@@ -1,0 +1,31 @@
+name: vps-ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service alias (matches /etc/svcopctl/services.d/<alias>.env)"
+        required: true
+        type: string
+      action:
+        description: "Action"
+        required: true
+        type: choice
+        options:
+          - status
+          - logs
+          - health
+          - restart
+
+permissions:
+  contents: read
+
+jobs:
+  ops:
+    runs-on: [self-hosted, vps-ops]
+    steps:
+      - name: Run operation
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo /usr/local/sbin/svcopctl "${{ inputs.service }}" "${{ inputs.action }}"
