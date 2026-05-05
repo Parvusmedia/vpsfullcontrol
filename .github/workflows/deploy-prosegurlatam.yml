@@ -13,7 +13,7 @@ jobs:
           repository: Parvusmedia/prosegurlatam
           ref: main
           path: prosegurlatam
-          token: ${{ secrets.PROSEGURLATAM_REPO_TOKEN }}
+          token: ${{ secrets.PROSEGURLATAM_REPO_TOKEN || github.token }}
 
       - name: Sync to /home/cursorbot/prosegurlatam
         run: |
