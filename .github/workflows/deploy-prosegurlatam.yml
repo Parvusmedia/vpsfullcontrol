@@ -37,7 +37,7 @@ jobs:
 
       - name: Restart service and wait
         run: |
-          sudo systemctl restart client-ficha-panel.service
+          sudo /bin/systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,160p'
 
           for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:8015/ >/dev/null; then
