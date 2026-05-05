@@ -27,15 +27,26 @@ jobs:
             prosegurlatam/ /home/cursorbot/prosegurlatam/
           sudo chown -R cursorbot:cursorbot /home/cursorbot/prosegurlatam
 
+      - name: Ensure required data files exist
+        run: |
+          sudo -u cursorbot bash -lc '
+            cd /home/cursorbot/prosegurlatam
+            test -f data/client_panel_regions.json || cp -n data/client_panel_regions.example.json data/client_panel_regions.json
+            test -f data/client_panel_users.json   || cp -n data/client_panel_users.example.json   data/client_panel_users.json
+          '
+
       - name: Restart service and wait
         run: |
           sudo systemctl restart client-ficha-panel.service
-          for i in $(seq 1 30); do
+
+          for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:8015/ >/dev/null; then
               echo "OK: prosegurlatam up"
               exit 0
             fi
             sleep 1
           done
-          sudo systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,120p'
+
+          echo "ERROR: service did not come up"
+          sudo systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,160p'
           exit 1
