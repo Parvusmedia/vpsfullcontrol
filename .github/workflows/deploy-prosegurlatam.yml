@@ -48,5 +48,5 @@ jobs:
           done
 
           echo "ERROR: service did not come up"
-          sudo systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,160p'
+          sudo /bin/systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,160p'
           exit 1
