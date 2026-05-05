@@ -15,10 +15,9 @@ jobs:
           path: prosegurlatam
           token: ${{ secrets.PROSEGURLATAM_REPO_TOKEN || github.token }}
 
-      - name: Sync to /home/cursorbot/prosegurlatam
+      - name: Sync to /home/cursorbot/prosegurlatam (safe, no delete)
         run: |
           sudo rsync -a \
-            --delete \
             --exclude '.git' \
             --exclude '.venv' \
             --exclude '__pycache__' \
@@ -36,15 +35,6 @@ jobs:
           sudo test -f /home/cursorbot/prosegurlatam/data/client_panel_users.json || \
             sudo cp -n /home/cursorbot/prosegurlatam/data/client_panel_users.example.json /home/cursorbot/prosegurlatam/data/client_panel_users.json
           sudo chown -R cursorbot:cursorbot /home/cursorbot/prosegurlatam/data
-
-      - name: Ensure deps installed in venv
-        run: |
-          sudo /home/cursorbot/prosegurlatam/.venv/bin/pip install -U pip
-          sudo /home/cursorbot/prosegurlatam/.venv/bin/pip install -r /home/cursorbot/prosegurlatam/requirements.txt
-
-      - name: Debug import (prints real error if any)
-        run: |
-          sudo bash -lc 'cd /home/cursorbot/prosegurlatam && /home/cursorbot/prosegurlatam/.venv/bin/python -c "import app.main; print(\"IMPORT_OK\")"'
 
       - name: Restart service and wait
         run: |
