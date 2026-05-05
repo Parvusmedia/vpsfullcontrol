@@ -27,5 +27,15 @@ jobs:
       - name: Restart service
         run: |
           sudo systemctl restart ai-agent-v3.service
-          curl -fsS http://127.0.0.1:8004/ >/dev/null
-          sudo systemctl status ai-agent-v3.service --no-pager -l | sed -n '1,40p'
+
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8004/ >/dev/null; then
+              echo "OK: ai-agent-v3 up"
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "ERROR: ai-agent-v3 did not come up"
+          sudo systemctl status ai-agent-v3.service --no-pager -l | sed -n '1,120p'
+          exit 1
