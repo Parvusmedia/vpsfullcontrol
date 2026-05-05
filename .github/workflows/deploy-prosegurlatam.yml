@@ -29,15 +29,16 @@ jobs:
 
       - name: Ensure required data files exist
         run: |
-          sudo -u cursorbot bash -lc '
-            cd /home/cursorbot/prosegurlatam
-            test -f data/client_panel_regions.json || cp -n data/client_panel_regions.example.json data/client_panel_regions.json
-            test -f data/client_panel_users.json   || cp -n data/client_panel_users.example.json   data/client_panel_users.json
-          '
+          sudo mkdir -p /home/cursorbot/prosegurlatam/data
+          sudo test -f /home/cursorbot/prosegurlatam/data/client_panel_regions.json || \
+            sudo cp -n /home/cursorbot/prosegurlatam/data/client_panel_regions.example.json /home/cursorbot/prosegurlatam/data/client_panel_regions.json
+          sudo test -f /home/cursorbot/prosegurlatam/data/client_panel_users.json || \
+            sudo cp -n /home/cursorbot/prosegurlatam/data/client_panel_users.example.json /home/cursorbot/prosegurlatam/data/client_panel_users.json
+          sudo chown -R cursorbot:cursorbot /home/cursorbot/prosegurlatam/data
 
       - name: Restart service and wait
         run: |
-          sudo /bin/systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,160p'
+          sudo /bin/systemctl restart client-ficha-panel.service
 
           for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:8015/ >/dev/null; then
