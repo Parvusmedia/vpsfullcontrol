@@ -1,0 +1,31 @@
+name: deploy-agentv3
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout agentv3
+        uses: actions/checkout@v4
+        with:
+          repository: Parvusmedia/agentv3
+          ref: main
+          path: agentv3
+          token: ${{ secrets.AGENTV3_REPO_TOKEN }}
+
+      - name: Sync to /opt/ai-agent-v3
+        run: |
+          sudo rsync -a --delete \
+            --exclude '.git' \
+            --exclude 'venv' \
+            --exclude '__pycache__' \
+            agentv3/ /opt/ai-agent-v3/
+          sudo chown -R cursorbot:cursorbot /opt/ai-agent-v3
+
+      - name: Restart service
+        run: |
+          sudo systemctl restart ai-agent-v3.service
+          sudo ss -lntp | grep -E ":8004"
+          curl -fsS http://127.0.0.1:8004/ >/dev/null
