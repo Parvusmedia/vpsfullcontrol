@@ -1,0 +1,41 @@
+name: deploy-prosegurlatam
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout prosegurlatam
+        uses: actions/checkout@v4
+        with:
+          repository: Parvusmedia/prosegurlatam
+          ref: main
+          path: prosegurlatam
+          token: ${{ secrets.PROSEGURLATAM_REPO_TOKEN }}
+
+      - name: Sync to /home/cursorbot/prosegurlatam
+        run: |
+          sudo rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.venv' \
+            --exclude '__pycache__' \
+            --exclude '.env' \
+            --exclude 'tmp_upload' \
+            --exclude 'data/*.json' \
+            prosegurlatam/ /home/cursorbot/prosegurlatam/
+          sudo chown -R cursorbot:cursorbot /home/cursorbot/prosegurlatam
+
+      - name: Restart service and wait
+        run: |
+          sudo systemctl restart client-ficha-panel.service
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8015/ >/dev/null; then
+              echo "OK: prosegurlatam up"
+              exit 0
+            fi
+            sleep 1
+          done
+          sudo systemctl status client-ficha-panel.service --no-pager -l | sed -n '1,120p'
+          exit 1
