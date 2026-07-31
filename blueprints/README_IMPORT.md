@@ -54,5 +54,9 @@ Meta Lead Ads
 }
 ```
 
-## Nota seguridad
-El token de Apify viene del blueprint original. Conviene rotarlo en Apify y actualizar `Settings.task_url`.
+## Setup obligatorio en n8n Settings
+
+En el nodo `Settings`, reemplazar `REPLACE_WITH_APIFY_TOKEN` en `task_url`
+por el token real del actor `customary_viburnum~prosegur-latam-argentina-comments`.
+
+Rotar el token anterior si estuvo expuesto en blueprints viejos.
