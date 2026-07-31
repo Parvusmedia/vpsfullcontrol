@@ -1,0 +1,936 @@
+{
+  "name": "Argentina_Prosegur_Meta_Apify_Comments_UNIFIED",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "argentina-prosegur-meta-leads",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1800,
+        0
+      ],
+      "id": "30ed991f-4ae8-4ca6-986e-7eb5e8153dc4",
+      "name": "Webhook",
+      "webhookId": "argentina-prosegur-meta-leads"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Argentina Prosegur Meta leads — normalize payload + build Apify comment.\n * Accepts:\n *  1) New Make JSON body: { lead, phone_e164, params_url, aid }\n *  2) Legacy: query.jsonpayload / body.jsonpayload + body.params_url\n */\n\nconst crypto = require('crypto');\n\nfunction generateUuid() {\n  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {\n    const r = Math.floor(Math.random() * 16);\n    const v = c === 'x' ? r : (r & 0x3) | 0x8;\n    return v.toString(16);\n  });\n}\n\nfunction normalizeValue(value) {\n  if (Array.isArray(value)) {\n    if (value.length === 0) return null;\n    if (value.length === 1) return normalizeValue(value[0]);\n    const parts = value.map(normalizeValue).filter((v) => v !== null && v !== '');\n    return parts.length ? parts.join(', ') : null;\n  }\n  if (typeof value === 'string') {\n    const trimmed = value.trim();\n    return trimmed === '' ? null : trimmed;\n  }\n  return value ?? null;\n}\n\nfunction normalizeKey(key) {\n  return String(key)\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[¿?¡!:'\"]/g, '')\n    .replace(/[^a-z0-9]+/g, '_')\n    .replace(/^_+|_+$/g, '')\n    .replace(/_+/g, '_');\n}\n\nfunction normalizeObject(object = {}) {\n  if (!object || typeof object !== 'object' || Array.isArray(object)) return {};\n  return Object.entries(object).reduce((acc, [k, v]) => {\n    acc[normalizeKey(k)] = normalizeValue(v);\n    return acc;\n  }, {});\n}\n\nfunction formatText(value) {\n  const normalized = normalizeValue(value);\n  if (normalized === null) return null;\n  return String(normalized).replace(/_/g, ' ').replace(/\\s+/g, ' ').trim();\n}\n\nfunction mapSecuritySituation(value) {\n  const normalized = normalizeValue(value);\n  if (!normalized) return null;\n  const key = normalizeKey(normalized);\n  const options = {\n    sufri_un_robo_recientemente: 'robo reciente',\n    hubo_robos_en_mi_zona: 'robos en zona',\n    quiero_prevenir: 'prevención',\n    es_una_propiedad_nueva: 'propiedad nueva',\n  };\n  return options[key] ?? formatText(normalized);\n}\n\nfunction mapPreferredNextStep(value) {\n  const normalized = normalizeValue(value);\n  if (!normalized) return null;\n  const key = normalizeKey(normalized);\n  const options = {\n    quiero_que_un_asesor_me_contacte_para_cotizar: 'contactar para cotizar',\n    quiero_evaluarlo_mas_adelante: 'evaluar más adelante',\n  };\n  return options[key] ?? formatText(normalized);\n}\n\nfunction buildComment({ currentSecuritySituation, preferredNextStep, preferredContactTime }) {\n  const lines = [];\n  const securitySituation = mapSecuritySituation(currentSecuritySituation);\n  const nextStep = mapPreferredNextStep(preferredNextStep);\n  const contactTime = formatText(preferredContactTime);\n  if (securitySituation) lines.push(`Situación: ${securitySituation}`);\n  if (nextStep) lines.push(`Avance: ${nextStep}`);\n  if (contactTime) lines.push(`Horario: ${contactTime}`);\n  const comment = lines.join('\\n');\n  if (!comment) return null;\n  return comment.length <= 170 ? comment : `${comment.slice(0, 167).trimEnd()}...`;\n}\n\nfunction capitalize(value) {\n  const text = formatText(value);\n  if (!text) return '';\n  return text.charAt(0).toUpperCase() + text.slice(1);\n}\n\nfunction normalizeCityName(input) {\n  if (!input || typeof input !== 'string') return '';\n  const words = input.trim().split(/\\s+/);\n  let city = words.slice(0, 2).join(' ');\n  if (city.replace(/\\s+/g, '').length <= 3) city += '_aaa';\n  return city;\n}\n\nfunction normalizePersonName(str) {\n  if (str == null) return 'na';\n  let s = String(str)\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z ]/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n  if (!s) return 'na';\n  return s.split(' ').filter(Boolean).slice(0, 4).join(' ') || 'na';\n}\n\nfunction normalizePhoneDigits(str) {\n  if (str == null) return null;\n  const digits = String(str).replace(/\\D/g, '');\n  return digits || null;\n}\n\nfunction parseLeadPayload(input) {\n  const body = input.body || {};\n\n  if (body.lead && typeof body.lead === 'object' && !Array.isArray(body.lead)) {\n    return body.lead;\n  }\n\n  for (const raw of [body.jsonpayload, input.query?.jsonpayload]) {\n    if (!raw) continue;\n    if (typeof raw === 'object' && !Array.isArray(raw)) return raw;\n    if (typeof raw === 'string') {\n      try {\n        return JSON.parse(raw);\n      } catch (error) {\n        throw new Error(`No se pudo parsear jsonpayload: ${error.message}`);\n      }\n    }\n  }\n\n  if (body.leadgenId || body.formId || body.data) {\n    return body;\n  }\n\n  return {};\n}\n\nreturn items.map((item) => {\n  const input = item.json ?? {};\n  const body = input.body || {};\n  const payload = parseLeadPayload(input);\n  const leadData = normalizeObject(payload.data || {});\n  const webhookBody = normalizeObject(body);\n\n  const installationPlace =\n    leadData.donde_queres_instalar_el_sistema_de_alarmas ?? null;\n  const currentSecuritySituation =\n    leadData.cual_es_tu_situacion_actual_de_seguridad ?? null;\n  const preferredNextStep = leadData.como_te_gustaria_avanzar ?? null;\n  const preferredContactTime =\n    leadData.selecciona_la_franja_horaria_que_queres_que_te_contacten ?? null;\n\n  const rawPhone =\n    body.phone_e164 ||\n    leadData.phone ||\n    webhookBody.phone ||\n    null;\n\n  const fullName = leadData.full_name ?? null;\n  const city = leadData.city ?? null;\n\n  const normalized = {\n    uuid: generateUuid(),\n    aid: normalizeValue(body.aid) || 'ps',\n    platform: normalizeValue(payload.platform),\n    leadgen_id: normalizeValue(payload.leadgenId),\n    form_id: normalizeValue(payload.formId ?? body.formid),\n    is_organic: typeof payload.isOrganic === 'boolean' ? payload.isOrganic : null,\n    ad_id: normalizeValue(payload.adId),\n    ad_name: normalizeValue(payload.adName),\n    adset_id: normalizeValue(payload.adsetId),\n    adset_name: normalizeValue(payload.adsetName),\n    campaign_id: normalizeValue(payload.campaignId),\n    campaign_name: normalizeValue(payload.campaignName),\n    page_id: normalizeValue(payload.pageId),\n    date_created: normalizeValue(payload.dateCreated),\n    full_name: fullName,\n    name_normalized: normalizePersonName(fullName),\n    email: typeof leadData.email === 'string' ? leadData.email.toLowerCase() : null,\n    phone: rawPhone,\n    phone_digits: normalizePhoneDigits(rawPhone),\n    city,\n    ciudad: normalizeCityName(city || ''),\n    utm_source: leadData.utm_source ?? null,\n    utm_medium: leadData.utm_medium ?? null,\n    utm_campaign: leadData.utm_campaign ?? null,\n    utm_product: leadData.utm_product ?? null,\n    utm_offer: leadData.utm_offer ?? null,\n    utm_brand: leadData.utm_brand ?? null,\n    utm_target: leadData.utm_target ?? null,\n    installation_place: installationPlace,\n    hogar_negocio: capitalize(installationPlace),\n    current_security_situation: currentSecuritySituation,\n    preferred_next_step: preferredNextStep,\n    preferred_contact_time: preferredContactTime,\n    comment: buildComment({\n      currentSecuritySituation,\n      preferredNextStep,\n      preferredContactTime,\n    }),\n    params_url: webhookBody.params_url ?? body.params_url ?? null,\n    source_label: [\n      leadData.utm_source || 'meta',\n      normalizeValue(payload.platform) || '',\n    ].filter(Boolean).join('-'),\n    webhook_url: normalizeValue(input.webhookUrl),\n    form_data: leadData,\n  };\n\n  return { json: normalized };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1560,
+        0
+      ],
+      "id": "516f6e12-7966-47c8-8010-2b4e5bbe5a95",
+      "name": "InputData"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"sheet_id\": \"https://docs.google.com/spreadsheets/d/1TTjRCb5YaJ0h7NPNwAdkvdkk564I0-Cj9HjYbCNFk-w\",\n  \"task_url\": \"https://api.apify.com/v2/actor-tasks/customary_viburnum~prosegur-latam-argentina-comments/run-sync-get-dataset-items?token=REPLACE_WITH_APIFY_TOKEN\",\n  \"timezone\": \"America/Argentina/Buenos_Aires\",\n  \"startHour\": 9,\n  \"startMinute\": 0,\n  \"endHour\": 21,\n  \"endMinute\": 59,\n  \"country_phone_code\": \"+54\",\n  \"phone_pattern\": \"549\\\\d{10}\",\n  \"recieve_failuare_emails\": \"zezoamer113@gmail.com,parvusmedia-development@gmail.com,emiliano@parvusmedia.com\",\n  \"recieve_success_emails\": \"damian.andrei@prosegur.com\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1320,
+        0
+      ],
+      "id": "469222b9-bed6-4fc5-af99-9a0e90636b4c",
+      "name": "Settings"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "rawinput",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $('InputData').item.json.full_name }}",
+            "telefono": "={{ $('InputData').item.json.phone }}",
+            "email": "={{ $('InputData').item.json.email }}",
+            "params_url": "={{ $('InputData').item.json.params_url }}",
+            "campana": "={{ $('InputData').item.json.campaign_name }}",
+            "adset": "={{ $('InputData').item.json.utm_product }}",
+            "source": "={{ $('InputData').item.json.source_label }}",
+            "leadid": "={{ $('InputData').item.json.leadgen_id }}",
+            "WS": "pendiente",
+            "wsmessage": "pendiente",
+            "whatsapp_push": "pendiente",
+            "plantillawhatsapp": "pendiente",
+            "uuid": "={{ $('InputData').item.json.uuid }}",
+            "ciudad": "={{ $('InputData').item.json.city }}",
+            "hogar_negocio": "={{ $('InputData').item.json.installation_place }}",
+            "estado_actual": "={{ $('InputData').item.json.current_security_situation }}",
+            "horario": "={{ $('InputData').item.json.preferred_contact_time }}",
+            "proximopaso": "={{ $('InputData').item.json.preferred_next_step }}",
+            "comment": "={{ $('InputData').item.json.comment }}",
+            "custom1": "={{ $('InputData').item.json.webhook_url }}",
+            "fecha": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('dd-MM-yyyy HH:mm') }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1080,
+        0
+      ],
+      "id": "7c75216b-2157-47b5-8199-597656f05467",
+      "name": "LogRawInput",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "leadsconhorario",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "aid": "={{ $('InputData').item.json.aid }}",
+            "nombre": "={{ $('InputData').item.json.full_name }}",
+            "Fecha": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('dd-MM-yyyy HH:mm') }}",
+            "telefono": "={{ $('InputData').item.json.phone }}",
+            "email": "={{ $('InputData').item.json.email }}",
+            "params_url": "={{ $('InputData').item.json.params_url }}",
+            "campana": "={{ $('InputData').item.json.campaign_name }}",
+            "adset": "={{ $('InputData').item.json.adset_name }}",
+            "adname": "={{ $('InputData').item.json.ad_name }}",
+            "formid": "={{ $('InputData').item.json.form_id }}",
+            "source": "={{ $('InputData').item.json.source_label }}",
+            "leadid": "={{ $('InputData').item.json.leadgen_id }}",
+            "WS": "pendiente",
+            "horario": "={{ $('InputData').item.json.preferred_contact_time }}",
+            "ciudad": "={{ $('InputData').item.json.city }}",
+            "dónde_querés_instalar_el_sistema_de_alarmas": "={{ $('InputData').item.json.installation_place }}",
+            "¿cuál_es_tu_situación_actual_de_seguridad?": "={{ $('InputData').item.json.current_security_situation }}",
+            "¿cómo_te_gustaría_avanzar?": "={{ $('InputData').item.json.preferred_next_step }}",
+            "Column 20": "={{ $('InputData').item.json.comment }}",
+            "uuid": "={{ $('InputData').item.json.uuid }}",
+            "EstadoEnvio": "pendiente"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -840,
+        0
+      ],
+      "id": "f133c52a-cd5f-4564-9db8-b49c88ad8443",
+      "name": "LogLeadsConHorario",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const settings = $('Settings').first().json;\nconst lead = $('InputData').first().json;\nconst countryCode = String(settings.country_phone_code || '+54');\nconst phonePattern = String(settings.phone_pattern || '549\\\\d{10}');\nconst phoneNumber = lead.phone;\n\nif (!phoneNumber) {\n  return [{ json: { valid: false, error: 'No phone number provided' } }];\n}\n\nconst digits = String(phoneNumber).replace(/\\D/g, '');\nconst pattern = new RegExp(`^${phonePattern}$`);\nconst candidates = [\n  digits,\n  digits.startsWith('54') ? digits : `54${digits}`,\n  digits.startsWith('549') ? digits : `549${digits.replace(/^54/, '')}`,\n];\n\nlet e164 = null;\nfor (const candidate of candidates) {\n  if (pattern.test(candidate)) {\n    e164 = `+${candidate}`;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    valid: Boolean(e164),\n    phone: digits,\n    e164,\n    original: phoneNumber,\n    country_code: countryCode,\n    error: e164 ? null : 'Invalid Argentine phone number',\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "id": "675ef40c-e14d-42a6-ad25-3c95a161c6a0",
+      "name": "ValidatePhone"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2b8c666b-6e04-4d56-af76-ffe6cb3ea271",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -360,
+        0
+      ],
+      "id": "8f67bd50-879b-46d9-98d6-8de527d2cda3",
+      "name": "IfPhoneValid"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hola@parvusmedia.com",
+        "toEmail": "={{ $('Settings').first().json.recieve_failuare_emails }}",
+        "subject": "=Teléfono inválido AR - {{ $('InputData').item.json.leadgen_id }}",
+        "emailFormat": "text",
+        "text": "=Lead con teléfono inválido\nNombre: {{ $('InputData').item.json.full_name }}\nTel: {{ $('InputData').item.json.phone }}\nLead ID: {{ $('InputData').item.json.leadgen_id }}\nError: {{ $json.error }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -120,
+        220
+      ],
+      "id": "9759d57f-9e45-4247-a057-f1ef871d28d3",
+      "name": "EmailInvalidPhone",
+      "credentials": {
+        "smtp": {
+          "id": "bI1OPZXssQ2rWLBK",
+          "name": "No Reply Pmediaplus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const settings = $('Settings').first().json;\nif (!settings || !settings.timezone) {\n  throw new Error('Settings must contain timezone configuration');\n}\n\nconst timezone = settings.timezone;\nconst startHour = settings.startHour ?? 9;\nconst startMinute = settings.startMinute ?? 0;\nconst endHour = settings.endHour ?? 21;\nconst endMinute = settings.endMinute ?? 59;\n\nconst now = new Date();\nconst localTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));\nconst hours = localTime.getHours();\nconst minutes = localTime.getMinutes();\nconst totalMinutes = hours * 60 + minutes;\nconst startTotalMinutes = startHour * 60 + startMinute;\nconst endTotalMinutes = endHour * 60 + endMinute;\nconst isBusinessHours = totalMinutes >= startTotalMinutes && totalMinutes <= endTotalMinutes;\n\nreturn [{\n  json: {\n    currentTime: localTime.toLocaleString('es-AR', { timeZone: timezone }),\n    timezone,\n    hours,\n    minutes,\n    isBusinessHours,\n    businessHours: {\n      start: `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`,\n      end: `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`,\n    },\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        -120
+      ],
+      "id": "b591e741-1c2e-4731-a9fb-e53d75ddd236",
+      "name": "CalculateBusinessHours"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "15303fa5-e08b-4077-ae56-1f783ab36460",
+              "leftValue": "={{ $json.isBusinessHours }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        120,
+        -120
+      ],
+      "id": "591e248d-0c49-4e9a-a40d-04348c316b86",
+      "name": "IfBusinessHours"
+    },
+    {
+      "parameters": {
+        "content": "## Fuera de horario\nEl lead ya quedó en `rawinput` + `leadsconhorario`.\nNo se llama a Apify fuera de 09:00–21:59 ART.",
+        "height": 200,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        360,
+        80
+      ],
+      "id": "18d29536-3853-4292-ad19-8bfa5d59df4f",
+      "name": "NoteOutsideHours"
+    },
+    {
+      "parameters": {
+        "amount": 20,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        -200
+      ],
+      "id": "bde2798f-e456-425a-9a16-4fafad4c4708",
+      "name": "Wait20s",
+      "webhookId": "b7b9d934-1e9a-4e6c-b926-31ad34e6ce95"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Settings').first().json.task_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ciudad\": {{ JSON.stringify($('InputData').item.json.ciudad) }},\n  \"comuna\": \"\",\n  \"email\": {{ JSON.stringify($('InputData').item.json.email) }},\n  \"hogar_negocio\": {{ JSON.stringify($('InputData').item.json.hogar_negocio) }},\n  \"name\": {{ JSON.stringify($('InputData').item.json.name_normalized) }},\n  \"comment\": {{ JSON.stringify($('InputData').item.json.comment) }},\n  \"phone\": {{ JSON.stringify($('ValidatePhone').item.json.e164 || $('InputData').item.json.phone) }},\n  \"url\": {{ JSON.stringify($('InputData').item.json.params_url) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        -200
+      ],
+      "id": "1a1252ef-4967-428d-b189-d341086e777c",
+      "name": "CallApify",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bcaeb6b1-8aa5-4840-8670-f456ecf44dd2",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "ffb9267a-c37c-4b75-a01e-05fdbed3700f",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "The Phone Pushed Successfully",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        840,
+        -200
+      ],
+      "id": "be1e50b6-0653-48c8-bc41-ebf3d3ab215a",
+      "name": "IfApifySuccess"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "lead2landing",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "aid": "={{ $('InputData').item.json.aid }}",
+            "telefono": "={{ $('ValidatePhone').item.json.e164 }}",
+            "campana": "={{ $('InputData').item.json.campaign_name }}",
+            "adset": "={{ $('InputData').item.json.ad_name }}",
+            "source": "={{ $('InputData').item.json.platform }}",
+            "leadid": "={{ $('InputData').item.json.leadgen_id }}",
+            "WS": "={{ $('CallApify').item.json.status }}",
+            "wsmessage": "={{ $('CallApify').item.json.message }}",
+            "nombre": "={{ $('InputData').item.json.full_name }}",
+            "fecha": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('dd-MM-yyyy HH:mm') }}",
+            "email": "={{ $('InputData').item.json.email }}",
+            "params_url": "={{ $('InputData').item.json.params_url }}",
+            "ciudad": "={{ $('InputData').item.json.ciudad }}",
+            "hogar_negocio": "={{ $('InputData').item.json.hogar_negocio }}",
+            "custom1": "={{ $('InputData').item.json.comment }}",
+            "cid": "={{ $('InputData').item.json.form_id }}",
+            "estado_actual": "={{ $('InputData').item.json.preferred_contact_time }}",
+            "uuid": "={{ $('InputData').item.json.uuid }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1080,
+        -320
+      ],
+      "id": "2de5e599-278c-4501-be5c-431e086d4fe2",
+      "name": "LogLead2Landing",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "hola@parvusmedia.com",
+        "toEmail": "={{ $('Settings').first().json.recieve_success_emails }}",
+        "subject": "=Ads Facebook - {{ $('ValidatePhone').item.json.e164 }} - {{ $('InputData').item.json.city }}",
+        "emailFormat": "text",
+        "text": "=Nuevo Lead:\nFecha: {{ $now }}\n\n------------------------------------------------------\nNombre: {{ $('InputData').item.json.full_name }}\nTelefono: {{ $('ValidatePhone').item.json.e164 }}\nEmail: {{ $('InputData').item.json.email }}\nCiudad: {{ $('InputData').item.json.city }}\nTipo de Inmueble: {{ $('InputData').item.json.hogar_negocio }}\nSituación: {{ $('InputData').item.json.current_security_situation }}\nAvance: {{ $('InputData').item.json.preferred_next_step }}\nHorario: {{ $('InputData').item.json.preferred_contact_time }}\nComment:\n{{ $('InputData').item.json.comment }}\n\nOrigen: Marketing y Comunicaciones\nSuborigen: Ads Facebook - Platform {{ $('InputData').item.json.platform }}\nCampaña: {{ $('InputData').item.json.campaign_name }}\nAnuncio: {{ $('InputData').item.json.ad_name }}\nLeadid: {{ $('InputData').item.json.leadgen_id }}\nResultado Apify: {{ $('CallApify').item.json.message }}\n------------------------------------------------------",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        -320
+      ],
+      "id": "06ee98f0-3f37-48de-8538-44dd5e00d8a7",
+      "name": "EmailSuccess",
+      "credentials": {
+        "smtp": {
+          "id": "bI1OPZXssQ2rWLBK",
+          "name": "No Reply Pmediaplus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reintentos",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telefono",
+              "lookupValue": "={{ String($('ValidatePhone').item.json.e164 || $('InputData').item.json.phone).trim() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1080,
+        -40
+      ],
+      "id": "b05489fd-9346-4719-ad8d-58eaed059648",
+      "name": "SearchReintentos",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        -40
+      ],
+      "id": "5c05de1f-1428-4a20-b27a-67eec591d8f2",
+      "name": "AggregateReintentos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5eb98baa-4554-46b9-a209-9a7cbd40737b",
+              "leftValue": "={{ ($json.data || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1560,
+        -40
+      ],
+      "id": "ec6b2bb0-8ad1-4e05-8644-29c3ec663b45",
+      "name": "IfNewRetry"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reintentos",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('dd-MM-yyyy HH:mm') }}",
+            "telefono": "={{ $('ValidatePhone').item.json.e164 }}",
+            "params_url": "={{ $('InputData').item.json.params_url }}",
+            "campana": "={{ $('InputData').item.json.campaign_name }}",
+            "estado": "pendiente",
+            "source": "={{ $('InputData').item.json.platform }}",
+            "reintento": "1",
+            "leadid": "={{ $('InputData').item.json.leadgen_id }}",
+            "ciudad": "={{ $('InputData').item.json.ciudad }}",
+            "hogar_negocio": "={{ $('InputData').item.json.hogar_negocio }}",
+            "formid": "={{ $('InputData').item.json.form_id }}",
+            "email": "={{ $('InputData').item.json.email }}",
+            "nombre": "={{ $('InputData').item.json.full_name }}",
+            "webhook": "={{ $('InputData').item.json.webhook_url }}",
+            "message": "={{ $('CallApify').item.json.message }}",
+            "uuid": "={{ $('InputData').item.json.uuid }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1800,
+        -160
+      ],
+      "id": "0388bb6d-639d-4a21-819f-7f39baa3dcfd",
+      "name": "AppendReintento",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Settings').first().json.sheet_id }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "reintentos",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefono": "={{ String($('ValidatePhone').item.json.e164).trim() }}",
+            "estado": "pendiente",
+            "reintento": "={{ Number(($('AggregateReintentos').first().json.data[0] || {}).reintento || 0) + 1 }}",
+            "message": "={{ $('CallApify').item.json.message }}"
+          },
+          "matchingColumns": [
+            "telefono"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1800,
+        80
+      ],
+      "id": "7678ddc1-10c2-487a-b524-bc7f422d1117",
+      "name": "UpdateReintento",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "hola@parvusmedia.com",
+        "toEmail": "={{ $('Settings').first().json.recieve_failuare_emails }}",
+        "subject": "=Error Apify AR - {{ $('InputData').item.json.source_label }}",
+        "emailFormat": "text",
+        "text": "=Status: {{ $('CallApify').item.json.status }}\nTel: {{ $('ValidatePhone').item.json.e164 }}\nFuente: {{ $('InputData').item.json.source_label }}\nLead: {{ $('InputData').item.json.leadgen_id }}\nError:\n{{ $('CallApify').item.json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2040,
+        -40
+      ],
+      "id": "512e7fd3-1b17-4fde-bdf4-c388e5d9871f",
+      "name": "EmailError",
+      "credentials": {
+        "smtp": {
+          "id": "bI1OPZXssQ2rWLBK",
+          "name": "No Reply Pmediaplus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Argentina Prosegur Meta → Apify Comments\n\n1. Webhook único desde Make\n2. Normaliza form + arma `comment`\n3. Log sheets\n4. Valida teléfono AR (+549…)\n5. Solo en horario ART llama Apify comments\n\nWebhook path: `argentina-prosegur-meta-leads`",
+        "height": 320,
+        "width": 420,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1840,
+        -360
+      ],
+      "id": "0ac38822-a5ac-436e-a362-be4161463e8b",
+      "name": "Overview"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "InputData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "InputData": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "LogRawInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogRawInput": {
+      "main": [
+        [
+          {
+            "node": "LogLeadsConHorario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogLeadsConHorario": {
+      "main": [
+        [
+          {
+            "node": "ValidatePhone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfPhoneValid": {
+      "main": [
+        [
+          {
+            "node": "CalculateBusinessHours",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "EmailInvalidPhone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidatePhone": {
+      "main": [
+        [
+          {
+            "node": "IfPhoneValid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CalculateBusinessHours": {
+      "main": [
+        [
+          {
+            "node": "IfBusinessHours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfBusinessHours": {
+      "main": [
+        [
+          {
+            "node": "Wait20s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Wait20s": {
+      "main": [
+        [
+          {
+            "node": "CallApify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CallApify": {
+      "main": [
+        [
+          {
+            "node": "IfApifySuccess",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SearchReintentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfApifySuccess": {
+      "main": [
+        [
+          {
+            "node": "LogLead2Landing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SearchReintentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogLead2Landing": {
+      "main": [
+        [
+          {
+            "node": "EmailSuccess",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SearchReintentos": {
+      "main": [
+        [
+          {
+            "node": "AggregateReintentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AggregateReintentos": {
+      "main": [
+        [
+          {
+            "node": "IfNewRetry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfNewRetry": {
+      "main": [
+        [
+          {
+            "node": "AppendReintento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UpdateReintento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AppendReintento": {
+      "main": [
+        [
+          {
+            "node": "EmailError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateReintento": {
+      "main": [
+        [
+          {
+            "node": "EmailError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "37e36e52-487f-44ac-b462-3eccd88ce445",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "argentina-prosegur-meta-unified",
+  "tags": [
+    {
+      "name": "argentina"
+    },
+    {
+      "name": "prosegur"
+    },
+    {
+      "name": "meta"
+    }
+  ]
+}
