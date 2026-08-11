@@ -1,0 +1,5 @@
+self-hosted-runner:
+  # Custom labels used by our self-hosted VPS runners. Declaring them here
+  # tells actionlint they are valid so it stops reporting "label is unknown".
+  labels:
+    - vps-ops
