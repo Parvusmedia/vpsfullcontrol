@@ -1,0 +1,4 @@
+{
+  "name": "vpsfullcontrol",
+  "install": "bash .cursor/install.sh"
+}
