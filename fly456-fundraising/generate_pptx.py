@@ -305,37 +305,32 @@ def build():
         ],
     )
 
-    # 5 Traction + model
+    # 5 Traction
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Traction & model", "Replace brackets with live numbers before sending", 5)
-    card(
+    content_header(s, prs, "Traction", "Just launched July 2026, no marketing budget", 5)
+    add_bullets(
         s,
-        0.5,
+        0.6,
         2.0,
-        6.0,
-        4.2,
-        "Traction",
+        12,
+        3.8,
         [
+            "Currently 6 free channels live on Telegram for niche audiences (LatAm expats living in EU and US).",
+            "Currently few paying Premium subscribers.",
+            "Plans: Economy 5€/month | 20€/year · Business 12€/month | 99€/year. Stripe checkout in Telegram.",
             "Product live: fly456.com + @fly456bot",
-            "[N] active route alerts monitored",
-            "[P] paying subscribers · €[A] MRR",
-            "Stripe checkout inside Telegram",
-            "Edit placeholders before send",
         ],
+        17,
     )
     card(
         s,
-        6.8,
-        2.0,
-        6.0,
-        4.2,
-        "Model & ask (~€150k)",
+        0.5,
+        5.5,
+        12.3,
+        1.5,
+        "The ask (~€150k)",
         [
-            "Subscription for named route alerts",
-            "Economy + Business cabin products",
-            "Later: affiliate / partner take-rate",
-            "Use of funds: better monitoring,",
-            "faster alerts, convert & retain users",
+            "Sharper monitoring · faster Telegram alerts · grow paid Economy + Business · keep burn low",
         ],
     )
 

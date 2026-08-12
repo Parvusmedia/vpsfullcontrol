@@ -18,9 +18,10 @@ Two products:
 
 Same alert logic, different cabin.
 
-Traction [CONFIRM]:
-- [N] active route alerts
-- [P] paying subscribers · €[A] MRR
+Traction:
+- Launched July 2026, no marketing budget
+- 6 free Telegram channels (LatAm expats in EU/US)
+- Early Premium (few paying) · Economy 5€/mo|20€/yr · Business 12€/mo|99€/yr
 - Live: fly456.com + @fly456bot (Stripe in Telegram)
 
 Raising ~€150k pre-seed to sharpen monitoring, speed up alerts, and grow paid Economy + Business.

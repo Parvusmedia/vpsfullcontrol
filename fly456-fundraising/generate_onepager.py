@@ -165,32 +165,14 @@ def build():
         ],
     )
 
-    y = pdf.slide("Traction & model", "Replace brackets with live numbers before sending")
-    pdf.box(
-        14,
+    y = pdf.slide("Traction", "Just launched July 2026, no marketing budget")
+    pdf.bullets(
         y,
-        130,
-        90,
-        "Traction",
         [
+            "Currently 6 free channels live on Telegram for niche audiences (LatAm expats living in EU and US).",
+            "Currently few paying Premium subscribers.",
+            "Plans: Economy 5EUR/month | 20EUR/year · Business 12EUR/month | 99EUR/year. Stripe checkout in Telegram.",
             "Product live: fly456.com + @fly456bot",
-            "[N] active route alerts monitored",
-            "[P] paying subscribers · EUR [A] MRR",
-            "Stripe checkout inside Telegram",
-        ],
-    )
-    pdf.box(
-        152,
-        y,
-        130,
-        90,
-        "Model & ask (~150k EUR)",
-        [
-            "Subscription for named route alerts",
-            "Economy + Business cabin products",
-            "Later: affiliate / partner take-rate",
-            "Funds: better monitoring, faster alerts,",
-            "convert and retain paying users",
         ],
     )
 
