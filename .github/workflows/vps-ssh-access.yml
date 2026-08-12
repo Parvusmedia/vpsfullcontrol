@@ -1,11 +1,6 @@
 name: vps-ssh-access
 
-# Configura acceso SSH operativo en el VPS (self-hosted runner).
-# - Puerto 22 + 2222 (por si la red del cliente bloquea 22)
-# - Claves en root y cursorbot
-# - PermitRootLogin prohibit-password (solo clave, no password)
-# - Diagnóstico de auth
-
+# Acceso SSH operativo en el VPS (self-hosted).
 on:
   workflow_dispatch:
   push:
@@ -25,16 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure sudoers for ssh/nginx/cert tooling
+      - name: Install and run setup-ssh-access
         run: |
           set -euo pipefail
-          printf '%s\n' \
-            'ops ALL=(root) NOPASSWD: /usr/bin/certbot, /usr/bin/certbot *, /usr/sbin/nginx, /usr/sbin/nginx *, /usr/bin/ln, /usr/bin/ln *, /bin/chmod, /bin/chmod *, /usr/sbin/sshd, /usr/sbin/sshd *, /usr/sbin/ufw, /usr/sbin/ufw *, /bin/sed, /bin/sed *, /usr/bin/sed, /usr/bin/sed *, /usr/bin/tee, /usr/bin/tee *, /bin/cat, /bin/cat *' \
-            > /tmp/ops-ssh-sudoers
-          sudo cp /tmp/ops-ssh-sudoers /etc/sudoers.d/ops-ssh
-          sudo chmod 440 /etc/sudoers.d/ops-ssh
-
-      - name: Run SSH access setup
-        run: |
-          set -euo pipefail
-          sudo bash scripts/setup-ssh-access.sh
+          # Instala el script como binario root-ejecutable vía sudoers dedicado
+          sudo cp scripts/setup-ssh-access.sh /usr/local/sbin/parvus-ssh-setup
+          sudo chmod 755 /usr/local/sbin/parvus-ssh-setup
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/parvus-ssh-setup' > /tmp/ops-parvus-ssh
+          sudo cp /tmp/ops-parvus-ssh /etc/sudoers.d/ops-parvus-ssh
+          sudo chmod 440 /etc/sudoers.d/ops-parvus-ssh
+          sudo /usr/local/sbin/parvus-ssh-setup
