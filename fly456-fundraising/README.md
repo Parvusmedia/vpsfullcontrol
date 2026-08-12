@@ -1,15 +1,8 @@
-# Fly456 → Kima fundraising pack
+# Fly456 → Kima
 
-## Editable deck (PowerPoint)
-- `Fly456_Kima_OnePager.pptx` — **edit this**
-- Also at repo root: `/Fly456_Kima_OnePager.pptx`
+## True one-pager (1 slide)
+`Fly456_Kima_OnePager.pptx` — single editable slide for cold email.
 
-## Also available
-- `Fly456_Kima_OnePager.pdf`
-- `Fly456_Kima_OnePager.html`
-- `KIMA_COLD_EMAIL.md`
+Also at repo root: `/Fly456_Kima_OnePager.pptx`
 
-## Regenerate PPTX
-```bash
-python3 generate_pptx.py
-```
+Regenerate: `python3 generate_true_onepager_pptx.py`
