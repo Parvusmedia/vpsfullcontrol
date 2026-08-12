@@ -1,0 +1,40 @@
+name: vps-ssh-access
+
+# Configura acceso SSH operativo en el VPS (self-hosted runner).
+# - Puerto 22 + 2222 (por si la red del cliente bloquea 22)
+# - Claves en root y cursorbot
+# - PermitRootLogin prohibit-password (solo clave, no password)
+# - Diagnóstico de auth
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/vps-ssh-access.yml"
+      - "scripts/setup-ssh-access.sh"
+
+concurrency:
+  group: vps-ssh-access
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure sudoers for ssh/nginx/cert tooling
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'ops ALL=(root) NOPASSWD: /usr/bin/certbot, /usr/bin/certbot *, /usr/sbin/nginx, /usr/sbin/nginx *, /usr/bin/ln, /usr/bin/ln *, /bin/chmod, /bin/chmod *, /usr/sbin/sshd, /usr/sbin/sshd *, /usr/sbin/ufw, /usr/sbin/ufw *, /bin/sed, /bin/sed *, /usr/bin/sed, /usr/bin/sed *, /usr/bin/tee, /usr/bin/tee *, /bin/cat, /bin/cat *' \
+            > /tmp/ops-ssh-sudoers
+          sudo cp /tmp/ops-ssh-sudoers /etc/sudoers.d/ops-ssh
+          sudo chmod 440 /etc/sudoers.d/ops-ssh
+
+      - name: Run SSH access setup
+        run: |
+          set -euo pipefail
+          sudo bash scripts/setup-ssh-access.sh

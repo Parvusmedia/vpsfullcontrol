@@ -1,5 +1,6 @@
 name: ssl-friendinme-app
 
+# Renueva/emite cert Let's Encrypt para friendinme.app (runner self-hosted).
 on:
   workflow_dispatch:
   push:
@@ -15,35 +16,26 @@ jobs:
   certbot:
     runs-on: self-hosted
     steps:
-      - name: Restart friendinme + verify SSH/TLS
+      - name: Certbot friendinme.app
         run: |
           set -euo pipefail
-          # Ensure root key present
-          printf '%s\n' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-temp-friendinme' > /tmp/root-ak
-          sudo mkdir -p /root/.ssh
-          sudo cp /tmp/root-ak /root/.ssh/authorized_keys
-          sudo chmod 700 /root/.ssh
-          sudo chmod 600 /root/.ssh/authorized_keys
-          printf '%s\n' 'PermitRootLogin yes' 'PasswordAuthentication yes' 'PubkeyAuthentication yes' > /tmp/99-root-login.conf
-          sudo cp /tmp/99-root-login.conf /etc/ssh/sshd_config.d/99-root-login.conf
-          sudo systemctl restart ssh || sudo systemctl restart sshd || true
-          sleep 2
-
-          echo "=== services before ==="
-          sudo systemctl is-active friendinme-api friendinme-web nginx || true
-          sudo systemctl restart friendinme-api friendinme-web || true
-          sleep 3
-          echo "=== services after ==="
-          sudo systemctl is-active friendinme-api friendinme-web nginx || true
-          sudo systemctl --no-pager -l status friendinme-api friendinme-web | sed -n '1,80p' || true
-          echo "=== ports ==="
-          ss -tlnp | grep -E ':3010|:8000|:443' || true
-          echo "=== authorized_keys ==="
-          sudo cp /root/.ssh/authorized_keys /tmp/ak-check
-          sudo chown ops:ops /tmp/ak-check
-          wc -l /tmp/ak-check
-          cat /tmp/ak-check
-          echo "=== https ==="
-          curl -sIk https://friendinme.app 2>&1 | head -15 || true
-          curl -sS --max-time 5 http://127.0.0.1:3010/ 2>&1 | head -5 || true
-          curl -sS --max-time 5 http://127.0.0.1:8000/api/health 2>&1 | head -5 || true
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/bin/certbot, /usr/bin/certbot *, /usr/sbin/nginx, /usr/sbin/nginx *, /usr/bin/ln, /usr/bin/ln *, /bin/chmod, /bin/chmod *' > /tmp/ops-ssl-sudoers
+          sudo cp /tmp/ops-ssl-sudoers /etc/sudoers.d/ops-ssl
+          sudo chmod 440 /etc/sudoers.d/ops-ssl
+          if [ -f /opt/apps/friendinme/deploy/nginx-friendinme.conf ]; then
+            sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-available/friendinme
+            sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-enabled/friendinme
+            sudo nginx -t
+            sudo systemctl reload nginx
+          fi
+          sudo certbot --nginx \
+            -d friendinme.app \
+            -d www.friendinme.app \
+            --non-interactive \
+            --agree-tos \
+            --register-unsafely-without-email \
+            --redirect \
+            --keep-until-expiring
+          sudo nginx -t
+          sudo systemctl reload nginx
+          curl -sIk https://friendinme.app | head -10 || true
