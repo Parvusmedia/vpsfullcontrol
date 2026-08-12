@@ -54,4 +54,4 @@ Actions → **vps-ssh-access** → Run workflow
 - Web: `127.0.0.1:3010` (`friendinme-web`)
 - Dominio canónico: `https://friendinme.app`
 - Legacy `friendinme.pmediaplus.com` → 301 a `friendinme.app`
-- **No** reutilizar el puerto 8000 para otros servicios (`ai-agent` legacy usa **8010**; `ai-agent-v3` usa **8004**)
+- **No** reutilizar el puerto 8000 para otros servicios (`ai-agent` legacy usa **8005**; `ai-agent-v3` usa **8004**; `linkedinreport` usa **8010**)
