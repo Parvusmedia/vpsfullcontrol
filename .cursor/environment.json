@@ -1,0 +1,3 @@
+{
+  "install": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
+}

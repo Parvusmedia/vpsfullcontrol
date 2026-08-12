@@ -1,5 +1,8 @@
 # Acceso SSH operativo al VPS
 
+> Para Cursor local/cloud (clave dedicada y secrets): ver [`docs/CURSOR_VPS_SSH.md`](CURSOR_VPS_SSH.md).
+
+
 ## Modelo
 
 | Ítem | Valor |

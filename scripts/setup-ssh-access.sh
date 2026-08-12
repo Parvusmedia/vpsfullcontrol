@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AGENT_PUB='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-agent-vps'
+AGENT_PUBS=(
+  'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-agent-vps'
+  'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFq2RHsSB0Oz9frrqB7YsaGf2D0n0p+mXHSf+euTEssM cursor-vps-access@parvus'
+)
 
 echo "=== REPAIR SSH SOCKET + ACCESS ==="
 hostname; date -u
@@ -42,9 +45,11 @@ fi
 CB_HOME=$(getent passwd cursorbot | cut -d: -f6)
 mkdir -p "$CB_HOME/.ssh"
 touch "$CB_HOME/.ssh/authorized_keys"
-if ! grep -qxF "$AGENT_PUB" "$CB_HOME/.ssh/authorized_keys"; then
-  printf '%s\n' "$AGENT_PUB" >> "$CB_HOME/.ssh/authorized_keys"
-fi
+for AGENT_PUB in "${AGENT_PUBS[@]}"; do
+  if ! grep -qxF "$AGENT_PUB" "$CB_HOME/.ssh/authorized_keys"; then
+    printf '%s\n' "$AGENT_PUB" >> "$CB_HOME/.ssh/authorized_keys"
+  fi
+done
 awk 'NF && !seen[$0]++' "$CB_HOME/.ssh/authorized_keys" > "$CB_HOME/.ssh/authorized_keys.tmp"
 mv "$CB_HOME/.ssh/authorized_keys.tmp" "$CB_HOME/.ssh/authorized_keys"
 chown -R cursorbot:cursorbot "$CB_HOME/.ssh"

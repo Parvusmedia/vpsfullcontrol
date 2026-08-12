@@ -1,0 +1,124 @@
+# Cursor ↔ VPS SSH (local y cloud)
+
+Objetivo: que **cualquier agente Cursor** (IDE local o Cloud Agent) pueda entrar al VPS Parvus y operar los proyectos en `/opt/apps`.
+
+## Datos del VPS
+
+| Campo | Valor |
+|-------|--------|
+| Host | `87.106.194.137` |
+| Puerto | `2222` (preferido) / `22` |
+| Usuario | `cursorbot` |
+| Clave dedicada Cursor | `cursor_vps_access` (ed25519) |
+| Alias SSH | `parvus-vps` |
+
+Proyectos en el VPS: `/opt/apps/*` (friendinme, linkedinreport, fly456bot, prospeccion-*, etc.).
+
+## 1) Cursor local (Windows / macOS / Linux)
+
+### A. Guardar la clave privada
+
+Copia el archivo privado `cursor_vps_access` a:
+
+- Windows: `C:\Users\<tu>\.ssh\cursor_vps_access`
+- macOS/Linux: `~/.ssh/cursor_vps_access`
+
+Permisos (macOS/Linux):
+
+```bash
+chmod 600 ~/.ssh/cursor_vps_access
+```
+
+### B. SSH config
+
+Añade a `~/.ssh/config` (Windows: `C:\Users\<tu>\.ssh\config`):
+
+```
+Host parvus-vps
+  HostName 87.106.194.137
+  Port 2222
+  User cursorbot
+  IdentityFile ~/.ssh/cursor_vps_access
+  IdentitiesOnly yes
+  ServerAliveInterval 30
+```
+
+### C. Probar
+
+```bash
+ssh parvus-vps
+```
+
+En Cursor Agent (local), ya puede ejecutar:
+
+```bash
+ssh parvus-vps 'ls /opt/apps'
+ssh parvus-vps 'sudo systemctl status friendinme-api --no-pager'
+```
+
+También puedes usar **Remote-SSH** al host `parvus-vps`.
+
+> Alternativa sin la clave dedicada: tu clave `id_ed25519` (`cursorbot-vps`) ya está autorizada, o password de `cursorbot` por PuTTY.
+
+## 2) Cursor Cloud Agents
+
+Los pods de Cloud Agent **no** heredan tu `~/.ssh` local. Hay que inyectar la clave:
+
+### Opción recomendada — Secret + bootstrap
+
+1. En Cursor → Settings / Environment / Secrets, crea:
+
+   - `CURSOR_VPS_SSH_PRIVATE_KEY` = contenido completo de la clave privada (`-----BEGIN OPENSSH PRIVATE KEY-----` …)
+
+2. En cada environment (o en `.cursor/environment.json` del repo) ejecuta al install/start:
+
+```bash
+# desde el repo vpsfullcontrol, o copia el script a otros repos
+bash scripts/cursor-env-ssh-bootstrap.sh
+```
+
+Eso deja `ssh parvus-vps` usable para ese agente.
+
+### Opción por repo
+
+Añade en `.cursor/environment.json`:
+
+```json
+{
+  "install": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
+}
+```
+
+(requiere el secret configurado en el environment de Cursor).
+
+### Sin secret (fallback)
+
+Usa GitHub Actions self-hosted (`vps-ops`, `ssl-friendinme-app`) que ya corren **dentro** del VPS.
+
+## 3) Qué puede hacer el agente en el VPS
+
+```bash
+ssh parvus-vps 'ls /opt/apps'
+ssh parvus-vps 'sudo systemctl status friendinme-api friendinme-web --no-pager'
+ssh parvus-vps 'cd /opt/apps/friendinme && git status'
+```
+
+`cursorbot` tiene sudo. No uses `root` por SSH.
+
+## 4) Rotar / reparar acceso
+
+- Reinstalar claves del agente: Actions → `vps-ssh-access`
+- Añadir otra pubkey de workstation: Actions → `vps-register-pubkey`
+- Doc general PuTTY/password: `docs/SSH_ACCESS.md`
+
+## 5) Varios VPS (futuro)
+
+Si añades más máquinas, repite el mismo `authorized_keys` en `cursorbot` y añade hosts al SSH config:
+
+```
+Host parvus-vps-2
+  HostName x.x.x.x
+  Port 2222
+  User cursorbot
+  IdentityFile ~/.ssh/cursor_vps_access
+```
