@@ -1,0 +1,42 @@
+name: vps-register-pubkey
+
+# Registra una clave pública SSH en cursorbot (para PuTTY/PC).
+on:
+  workflow_dispatch:
+    inputs:
+      pubkey:
+        description: "Línea completa de la clave pública (ssh-ed25519 AAAA... comment)"
+        required: true
+        type: string
+
+concurrency:
+  group: vps-register-pubkey
+  cancel-in-progress: false
+
+jobs:
+  register:
+    runs-on: self-hosted
+    steps:
+      - name: Add pubkey to cursorbot
+        env:
+          PUBKEY: ${{ inputs.pubkey }}
+        run: |
+          set -euo pipefail
+          case "$PUBKEY" in
+            ssh-ed25519\ *|ssh-rsa\ *|ecdsa-sha2-nistp256\ *) ;;
+            *) echo "Formato de clave no reconocido"; exit 1 ;;
+          esac
+          CB_HOME=$(getent passwd cursorbot | cut -d: -f6)
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/bin/tee, /usr/bin/tee *, /bin/chmod, /bin/chmod *, /bin/chown, /bin/chown *, /usr/bin/mkdir, /bin/mkdir' > /tmp/ops-keyreg
+          sudo cp /tmp/ops-keyreg /etc/sudoers.d/ops-keyreg
+          sudo chmod 440 /etc/sudoers.d/ops-keyreg
+          sudo mkdir -p "$CB_HOME/.ssh"
+          # append if missing
+          if ! sudo grep -qxF "$PUBKEY" "$CB_HOME/.ssh/authorized_keys" 2>/dev/null; then
+            echo "$PUBKEY" | sudo tee -a "$CB_HOME/.ssh/authorized_keys" >/dev/null
+          fi
+          sudo chown -R cursorbot:cursorbot "$CB_HOME/.ssh"
+          sudo chmod 700 "$CB_HOME/.ssh"
+          sudo chmod 600 "$CB_HOME/.ssh/authorized_keys"
+          echo "Registrada. Fingerprints:"
+          ssh-keygen -lf <(sudo cat "$CB_HOME/.ssh/authorized_keys") || sudo cat "$CB_HOME/.ssh/authorized_keys"
