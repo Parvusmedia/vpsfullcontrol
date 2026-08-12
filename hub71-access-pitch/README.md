@@ -2,43 +2,34 @@
 
 ## Entregable
 
-- **PDF listo para adjuntar:** `NextConvers_Hub71_Access_Pitch.pdf`
+- **PDF:** `NextConvers_Hub71_Access_Pitch.pdf` (11 slides)
 - **Regenerar:** `python3 generate_deck.py`
 
-## Secciones que pide Hub71 (todas cubiertas)
+## Hub71 required points — covered
 
-1. Problem, solution, value proposition, business model  
-2. Competition, market, traction, funds raised  
-3. Founders / founding team  
-4. Plans for Hub71 and Abu Dhabi  
-
-## Antes de enviar — completar estos datos reales
-
-Sustituye en `generate_deck.py` (slides Traction / Team) y vuelve a generar el PDF:
-
-| Campo | Dónde | Ejemplo |
+| # | Required point | Slide |
 |---|---|---|
-| MRR / ARR o nº clientes / pilots | Slide Traction | “€X MRR · N pilots” |
-| Logos de clientes (si hay permiso) | Slide Traction | 3–5 nombres |
-| Waitlist / demos mensuales | Slide Traction | “N demos/mes” |
-| Pricing exacto / ACV | Slide Business model | planes y precio |
-| Co-founders / hires clave | Slide Team | nombres + rol |
-| Quién se muda a Abu Dhabi y cuándo | Slide Plans + Team | founder + fecha |
-| Email / LinkedIn de contacto | Slide final | email corporativo |
-| % equity / valuation cap del SAFE | Solo si Hub71 lo pregunta en form | no inventar en deck |
+| 1 | Problem | 2 |
+| 2 | Solution / value proposition | 3 |
+| 3 | Business model | 4 |
+| 4 | Competition | 5 |
+| 5 | Market | 6 |
+| 6 | Traction | 7 |
+| 7 | Founding team | 8 |
+| 8 | Previous and next fundraising | 9 |
+| 9 | Plans for Hub71 and Abu Dhabi | 10 |
 
-## Ángulo recomendado (ya usado en el deck)
+Cover (1) lists the checklist; closing (11) restates the ask.
 
-- **Producto lead:** NextConvers (AI decision layer before outreach)  
-- **Wedge:** DataForMedia como señal/PLG, no como empresa applicant  
-- **Fly456:** fuera del deck  
-- **MENA:** Parvus ya menciona footprint Dubai → Abu Dhabi como HQ de escala  
-- **Ask:** Access Cohort 20 · AED 250k SAFE + AED 250k in-kind · founder relocation  
+## Before submit — fill real numbers
 
-## Idioma
+Edit `generate_deck.py` then regenerate:
 
-Inglés (requisito implícito del proceso Hub71 / partners internacionales).
+- Traction: MRR/ARR, logos, pilots
+- Business model: pricing / ACV
+- Team: who relocates + co-founders
+- Fundraising: confirm bootstrapped; next-round target size if known
 
-## Deadline Cohort 20
+## Deadline
 
-**21 August 2026** · programa inicia February 2027.
+Cohort 20 — **21 August 2026** · programme starts February 2027.
