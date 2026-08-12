@@ -1,5 +1,4 @@
-# Emite certificado Let's Encrypt para friendinme.app.
-# ops solo tiene sudo acotado; ampliamos via /etc/sudoers.d (sudo cp permitido).
+# Emite certificado Let's Encrypt para friendinme.app (ops + sudoers.d/ops-ssl).
 name: ssl-friendinme-app
 
 on:
@@ -17,18 +16,18 @@ jobs:
   certbot:
     runs-on: self-hosted
     steps:
-      - name: Bootstrap sudo for certbot/nginx + root SSH key
+      - name: Ensure sudoers + root key
         run: |
           set -euo pipefail
-          whoami
           printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/bin/certbot, /usr/bin/certbot *, /usr/sbin/nginx, /usr/sbin/nginx *, /usr/bin/ln, /usr/bin/ln *, /bin/chmod, /bin/chmod *' > /tmp/ops-ssl-sudoers
           sudo cp /tmp/ops-ssl-sudoers /etc/sudoers.d/ops-ssl
           sudo chmod 440 /etc/sudoers.d/ops-ssl
-          sudo -n -l | head -40
+
           sudo mkdir -p /root/.ssh
           printf '%s\n' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-temp-friendinme' > /tmp/root-ak
           if sudo test -f /root/.ssh/authorized_keys; then
             sudo cp /root/.ssh/authorized_keys /tmp/ak-old
+            sudo chown ops:ops /tmp/ak-old
             grep -qxF "$(cat /tmp/root-ak)" /tmp/ak-old || cat /tmp/root-ak >> /tmp/ak-old
             sudo cp /tmp/ak-old /root/.ssh/authorized_keys
           else
@@ -36,6 +35,7 @@ jobs:
           fi
           sudo chmod 700 /root/.ssh
           sudo chmod 600 /root/.ssh/authorized_keys
+
           printf '%s\n' 'PermitRootLogin yes' 'PasswordAuthentication yes' > /tmp/99-root-login.conf
           sudo mkdir -p /etc/ssh/sshd_config.d
           sudo cp /tmp/99-root-login.conf /etc/ssh/sshd_config.d/99-root-login.conf
@@ -47,6 +47,7 @@ jobs:
           echo "DNS:"
           dig +short friendinme.app A || true
           dig +short www.friendinme.app A || true
+
           if [ -f /opt/apps/friendinme/deploy/nginx-friendinme.conf ]; then
             sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-available/friendinme
             sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-enabled/friendinme
@@ -57,6 +58,7 @@ jobs:
             ls -la /opt/apps 2>/dev/null || true
             ls -la /etc/nginx/sites-enabled 2>/dev/null || true
           fi
+
           sudo certbot --nginx \
             -d friendinme.app \
             -d www.friendinme.app \
@@ -65,6 +67,7 @@ jobs:
             --register-unsafely-without-email \
             --redirect \
             --keep-until-expiring
+
           sudo nginx -t
           sudo systemctl reload nginx
           echo "=== certificates ==="
