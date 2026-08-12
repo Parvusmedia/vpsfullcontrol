@@ -60,7 +60,7 @@ def build():
     card(0.4, 1.6, 6.2, 2.15, "PROBLEM", [
         "• Fares move in hours — manual checking is too slow.",
         "• Generic deal feeds are noisy (not your brief).",
-        "• When you finally see it, the fare is often gone.",
+        "• Expats buy flights again and again (home, family, season) — missing one fare hurts every trip.",
     ])
     card(6.85, 1.6, 6.1, 2.15, "PRODUCT", [
         "• You set: origin, destination, dates, max price.",
@@ -78,13 +78,13 @@ def build():
     ])
     card(0.4, 5.6, 6.2, 1.6, "TRACTION (JUL 2026 LAUNCH · NO ADS)", [
         "• 6 free Telegram channels (LatAm expats in EU/US).",
-        "• Early Premium — few paying subscribers so far.",
-        "• Live: fly456.com + @fly456bot (Stripe in Telegram).",
+        "• Expats are recurring flight buyers (home visits, family, season).",
+        "• Early Premium — few paying so far. Live: fly456.com + @fly456bot.",
     ])
     card(6.85, 5.6, 6.1, 1.6, "USE OF FUNDS (~€150k)", [
-        "• BizDev hire  ·  paid acquisition tests",
-        "• Free → Premium conversion  ·  affiliate pilots",
-        "• Prove LTV/CAC with low burn",
+        "• BizDev hire  ·  light paid acquisition tests",
+        "• Free → Premium conversion",
+        "• Affiliate / partner pilots",
     ])
     foot = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.18), Inches(7.22), prs.slide_width - Inches(0.18), Inches(0.28))
     foot.fill.solid(); foot.fill.fore_color.rgb = NAVY; foot.line.fill.background()
