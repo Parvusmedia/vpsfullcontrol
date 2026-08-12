@@ -26,8 +26,8 @@ cat > /etc/ssh/sshd_config.d/50-parvus-access.conf <<'C'
 # Parvus Media operational SSH access
 # Ports are managed by systemd ssh.socket (22 + 2222)
 PermitRootLogin no
-PasswordAuthentication no
-KbdInteractiveAuthentication no
+PasswordAuthentication yes
+KbdInteractiveAuthentication yes
 PubkeyAuthentication yes
 AllowUsers cursorbot
 AuthorizedKeysFile .ssh/authorized_keys

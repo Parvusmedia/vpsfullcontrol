@@ -2,40 +2,56 @@
 
 ## Modelo
 
-- Usuario SSH: **`cursorbot`** (único permitido vía `AllowUsers`)
-- Auth: **solo clave pública** (sin password)
-- Puertos: **22** y **2222**
-- Root SSH: deshabilitado a propósito
-- `cursorbot` tiene sudo NOPASSWD para operar proyectos en `/opt/apps`
+| Ítem | Valor |
+|------|--------|
+| Host | `87.106.194.137` |
+| Puerto | **2222** (recomendado) o `22` |
+| Usuario | **`cursorbot`** |
+| Auth | contraseña **o** clave SSH |
+| Root por SSH | deshabilitado (usar `sudo` / `sudo -i`) |
 
-## PuTTY / Windows
+`cursorbot` tiene sudo NOPASSWD para operar `/opt/apps` y servicios.
 
-1. En IONOS Cloud Panel → Firewall del VPS → **Permitir TCP 2222** (todas las IPs).  
-   El 22 ya está abierto; si tu ISP bloquea salida al 22, usa **2222**.
-2. En PowerShell, copia tu clave pública:
+## PuTTY (simple, con contraseña)
+
+1. Host: `87.106.194.137`
+2. Port: `2222`
+3. Connection type: SSH
+4. Connection → Data → Auto-login username: `cursorbot`
+5. Open → introducir la contraseña de `cursorbot`
+
+Si falla el puerto 22 desde tu red, usa siempre **2222** (debe estar permitido en el firewall IONOS).
+
+## OpenSSH / PowerShell
 
 ```powershell
-type $env:USERPROFILE\.ssh\id_ed25519.pub
+ssh -p 2222 cursorbot@87.106.194.137
 ```
 
-3. Regístrala en el VPS (Actions → **vps-register-pubkey** → Run workflow pegando la línea `ssh-ed25519 ...`),  
-   o pásasela al agente Cursor para que la instale.
-4. PuTTY:
-   - Host: `87.106.194.137`
-   - Port: `2222` (o `22` si tu red no lo bloquea)
-   - Connection → SSH → Auth → Private key: `C:\Users\<tu>\.ssh\id_ed25519`  
-     (si PuTTY pide `.ppk`, convierte con PuTTYgen: Conversions → Import key)
-   - Usuario: `cursorbot`
+Con clave (opcional):
+
+```powershell
+ssh -i $env:USERPROFILE\.ssh\id_ed25519 -p 2222 cursorbot@87.106.194.137
+```
 
 ## Cloud agents / automatización
 
-- Clave pública del agente: `cursor-agent-vps` (instalada en `~cursorbot/.ssh/authorized_keys`)
-- Runner self-hosted `ops` sigue siendo el canal de operaciones vía GitHub Actions (`vps-ops`, `ssl-friendinme-app`, `vps-ssh-access`)
+- Clave pública del agente Cursor: `cursor-agent-vps` en `~cursorbot/.ssh/authorized_keys`
+- Runner self-hosted `ops` para workflows (`vps-ops`, `ssl-friendinme-app`, `vps-ssh-access`)
 
-## Reparar acceso
+## Registrar otra clave pública
 
-```text
-Actions → vps-ssh-access → Run workflow
-```
+Actions → **vps-register-pubkey** → Run workflow (pegar línea `ssh-ed25519 AAAA...`).
 
-Ejecuta `/usr/local/sbin/parvus-ssh-setup` en el VPS.
+## Reparar SSH
+
+Actions → **vps-ssh-access** → Run workflow  
+(ejecuta `/usr/local/sbin/parvus-ssh-setup`).
+
+## FriendInMe (notas operativas)
+
+- API: `127.0.0.1:8000` (`friendinme-api`)
+- Web: `127.0.0.1:3010` (`friendinme-web`)
+- Dominio canónico: `https://friendinme.app`
+- Legacy `friendinme.pmediaplus.com` → 301 a `friendinme.app`
+- **No** reutilizar el puerto 8000 para otros servicios (`ai-agent` legacy usa **8010**; `ai-agent-v3` usa **8004**)
