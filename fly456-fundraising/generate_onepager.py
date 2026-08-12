@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Short Fly456 one-pager / micro-deck for Kima-style cold outreach."""
+"""PDF one-pager aligned with named-monitoring + Economy/Business positioning."""
 
 from pathlib import Path
 
 from fpdf import FPDF
 
 OUT = Path(__file__).resolve().parent / "Fly456_Kima_OnePager.pdf"
+OUT_ROOT = Path(__file__).resolve().parents[1] / "Fly456_Kima_OnePager.pdf"
+OUT_ART = Path("/opt/cursor/artifacts/Fly456_Kima_OnePager.pdf")
 FONT_REG = "/tmp/Roboto-Regular.ttf"
 FONT_BOLD = "/tmp/Roboto-Bold.ttf"
 
@@ -44,7 +46,7 @@ class Deck(FPDF):
         self.set_text_color(*TEAL)
         self.set_xy(14, 20)
         self.cell(0, 6, eyebrow.upper())
-        self.set_font("Roboto", "B", 24)
+        self.set_font("Roboto", "B", 22)
         self.set_text_color(*NAVY)
         self.set_xy(14, 28)
         self.multi_cell(270, 9, title)
@@ -82,7 +84,6 @@ class Deck(FPDF):
 def build():
     pdf = Deck()
 
-    # 1 Cover
     pdf.add_page()
     pdf.n = 1
     pdf.set_fill_color(*NAVY)
@@ -93,102 +94,121 @@ def build():
     pdf.rect(8, 178, 289, 4, "F")
     pdf.set_font("Roboto", "", 12)
     pdf.set_text_color(180, 200, 210)
-    pdf.set_xy(24, 40)
-    pdf.cell(0, 8, "PRE-SEED  ·  CONSUMER TRAVEL  ·  TELEGRAM-NATIVE")
+    pdf.set_xy(24, 36)
+    pdf.cell(0, 8, "PRE-SEED  ·  FLIGHT MONITORING  ·  TELEGRAM ALERTS")
     pdf.set_font("Roboto", "B", 48)
     pdf.set_text_color(*WHITE)
-    pdf.set_xy(24, 58)
+    pdf.set_xy(24, 54)
     pdf.cell(0, 18, "Fly456")
-    pdf.set_font("Roboto", "", 16)
+    pdf.set_font("Roboto", "", 15)
     pdf.set_text_color(200, 220, 225)
-    pdf.set_xy(24, 82)
-    pdf.multi_cell(250, 8, "Cheap-flight opportunities EU/US to LatAm.\nFree Telegram channels + paid route alerts.")
-    pdf.set_font("Roboto", "B", 12)
+    pdf.set_xy(24, 78)
+    pdf.multi_cell(
+        250,
+        7,
+        "You set origin, destination, dates and max price.\nWe monitor flights and notify you on Telegram - so you can book fast.",
+    )
+    pdf.set_font("Roboto", "B", 13)
     pdf.set_text_color(*ACCENT)
-    pdf.set_xy(24, 120)
-    pdf.cell(0, 7, "Asking: ~150k EUR pre-seed  ·  fly456.com")
-    pdf.set_font("Roboto", "", 11)
+    pdf.set_xy(24, 110)
+    pdf.cell(0, 7, "Two products: Economy cabin  ·  Business cabin")
+    pdf.set_font("Roboto", "", 12)
     pdf.set_text_color(160, 180, 190)
-    pdf.set_xy(24, 150)
-    pdf.cell(0, 6, "Emiliano Tichauer  ·  Founder  ·  Parvus Media / Fly456")
+    pdf.set_xy(24, 130)
+    pdf.cell(0, 6, "Asking: ~150k EUR pre-seed  ·  fly456.com  ·  @fly456bot")
+    pdf.set_xy(24, 145)
+    pdf.cell(0, 6, "Emiliano Tichauer  ·  Founder")
     pdf.set_xy(24, 190)
     pdf.cell(0, 5, "1/6")
 
-    # 2 Problem
-    y = pdf.slide("Problem", "Good fares to LatAm disappear before people see them")
+    y = pdf.slide("Problem", "Good fares disappear before travelers can act")
     pdf.bullets(
         y,
         [
-            "Diaspora and leisure travelers watch dozens of groups and still miss deals.",
-            "Airline and OTA prices move in hours; generic alerts are noisy.",
-            "Existing flight clubs are crowded, slow, or not focused on LatAm corridors.",
+            "Flight prices move in hours. Checking sites manually is slow and easy to miss.",
+            "Generic deal feeds are noisy - they are not your route, dates or budget.",
+            "By the time you see a fare, seats and price are often already gone.",
         ],
     )
 
-    # 3 Solution
-    y = pdf.slide("Solution", "Detect opportunities. Alert fast. Stay on Telegram.")
-    pdf.box(14, y, 88, 70, "Free", ["Public Telegram channels", "by origin/destination", "EU/US to LatAm routes", "Discovery engine"])
-    pdf.box(108, y, 88, 70, "Premium", ["Personal route alerts", "Origin + dest + dates", "Max price threshold", "Inbox via @fly456bot"])
-    pdf.box(202, y, 80, 70, "Not us", ["We do not sell tickets", "User books with airline/OTA", "We win on alerts + later", "affiliate / data upside"])
+    y = pdf.slide("Solution", "Named monitoring + Telegram alert to book fast")
+    pdf.box(14, y, 88, 85, "You define the flight", ["Origin", "Destination", "Dates", "Maximum price", "", "Fly456 watches that exact brief."])
+    pdf.box(108, y, 88, 85, "We notify on Telegram", ["Alert in your Telegram inbox", "via @fly456bot", "Built to help you reserve fast", "before the fare moves again", "", "We do not sell tickets."])
+    pdf.box(202, y, 80, 85, "Two cabin products", ["Economy - economy cabin", "Business - business cabin", "", "Same alert logic,", "different cabin."])
 
-    # 4 Traction placeholders
-    y = pdf.slide("Traction", "Replace brackets with live numbers before sending")
-    pdf.bullets(
-        y,
-        [
-            "[N] free channels live on Telegram",
-            "[M] members across channels (unique approx. [U])",
-            "[P] paying Premium subscribers  ·  [EUR] MRR",
-            "Plans from ~1 EUR/alert/mo  ·  Stripe checkout in Telegram",
-            "Product live: fly456.com + @fly456bot",
-        ],
-    )
-
-    # 5 Model + ask
-    y = pdf.slide("Model & ask", "Subscription now. Affiliate / data later.")
+    y = pdf.slide("Product", "Economy and Business - same monitoring, different cabin")
     pdf.box(
         14,
         y,
         130,
-        85,
-        "Business model",
+        90,
+        "Fly456 Economy",
         [
-            "Now: Premium route alerts (SaaS-lite)",
-            "Next: affiliate / partner take-rate",
-            "Later: demand signals for OTAs",
-            "GTM: organic Telegram + SEO routes",
-            "Cost base: detection + messaging infra",
+            "Monitors economy-cabin opportunities",
+            "Alert = origin + destination + dates + max price",
+            "Telegram notification when a match appears",
+            "For leisure / price-sensitive travelers",
         ],
     )
     pdf.box(
         152,
         y,
         130,
-        85,
-        "The ask (~150k EUR)",
+        90,
+        "Fly456 Business",
         [
-            "Scale high-intent LatAm corridors",
-            "Sharper detection + faster alerts",
-            "Conversion free to Premium",
-            "Pilot affiliate monetization",
-            "Keep burn low; prove LTV/CAC",
+            "Monitors business-cabin opportunities",
+            "Same named criteria, business fares",
+            "Telegram notification to book fast",
+            "For premium-cabin travelers waiting",
+            "for the right price window",
         ],
     )
 
-    # 6 Team
-    y = pdf.slide("Team", "Operator-builder with AdTech & product DNA")
+    y = pdf.slide("Traction & model", "Replace brackets with live numbers before sending")
+    pdf.box(
+        14,
+        y,
+        130,
+        90,
+        "Traction",
+        [
+            "Product live: fly456.com + @fly456bot",
+            "[N] active route alerts monitored",
+            "[P] paying subscribers · EUR [A] MRR",
+            "Stripe checkout inside Telegram",
+        ],
+    )
+    pdf.box(
+        152,
+        y,
+        130,
+        90,
+        "Model & ask (~150k EUR)",
+        [
+            "Subscription for named route alerts",
+            "Economy + Business cabin products",
+            "Later: affiliate / partner take-rate",
+            "Funds: better monitoring, faster alerts,",
+            "convert and retain paying users",
+        ],
+    )
+
+    y = pdf.slide("Team", "Operator-builder shipping the full loop")
     pdf.bullets(
         y,
         [
-            "Emiliano Tichauer — Founder (Spain; LatAm roots)",
-            "Built Parvus Media since 2013 (AdTech, data, performance; Madrid + Dubai footprint)",
-            "Ships products end-to-end: detection, Telegram UX, Stripe billing",
+            "Emiliano Tichauer - Founder",
+            "Built Parvus Media since 2013 (AdTech, data, performance products)",
+            "Owns the loop end-to-end: flight monitoring, Telegram UX, Stripe billing",
             "Contact: [email]  ·  LinkedIn: linkedin.com/in/etichauer  ·  fly456.com",
         ],
     )
 
-    pdf.output(OUT)
-    print(f"Wrote {OUT}")
+    for path in (OUT, OUT_ROOT, OUT_ART):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pdf.output(path)
+        print(f"Wrote {path}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate editable Fly456 PowerPoint for Kima outreach."""
+"""Generate editable Fly456 PowerPoint for Kima outreach.
+
+Positioning: named flight monitoring (origin, destination, dates, max price)
++ Telegram alerts to book fast. Economy and Business cabin products.
+"""
 
 from pathlib import Path
 
@@ -20,6 +24,7 @@ DARK = RGBColor(0x19, 0x23, 0x2D)
 OUTS = [
     Path(__file__).resolve().parent / "Fly456_Kima_OnePager.pptx",
     Path(__file__).resolve().parents[1] / "Fly456_Kima_OnePager.pptx",
+    Path("/opt/cursor/artifacts/Fly456_Kima_OnePager.pptx"),
 ]
 
 
@@ -121,6 +126,7 @@ def build():
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
+    # 1 Cover
     s = prs.slides.add_slide(prs.slide_layouts[6])
     add_bg(s, prs, NAVY)
     bar = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(0.28), prs.slide_height)
@@ -134,36 +140,68 @@ def build():
     accent.fill.fore_color.rgb = ACCENT
     accent.line.fill.background()
     add_text(
-        s, 0.7, 1.3, 11, 0.4, "PRE-SEED  ·  CONSUMER TRAVEL  ·  TELEGRAM-NATIVE", 14, False, RGBColor(0xB4, 0xC8, 0xD2)
+        s,
+        0.7,
+        1.2,
+        11,
+        0.4,
+        "PRE-SEED  ·  FLIGHT MONITORING  ·  TELEGRAM ALERTS",
+        14,
+        False,
+        RGBColor(0xB4, 0xC8, 0xD2),
     )
-    add_text(s, 0.7, 1.9, 11, 0.9, "Fly456", 54, True, WHITE)
+    add_text(s, 0.7, 1.8, 11, 0.9, "Fly456", 54, True, WHITE)
     add_text(
         s,
         0.7,
-        2.9,
+        2.8,
         11,
-        1.0,
-        "Cheap-flight opportunities EU/US to LatAm.\nFree Telegram channels + paid route alerts.",
+        1.2,
+        "You set origin, destination, dates and max price.\nWe monitor flights and notify you on Telegram — so you can book fast.",
         20,
         False,
         RGBColor(0xC8, 0xDC, 0xE1),
     )
-    add_text(s, 0.7, 4.2, 11, 0.4, "Asking: ~€150k pre-seed  ·  fly456.com", 16, True, ACCENT)
     add_text(
         s,
         0.7,
-        5.2,
+        4.3,
         11,
         0.4,
-        "Emiliano Tichauer  ·  Founder  ·  Parvus Media / Fly456",
+        "Two products: Economy cabin  ·  Business cabin",
+        16,
+        True,
+        ACCENT,
+    )
+    add_text(
+        s,
+        0.7,
+        5.0,
+        11,
+        0.4,
+        "Asking: ~€150k pre-seed  ·  fly456.com  ·  @fly456bot",
+        15,
+        True,
+        RGBColor(0xA0, 0xB4, 0xBE),
+    )
+    add_text(
+        s,
+        0.7,
+        5.6,
+        11,
+        0.4,
+        "Emiliano Tichauer  ·  Founder",
         14,
         False,
         RGBColor(0xA0, 0xB4, 0xBE),
     )
     add_text(s, 0.7, 6.85, 2, 0.3, "1/6", 12, False, RGBColor(0x8C, 0xA0, 0xAA))
 
+    # 2 Problem
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Problem", "Good fares to LatAm disappear before people see them", 2)
+    content_header(
+        s, prs, "Problem", "Good fares disappear before travelers can act", 2
+    )
     add_bullets(
         s,
         0.6,
@@ -171,73 +209,139 @@ def build():
         12,
         4.5,
         [
-            "Diaspora and leisure travelers watch dozens of groups and still miss deals.",
-            "Airline and OTA prices move in hours; generic alerts are noisy.",
-            "Existing flight clubs are crowded, slow, or not focused on LatAm corridors.",
+            "Flight prices move in hours. Checking sites manually is slow and easy to miss.",
+            "Generic deal feeds are noisy — they are not your route, dates or budget.",
+            "By the time you see a fare, seats and price are often already gone.",
         ],
         18,
     )
 
+    # 3 Solution
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Solution", "Detect opportunities. Alert fast. Stay on Telegram.", 3)
-    card(s, 0.5, 2.1, 3.9, 3.8, "Free", ["Public Telegram channels", "by origin / destination", "EU/US → LatAm routes", "Discovery engine"])
-    card(s, 4.7, 2.1, 3.9, 3.8, "Premium", ["Personal route alerts", "Origin + dest + dates", "Max price threshold", "Inbox via @fly456bot"])
-    card(s, 8.9, 2.1, 3.9, 3.8, "Not us", ["We do not sell tickets", "User books with airline/OTA", "We win on alerts + later", "affiliate / data upside"])
-
-    s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Traction", "Replace brackets with live numbers before sending", 4)
-    add_bullets(
-        s,
-        0.6,
-        2.0,
-        12,
-        4.5,
-        [
-            "[N] free channels live on Telegram",
-            "[M] members across channels (unique approx. [U])",
-            "[P] paying Premium subscribers  ·  €[A] MRR",
-            "Plans from ~€1 / alert / mo  ·  Stripe checkout in Telegram",
-            "Product live: fly456.com + @fly456bot",
-        ],
-        18,
+    content_header(
+        s, prs, "Solution", "Named monitoring + Telegram alert to book fast", 3
     )
-    add_text(s, 0.6, 6.5, 12, 0.4, "Tip: edit these placeholders in PowerPoint before emailing Jean.", 12, False, MUTED)
-
-    s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Model & ask", "Subscription now. Affiliate / data later.", 5)
     card(
         s,
         0.5,
-        2.1,
+        2.0,
+        4.0,
+        4.2,
+        "You define the flight",
+        [
+            "Origin",
+            "Destination",
+            "Dates",
+            "Maximum price",
+            "",
+            "Fly456 watches that exact brief.",
+        ],
+    )
+    card(
+        s,
+        4.75,
+        2.0,
+        4.0,
+        4.2,
+        "We notify on Telegram",
+        [
+            "Alert lands in your Telegram inbox",
+            "via @fly456bot",
+            "Built to help you reserve fast",
+            "before the fare moves again",
+            "",
+            "We do not sell tickets.",
+        ],
+    )
+    card(
+        s,
+        9.0,
+        2.0,
+        3.8,
+        4.2,
+        "Two cabin products",
+        [
+            "Economy — monitor economy",
+            "cabin fares for your route",
+            "",
+            "Business — monitor business",
+            "cabin fares for your route",
+            "",
+            "Same alert logic, different cabin.",
+        ],
+    )
+
+    # 4 Product
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    content_header(s, prs, "Product", "Economy and Business — same monitoring, different cabin", 4)
+    card(
+        s,
+        0.5,
+        2.0,
         6.0,
         4.2,
-        "Business model",
+        "Fly456 Economy",
         [
-            "Now: Premium route alerts (SaaS-lite)",
-            "Next: affiliate / partner take-rate",
-            "Later: demand signals for OTAs",
-            "GTM: organic Telegram + SEO routes",
-            "Cost base: detection + messaging infra",
+            "Monitors economy-cabin opportunities",
+            "Alert = origin + destination + dates + max price",
+            "Telegram notification when a match appears",
+            "For leisure and price-sensitive travelers",
+            "who need speed, not another search tab",
         ],
     )
     card(
         s,
         6.8,
-        2.1,
+        2.0,
         6.0,
         4.2,
-        "The ask (~€150k)",
+        "Fly456 Business",
         [
-            "Scale high-intent LatAm corridors",
-            "Sharper detection + faster alerts",
-            "Conversion free → Premium",
-            "Pilot affiliate monetization",
-            "Keep burn low; prove LTV/CAC",
+            "Monitors business-cabin opportunities",
+            "Same named criteria, business fares",
+            "Telegram notification to book fast",
+            "For travelers who want premium cabin",
+            "when the price finally drops into range",
         ],
     )
 
+    # 5 Traction + model
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    content_header(s, prs, "Team", "Operator-builder with AdTech & product DNA", 6)
+    content_header(s, prs, "Traction & model", "Replace brackets with live numbers before sending", 5)
+    card(
+        s,
+        0.5,
+        2.0,
+        6.0,
+        4.2,
+        "Traction",
+        [
+            "Product live: fly456.com + @fly456bot",
+            "[N] active route alerts monitored",
+            "[P] paying subscribers · €[A] MRR",
+            "Stripe checkout inside Telegram",
+            "Edit placeholders before send",
+        ],
+    )
+    card(
+        s,
+        6.8,
+        2.0,
+        6.0,
+        4.2,
+        "Model & ask (~€150k)",
+        [
+            "Subscription for named route alerts",
+            "Economy + Business cabin products",
+            "Later: affiliate / partner take-rate",
+            "Use of funds: better monitoring,",
+            "faster alerts, convert & retain users",
+        ],
+    )
+
+    # 6 Team
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    content_header(s, prs, "Team", "Operator-builder shipping the full loop", 6)
     add_bullets(
         s,
         0.6,
@@ -245,9 +349,9 @@ def build():
         12,
         4.0,
         [
-            "Emiliano Tichauer — Founder (Spain; LatAm roots)",
-            "Built Parvus Media since 2013 (AdTech, data, performance; Madrid + Dubai footprint)",
-            "Ships products end-to-end: detection, Telegram UX, Stripe billing",
+            "Emiliano Tichauer — Founder",
+            "Built Parvus Media since 2013 (AdTech, data, performance products)",
+            "Owns the loop end-to-end: flight monitoring, Telegram UX, Stripe billing",
             "Contact: [email]  ·  LinkedIn: linkedin.com/in/etichauer  ·  fly456.com",
         ],
         18,
