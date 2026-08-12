@@ -1,6 +1,5 @@
 name: vps-ssh-access
 
-# Acceso SSH operativo en el VPS (self-hosted).
 on:
   workflow_dispatch:
   push:
@@ -23,7 +22,6 @@ jobs:
       - name: Install and run setup-ssh-access
         run: |
           set -euo pipefail
-          # Instala el script como binario root-ejecutable vía sudoers dedicado
           sudo cp scripts/setup-ssh-access.sh /usr/local/sbin/parvus-ssh-setup
           sudo chmod 755 /usr/local/sbin/parvus-ssh-setup
           printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/parvus-ssh-setup' > /tmp/ops-parvus-ssh

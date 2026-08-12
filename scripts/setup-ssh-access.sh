@@ -2,92 +2,71 @@
 set -euo pipefail
 
 AGENT_PUB='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-agent-vps'
-ALT_PORT=2222
 
-echo "=== preflight ==="
+echo "=== REPAIR SSH SOCKET + ACCESS ==="
 hostname; date -u
-sshd -T 2>/dev/null | egrep '^(port|permitrootlogin|passwordauthentication|pubkeyauthentication|authorizedkeysfile|allowusers|denyusers) ' || true
 
-install_keys_for() {
-  local home="$1"
-  local user="$2"
-  mkdir -p "$home/.ssh"
-  touch "$home/.ssh/authorized_keys"
-  if ! grep -qxF "$AGENT_PUB" "$home/.ssh/authorized_keys" 2>/dev/null; then
-    printf '%s\n' "$AGENT_PUB" >> "$home/.ssh/authorized_keys"
-  fi
-  # Deduplicate exact lines
-  awk 'NF && !seen[$0]++' "$home/.ssh/authorized_keys" > "$home/.ssh/authorized_keys.tmp"
-  mv "$home/.ssh/authorized_keys.tmp" "$home/.ssh/authorized_keys"
-  chown -R "$user:$user" "$home/.ssh"
-  chmod 700 "$home/.ssh"
-  chmod 600 "$home/.ssh/authorized_keys"
-  echo "keys for $user:"
-  ssh-keygen -lf "$home/.ssh/authorized_keys" || true
-}
+# Restore Ubuntu default socket first (IPv4+IPv6 on 22 only), then add 2222 carefully
+mkdir -p /etc/systemd/system/ssh.socket.d
+cat > /etc/systemd/system/ssh.socket.d/override.conf <<'O'
+[Socket]
+# Reset inherited ListenStream then bind explicitly
+ListenStream=
+ListenStream=0.0.0.0:22
+ListenStream=[::]:22
+ListenStream=0.0.0.0:2222
+ListenStream=[::]:2222
+Accept=no
+FreeBind=yes
+O
 
-echo "=== install keys ==="
-install_keys_for /root root
-if id cursorbot >/dev/null 2>&1; then
-  install_keys_for "$(getent passwd cursorbot | cut -d: -f6)" cursorbot
-fi
-if id ubuntu >/dev/null 2>&1; then
-  install_keys_for "$(getent passwd ubuntu | cut -d: -f6)" ubuntu
-fi
-
-echo "=== collect known public keys on disk (for ops visibility) ==="
-find /home /root -path '*/.ssh/*.pub' 2>/dev/null | head -50 || true
-
-echo "=== sshd drop-in ==="
+# Auth policy: only cursorbot, key-only. Root disabled on purpose.
 mkdir -p /etc/ssh/sshd_config.d
-cat > /etc/ssh/sshd_config.d/50-parvus-access.conf <<CFG
+cat > /etc/ssh/sshd_config.d/50-parvus-access.conf <<'C'
 # Parvus Media operational SSH access
-Port 22
-Port ${ALT_PORT}
-PermitRootLogin prohibit-password
+# Ports are managed by systemd ssh.socket (22 + 2222)
+PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
+AllowUsers cursorbot
 AuthorizedKeysFile .ssh/authorized_keys
-CFG
+C
 
-rm -f /etc/ssh/sshd_config.d/99-root-login.conf
-
-# Normalize main file overrides (first value wins depending on Include order;
-# Ubuntu puts Include at top, but some images set PermitRootLogin later).
-if grep -qE '^PermitRootLogin ' /etc/ssh/sshd_config; then
-  sed -i 's/^PermitRootLogin .*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
-fi
-if grep -qE '^PasswordAuthentication ' /etc/ssh/sshd_config; then
-  sed -i 's/^PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-fi
-# Ensure Include is present
-if ! grep -qE '^Include /etc/ssh/sshd_config.d/\*\.conf' /etc/ssh/sshd_config; then
-  sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' /etc/ssh/sshd_config
+# Keep existing allowusers file consistent if present
+if [ -f /etc/ssh/sshd_config.d/99-cursorbot.conf ]; then
+  sed -i 's/^AllowUsers .*/AllowUsers cursorbot/' /etc/ssh/sshd_config.d/99-cursorbot.conf || true
 fi
 
-echo "=== host firewall ==="
-if command -v ufw >/dev/null 2>&1; then
-  ufw allow 22/tcp || true
-  ufw allow ${ALT_PORT}/tcp || true
-  ufw status || true
+# Install agent key for cursorbot
+CB_HOME=$(getent passwd cursorbot | cut -d: -f6)
+mkdir -p "$CB_HOME/.ssh"
+touch "$CB_HOME/.ssh/authorized_keys"
+if ! grep -qxF "$AGENT_PUB" "$CB_HOME/.ssh/authorized_keys"; then
+  printf '%s\n' "$AGENT_PUB" >> "$CB_HOME/.ssh/authorized_keys"
 fi
-# iptables fallback accept (idempotent-ish)
-if command -v iptables >/dev/null 2>&1; then
-  iptables -C INPUT -p tcp --dport 22 -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport 22 -j ACCEPT || true
-  iptables -C INPUT -p tcp --dport ${ALT_PORT} -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport ${ALT_PORT} -j ACCEPT || true
-fi
+awk 'NF && !seen[$0]++' "$CB_HOME/.ssh/authorized_keys" > "$CB_HOME/.ssh/authorized_keys.tmp"
+mv "$CB_HOME/.ssh/authorized_keys.tmp" "$CB_HOME/.ssh/authorized_keys"
+chown -R cursorbot:cursorbot "$CB_HOME/.ssh"
+chmod 700 "$CB_HOME/.ssh"
+chmod 600 "$CB_HOME/.ssh/authorized_keys"
 
-echo "=== validate & restart ssh ==="
 sshd -t
-systemctl restart ssh || systemctl restart sshd
+systemctl daemon-reload
+systemctl restart ssh.socket
+# Prefer socket activation; also restart service if active
+systemctl restart ssh.service || true
 sleep 2
-echo "effective:"
-sshd -T | egrep '^(port|permitrootlogin|passwordauthentication|pubkeyauthentication) ' || true
-echo "listeners:"
+
+echo "=== listeners ==="
 ss -tlnp | egrep ':22|:2222' || true
-
-echo "=== auth log tail ==="
-journalctl -u ssh -u sshd --no-pager -n 50 || true
-
-echo "SETUP_OK port22+${ALT_PORT} key-only root/cursorbot/ubuntu"
+echo "=== effective ==="
+sshd -T | egrep '^(port|allowusers|permitrootlogin|passwordauthentication|pubkeyauthentication) ' || true
+echo "=== keys ==="
+ssh-keygen -lf "$CB_HOME/.ssh/authorized_keys" || cat "$CB_HOME/.ssh/authorized_keys"
+echo "=== local ssh smoke ==="
+# From localhost using agent pubkey isn't possible without private key; just check banner
+timeout 3 bash -c 'exec 3<>/dev/tcp/127.0.0.1/22; echo > /dev/tcp/127.0.0.1/22' 2>/dev/null || true
+timeout 2 nc -vz 127.0.0.1 22 || true
+timeout 2 nc -vz 127.0.0.1 2222 || true
+echo SETUP_OK
