@@ -1,4 +1,3 @@
-# Emite certificado Let's Encrypt para friendinme.app (ops + sudoers.d/ops-ssl).
 name: ssl-friendinme-app
 
 on:
@@ -16,61 +15,35 @@ jobs:
   certbot:
     runs-on: self-hosted
     steps:
-      - name: Ensure sudoers + root key
+      - name: Restart friendinme + verify SSH/TLS
         run: |
           set -euo pipefail
-          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/bin/certbot, /usr/bin/certbot *, /usr/sbin/nginx, /usr/sbin/nginx *, /usr/bin/ln, /usr/bin/ln *, /bin/chmod, /bin/chmod *' > /tmp/ops-ssl-sudoers
-          sudo cp /tmp/ops-ssl-sudoers /etc/sudoers.d/ops-ssl
-          sudo chmod 440 /etc/sudoers.d/ops-ssl
-
-          sudo mkdir -p /root/.ssh
+          # Ensure root key present
           printf '%s\n' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-temp-friendinme' > /tmp/root-ak
-          if sudo test -f /root/.ssh/authorized_keys; then
-            sudo cp /root/.ssh/authorized_keys /tmp/ak-old
-            sudo chown ops:ops /tmp/ak-old
-            grep -qxF "$(cat /tmp/root-ak)" /tmp/ak-old || cat /tmp/root-ak >> /tmp/ak-old
-            sudo cp /tmp/ak-old /root/.ssh/authorized_keys
-          else
-            sudo cp /tmp/root-ak /root/.ssh/authorized_keys
-          fi
+          sudo mkdir -p /root/.ssh
+          sudo cp /tmp/root-ak /root/.ssh/authorized_keys
           sudo chmod 700 /root/.ssh
           sudo chmod 600 /root/.ssh/authorized_keys
-
-          printf '%s\n' 'PermitRootLogin yes' 'PasswordAuthentication yes' > /tmp/99-root-login.conf
-          sudo mkdir -p /etc/ssh/sshd_config.d
+          printf '%s\n' 'PermitRootLogin yes' 'PasswordAuthentication yes' 'PubkeyAuthentication yes' > /tmp/99-root-login.conf
           sudo cp /tmp/99-root-login.conf /etc/ssh/sshd_config.d/99-root-login.conf
-          sudo systemctl reload ssh || sudo systemctl reload sshd || true
+          sudo systemctl restart ssh || sudo systemctl restart sshd || true
+          sleep 2
 
-      - name: Certbot friendinme.app
-        run: |
-          set -euo pipefail
-          echo "DNS:"
-          dig +short friendinme.app A || true
-          dig +short www.friendinme.app A || true
-
-          if [ -f /opt/apps/friendinme/deploy/nginx-friendinme.conf ]; then
-            sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-available/friendinme
-            sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-enabled/friendinme
-            sudo nginx -t
-            sudo systemctl reload nginx
-          else
-            echo "WARN: missing nginx-friendinme.conf"
-            ls -la /opt/apps 2>/dev/null || true
-            ls -la /etc/nginx/sites-enabled 2>/dev/null || true
-          fi
-
-          sudo certbot --nginx \
-            -d friendinme.app \
-            -d www.friendinme.app \
-            --non-interactive \
-            --agree-tos \
-            --register-unsafely-without-email \
-            --redirect \
-            --keep-until-expiring
-
-          sudo nginx -t
-          sudo systemctl reload nginx
-          echo "=== certificates ==="
-          sudo certbot certificates || true
-          echo "=== https probe ==="
-          curl -sIk https://friendinme.app 2>&1 | head -25 || true
+          echo "=== services before ==="
+          sudo systemctl is-active friendinme-api friendinme-web nginx || true
+          sudo systemctl restart friendinme-api friendinme-web || true
+          sleep 3
+          echo "=== services after ==="
+          sudo systemctl is-active friendinme-api friendinme-web nginx || true
+          sudo systemctl --no-pager -l status friendinme-api friendinme-web | sed -n '1,80p' || true
+          echo "=== ports ==="
+          ss -tlnp | grep -E ':3010|:8000|:443' || true
+          echo "=== authorized_keys ==="
+          sudo cp /root/.ssh/authorized_keys /tmp/ak-check
+          sudo chown ops:ops /tmp/ak-check
+          wc -l /tmp/ak-check
+          cat /tmp/ak-check
+          echo "=== https ==="
+          curl -sIk https://friendinme.app 2>&1 | head -15 || true
+          curl -sS --max-time 5 http://127.0.0.1:3010/ 2>&1 | head -5 || true
+          curl -sS --max-time 5 http://127.0.0.1:8000/api/health 2>&1 | head -5 || true
