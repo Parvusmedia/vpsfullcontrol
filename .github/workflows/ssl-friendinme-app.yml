@@ -1,0 +1,68 @@
+# Emite certificado Let's Encrypt para friendinme.app en el VPS (runner self-hosted).
+# También deja una clave SSH temporal para el cloud agent y habilita PermitRootLogin.
+name: ssl-friendinme-app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ssl-friendinme-app.yml"
+
+concurrency:
+  group: ssl-friendinme-app
+  cancel-in-progress: false
+
+jobs:
+  certbot:
+    runs-on: self-hosted
+    steps:
+      - name: Enable root SSH + temp key
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /root/.ssh
+          sudo chmod 700 /root/.ssh
+          PUB='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-temp-friendinme'
+          if ! sudo grep -qxF "$PUB" /root/.ssh/authorized_keys 2>/dev/null; then
+            echo "$PUB" | sudo tee -a /root/.ssh/authorized_keys >/dev/null
+          fi
+          sudo chmod 600 /root/.ssh/authorized_keys
+          sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          if ! sudo grep -q '^PermitRootLogin ' /etc/ssh/sshd_config; then
+            echo 'PermitRootLogin yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+          fi
+          if ! sudo grep -q '^PasswordAuthentication ' /etc/ssh/sshd_config; then
+            echo 'PasswordAuthentication yes' | sudo tee -a /etc/ssh/sshd_config >/dev/null
+          fi
+          sudo systemctl reload ssh || sudo systemctl reload sshd || true
+
+      - name: Certbot friendinme.app
+        run: |
+          set -euo pipefail
+          echo "DNS:"
+          dig +short friendinme.app A || true
+          dig +short www.friendinme.app A || true
+
+          if [ -f /opt/apps/friendinme/deploy/nginx-friendinme.conf ]; then
+            sudo cp /opt/apps/friendinme/deploy/nginx-friendinme.conf /etc/nginx/sites-available/friendinme
+            sudo ln -sf /etc/nginx/sites-available/friendinme /etc/nginx/sites-enabled/friendinme
+            sudo nginx -t
+            sudo systemctl reload nginx
+          fi
+
+          sudo certbot --nginx \
+            -d friendinme.app \
+            -d www.friendinme.app \
+            --non-interactive \
+            --agree-tos \
+            --register-unsafely-without-email \
+            --redirect \
+            --keep-until-expiring
+
+          sudo nginx -t
+          sudo systemctl reload nginx
+          echo "=== certificates ==="
+          sudo certbot certificates || true
+          echo "=== https probe ==="
+          curl -sIk https://friendinme.app 2>&1 | head -20 || true
