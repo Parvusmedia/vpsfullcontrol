@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=300, height=600, initial-scale=1">
+  <meta name="ad.size" content="width=300,height=600">
+  <title>Riyadh Air — Live fares</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="banner" class="banner" role="banner">
+    <div class="glow" aria-hidden="true"></div>
+    <header class="brand">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M8 28c8-2 14-10 22-12 4-.8 10-1 14 2-6 1-11 4-16 9-3 3-8 6-14 6-3 0-5-2-6-5z" fill="currentColor"/>
+      </svg>
+      <div class="brand-text">
+        <p class="kicker">Premium fares</p>
+        <h1>Riyadh Air</h1>
+      </div>
+    </header>
+
+    <section class="field">
+      <span class="label">From</span>
+      <p class="origin" id="originLabel">Madrid (MAD)</p>
+    </section>
+
+    <section class="field">
+      <label class="label" for="destination">To</label>
+      <div class="select-wrap">
+        <select id="destination" name="destination"></select>
+      </div>
+    </section>
+
+    <section class="field">
+      <label class="label" for="month">When</label>
+      <div class="select-wrap">
+        <select id="month" name="month"></select>
+      </div>
+    </section>
+
+    <section class="price-block" id="priceBlock">
+      <p class="price-kicker" id="priceKicker">From</p>
+      <p class="price" id="priceValue">—</p>
+      <p class="route" id="routeLine"></p>
+    </section>
+
+    <a id="cta" class="cta" href="#" target="_blank" rel="noopener noreferrer">View flights</a>
+    <p class="legal">Fares update live. Terms apply.</p>
+
+    <aside id="debug" class="debug" hidden></aside>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

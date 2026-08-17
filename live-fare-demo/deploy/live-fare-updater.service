@@ -1,0 +1,15 @@
+[Unit]
+Description=Live fare static JSON updater (oneshot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/live-fare-demo
+EnvironmentFile=-/opt/apps/live-fare-demo/.env
+ExecStart=/usr/bin/python3 /opt/apps/live-fare-demo/feed/updater/update.py --once
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,58 @@
+name: deploy-live-fare-demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - cursor/live-fare-dv360-poc-e420
+    paths:
+      - "live-fare-demo/**"
+      - ".github/workflows/deploy-live-fare-demo.yml"
+
+concurrency:
+  group: deploy-live-fare-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Updater unit tests
+        run: python3 live-fare-demo/feed/updater/test_update.py
+      - name: Generate feed + DV360 zip
+        run: |
+          python3 live-fare-demo/feed/updater/update.py --once
+          chmod +x live-fare-demo/scripts/*.sh
+          live-fare-demo/scripts/build-dv360.sh
+
+  deploy:
+    needs: test
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect VPS
+        run: |
+          chmod +x live-fare-demo/scripts/*.sh
+          live-fare-demo/scripts/inspect-vps.sh
+      - name: Deploy (nginx reload only + updater timer)
+        run: live-fare-demo/scripts/deploy.sh
+      - name: Validate over localhost vhost
+        run: |
+          curl -fsS -H "Host: flights.pmediaplus.com" http://127.0.0.1/fares/MAD.json | head -c 400
+          echo
+          curl -fsS -H "Host: flights.pmediaplus.com" http://127.0.0.1/health
+          echo
+          curl -sI -H "Host: flights.pmediaplus.com" http://127.0.0.1/fares/MAD.json | sed -n '1,20p'
+      - name: Validate public HTTPS if DNS is live
+        run: |
+          resolved="$(dig +short flights.pmediaplus.com A | tail -n1 || true)"
+          if [[ "$resolved" == "87.106.194.137" ]]; then
+            live-fare-demo/scripts/validate-poc.sh https://flights.pmediaplus.com
+          else
+            echo "Public HTTPS skipped until DNS A flights.pmediaplus.com -> 87.106.194.137"
+          fi
