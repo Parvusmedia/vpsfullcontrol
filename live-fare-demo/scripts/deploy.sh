@@ -79,3 +79,6 @@ else
 fi
 
 echo "DEPLOY_OK"
+
+echo "=== integration tests ==="
+bash "$DEST/scripts/vps-integration-tests.sh" "$DEST"

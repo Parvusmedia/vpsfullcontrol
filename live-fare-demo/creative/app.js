@@ -31,7 +31,9 @@
   function resolveFeedUrl() {
     if (debugEnabled && params.get("feed")) return params.get("feed");
     const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") return "/fares/MAD.json";
+    if (host === "localhost" || host === "127.0.0.1" || host === "flights.pmediaplus.com") {
+      return "/fares/MAD.json";
+    }
     return CONFIG.feedUrl;
   }
 
