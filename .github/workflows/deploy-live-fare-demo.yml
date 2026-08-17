@@ -40,7 +40,14 @@ jobs:
           chmod +x live-fare-demo/scripts/*.sh
           live-fare-demo/scripts/inspect-vps.sh
       - name: Deploy (nginx reload only + updater timer)
-        run: live-fare-demo/scripts/deploy.sh
+        run: |
+          set -euo pipefail
+          sudo cp live-fare-demo/scripts/deploy.sh /usr/local/sbin/live-fare-deploy
+          sudo chmod 755 /usr/local/sbin/live-fare-deploy
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/live-fare-deploy, /usr/local/sbin/live-fare-deploy *' > /tmp/ops-live-fare
+          sudo cp /tmp/ops-live-fare /etc/sudoers.d/ops-live-fare
+          sudo chmod 440 /etc/sudoers.d/ops-live-fare
+          sudo /usr/local/sbin/live-fare-deploy "$GITHUB_WORKSPACE/live-fare-demo"
       - name: Validate over localhost vhost
         run: |
           curl -fsS -H "Host: flights.pmediaplus.com" http://127.0.0.1/fares/MAD.json | head -c 400

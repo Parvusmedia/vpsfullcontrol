@@ -2,7 +2,15 @@
 # Idempotent deploy onto the Parvus VPS. Does not restart unrelated services.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT=""
+if [[ $# -ge 1 && -d "$1" ]]; then
+  ROOT="$(cd "$1" && pwd)"
+elif [[ "$(basename "$(cd "$(dirname "$0")" && pwd)")" == "scripts" ]]; then
+  ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+else
+  echo "Usage: $0 /path/to/live-fare-demo" >&2
+  exit 1
+fi
 DEST="/opt/apps/live-fare-demo"
 DOMAIN="${LIVE_FARE_DOMAIN:-flights.pmediaplus.com}"
 VPS_IP="${VPS_IP:-87.106.194.137}"
