@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Create usj-advisor.pmediaplus.com A 87.106.194.137 on the Plesk nameserver.
+# Create usjdemo.pmediaplus.com A 87.106.194.137 on the Plesk nameserver.
 # Never prints secret values.
 set -euo pipefail
 
 DOMAIN="${DNS_DOMAIN:-pmediaplus.com}"
-HOST="${DNS_HOST:-usj-advisor}"
+HOST="${DNS_HOST:-usjdemo}"
 FQDN="${HOST}.${DOMAIN}"
 IP="${DNS_IP:-87.106.194.137}"
 PLESK_IP="${PLESK_IP:-82.223.3.205}"

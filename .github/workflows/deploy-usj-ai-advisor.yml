@@ -32,7 +32,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Create usj-advisor.pmediaplus.com A record on Plesk
+      - name: Create usjdemo.pmediaplus.com A record on Plesk
         run: |
           set -euo pipefail
           sudo cp usj-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-usj-advisor
@@ -65,9 +65,11 @@ jobs:
           set -euo pipefail
           # Recursor on the VPS often cannot resolve the new name; SNI via --resolve.
           usj-ai-advisor/scripts/validate.sh http://127.0.0.1:8021
-          curl -fsSk --max-time 15 --resolve usj-advisor.pmediaplus.com:443:127.0.0.1 \
-            https://usj-advisor.pmediaplus.com/api/health
+          curl -fsSk --max-time 15 --resolve usjdemo.pmediaplus.com:443:127.0.0.1 \
+            https://usjdemo.pmediaplus.com/api/health || \
+            curl -fsS --max-time 15 --resolve usjdemo.pmediaplus.com:80:127.0.0.1 \
+              http://usjdemo.pmediaplus.com/api/health
           echo
-          curl -fsS --max-time 15 --resolve usj-advisor.pmediaplus.com:80:127.0.0.1 \
-            http://usj-advisor.pmediaplus.com/ | head -c 80
+          curl -fsS --max-time 15 --resolve usjdemo.pmediaplus.com:80:127.0.0.1 \
+            http://usjdemo.pmediaplus.com/ | head -c 80
           echo

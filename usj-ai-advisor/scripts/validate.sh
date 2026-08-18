@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-BASE="${1:-https://usj-advisor.pmediaplus.com}"
+BASE="${1:-https://usjdemo.pmediaplus.com}"
 curl -fsS "$BASE/api/health"
 echo
 python3 - "$BASE" <<'PY'

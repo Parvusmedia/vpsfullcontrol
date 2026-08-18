@@ -7,18 +7,18 @@ Interactive HTML5 ad that behaves as a **mini academic advisor**, not a DCO temp
 
 That turns anonymous traffic into **context-rich prospects** before Admissions speaks to anyone.
 
-**Domain:** `https://usj-advisor.pmediaplus.com`
+**Domain:** `https://usjdemo.pmediaplus.com`
 
-`usj.pmediaplus.com` already exists on the VPS with another FastAPI stub (`/health`, `/webhook`). This demo uses a sibling host so that product is left untouched.
+`usj.pmediaplus.com` already hosts another app. This demo is served at `usjdemo.pmediaplus.com`.
 
 | Recurso | URL |
 |---------|-----|
-| Advisor | https://usj-advisor.pmediaplus.com/ |
-| Ad 300×600 | https://usj-advisor.pmediaplus.com/ad |
-| Admissions | https://usj-advisor.pmediaplus.com/admissions |
-| Catalogue | https://usj-advisor.pmediaplus.com/admin |
-| Debug events | https://usj-advisor.pmediaplus.com/debug |
-| Health | https://usj-advisor.pmediaplus.com/api/health |
+| Advisor | https://usjdemo.pmediaplus.com/ |
+| Ad 300×600 | https://usjdemo.pmediaplus.com/ad |
+| Admissions | https://usjdemo.pmediaplus.com/admissions |
+| Catalogue | https://usjdemo.pmediaplus.com/admin |
+| Debug events | https://usjdemo.pmediaplus.com/debug |
+| Health | https://usjdemo.pmediaplus.com/api/health |
 
 ## Product positioning
 
@@ -115,7 +115,7 @@ usj-ai-advisor/scripts/inspect-vps.sh
 sudo usj-ai-advisor/scripts/deploy.sh /opt/apps/usj-ai-advisor
 ```
 
-DNS: Plesk A record `usj-advisor.pmediaplus.com → 87.106.194.137`. TLS via `certbot certonly --webroot` (never `--nginx`).
+DNS: Plesk A record `usjdemo.pmediaplus.com → 87.106.194.137`. TLS via `certbot certonly --webroot` (never `--nginx`).
 
 Restart API only:
 

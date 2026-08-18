@@ -21,7 +21,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Create usj-advisor.pmediaplus.com A record
+      - name: Create usjdemo.pmediaplus.com A record
         run: |
           set -euo pipefail
           sudo cp usj-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-usj-advisor

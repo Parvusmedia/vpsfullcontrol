@@ -11,7 +11,8 @@ echo "=== listeners 8021 ==="
 ss -tlnp | grep -E ':8021|:8000|:8004|:8005|:8010' || true
 echo "=== dns ==="
 dig +short usj.pmediaplus.com A || true
-dig +short usj-advisor.pmediaplus.com A || true
+dig +short usjdemo.pmediaplus.com A || true
+dig +short usjdemo.pmediaplus.com A @82.223.3.205 || true
 echo "=== systemd ==="
 systemctl is-active usj-ai-advisor.service 2>/dev/null || true
 echo "INSPECT_OK"

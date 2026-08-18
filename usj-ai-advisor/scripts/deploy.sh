@@ -14,7 +14,7 @@ else
 fi
 
 DEST="/opt/apps/usj-ai-advisor"
-DOMAIN="${USJ_ADVISOR_DOMAIN:-usj-advisor.pmediaplus.com}"
+DOMAIN="${USJ_ADVISOR_DOMAIN:-usjdemo.pmediaplus.com}"
 VPS_IP="${VPS_IP:-87.106.194.137}"
 PORT="${USJ_ADVISOR_PORT:-8021}"
 SITE_AVAIL="/etc/nginx/sites-available/usj-ai-advisor"
@@ -79,14 +79,14 @@ install_nginx_site() {
     echo "nginx site: HTTPS (${DOMAIN})"
   else
     install -m 644 "$DEST/deploy/nginx-usj-ai-advisor.conf" "$SITE_AVAIL"
-    sed -i "s/usj-advisor.pmediaplus.com/${DOMAIN}/g" "$SITE_AVAIL"
+    sed -i "s/usjdemo.pmediaplus.com/${DOMAIN}/g" "$SITE_AVAIL"
     echo "nginx site: HTTP only (no cert yet)"
   fi
   ln -sfn "$SITE_AVAIL" "$SITE_EN"
 }
 
 echo "=== deploy usj-ai-advisor → $DEST ($DOMAIN :$PORT) ==="
-echo "Note: usj.pmediaplus.com already hosts another FastAPI stub; this demo uses ${DOMAIN}."
+echo "Note: demo host is ${DOMAIN} (not usj.pmediaplus.com, which already has another app)."
 mkdir -p "$DEST" /var/www/html "$DEST/backend/storage"
 if [[ ! -f "$DEST/.env" ]]; then
   cp "$ROOT/.env.example" "$DEST/.env"
