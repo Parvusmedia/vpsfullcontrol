@@ -9,15 +9,44 @@
 </head>
 <body>
   <div id="banner" class="banner" role="banner">
-    <div class="glow" aria-hidden="true"></div>
+    <div class="livery" aria-hidden="true">
+      <span class="livery-green"></span>
+      <span class="livery-sand"></span>
+      <span class="livery-blue"></span>
+    </div>
+    <svg class="dunes" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#163A66" d="M0 58 Q70 38 140 56 T300 44 V120 H0 Z"/>
+      <path fill="#C4A46C" d="M0 74 Q90 52 170 76 T300 66 V120 H0 Z"/>
+      <path fill="#B0894A" d="M0 92 Q110 78 190 94 T300 86 V120 H0 Z"/>
+    </svg>
+
     <header class="brand">
-      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
-        <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M8 28c8-2 14-10 22-12 4-.8 10-1 14 2-6 1-11 4-16 9-3 3-8 6-14 6-3 0-5-2-6-5z" fill="currentColor"/>
-      </svg>
-      <div class="brand-text">
-        <p class="kicker">Premium fares</p>
-        <h1>Saudia</h1>
+      <div class="lockup">
+        <svg class="mark" viewBox="0 0 72 92" role="img" aria-label="Saudia">
+          <path class="fin" d="M36 3.5 L67.5 86.5 H4.5 Z"/>
+          <g fill="currentColor">
+            <g transform="translate(36 40)">
+              <ellipse cx="0" cy="-15.5" rx="4.2" ry="16.2"/>
+              <ellipse cx="0" cy="-15.5" rx="4.2" ry="16.2" transform="rotate(28)"/>
+              <ellipse cx="0" cy="-15.5" rx="4.2" ry="16.2" transform="rotate(-28)"/>
+              <ellipse cx="0" cy="-15.5" rx="4.2" ry="16.2" transform="rotate(55)"/>
+              <ellipse cx="0" cy="-15.5" rx="4.2" ry="16.2" transform="rotate(-55)"/>
+              <ellipse cx="0" cy="-15.5" rx="3.6" ry="14.5" transform="rotate(82)"/>
+              <ellipse cx="0" cy="-15.5" rx="3.6" ry="14.5" transform="rotate(-82)"/>
+              <ellipse cx="0" cy="-13" rx="3.2" ry="12" transform="rotate(110)"/>
+              <ellipse cx="0" cy="-13" rx="3.2" ry="12" transform="rotate(-110)"/>
+            </g>
+            <path d="M33.6 40.5 L32.2 71.2 H39.8 L38.4 40.5 Z"/>
+            <path d="M31.6 46 H40.4 L39.6 49 H32.4 Z" opacity=".35"/>
+            <path d="M31.8 54 H40.2 L39.4 57 H32.6 Z" opacity=".35"/>
+          </g>
+          <path class="arch" d="M22 76 C28 64 33 63 36 72"/>
+          <path class="arch" d="M50 76 C44 64 39 63 36 72"/>
+        </svg>
+        <div class="names">
+          <p class="wordmark">saudia</p>
+          <p class="wordmark-ar" lang="ar" dir="rtl">السعودية</p>
+        </div>
       </div>
     </header>
 
@@ -48,8 +77,8 @@
       <p class="route" id="routeLine"></p>
     </section>
 
-    <a id="cta" class="cta" href="#" target="_blank" rel="noopener noreferrer">View flights</a>
-    <p class="legal">Fares update live. Terms apply.</p>
+    <a id="cta" class="cta" href="#" target="_blank" rel="noopener noreferrer">Book now</a>
+    <p class="legal">saudia.com · Fares update live. Terms apply.</p>
 
     <aside id="debug" class="debug" hidden></aside>
   </div>

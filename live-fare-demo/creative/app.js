@@ -195,8 +195,8 @@
   function formatPrice(amount, currency) {
     if (typeof amount !== "number" || Number.isNaN(amount)) return null;
     const symbols = { EUR: "€", USD: "$", GBP: "£" };
-    if (symbols[currency]) return "FROM " + symbols[currency] + Math.round(amount);
-    return "FROM " + (currency || "") + " " + Math.round(amount);
+    if (symbols[currency]) return symbols[currency] + Math.round(amount);
+    return (currency || "SAR") + " " + Math.round(amount);
   }
 
   function showFallback(reason) {

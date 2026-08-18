@@ -1,11 +1,14 @@
 :root {
-  --navy: #062318;
-  --navy-2: #0a3a28;
-  --gold: #c9a45c;
-  --gold-soft: rgba(201, 164, 92, 0.35);
-  --cream: #f6f0e4;
-  --muted: rgba(246, 240, 228, 0.62);
-  --line: rgba(201, 164, 92, 0.28);
+  --green: #0a5c32;
+  --green-deep: #063e22;
+  --green-mid: #0e6b3a;
+  --sand: #c4a46c;
+  --sand-deep: #b0894a;
+  --sand-soft: rgba(196, 164, 108, 0.38);
+  --blue: #163a66;
+  --cream: #f7f4ee;
+  --muted: rgba(247, 244, 238, 0.68);
+  --line: rgba(196, 164, 108, 0.42);
 }
 
 * {
@@ -19,78 +22,121 @@ body {
   width: 300px;
   height: 600px;
   overflow: hidden;
-  background: #000;
+  background: #063e22;
 }
 
 .banner {
   position: relative;
   width: 300px;
   height: 600px;
-  padding: 22px 22px 18px;
+  padding: 16px 20px 34px;
   color: var(--cream);
   background:
-    radial-gradient(1200px 280px at 50% -80px, rgba(201, 164, 92, 0.18), transparent 55%),
-    linear-gradient(165deg, #0f4c34 0%, var(--navy) 42%, #03140e 100%);
-  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+    radial-gradient(900px 240px at 50% -90px, rgba(196, 164, 108, 0.16), transparent 58%),
+    linear-gradient(168deg, #147a42 0%, var(--green) 38%, var(--green-deep) 100%);
+  font-family: "Avenir Next", "Century Gothic", "Futura", "Segoe UI", sans-serif;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--gold-soft);
+  overflow: hidden;
 }
 
-.glow {
+.livery {
   position: absolute;
-  inset: auto -40px -120px;
-  height: 220px;
-  background: radial-gradient(circle, rgba(201, 164, 92, 0.16), transparent 65%);
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.livery-green { flex: 5; background: var(--green-mid); }
+.livery-sand { flex: 2; background: var(--sand); }
+.livery-blue { flex: 2; background: var(--blue); }
+
+.dunes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
   pointer-events: none;
+  z-index: 0;
 }
 
 .brand {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 14px 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lockup {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
 }
 
 .mark {
-  width: 38px;
-  height: 38px;
-  color: var(--gold);
+  width: 46px;
+  height: 59px;
+  color: var(--cream);
   flex: 0 0 auto;
+  overflow: visible;
 }
 
-.kicker {
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--gold);
+.mark .fin {
+  fill: rgba(247, 244, 238, 0.08);
+  stroke: var(--sand);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
 }
 
-.brand h1 {
-  font-family: Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 26px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.05;
+.mark .arch {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+}
+
+.names {
+  min-width: 0;
+  padding-top: 6px;
+}
+
+.wordmark {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 0.9;
+  text-transform: lowercase;
+  color: var(--cream);
+}
+
+.wordmark-ar {
+  margin-top: 5px;
+  font-family: "Geeza Pro", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  color: var(--sand);
+  line-height: 1;
 }
 
 .field {
-  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px 8px;
 }
 
 .label {
   display: block;
   font-size: 10px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.origin {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  color: var(--sand);
+  margin-bottom: 5px;
 }
 
 .select-wrap {
@@ -104,55 +150,60 @@ body {
   top: 50%;
   width: 7px;
   height: 7px;
-  border-right: 1.5px solid var(--gold);
-  border-bottom: 1.5px solid var(--gold);
+  border-right: 1.5px solid var(--sand);
+  border-bottom: 1.5px solid var(--sand);
   transform: translateY(-70%) rotate(45deg);
   pointer-events: none;
 }
 
 select {
   width: 100%;
-  height: 42px;
+  height: 40px;
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid var(--line);
-  background: rgba(7, 21, 38, 0.55);
+  background: rgba(6, 62, 34, 0.45);
   color: var(--cream);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   padding: 0 32px 0 12px;
   outline: none;
   cursor: pointer;
+  border-radius: 0;
 }
 
 select:focus {
-  border-color: var(--gold);
+  border-color: var(--sand);
 }
 
 .price-block {
-  margin-top: auto;
-  margin-bottom: 16px;
-  padding-top: 8px;
-  min-height: 118px;
+  position: relative;
+  z-index: 1;
+  margin: auto 0 14px 8px;
+  padding-top: 4px;
+  min-height: 108px;
 }
 
 .price-kicker {
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--sand);
 }
 
 .price {
-  font-family: Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 34px;
-  line-height: 1.1;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.08;
   margin: 4px 0 8px;
 }
 
 .price.fallback {
-  font-size: 26px;
-  line-height: 1.2;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
 }
 
 .route {
@@ -162,40 +213,45 @@ select:focus {
 }
 
 .cta {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 46px;
-  background: var(--gold);
-  color: var(--navy);
+  margin-left: 8px;
+  background: var(--sand);
+  color: var(--green-deep);
   text-decoration: none;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   font-size: 12px;
   font-weight: 700;
 }
 
 .cta:hover,
 .cta:focus {
-  background: #ddb86a;
+  background: #d4b57e;
 }
 
 .legal {
-  margin-top: 10px;
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+  margin: 8px 0 0 8px;
+  font-size: 9px;
+  color: var(--cream);
+  letter-spacing: 0.03em;
 }
 
 .debug {
   position: absolute;
-  left: 8px;
+  left: 16px;
   right: 8px;
   bottom: 8px;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.78);
-  border: 1px solid var(--gold-soft);
-  color: #d7ffe4;
+  background: rgba(6, 62, 34, 0.92);
+  border: 1px solid var(--sand-soft);
+  color: #e8f6ec;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 9px;
   line-height: 1.35;
