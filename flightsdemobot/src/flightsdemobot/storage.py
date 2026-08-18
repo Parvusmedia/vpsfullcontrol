@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -45,6 +46,7 @@ class Store:
     def __init__(self, path: Path, access_key: str) -> None:
         self._path = path
         self._access_key = access_key
+        self._key_fp = self._fingerprint(access_key)
         self._lock = threading.Lock()
         self._memory: dict[int, ChatState] = {}
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -54,6 +56,9 @@ class Store:
         conn = sqlite3.connect(self._path)
         conn.row_factory = sqlite3.Row
         return conn
+
+    def _fingerprint(self, key: str) -> str:
+        return hashlib.sha256(key.encode()).hexdigest()
 
     def _init_db(self) -> None:
         with self._lock:
@@ -65,7 +70,8 @@ class Store:
                     unlocked INTEGER NOT NULL DEFAULT 0,
                     lang TEXT NOT NULL DEFAULT 'en',
                     draft_json TEXT NOT NULL DEFAULT '{}',
-                    step TEXT NOT NULL DEFAULT 'idle'
+                    step TEXT NOT NULL DEFAULT 'idle',
+                    key_fp TEXT NOT NULL DEFAULT ''
                 )
                 """
             )
@@ -78,7 +84,7 @@ class Store:
                 return self._memory[chat_id]
             conn = self._connect()
             row = conn.execute(
-                "SELECT unlocked, lang, draft_json, step FROM unlocks WHERE chat_id = ?",
+                "SELECT unlocked, lang, draft_json, step, key_fp FROM unlocks WHERE chat_id = ?",
                 (chat_id,),
             ).fetchone()
             conn.close()
@@ -95,9 +101,10 @@ class Store:
                 one_way=bool(draft_data.get("one_way")),
                 max_price_sar=draft_data.get("max_price_sar"),
             )
+            unlocked = bool(row["unlocked"]) and row["key_fp"] == self._key_fp
             state = ChatState(
                 lang=row["lang"] if row["lang"] in ("en", "ar") else "en",
-                unlocked=bool(row["unlocked"]),
+                unlocked=unlocked,
                 step=row["step"] if row["step"] else "idle",
                 draft=draft,
             )
@@ -111,13 +118,14 @@ class Store:
             conn = self._connect()
             conn.execute(
                 """
-                INSERT INTO unlocks (chat_id, unlocked, lang, draft_json, step)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO unlocks (chat_id, unlocked, lang, draft_json, step, key_fp)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(chat_id) DO UPDATE SET
                     unlocked = excluded.unlocked,
                     lang = excluded.lang,
                     draft_json = excluded.draft_json,
-                    step = excluded.step
+                    step = excluded.step,
+                    key_fp = excluded.key_fp
                 """,
                 (
                     chat_id,
@@ -125,6 +133,7 @@ class Store:
                     state.lang,
                     draft_json,
                     state.step,
+                    self._key_fp if state.unlocked else "",
                 ),
             )
             conn.commit()
