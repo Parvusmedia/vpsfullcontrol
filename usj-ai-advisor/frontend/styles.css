@@ -31,7 +31,7 @@ button, textarea, input { font-family: inherit; }
 a { color: inherit; }
 
 .wrap {
-  width: min(1080px, calc(100% - 40px));
+  width: min(680px, calc(100% - 32px));
   margin: 0 auto;
 }
 
@@ -164,8 +164,8 @@ h1 {
 
 .result-grid {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 22px;
+  grid-template-columns: 1fr;
+  gap: 16px;
   padding-bottom: 80px;
 }
 .card {
@@ -281,7 +281,7 @@ h1 {
   h1 { max-width: none; font-size: clamp(1.45rem, 6.4vw, 1.9rem); }
   .nav { flex-wrap: wrap; padding-top: 16px; }
   .nav-links { font-size: 12px; gap: 10px; }
-  .wrap { width: min(1080px, calc(100% - 24px)); }
+  .wrap { width: min(680px, calc(100% - 24px)); }
   .choice { font-size: 15px; padding: 14px; }
   .program-title { font-size: 26px; }
   .wizard-card { padding: 16px; border-radius: 18px; }
