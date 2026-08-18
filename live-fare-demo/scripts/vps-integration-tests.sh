@@ -48,7 +48,11 @@ grep -q '<svg' /tmp/lf-logo.svg
 grep -q "cityLabel" /tmp/lf-app.js
 grep -q "B_LOCATION" /tmp/lf-app.js
 grep -q "network.json" /tmp/lf-app.js
-grep -q "DV360 Live Fare POC" /tmp/lf-demo.html
+grep -q "Ad managed by Parvus Media for demo purposes" /tmp/lf-demo.html
+if grep -q "DV360 Live Fare POC" /tmp/lf-demo.html; then
+  echo "demo still says DV360 Live Fare POC" >&2
+  exit 1
+fi
 grep -q 'id="feedToggle"' /tmp/lf-demo.html
 grep -q 'id="feedMeta" hidden' /tmp/lf-demo.html
 if grep -q "no Google Studio" /tmp/lf-demo.html; then
