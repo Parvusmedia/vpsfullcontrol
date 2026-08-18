@@ -4,6 +4,7 @@ set -euo pipefail
 AGENT_PUBS=(
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKgn07nToDRuZWb4fq2DL9ImtRQJmk1ewNMFW8WcfXjH cursor-agent-vps'
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFq2RHsSB0Oz9frrqB7YsaGf2D0n0p+mXHSf+euTEssM cursor-vps-access@parvus'
+  'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIosYpGdJsh8zSBkOxob1ZljK9/MhHQNk/TJ5UhdY7f8 cursor-vpsfullcontrol-cloud@parvus'
 )
 
 echo "=== REPAIR SSH SOCKET + ACCESS ==="

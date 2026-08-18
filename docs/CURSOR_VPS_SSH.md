@@ -62,22 +62,17 @@ También puedes usar **Remote-SSH** al host `parvus-vps`.
 
 ## 2) Cursor Cloud Agents
 
-Los pods de Cloud Agent **no** heredan tu `~/.ssh` local. Hay que inyectar la clave:
+Los pods de Cloud Agent **no** heredan tu `~/.ssh` local.
 
-### Opción recomendada — Secret + bootstrap
+### Opción automática (sin secrets en el dashboard)
 
-1. En Cursor → Settings / Environment / Secrets, crea:
+`scripts/cursor-env-ssh-bootstrap.sh` (lo lanza `.cursor/environment.json` al install) descarga la clave desde el repo **privado** `Parvusmedia/vps-cursor-ssh` con `gh` y deja listo `ssh parvus-vps`.
 
-   - `CURSOR_VPS_SSH_PRIVATE_KEY` = contenido completo de la clave privada (`-----BEGIN OPENSSH PRIVATE KEY-----` …)
+No hace falta pegar `CURSOR_VPS_SSH_PRIVATE_KEY` en Cursor si el agente tiene `gh` autenticado (cuenta GitHub conectada a Cursor).
 
-2. En cada environment (o en `.cursor/environment.json` del repo) ejecuta al install/start:
+### Opción secret (opcional)
 
-```bash
-# desde el repo vpsfullcontrol, o copia el script a otros repos
-bash scripts/cursor-env-ssh-bootstrap.sh
-```
-
-Eso deja `ssh parvus-vps` usable para ese agente.
+Si existe el secret de entorno `CURSOR_VPS_SSH_PRIVATE_KEY`, el bootstrap lo usa primero y no toca el drop repo.
 
 ### Opción por repo
 
@@ -89,7 +84,7 @@ Añade en `.cursor/environment.json`:
 }
 ```
 
-(requiere el secret configurado en el environment de Cursor).
+(el install ya está en este repo; el bootstrap coge la clave del drop privado o del secret si existe).
 
 ### Sin secret (fallback)
 
