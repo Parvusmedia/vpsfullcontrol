@@ -36,9 +36,10 @@ PY
 
 echo "=== creative standalone ==="
 curl_h "$BASE/creative/index.html" | grep -q "Saudia"
-curl_h "$BASE/creative/index.html" | grep -q "saudia"
+curl_h "$BASE/creative/index.html" | grep -q "saudia-logo.svg"
 curl_h "$BASE/creative/index.html" | grep -q "السعودية"
 curl_h "$BASE/creative/index.html" | grep -q 'aria-label="Saudia"'
+curl_h "$BASE/creative/assets/saudia-logo.svg" | grep -q '<svg'
 curl_h "$BASE/creative/app.js" | grep -q "cityLabel"
 curl_h "$BASE/creative/app.js" | grep -q "B_LOCATION"
 curl_h "$BASE/creative/app.js" | grep -q "network.json"

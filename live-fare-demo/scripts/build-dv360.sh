@@ -30,3 +30,4 @@ kb = p.stat().st_size / 1024
 print(f"ZIP size: {kb:.1f} KB")
 PY
 unzip -l "$ZIP"
+unzip -l "$ZIP" | grep -q "saudia-logo.svg"

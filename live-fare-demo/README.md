@@ -139,7 +139,7 @@ Click: **Book now** abre `https://www.saudia.com/booking` con `B_LOCATION` (orig
 # → dist/dv360-creative.zip
 ```
 
-El ZIP contiene `index.html`, `styles.css`, `app.js` (y `assets/` si hay ficheros). Lockup Saudia 2023: palmera sobre deriva, wordmark `saudia` / `السعودية`, livery verde–arena–azul. El creative llama al feed remoto por HTTPS. Sin Studio, sin API keys.
+El ZIP contiene `index.html`, `styles.css`, `app.js` y `assets/saudia-logo.svg` (lockup oficial 2023: palmera, espadas cruzadas, `السعودية` / Saudia). Livery verde–arena–azul. El creative llama al feed remoto por HTTPS. Sin Studio, sin API keys.
 
 ## Production migration
 
