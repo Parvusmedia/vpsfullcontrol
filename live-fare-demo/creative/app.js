@@ -249,6 +249,7 @@
     }, 2100);
     scheduleCue(function () {
       originField.classList.remove("is-cue");
+      fillCueMenu(els.cueDest, els.destination, 3);
       destField.classList.add("is-cue", "is-open-cue");
     }, 2400);
     scheduleCue(function () {
@@ -451,7 +452,10 @@
     stopInteractCue();
     updateView();
   });
-  els.banner.addEventListener("pointerdown", stopInteractCue);
+  [els.origin, els.destination, els.month].forEach(function (select) {
+    select.addEventListener("pointerdown", stopInteractCue);
+    select.addEventListener("focus", stopInteractCue);
+  });
   els.cta.addEventListener("click", function (event) {
     const url = resolveExitUrl(currentBookingUrl());
     els.cta.setAttribute("href", url);
