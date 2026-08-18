@@ -1,0 +1,27 @@
+name: vps-sync-cloud-ssh-keys
+
+# Auto-ingest Cursor Cloud Agent pubkeys pushed to cursor-cloud-ssh-keys.
+on:
+  push:
+    branches: [cursor-cloud-ssh-keys]
+    paths: [cloud-keys/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-sync-cloud-ssh-keys
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout cloud keys branch
+        uses: actions/checkout@v4
+        with:
+          ref: cursor-cloud-ssh-keys
+
+      - name: Merge pubkeys into cursorbot authorized_keys
+        run: sudo bash scripts/vps-sync-cloud-ssh-keys.sh "$GITHUB_WORKSPACE/cloud-keys"

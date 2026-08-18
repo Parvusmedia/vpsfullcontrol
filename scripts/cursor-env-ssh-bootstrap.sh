@@ -107,6 +107,10 @@ publish_pubkey_for_vps() {
       -f branch="$KEYS_BRANCH" >/dev/null
   fi
   echo "Published pubkey to ${CTRL_REPO}@${KEYS_BRANCH}:${path}"
+  gh workflow run vps-sync-cloud-ssh-keys.yml -R "$CTRL_REPO" >/dev/null 2>&1 \
+    || gh api "repos/${CTRL_REPO}/actions/workflows/vps-sync-cloud-ssh-keys.yml/dispatches" \
+         -f ref=main >/dev/null 2>&1 \
+    || true
   gh workflow run vps-register-pubkey.yml -R "$CTRL_REPO" -f pubkey="$pub" >/dev/null 2>&1 \
     || gh api "repos/${CTRL_REPO}/actions/workflows/vps-register-pubkey.yml/dispatches" \
          -f ref=main -f "inputs[pubkey]=${pub}" >/dev/null 2>&1 \
@@ -146,8 +150,8 @@ if ssh_ok; then
 fi
 
 echo "Waiting for VPS to ingest pubkey..."
-for _ in $(seq 1 18); do
-  sleep 5
+for _ in $(seq 1 30); do
+  sleep 4
   if ssh_ok; then
     exit 0
   fi

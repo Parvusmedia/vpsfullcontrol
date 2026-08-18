@@ -72,7 +72,9 @@ Los checkouts de Cloud Agent suelen estar desactualizados. En el otro entorno pe
 curl -fsSL https://raw.githubusercontent.com/Parvusmedia/vpsfullcontrol/main/scripts/cursor-env-ssh-bootstrap.sh | bash
 ```
 
-Eso descarga la clave del drop privado o, si `gh` no puede leerlo, publica una pubkey y el VPS la ingiere. No hace falta el secret `CURSOR_VPS_SSH_PRIVATE_KEY`.
+Eso genera (si hace falta) una clave ephemeral, publica la pubkey en la rama `cursor-cloud-ssh-keys` y el workflow **vps-sync-cloud-ssh-keys** la ingiere en el VPS automáticamente (runner self-hosted). No hace falta `vps-register-pubkey` manual.
+
+Si el workflow aún no corrió, espera ~2 minutos o lanza Actions → **vps-sync-cloud-ssh-keys** → Run workflow.
 
 ### Opción secret (opcional)
 
