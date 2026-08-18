@@ -131,8 +131,15 @@ for i in $(seq 1 25); do
   fi
 done
 
-resolved="$(dig +short "$DOMAIN" A 2>/dev/null | tail -n1 || true)"
-echo "DNS $DOMAIN -> ${resolved:-none} (want $VPS_IP)"
+resolved=""
+for i in $(seq 1 40); do
+  resolved="$(dig +short "$DOMAIN" A 2>/dev/null | tail -n1 || true)"
+  echo "DNS $DOMAIN -> ${resolved:-none} (want $VPS_IP) try $i"
+  if [[ "$resolved" == "$VPS_IP" ]]; then
+    break
+  fi
+  sleep 3
+done
 if [[ "$resolved" == "$VPS_IP" ]]; then
   certbot certonly \
     --webroot \

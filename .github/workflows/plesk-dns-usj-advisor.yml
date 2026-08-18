@@ -26,4 +26,7 @@ jobs:
           set -euo pipefail
           sudo cp usj-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-usj-advisor
           sudo chmod 755 /usr/local/sbin/plesk-add-usj-advisor
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/plesk-add-usj-advisor, /usr/local/sbin/plesk-add-usj-advisor *' > /tmp/ops-plesk-usj
+          sudo cp /tmp/ops-plesk-usj /etc/sudoers.d/ops-plesk-usj
+          sudo chmod 440 /etc/sudoers.d/ops-plesk-usj
           sudo /usr/local/sbin/plesk-add-usj-advisor
