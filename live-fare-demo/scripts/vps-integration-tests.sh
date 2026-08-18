@@ -35,19 +35,23 @@ print("CORS/cache OK")
 PY
 
 echo "=== creative standalone ==="
-curl_h "$BASE/creative/index.html" | grep -q "Saudia"
-curl_h "$BASE/creative/index.html" | grep -q "saudia-logo.svg"
-curl_h "$BASE/creative/index.html" | grep -q "السعودية"
-curl_h "$BASE/creative/index.html" | grep -q "Select yours"
-curl_h "$BASE/creative/app.js" | grep -q "playInteractCue"
-curl_h "$BASE/creative/assets/saudia-logo.svg" | grep -q '<svg'
-curl_h "$BASE/creative/app.js" | grep -q "cityLabel"
-curl_h "$BASE/creative/app.js" | grep -q "B_LOCATION"
-curl_h "$BASE/creative/app.js" | grep -q "network.json"
-curl_h "$BASE/demo/" | grep -q "DV360 Live Fare POC"
-curl_h "$BASE/demo/" | grep -q 'id="feedToggle"'
-curl_h "$BASE/demo/" | grep -q 'id="feedMeta" hidden'
-if curl_h "$BASE/demo/" | grep -q "no Google Studio"; then
+curl_h -o /tmp/lf-index.html "$BASE/creative/index.html"
+curl_h -o /tmp/lf-app.js "$BASE/creative/app.js"
+curl_h -o /tmp/lf-logo.svg "$BASE/creative/assets/saudia-logo.svg"
+curl_h -o /tmp/lf-demo.html "$BASE/demo/"
+grep -q "Saudia" /tmp/lf-index.html
+grep -q "saudia-logo.svg" /tmp/lf-index.html
+grep -q "السعودية" /tmp/lf-index.html
+grep -q "Select yours" /tmp/lf-index.html
+grep -q "playInteractCue" /tmp/lf-app.js
+grep -q '<svg' /tmp/lf-logo.svg
+grep -q "cityLabel" /tmp/lf-app.js
+grep -q "B_LOCATION" /tmp/lf-app.js
+grep -q "network.json" /tmp/lf-app.js
+grep -q "DV360 Live Fare POC" /tmp/lf-demo.html
+grep -q 'id="feedToggle"' /tmp/lf-demo.html
+grep -q 'id="feedMeta" hidden' /tmp/lf-demo.html
+if grep -q "no Google Studio" /tmp/lf-demo.html; then
   echo "demo still mentions Google Studio" >&2
   exit 1
 fi
