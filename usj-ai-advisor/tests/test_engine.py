@@ -58,6 +58,7 @@ def test_lawyer_digital_gets_ai_option():
     assert result["best"]["programme_id"] == "ai-applied"
     assert result["best"]["eligibility"] == "ADMISIÓN A REVISAR"
     assert result["has_strong_match"] is False
+    assert result["best"]["score_pct"] <= 72
 
 
 def test_guide_lawyer_tech_law():
@@ -67,6 +68,7 @@ def test_guide_lawyer_tech_law():
     ids = [row["programme_id"] for row in out["remaining"]]
     assert "biomechanics" not in ids
     assert out["best"]["programme_id"] == "ai-applied"
+    assert out["best"]["score_pct"] <= 72
     assert 1 <= len(out["remaining"]) <= 3
 
 

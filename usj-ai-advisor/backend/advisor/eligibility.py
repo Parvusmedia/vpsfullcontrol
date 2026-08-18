@@ -7,6 +7,15 @@ from .catalogue import programme_by_id
 GOOD = "BUEN ENCAJE"
 LIKELY = "PROBABLEMENTE ELEGIBLE"
 REVIEW = "ADMISIÓN A REVISAR"
+REVIEW_SCORE_CAP = 0.72
+
+
+def cap_score_for_status(row: dict[str, Any], status: str) -> dict[str, Any]:
+    """Do not show a perfect score when admission still needs a human review."""
+    if status == REVIEW:
+        row["score"] = min(float(row.get("score") or 0), REVIEW_SCORE_CAP)
+        row["score_pct"] = int(round(row["score"] * 100))
+    return row
 
 
 def _norm(value: str | None) -> str:

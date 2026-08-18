@@ -34,6 +34,7 @@ def recommend(message: str, priority: str | None = None, debug: bool = False) ->
         best = dict(best)
         best["eligibility"] = elig["status"]
         best["eligibility_note"] = elig["note"]
+        eligibility_mod.cap_score_for_status(best, elig["status"])
         programme = programme_by_id(best["programme_id"])
         context = {
             "reasons": best.get("reasons"),
@@ -50,6 +51,7 @@ def recommend(message: str, priority: str | None = None, debug: bool = False) ->
         for alt in split["alternatives"]:
             alt_el = eligibility_mod.classify(profile, alt["programme_id"])
             alt["eligibility"] = alt_el["status"]
+            eligibility_mod.cap_score_for_status(alt, alt_el["status"])
     payload: dict[str, Any] = {
         "profile": {k: v for k, v in profile.items() if k != "raw_message" or debug},
         "has_strong_match": split["has_strong_match"],

@@ -109,6 +109,7 @@ def run_guide(answers: dict[str, str], debug: bool = False) -> dict[str, Any]:
         elig = eligibility_mod.classify(profile, row["programme_id"])
         row["eligibility"] = elig["status"]
         row["eligibility_note"] = elig["note"]
+        eligibility_mod.cap_score_for_status(row, elig["status"])
         programme = programme_by_id(row["programme_id"])
         if programme:
             row["programme_card"] = public_programme(programme)
