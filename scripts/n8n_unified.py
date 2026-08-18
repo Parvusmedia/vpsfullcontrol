@@ -27,6 +27,46 @@ def _is_jwt(value: str) -> bool:
     return value.count(".") == 2
 
 
+def _parse_sse(raw: str) -> Any:
+    """Parse a Server-Sent-Events body and return the last JSON `data` payload.
+
+    n8n's MCP StreamableHTTP endpoint answers with `event: message` / `data: {...}`
+    frames instead of a plain JSON body, so a naive json.loads on the whole
+    response fails.
+    """
+    last: Any = None
+    data_lines: list[str] = []
+
+    def flush() -> None:
+        nonlocal last, data_lines
+        if not data_lines:
+            return
+        joined = "\n".join(data_lines)
+        try:
+            last = json.loads(joined)
+        except json.JSONDecodeError:
+            last = {"raw": joined}
+        data_lines = []
+
+    for line in raw.splitlines():
+        if line.startswith("data:"):
+            data_lines.append(line[len("data:"):].lstrip())
+        elif line.strip() == "":
+            flush()
+    flush()
+
+    return last if last is not None else {"raw": raw}
+
+
+def _parse_body(raw: str, content_type: str) -> Any:
+    if "text/event-stream" in content_type.lower():
+        return _parse_sse(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"raw": raw}
+
+
 def _safe_name(name: str) -> str:
     return re.sub(r"[^a-zA-Z0-9._-]+", "_", name).strip("_") or "workflow"
 
@@ -59,14 +99,13 @@ class N8NClient:
                 raw = response.read().decode("utf-8")
                 if not raw:
                     return response.status, {}
-                try:
-                    return response.status, json.loads(raw)
-                except json.JSONDecodeError:
-                    return response.status, {"raw": raw}
+                content_type = response.headers.get("Content-Type", "")
+                return response.status, _parse_body(raw, content_type)
         except urllib.error.HTTPError as exc:
             try:
                 raw = exc.read().decode("utf-8")
-                data = json.loads(raw) if raw else {}
+                content_type = exc.headers.get("Content-Type", "") if exc.headers else ""
+                data = _parse_body(raw, content_type) if raw else {}
             except Exception:  # pragma: no cover - defensive
                 data = {"error": "http_error", "status": exc.code}
             return exc.code, data
@@ -90,7 +129,12 @@ class N8NClient:
             return 0, {"error": "missing_mcp_token"}
         url = f"{self.base_url}/mcp-server/http"
         payload = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
-        headers = {"Authorization": f"Bearer {self.mcp_token}"}
+        headers = {
+            "Authorization": f"Bearer {self.mcp_token}",
+            # n8n's MCP StreamableHTTP transport requires the client to accept
+            # both application/json and text/event-stream, otherwise it returns 406.
+            "Accept": "application/json, text/event-stream",
+        }
         return self._request("POST", url, headers=headers, payload=payload)
 
     def mcp_initialize(self) -> tuple[int, Any]:
