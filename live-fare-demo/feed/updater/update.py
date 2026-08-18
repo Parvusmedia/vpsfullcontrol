@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_PATH = ROOT / "feed" / "source" / "routes.json"
@@ -75,9 +76,28 @@ def jitter_price(current: int, min_price: int, max_price: int) -> int:
     return max(min_price, min(max_price, nxt))
 
 
+SAUDIA_BOOKING = "https://www.saudia.com/booking"
+
+
+def month_search_date(month: str) -> str:
+    """Saudia DATE_1 format: YYYY-MM-DDTHH:mm:ss (15th of the fare month)."""
+    return f"{month}-15T00:00:00"
+
+
 def build_deeplink(base: str, origin: str, destination: str, month: str) -> str:
-    sep = "&" if "?" in base else "?"
-    return f"{base}{sep}origin={origin}&destination={destination}&month={month}"
+    """WDS deeplink used by saudia.com featured fares: B_LOCATION / E_LOCATION."""
+    parts = urlsplit((base or SAUDIA_BOOKING).strip() or SAUDIA_BOOKING)
+    path = parts.path or "/booking"
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query.update(
+        {
+            "B_LOCATION": origin,
+            "E_LOCATION": destination,
+            "trip_type": "OW",
+            "DATE_1": month_search_date(month),
+        }
+    )
+    return urlunsplit((parts.scheme, parts.netloc, path, urlencode(query), parts.fragment))
 
 
 def origin_meta(source: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -120,7 +140,7 @@ def generate_network(
     jitter: bool,
 ) -> dict[str, Any]:
     deeplink_base = os.environ.get("DEEPLINK_BASE") or str(
-        source.get("deeplink_base") or "https://www.saudia.com/book"
+        source.get("deeplink_base") or SAUDIA_BOOKING
     )
     origins = origin_meta(source)
     prev = last_prices(previous)

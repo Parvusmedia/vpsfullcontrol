@@ -39,6 +39,7 @@ curl_h "$BASE/creative/index.html" | grep -q "Saudia"
 curl_h "$BASE/creative/index.html" | grep -q "saudia"
 curl_h "$BASE/creative/index.html" | grep -q "السعودية"
 curl_h "$BASE/creative/index.html" | grep -q 'aria-label="Saudia"'
+curl_h "$BASE/creative/app.js" | grep -q "B_LOCATION"
 curl_h "$BASE/creative/app.js" | grep -q "network.json"
 curl_h "$BASE/demo/" | grep -q "DV360 Live Fare POC"
 echo "creative/demo HTML OK"

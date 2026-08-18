@@ -130,7 +130,7 @@ const CONFIG = {
 - Debug: https://flights.pmediaplus.com/creative/index.html?debug=1
 - Si `now - updated_at` > 30 min, o el feed falla: texto fallback + CTA operativo. Nunca `€undefined` / `NaN`.
 
-Click: `resolveExitUrl()` usa el deeplink de la tarifa. Si existe `window.clickTag` (DV360), se usa como tracking URL.
+Click: **Book now** abre `https://www.saudia.com/booking` con `B_LOCATION` (origen), `E_LOCATION` (destino), `trip_type=OW` y `DATE_1` (día 15 del mes elegido). Es el deeplink WDS que usa la propia web de Saudia. Si existe `window.clickTag` (DV360), envuelve esa URL.
 
 ## DV360
 

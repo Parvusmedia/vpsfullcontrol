@@ -10,7 +10,8 @@
     fallbackOriginName: "Jeddah",
     fallbackDestination: "RUH",
     fallbackDestinationName: "Riyadh",
-    fallbackDeeplink: "https://www.saudia.com/book?origin=JED&destination=RUH",
+    fallbackDeeplink: "https://www.saudia.com/booking?B_LOCATION=JED&E_LOCATION=RUH&trip_type=OW&DATE_1=2026-10-15T00:00:00",
+    bookingBase: "https://www.saudia.com/booking",
     clickTag: ""
   };
 
@@ -165,8 +166,23 @@
     return params.get("clickTag") || CONFIG.clickTag || "";
   }
 
+  function saudiaBookingUrl(origin, destination, month) {
+    const from = origin || CONFIG.fallbackOrigin;
+    const to = destination || CONFIG.fallbackDestination;
+    const when = month || "2026-10";
+    return CONFIG.bookingBase
+      + "?B_LOCATION=" + encodeURIComponent(from)
+      + "&E_LOCATION=" + encodeURIComponent(to)
+      + "&trip_type=OW"
+      + "&DATE_1=" + encodeURIComponent(when + "-15T00:00:00");
+  }
+
   function resolveExitUrl(deeplink) {
-    const dest = deeplink || CONFIG.fallbackDeeplink;
+    const dest = deeplink || saudiaBookingUrl(
+      els.origin && els.origin.value,
+      els.destination && els.destination.value,
+      els.month && els.month.value
+    );
     const tag = getClickTag();
     if (!tag) return dest;
     if (/[?&](?:url|dest|adurl)=?$/i.test(tag) || /[=]$/.test(tag)) {
@@ -199,6 +215,10 @@
     return (currency || "SAR") + " " + Math.round(amount);
   }
 
+  function currentBookingUrl() {
+    return saudiaBookingUrl(els.origin.value, els.destination.value, els.month.value);
+  }
+
   function showFallback(reason) {
     const origin = selectedOriginMeta();
     const destName = (els.destination.options[els.destination.selectedIndex] || {}).textContent || CONFIG.fallbackDestinationName;
@@ -208,7 +228,7 @@
     els.priceValue.textContent = "Discover our latest fares";
     els.priceValue.classList.add("fallback");
     els.routeLine.textContent = "";
-    els.cta.setAttribute("href", resolveExitUrl(CONFIG.fallbackDeeplink));
+    els.cta.setAttribute("href", resolveExitUrl(currentBookingUrl()));
     renderDebug(reason);
   }
 
@@ -225,7 +245,7 @@
     els.priceValue.classList.remove("fallback");
     els.routeLine.textContent =
       (fare.origin_name || fare.origin) + " → " + (fare.destination_name || fare.destination);
-    els.cta.setAttribute("href", resolveExitUrl(fare.deeplink));
+    els.cta.setAttribute("href", resolveExitUrl(currentBookingUrl()));
     renderDebug("ok");
   }
 
@@ -270,6 +290,7 @@
       "Age: " + (feed && feed.updated_at ? ageLabel(feed.updated_at) : "n/a"),
       "Feed URL: " + resolveFeedUrl(),
       "Fare: " + fareKey,
+      "Book: " + currentBookingUrl(),
       "Price: " + (currentFare ? currentFare.price + " " + (currentFare.currency || "") : "fallback"),
       "Status: " + status
     ];
@@ -318,7 +339,7 @@
   els.destination.addEventListener("change", updateView);
   els.month.addEventListener("change", updateView);
   els.cta.addEventListener("click", function (event) {
-    const url = resolveExitUrl(currentFare && currentFare.deeplink);
+    const url = resolveExitUrl(currentBookingUrl());
     els.cta.setAttribute("href", url);
     if (!url) event.preventDefault();
   });

@@ -54,7 +54,10 @@ class UpdaterTests(unittest.TestCase):
         self.assertEqual(len(feed["fares"]), 2)
         self.assertEqual(feed["fares"][0]["origin"], "JED")
         self.assertEqual(feed["fares"][0]["destination"], "RUH")
-        self.assertIn("origin=JED", feed["fares"][0]["deeplink"])
+        self.assertIn("B_LOCATION=JED", feed["fares"][0]["deeplink"])
+        self.assertIn("E_LOCATION=RUH", feed["fares"][0]["deeplink"])
+        self.assertIn("DATE_1=2026-10-15", feed["fares"][0]["deeplink"])
+        self.assertIn("trip_type=OW", feed["fares"][0]["deeplink"])
         self.assertNotIn("min_price", feed["fares"][0])
         oct_fare = next(f for f in feed["fares"] if f["month"] == "2026-10")
         self.assertEqual(oct_fare["price"], 380)
@@ -66,6 +69,15 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn("JED", split)
         self.assertEqual(split["JED"]["origin"], "JED")
         self.assertNotIn("origin", split["JED"]["fares"][0])
+
+    def test_build_deeplink_uses_saudia_wds_params(self) -> None:
+        url = updater.build_deeplink(
+            "https://www.saudia.com/booking", "DXB", "JED", "2026-11"
+        )
+        self.assertEqual(
+            url,
+            "https://www.saudia.com/booking?B_LOCATION=DXB&E_LOCATION=JED&trip_type=OW&DATE_1=2026-11-15T00%3A00%3A00",
+        )
 
     def test_missing_combo_not_invented(self) -> None:
         empty = {"origins": [], "routes": [], "months": ["2026-10"]}

@@ -18,5 +18,5 @@ services:
       - ./:/app
     environment:
       UPDATE_INTERVAL_SECONDS: "60"
-      DEEPLINK_BASE: https://example.com/book
+      DEEPLINK_BASE: https://www.saudia.com/booking
     command: ["python", "feed/updater/update.py", "--loop", "--interval", "60"]
