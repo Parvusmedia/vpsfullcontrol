@@ -37,7 +37,19 @@ def public_steps() -> dict[str, Any]:
                 ],
             }
         )
-    return {"intro": spec.get("intro", ""), "steps": steps}
+    intro = spec.get("intro_screen") or {}
+    return {
+        "intro": spec.get("intro", ""),
+        "intro_screen": {
+            "headline": intro.get("headline", "Encuentra tu máster en 3 pasos"),
+            "lede": intro.get("lede", spec.get("intro", "")),
+            "outcome": intro.get("outcome", ""),
+            "cta": intro.get("cta", "Empezar"),
+            "compact_headline": intro.get("compact_headline", "Tu máster en 3 toques"),
+            "compact_lede": intro.get("compact_lede", ""),
+        },
+        "steps": steps,
+    }
 
 
 def _option(step_id: str, option_id: str) -> dict[str, Any] | None:

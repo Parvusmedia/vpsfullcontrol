@@ -335,3 +335,18 @@ h1 {
 .choice:hover, .choice:focus { border-color: var(--gold); }
 .progress { color: var(--muted); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 8px; }
 
+.intro-roadmap { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 10px; }
+.intro-roadmap li {
+  display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff;
+}
+.intro-roadmap .step-num {
+  width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  background: var(--forest); color: #fff8ea; font-weight: 700; font-size: 14px;
+}
+.intro-roadmap b { display: block; font-size: 15px; margin-bottom: 4px; }
+.intro-roadmap span { display: block; font-size: 14px; color: var(--muted); line-height: 1.4; }
+.intro-outcome { margin: 12px 0 20px; max-width: none; }
+.facts { margin-bottom: 20px; }
+.facts li:before { content: "•"; color: var(--forest); }
+

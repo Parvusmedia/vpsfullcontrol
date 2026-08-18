@@ -1,8 +1,10 @@
 (function () {
   "use strict";
 
-  var state = { answers: {}, step: 0, spec: null, last: null };
+  var state = { answers: {}, step: 0, spec: null, last: null, phase: "intro" };
   var $wizard = document.getElementById("wizard");
+  var $intro = document.getElementById("intro-panel");
+  var $flow = document.getElementById("flow-panel");
   var $results = document.getElementById("results");
   var $debug = document.getElementById("debug");
   var names = {
@@ -15,30 +17,78 @@
 
   USJ.api("/api/guide").then(function (spec) {
     state.spec = spec;
-    renderStep();
-    refreshRemaining();
+    renderIntro();
   }).catch(function () {
-    $wizard.innerHTML = "<div class=\"card\"><p>Vamos a ayudarte a encontrar el programa adecuado.</p><p><a class=\"btn\" href=\"https://www.usj.es/estudios/posgrados/masteres\">Ver másteres USJ</a></p></div>";
+    $intro.innerHTML = "<div class=\"card\"><p>Vamos a ayudarte a encontrar el programa adecuado.</p><p><a class=\"btn\" href=\"https://www.usj.es/estudios/posgrados/masteres\">Ver másteres USJ</a></p></div>";
   });
 
   document.getElementById("back").onclick = function () {
-    if (!state.spec || state.step === 0) return;
+    if (!state.spec) return;
+    if (state.step === 0) {
+      renderIntro();
+      return;
+    }
     var ids = (state.spec.steps || []).map(function (s) { return s.id; });
     delete state.answers[ids[state.step]];
     state.step -= 1;
     delete state.answers[ids[state.step]];
     $results.classList.remove("visible");
-    $wizard.style.display = "";
+    $flow.hidden = false;
     renderStep();
     refreshRemaining();
   };
+
+  function introCopy() {
+    return (state.spec && state.spec.intro_screen) || {};
+  }
+
+  function stepHint(step, index) {
+    var hints = [
+      "Descartamos programas claramente incompatibles con tu titulación.",
+      "Filtramos por tu meta profesional. No prometemos empleo ni admisión.",
+      "Ajustamos por modalidad según el catálogo, no según la IA."
+    ];
+    return step.subtitle || hints[index] || "";
+  }
+
+  function renderIntro() {
+    state.phase = "intro";
+    state.answers = {};
+    state.step = 0;
+    $flow.hidden = true;
+    $results.classList.remove("visible");
+    $results.innerHTML = "";
+    var copy = introCopy();
+    var roadmap = (state.spec.steps || []).map(function (s, i) {
+      return "<li><span class=\"step-num\">" + (i + 1) + "</span><div><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></div></li>";
+    }).join("");
+    $intro.innerHTML =
+      "<p class=\"progress\">Cómo funciona</p>" +
+      "<h2 class=\"qtitle\">" + (copy.headline || "Encuentra tu máster en 3 pasos") + "</h2>" +
+      "<p class=\"lede\">" + (copy.lede || state.spec.intro || "") + "</p>" +
+      "<ol class=\"intro-roadmap\">" + roadmap + "</ol>" +
+      "<p class=\"lede intro-outcome\">" + (copy.outcome || "") + "</p>" +
+      "<button class=\"btn\" id=\"start-guide\" type=\"button\">" + (copy.cta || "Empezar orientación") + "</button>";
+    document.getElementById("start-guide").onclick = function () {
+      USJ.track("guide_started", { flow: "guide" });
+      startFlow();
+    };
+  }
+
+  function startFlow() {
+    state.phase = "step";
+    $intro.innerHTML = "";
+    $flow.hidden = false;
+    renderStep();
+    refreshRemaining();
+  }
 
   function renderStep() {
     var steps = state.spec.steps;
     var step = steps[state.step];
     document.getElementById("progress").textContent = "Pregunta " + (state.step + 1) + " de " + steps.length;
     document.getElementById("qtitle").textContent = step.title;
-    document.getElementById("qsub").textContent = step.subtitle || "";
+    document.getElementById("qsub").textContent = stepHint(step, state.step);
     var box = document.getElementById("choices");
     box.innerHTML = "";
     step.options.forEach(function (opt) {
@@ -48,7 +98,7 @@
       b.onclick = function () { pick(step.id, opt.id); };
       box.appendChild(b);
     });
-    document.getElementById("back").hidden = state.step === 0;
+    document.getElementById("back").hidden = false;
   }
 
   function pick(stepId, optionId) {
@@ -68,8 +118,6 @@
       method: "POST",
       body: JSON.stringify({ answers: state.answers })
     }).then(function (data) {
-      var hold = {};
-      (data.remaining || []).forEach(function (row) { hold[row.programme_id] = true; });
       var html = (data.remaining || []).map(function (row) {
         return "<span class=\"remain\">" + (names[row.programme_id] || row.programme) + "</span>";
       }).join("");
@@ -96,6 +144,11 @@
     return row && row.score_pct != null ? row.score_pct : Math.round((row.score || 0) * 100);
   }
 
+  function factsOf(best, limit) {
+    var card = best.programme_card || {};
+    return (card.approved_facts || []).slice(0, limit || 4);
+  }
+
   function renderResults(payload) {
     USJ.track("recommendation_generated", {
       match: payload.has_strong_match,
@@ -103,16 +156,18 @@
     });
     state.last = payload;
     USJ.saveState({ answers: state.answers, result: payload, signals: { profile_completed: true, recommendation_generated: true } });
-    $wizard.style.display = "none";
+    $flow.hidden = true;
+    $intro.innerHTML = "";
     $results.classList.add("visible");
     if (payload.fallback || !payload.best) {
       $results.innerHTML = "<div class=\"card\"><h2>Vamos a ayudarte a encontrar el programa adecuado.</h2><p><a class=\"btn\" href=\"https://www.usj.es/estudios/posgrados/masteres\">Ver másteres</a></p><p><button class=\"btn ghost\" id=\"restart\">Empezar de nuevo</button></p></div>";
-      document.getElementById("restart").onclick = restart;
+      document.getElementById("restart").onclick = renderIntro;
       return;
     }
     var best = payload.best;
     var alts = payload.alternatives || [];
     var title = payload.has_strong_match ? "Mejor encaje" : "Opciones más cercanas de este catálogo";
+    var facts = factsOf(best, 4);
     $results.innerHTML =
       "<div class=\"result-grid\">" +
         "<article class=\"card\">" +
@@ -120,9 +175,10 @@
           "<p class=\"score\">" + pct(best) + "% de encaje</p>" +
           "<h2 class=\"program-title\">" + best.programme + "</h2>" +
           "<div class=\"meta\"><span class=\"pill\">" + (best.modality_es || best.modality) + "</span><span class=\"pill\">" + best.ects + " ECTS</span><span class=\"eligibility\">" + (best.eligibility || "") + "</span></div>" +
+          "<p class=\"label\">Por qué encaja contigo</p>" +
           "<p>" + (best.explanation || "") + "</p>" +
-          "<p class=\"label\">Por qué encaja</p>" +
           "<ul class=\"reasons\">" + (best.reasons || []).map(function (r) { return "<li>" + r + "</li>"; }).join("") + "</ul>" +
+          (facts.length ? "<p class=\"label\">Qué ofrece este máster</p><ul class=\"reasons facts\">" + facts.map(function (f) { return "<li>" + f + "</li>"; }).join("") + "</ul>" : "") +
           "<div class=\"actions\">" +
             "<button class=\"btn\" id=\"explore\">Explorar este máster</button>" +
             "<button class=\"btn ghost\" id=\"ask\">Preguntar</button>" +
@@ -147,7 +203,7 @@
       document.getElementById("askbox").classList.add("open");
     };
     document.getElementById("askgo").onclick = askQuestion;
-    document.getElementById("restart").onclick = restart;
+    document.getElementById("restart").onclick = renderIntro;
     document.getElementById("talk").onclick = function () {
       USJ.track("lead_started", { channel: "whatsapp" });
       USJ.openWhatsApp({
@@ -159,18 +215,6 @@
       $debug.classList.add("open");
       $debug.textContent = JSON.stringify(payload.debug, null, 2);
     }
-  }
-
-  function restart() {
-    state.answers = {};
-    state.step = 0;
-    state.last = null;
-    $results.classList.remove("visible");
-    $results.innerHTML = "";
-    $wizard.style.display = "";
-    $debug.classList.remove("open");
-    renderStep();
-    refreshRemaining();
   }
 
   async function askQuestion() {

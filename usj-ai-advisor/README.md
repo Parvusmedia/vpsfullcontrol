@@ -81,7 +81,7 @@ Eligibility labels: `BUEN ENCAJE` · `PROBABLEMENTE ELEGIBLE` · `ADMISIÓN A RE
 `MEDIUM` — recommendation / programme explore.  
 `LOW` — started only.
 
-PII (name, email, phone) is collected only on **Talk to an advisor**. Analysis never sends those fields to an LLM.
+PII is not collected in the ad. **Seguir por WhatsApp** sends the person to a prefilled WhatsApp message about the recommended master's.
 
 ## KPIs this product can measure
 
