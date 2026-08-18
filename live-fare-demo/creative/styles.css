@@ -1,6 +1,6 @@
 :root {
-  --navy: #071526;
-  --navy-2: #0d243c;
+  --navy: #062318;
+  --navy-2: #0a3a28;
   --gold: #c9a45c;
   --gold-soft: rgba(201, 164, 92, 0.35);
   --cream: #f6f0e4;
@@ -30,7 +30,7 @@ body {
   color: var(--cream);
   background:
     radial-gradient(1200px 280px at 50% -80px, rgba(201, 164, 92, 0.18), transparent 55%),
-    linear-gradient(165deg, #123152 0%, var(--navy) 42%, #040b14 100%);
+    linear-gradient(165deg, #0f4c34 0%, var(--navy) 42%, #03140e 100%);
   font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   display: flex;
   flex-direction: column;
@@ -49,7 +49,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
 }
 
 .mark {
@@ -75,7 +75,7 @@ body {
 }
 
 .field {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .label {
@@ -145,7 +145,7 @@ select:focus {
 
 .price {
   font-family: Palatino, "Palatino Linotype", Georgia, serif;
-  font-size: 44px;
+  font-size: 34px;
   line-height: 1.1;
   margin: 4px 0 8px;
 }

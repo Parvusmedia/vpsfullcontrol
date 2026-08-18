@@ -9,15 +9,17 @@ import os
 import random
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE_PATH = ROOT / "feed" / "source" / "fares.json"
+SOURCE_PATH = ROOT / "feed" / "source" / "routes.json"
 PUBLIC_DIR = ROOT / "feed" / "public"
-PUBLIC_FEED = PUBLIC_DIR / "MAD.json"
+NETWORK_FEED = PUBLIC_DIR / "network.json"
 HEALTH_PATH = PUBLIC_DIR / "health.json"
+SEASONAL = {"2026-10": 1.0, "2026-11": 1.05, "2026-12": 1.10}
 
 
 def utc_now() -> datetime:
@@ -37,7 +39,6 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def atomic_write_json(path: Path, payload: Any) -> None:
-    """Write via MAD.tmp.json (or health.tmp.json) then rename."""
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
     tmp = path.parent / f"{path.stem}.tmp.json"
     encoded = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
@@ -47,9 +48,9 @@ def atomic_write_json(path: Path, payload: Any) -> None:
 
 def fare_key(fare: dict[str, Any]) -> tuple[str, str, str]:
     return (
+        str(fare.get("origin", "")),
         str(fare.get("destination", "")),
         str(fare.get("month", "")),
-        str(fare.get("currency", "EUR")),
     )
 
 
@@ -66,7 +67,8 @@ def last_prices(public: dict[str, Any] | None) -> dict[tuple[str, str, str], int
 
 
 def jitter_price(current: int, min_price: int, max_price: int) -> int:
-    delta = random.randint(-6, 6)
+    span = max(3, min(40, round(current * 0.012)))
+    delta = random.randint(-span, span)
     if delta == 0:
         delta = random.choice((-1, 1))
     nxt = current + delta
@@ -78,59 +80,102 @@ def build_deeplink(base: str, origin: str, destination: str, month: str) -> str:
     return f"{base}{sep}origin={origin}&destination={destination}&month={month}"
 
 
-def public_fare(item: dict[str, Any], origin: str, deeplink_base: str, price: int) -> dict[str, Any]:
-    destination = str(item["destination"])
-    month = str(item["month"])
+def origin_meta(source: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {str(item["code"]): item for item in source.get("origins") or []}
+
+
+def months_of(source: dict[str, Any]) -> list[str]:
+    months = list(source.get("months") or ["2026-10", "2026-11", "2026-12"])
+    return months
+
+
+def month_base_price(route: dict[str, Any], month: str) -> int:
+    pinned = (route.get("prices") or {}).get(month)
+    if pinned is not None:
+        return int(pinned)
+    base = int(route["price"])
+    factor = SEASONAL.get(month, 1.0)
+    return max(1, round(base * factor))
+
+
+def public_fare(route: dict[str, Any], origin: dict[str, Any], month: str, price: int, deeplink_base: str) -> dict[str, Any]:
+    destination = str(route["destination"])
+    origin_code = str(route["origin"])
     return {
+        "origin": origin_code,
+        "origin_name": str(origin.get("name") or origin_code),
         "destination": destination,
-        "destination_name": str(item.get("destination_name") or destination),
+        "destination_name": str(route.get("destination_name") or destination),
         "month": month,
         "price": int(price),
-        "currency": str(item.get("currency") or "EUR"),
-        "deeplink": build_deeplink(deeplink_base, origin, destination, month),
+        "currency": str(route.get("currency") or origin.get("currency") or "SAR"),
+        "deeplink": build_deeplink(deeplink_base, origin_code, destination, month),
     }
 
 
-def generate_feed(
+def generate_network(
     source: dict[str, Any],
     previous: dict[str, Any] | None,
     *,
     jitter: bool,
 ) -> dict[str, Any]:
-    origin = str(source.get("origin") or "MAD")
     deeplink_base = os.environ.get("DEEPLINK_BASE") or str(
-        source.get("deeplink_base") or "https://example.com/book"
+        source.get("deeplink_base") or "https://www.saudia.com/book"
     )
+    origins = origin_meta(source)
     prev = last_prices(previous)
-    fares = []
-    for item in source.get("fares") or []:
-        key = fare_key(item)
-        base_price = int(item["price"])
-        min_price = int(item.get("min_price", max(1, base_price - 40)))
-        max_price = int(item.get("max_price", base_price + 50))
-        current = prev.get(key, base_price)
-        price = jitter_price(current, min_price, max_price) if jitter else current
-        fares.append(public_fare(item, origin, deeplink_base, price))
+    fares: list[dict[str, Any]] = []
+    for route in source.get("routes") or []:
+        origin_code = str(route["origin"])
+        origin = origins.get(origin_code) or {"code": origin_code, "name": origin_code}
+        for month in months_of(source):
+            base_price = month_base_price(route, month)
+            min_price = int(route.get("min_price", max(1, round(base_price * 0.86))))
+            max_price = int(route.get("max_price", round(base_price * 1.14)))
+            key = (origin_code, str(route["destination"]), month)
+            current = prev.get(key, base_price)
+            price = jitter_price(current, min_price, max_price) if jitter else current
+            fares.append(public_fare(route, origin, month, price, deeplink_base))
     return {
-        "origin": origin,
         "updated_at": iso_z(utc_now()),
+        "origins": source.get("origins") or [],
         "fares": fares,
     }
 
 
-def write_health(feed_path: Path, feed: dict[str, Any] | None) -> dict[str, Any]:
-    exists = feed_path.is_file()
+def split_origin_feeds(network: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    names = {str(item["code"]): str(item.get("name") or item["code"]) for item in network.get("origins") or []}
+    for fare in network.get("fares") or []:
+        origin = str(fare["origin"])
+        slim = {k: v for k, v in fare.items() if k not in ("origin", "origin_name")}
+        grouped[origin].append(slim)
+    out = {}
+    for origin, fares in grouped.items():
+        out[origin] = {
+            "origin": origin,
+            "origin_name": names.get(origin, origin),
+            "updated_at": network["updated_at"],
+            "fares": fares,
+        }
+    return out
+
+
+def write_health(network: dict[str, Any] | None) -> dict[str, Any]:
+    exists = NETWORK_FEED.is_file()
     age = None
     updated_at = None
     fares_count = 0
+    origins: list[str] = []
     status = "ok"
-    if feed:
-        updated_at = str(feed.get("updated_at") or "")
-        fares_count = len(feed.get("fares") or [])
+    if network:
+        updated_at = str(network.get("updated_at") or "")
+        fares_count = len(network.get("fares") or [])
+        origins = [str(item["code"]) for item in network.get("origins") or []]
         parsed = datetime.strptime(updated_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         age = max(0, int((utc_now() - parsed).total_seconds()))
     elif exists:
-        age = max(0, int(time.time() - feed_path.stat().st_mtime))
+        age = max(0, int(time.time() - NETWORK_FEED.stat().st_mtime))
         status = "degraded"
     else:
         status = "missing"
@@ -140,50 +185,74 @@ def write_health(feed_path: Path, feed: dict[str, Any] | None) -> dict[str, Any]
         "feed_age_seconds": age,
         "updated_at": updated_at,
         "fares_count": fares_count,
+        "origins": origins,
     }
     atomic_write_json(HEALTH_PATH, payload)
     return payload
 
 
 def set_fare(source: dict[str, Any], origin: str, dest: str, month: str, price: int) -> dict[str, Any]:
-    if str(source.get("origin")) != origin:
-        raise SystemExit(f"Source origin is {source.get('origin')}, not {origin}")
     matched = False
-    for item in source.get("fares") or []:
-        if item.get("destination") == dest and item.get("month") == month:
-            item["price"] = price
-            item["min_price"] = max(1, price - 20)
-            item["max_price"] = price + 20
+    for route in source.get("routes") or []:
+        if route.get("origin") == origin and route.get("destination") == dest:
+            prices = dict(route.get("prices") or {})
+            prices[month] = price
+            route["prices"] = prices
+            route["min_price"] = max(1, min(int(route.get("min_price", price)), price - 20, price))
+            route["max_price"] = max(int(route.get("max_price", price)), price + 20, price)
             matched = True
             break
     if not matched:
-        raise SystemExit(f"No fare {origin}-{dest}-{month} in source")
+        raise SystemExit(f"No route {origin}-{dest} in source")
+    if month not in months_of(source):
+        raise SystemExit(f"Month {month} is not in source months")
     atomic_write_json(SOURCE_PATH, source)
     return source
 
 
 def apply_stale(feed: dict[str, Any], minutes: int) -> dict[str, Any]:
-    feed["updated_at"] = iso_z(utc_now() - timedelta(minutes=minutes))
+    stamp = iso_z(utc_now() - timedelta(minutes=minutes))
+    feed["updated_at"] = stamp
     return feed
+
+
+def publish(network: dict[str, Any]) -> None:
+    atomic_write_json(NETWORK_FEED, network)
+    origin_feeds = split_origin_feeds(network)
+    wanted = {f"{code}.json" for code in origin_feeds}
+    wanted.update({"network.json", "health.json"})
+    for code, payload in origin_feeds.items():
+        atomic_write_json(PUBLIC_DIR / f"{code}.json", payload)
+    for stale in PUBLIC_DIR.glob("*.json"):
+        if stale.name.endswith(".tmp.json"):
+            continue
+        if stale.name not in wanted:
+            stale.unlink()
+    write_health(network)
 
 
 def run_update(*, jitter: bool, stale_minutes: int | None = None) -> dict[str, Any]:
     started = time.perf_counter()
     source = load_json(SOURCE_PATH)
-    previous = load_json(PUBLIC_FEED) if PUBLIC_FEED.is_file() else None
-    feed = generate_feed(source, previous, jitter=jitter)
+    previous = load_json(NETWORK_FEED) if NETWORK_FEED.is_file() else None
+    network = generate_network(source, previous, jitter=jitter)
     if stale_minutes is not None:
-        feed = apply_stale(feed, stale_minutes)
-    atomic_write_json(PUBLIC_FEED, feed)
-    write_health(PUBLIC_FEED, feed)
+        network = apply_stale(network, stale_minutes)
+        for fare in network["fares"]:
+            pass
+        origin_feeds = split_origin_feeds(network)
+        for payload in origin_feeds.values():
+            payload["updated_at"] = network["updated_at"]
+    publish(network)
     elapsed_ms = (time.perf_counter() - started) * 1000
     stamp = utc_now().strftime("%Y-%m-%d %H:%M:%S")
+    origins = len(network.get("origins") or [])
     print(
-        f"{stamp}\nUpdated {PUBLIC_FEED.name}\n{len(feed['fares'])} fares\n"
-        f"generation_time={elapsed_ms:.0f}ms",
+        f"{stamp}\nUpdated network.json + {origins} origin files\n"
+        f"{len(network['fares'])} fares\ngeneration_time={elapsed_ms:.0f}ms",
         flush=True,
     )
-    return feed
+    return network
 
 
 def parse_args() -> argparse.Namespace:
@@ -220,15 +289,17 @@ def main() -> int:
         origin, dest, month, price_s = args.set
         source = load_json(SOURCE_PATH)
         set_fare(source, origin.upper(), dest.upper(), month, int(price_s))
-        previous = load_json(PUBLIC_FEED) if PUBLIC_FEED.is_file() else None
-        feed = generate_feed(source, previous, jitter=False)
-        # Force the pinned price even if previous JSON still has the old value.
-        for fare in feed["fares"]:
-            if fare["destination"] == dest.upper() and fare["month"] == month:
+        previous = load_json(NETWORK_FEED) if NETWORK_FEED.is_file() else None
+        network = generate_network(source, previous, jitter=False)
+        for fare in network["fares"]:
+            if (
+                fare["origin"] == origin.upper()
+                and fare["destination"] == dest.upper()
+                and fare["month"] == month
+            ):
                 fare["price"] = int(price_s)
-        feed["updated_at"] = iso_z(utc_now())
-        atomic_write_json(PUBLIC_FEED, feed)
-        write_health(PUBLIC_FEED, feed)
+        network["updated_at"] = iso_z(utc_now())
+        publish(network)
         print(f"Pinned {origin.upper()}-{dest.upper()}-{month} to {price_s}", flush=True)
         return 0
 

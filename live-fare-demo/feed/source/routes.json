@@ -1,0 +1,741 @@
+{
+  "deeplink_base": "https://www.saudia.com/book",
+  "months": [
+    "2026-10",
+    "2026-11",
+    "2026-12"
+  ],
+  "origins": [
+    {
+      "code": "JED",
+      "name": "Jeddah",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "RUH",
+      "name": "Riyadh",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "MED",
+      "name": "Medina",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "DMM",
+      "name": "Dammam",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "DXB",
+      "name": "Dubai",
+      "country": "AE",
+      "country_name": "United Arab Emirates",
+      "currency": "AED"
+    },
+    {
+      "code": "AUH",
+      "name": "Abu Dhabi",
+      "country": "AE",
+      "country_name": "United Arab Emirates",
+      "currency": "AED"
+    },
+    {
+      "code": "JFK",
+      "name": "New York",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "IAD",
+      "name": "Washington",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "LAX",
+      "name": "Los Angeles",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    }
+  ],
+  "routes": [
+    {
+      "origin": "JED",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "SAR",
+      "price": 380,
+      "min_price": 327,
+      "max_price": 433
+    },
+    {
+      "origin": "JED",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "currency": "SAR",
+      "price": 280,
+      "min_price": 241,
+      "max_price": 319
+    },
+    {
+      "origin": "JED",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "currency": "SAR",
+      "price": 420,
+      "min_price": 361,
+      "max_price": 479
+    },
+    {
+      "origin": "JED",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "currency": "SAR",
+      "price": 520,
+      "min_price": 447,
+      "max_price": 593
+    },
+    {
+      "origin": "JED",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "currency": "SAR",
+      "price": 560,
+      "min_price": 482,
+      "max_price": 638
+    },
+    {
+      "origin": "JED",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "currency": "SAR",
+      "price": 980,
+      "min_price": 843,
+      "max_price": 1117
+    },
+    {
+      "origin": "JED",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "currency": "SAR",
+      "price": 1180,
+      "min_price": 1015,
+      "max_price": 1345
+    },
+    {
+      "origin": "JED",
+      "destination": "LHR",
+      "destination_name": "London",
+      "currency": "SAR",
+      "price": 2450,
+      "min_price": 2107,
+      "max_price": 2793
+    },
+    {
+      "origin": "JED",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "currency": "SAR",
+      "price": 2380,
+      "min_price": 2047,
+      "max_price": 2713
+    },
+    {
+      "origin": "JED",
+      "destination": "MAD",
+      "destination_name": "Madrid",
+      "currency": "SAR",
+      "price": 1890,
+      "min_price": 1625,
+      "max_price": 2155
+    },
+    {
+      "origin": "JED",
+      "destination": "BCN",
+      "destination_name": "Barcelona",
+      "currency": "SAR",
+      "price": 1920,
+      "min_price": 1651,
+      "max_price": 2189
+    },
+    {
+      "origin": "JED",
+      "destination": "FCO",
+      "destination_name": "Rome",
+      "currency": "SAR",
+      "price": 2100,
+      "min_price": 1806,
+      "max_price": 2394
+    },
+    {
+      "origin": "JED",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "currency": "SAR",
+      "price": 4200,
+      "min_price": 3612,
+      "max_price": 4788
+    },
+    {
+      "origin": "JED",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "currency": "SAR",
+      "price": 4100,
+      "min_price": 3526,
+      "max_price": 4674
+    },
+    {
+      "origin": "JED",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "currency": "SAR",
+      "price": 1450,
+      "min_price": 1247,
+      "max_price": 1653
+    },
+    {
+      "origin": "JED",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "currency": "SAR",
+      "price": 1520,
+      "min_price": 1307,
+      "max_price": 1733
+    },
+    {
+      "origin": "JED",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "currency": "SAR",
+      "price": 1780,
+      "min_price": 1531,
+      "max_price": 2029
+    },
+    {
+      "origin": "JED",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "currency": "SAR",
+      "price": 1850,
+      "min_price": 1591,
+      "max_price": 2109
+    },
+    {
+      "origin": "JED",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "currency": "SAR",
+      "price": 2450,
+      "min_price": 2107,
+      "max_price": 2793
+    },
+    {
+      "origin": "JED",
+      "destination": "MNL",
+      "destination_name": "Manila",
+      "currency": "SAR",
+      "price": 2100,
+      "min_price": 1806,
+      "max_price": 2394
+    },
+    {
+      "origin": "RUH",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "SAR",
+      "price": 380,
+      "min_price": 327,
+      "max_price": 433
+    },
+    {
+      "origin": "RUH",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "currency": "SAR",
+      "price": 350,
+      "min_price": 301,
+      "max_price": 399
+    },
+    {
+      "origin": "RUH",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "currency": "SAR",
+      "price": 320,
+      "min_price": 275,
+      "max_price": 365
+    },
+    {
+      "origin": "RUH",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "currency": "SAR",
+      "price": 540,
+      "min_price": 464,
+      "max_price": 616
+    },
+    {
+      "origin": "RUH",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "currency": "SAR",
+      "price": 580,
+      "min_price": 499,
+      "max_price": 661
+    },
+    {
+      "origin": "RUH",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "currency": "SAR",
+      "price": 1020,
+      "min_price": 877,
+      "max_price": 1163
+    },
+    {
+      "origin": "RUH",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "currency": "SAR",
+      "price": 1280,
+      "min_price": 1101,
+      "max_price": 1459
+    },
+    {
+      "origin": "RUH",
+      "destination": "LHR",
+      "destination_name": "London",
+      "currency": "SAR",
+      "price": 2520,
+      "min_price": 2167,
+      "max_price": 2873
+    },
+    {
+      "origin": "RUH",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "currency": "SAR",
+      "price": 2480,
+      "min_price": 2133,
+      "max_price": 2827
+    },
+    {
+      "origin": "RUH",
+      "destination": "FRA",
+      "destination_name": "Frankfurt",
+      "currency": "SAR",
+      "price": 2350,
+      "min_price": 2021,
+      "max_price": 2679
+    },
+    {
+      "origin": "RUH",
+      "destination": "MXP",
+      "destination_name": "Milan",
+      "currency": "SAR",
+      "price": 2280,
+      "min_price": 1961,
+      "max_price": 2599
+    },
+    {
+      "origin": "RUH",
+      "destination": "GVA",
+      "destination_name": "Geneva",
+      "currency": "SAR",
+      "price": 2410,
+      "min_price": 2073,
+      "max_price": 2747
+    },
+    {
+      "origin": "RUH",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "currency": "SAR",
+      "price": 4350,
+      "min_price": 3741,
+      "max_price": 4959
+    },
+    {
+      "origin": "RUH",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "currency": "SAR",
+      "price": 4280,
+      "min_price": 3681,
+      "max_price": 4879
+    },
+    {
+      "origin": "RUH",
+      "destination": "LAX",
+      "destination_name": "Los Angeles",
+      "currency": "SAR",
+      "price": 4800,
+      "min_price": 4128,
+      "max_price": 5472
+    },
+    {
+      "origin": "RUH",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "currency": "SAR",
+      "price": 1510,
+      "min_price": 1299,
+      "max_price": 1721
+    },
+    {
+      "origin": "RUH",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "currency": "SAR",
+      "price": 1580,
+      "min_price": 1359,
+      "max_price": 1801
+    },
+    {
+      "origin": "RUH",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "currency": "SAR",
+      "price": 1840,
+      "min_price": 1582,
+      "max_price": 2098
+    },
+    {
+      "origin": "RUH",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "currency": "SAR",
+      "price": 1910,
+      "min_price": 1643,
+      "max_price": 2177
+    },
+    {
+      "origin": "RUH",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "currency": "SAR",
+      "price": 2520,
+      "min_price": 2167,
+      "max_price": 2873
+    },
+    {
+      "origin": "MED",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "SAR",
+      "price": 280,
+      "min_price": 241,
+      "max_price": 319
+    },
+    {
+      "origin": "MED",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "SAR",
+      "price": 350,
+      "min_price": 301,
+      "max_price": 399
+    },
+    {
+      "origin": "MED",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "currency": "SAR",
+      "price": 450,
+      "min_price": 387,
+      "max_price": 513
+    },
+    {
+      "origin": "MED",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "currency": "SAR",
+      "price": 610,
+      "min_price": 525,
+      "max_price": 695
+    },
+    {
+      "origin": "MED",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "currency": "SAR",
+      "price": 890,
+      "min_price": 765,
+      "max_price": 1015
+    },
+    {
+      "origin": "MED",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "currency": "SAR",
+      "price": 1050,
+      "min_price": 903,
+      "max_price": 1197
+    },
+    {
+      "origin": "MED",
+      "destination": "KHI",
+      "destination_name": "Karachi",
+      "currency": "SAR",
+      "price": 980,
+      "min_price": 843,
+      "max_price": 1117
+    },
+    {
+      "origin": "MED",
+      "destination": "DAC",
+      "destination_name": "Dhaka",
+      "currency": "SAR",
+      "price": 1320,
+      "min_price": 1135,
+      "max_price": 1505
+    },
+    {
+      "origin": "MED",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "currency": "SAR",
+      "price": 1380,
+      "min_price": 1187,
+      "max_price": 1573
+    },
+    {
+      "origin": "MED",
+      "destination": "KWI",
+      "destination_name": "Kuwait",
+      "currency": "SAR",
+      "price": 720,
+      "min_price": 619,
+      "max_price": 821
+    },
+    {
+      "origin": "DMM",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "SAR",
+      "price": 420,
+      "min_price": 361,
+      "max_price": 479
+    },
+    {
+      "origin": "DMM",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "SAR",
+      "price": 320,
+      "min_price": 275,
+      "max_price": 365
+    },
+    {
+      "origin": "DMM",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "currency": "SAR",
+      "price": 450,
+      "min_price": 387,
+      "max_price": 513
+    },
+    {
+      "origin": "DMM",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "currency": "SAR",
+      "price": 480,
+      "min_price": 413,
+      "max_price": 547
+    },
+    {
+      "origin": "DMM",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "currency": "SAR",
+      "price": 510,
+      "min_price": 439,
+      "max_price": 581
+    },
+    {
+      "origin": "DMM",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "currency": "SAR",
+      "price": 1390,
+      "min_price": 1195,
+      "max_price": 1585
+    },
+    {
+      "origin": "DMM",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "currency": "SAR",
+      "price": 1460,
+      "min_price": 1256,
+      "max_price": 1664
+    },
+    {
+      "origin": "DMM",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "currency": "SAR",
+      "price": 940,
+      "min_price": 808,
+      "max_price": 1072
+    },
+    {
+      "origin": "DMM",
+      "destination": "BAH",
+      "destination_name": "Bahrain",
+      "currency": "SAR",
+      "price": 390,
+      "min_price": 335,
+      "max_price": 445
+    },
+    {
+      "origin": "DMM",
+      "destination": "MCT",
+      "destination_name": "Muscat",
+      "currency": "SAR",
+      "price": 520,
+      "min_price": 447,
+      "max_price": 593
+    },
+    {
+      "origin": "DXB",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "AED",
+      "price": 720,
+      "min_price": 619,
+      "max_price": 821
+    },
+    {
+      "origin": "DXB",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "AED",
+      "price": 780,
+      "min_price": 671,
+      "max_price": 889
+    },
+    {
+      "origin": "DXB",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "currency": "AED",
+      "price": 690,
+      "min_price": 593,
+      "max_price": 787
+    },
+    {
+      "origin": "DXB",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "currency": "AED",
+      "price": 810,
+      "min_price": 697,
+      "max_price": 923
+    },
+    {
+      "origin": "AUH",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "AED",
+      "price": 760,
+      "min_price": 654,
+      "max_price": 866
+    },
+    {
+      "origin": "AUH",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "AED",
+      "price": 820,
+      "min_price": 705,
+      "max_price": 935
+    },
+    {
+      "origin": "AUH",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "currency": "AED",
+      "price": 730,
+      "min_price": 628,
+      "max_price": 832
+    },
+    {
+      "origin": "AUH",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "currency": "AED",
+      "price": 850,
+      "min_price": 731,
+      "max_price": 969
+    },
+    {
+      "origin": "JFK",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "USD",
+      "price": 980,
+      "min_price": 843,
+      "max_price": 1117
+    },
+    {
+      "origin": "JFK",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "USD",
+      "price": 1020,
+      "min_price": 877,
+      "max_price": 1163
+    },
+    {
+      "origin": "IAD",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "USD",
+      "price": 940,
+      "min_price": 808,
+      "max_price": 1072
+    },
+    {
+      "origin": "IAD",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "USD",
+      "price": 990,
+      "min_price": 851,
+      "max_price": 1129
+    },
+    {
+      "origin": "LAX",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "currency": "USD",
+      "price": 1180,
+      "min_price": 1015,
+      "max_price": 1345
+    },
+    {
+      "origin": "LAX",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "currency": "USD",
+      "price": 1240,
+      "min_price": 1066,
+      "max_price": 1414
+    }
+  ]
+}

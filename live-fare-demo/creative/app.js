@@ -2,28 +2,30 @@
   "use strict";
 
   const CONFIG = {
-    feedUrl: "https://flights.pmediaplus.com/fares/MAD.json",
-    origin: "MAD",
-    originName: "Madrid",
+    feedUrl: "https://flights.pmediaplus.com/fares/network.json",
+    defaultOrigin: "JED",
     maxDataAgeMinutes: 30,
-    fetchTimeoutMs: 3000,
+    fetchTimeoutMs: 4000,
+    fallbackOrigin: "JED",
+    fallbackOriginName: "Jeddah",
     fallbackDestination: "RUH",
     fallbackDestinationName: "Riyadh",
-    fallbackDeeplink: "https://example.com/book?origin=MAD&destination=RUH",
+    fallbackDeeplink: "https://www.saudia.com/book?origin=JED&destination=RUH",
     clickTag: ""
   };
-
-  const DESTINATIONS = [
-    { code: "RUH", name: "Riyadh" },
-    { code: "JED", name: "Jeddah" },
-    { code: "DXB", name: "Dubai" }
-  ];
 
   const MONTHS = [
     { value: "2026-10", label: "October 2026" },
     { value: "2026-11", label: "November 2026" },
     { value: "2026-12", label: "December 2026" }
   ];
+
+  const COUNTRY_ORDER = ["SA", "AE", "US"];
+  const COUNTRY_LABEL = {
+    SA: "Saudi Arabia",
+    AE: "United Arab Emirates",
+    US: "United States"
+  };
 
   const params = new URLSearchParams(window.location.search);
   const debugEnabled = params.get("debug") === "1";
@@ -32,19 +34,18 @@
     if (debugEnabled && params.get("feed")) return params.get("feed");
     const host = window.location.hostname;
     if (host === "localhost" || host === "127.0.0.1" || host === "flights.pmediaplus.com") {
-      return "/fares/MAD.json";
+      return "/fares/network.json";
     }
     return CONFIG.feedUrl;
   }
 
   const els = {
+    origin: document.getElementById("origin"),
     destination: document.getElementById("destination"),
     month: document.getElementById("month"),
-    originLabel: document.getElementById("originLabel"),
     priceKicker: document.getElementById("priceKicker"),
     priceValue: document.getElementById("priceValue"),
     routeLine: document.getElementById("routeLine"),
-    priceBlock: document.getElementById("priceBlock"),
     cta: document.getElementById("cta"),
     debug: document.getElementById("debug"),
     banner: document.getElementById("banner")
@@ -55,6 +56,99 @@
   let feedError = "";
   let currentFare = null;
 
+  function originMeta() {
+    const list = (feed && feed.origins) || [];
+    const map = {};
+    list.forEach(function (item) {
+      map[item.code] = item;
+    });
+    return map;
+  }
+
+  function selectedOriginMeta() {
+    const code = els.origin.value || CONFIG.fallbackOrigin;
+    return originMeta()[code] || {
+      code: code,
+      name: code,
+      country: "",
+      country_name: ""
+    };
+  }
+
+  function destinationsForOrigin(origin) {
+    const seen = {};
+    const out = [];
+    if (!feed || !Array.isArray(feed.fares)) return out;
+    feed.fares.forEach(function (fare) {
+      if (fare.origin !== origin || seen[fare.destination]) return;
+      seen[fare.destination] = true;
+      out.push({
+        code: fare.destination,
+        name: fare.destination_name || fare.destination
+      });
+    });
+    out.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    return out;
+  }
+
+  function fillOriginSelect() {
+    const previous = els.origin.value;
+    els.origin.innerHTML = "";
+    const origins = ((feed && feed.origins) || []).slice();
+    origins.sort(function (a, b) {
+      const ca = COUNTRY_ORDER.indexOf(a.country);
+      const cb = COUNTRY_ORDER.indexOf(b.country);
+      if (ca !== cb) return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb);
+      return String(a.name).localeCompare(String(b.name));
+    });
+    const groups = {};
+    origins.forEach(function (item) {
+      const key = item.country || "XX";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    COUNTRY_ORDER.concat(Object.keys(groups)).forEach(function (country) {
+      if (groups[country] && !els.origin.querySelector('optgroup[data-country="' + country + '"]')) {
+        const group = document.createElement("optgroup");
+        group.label = COUNTRY_LABEL[country] || groups[country][0].country_name || country;
+        group.setAttribute("data-country", country);
+        groups[country].forEach(function (item) {
+          const opt = document.createElement("option");
+          opt.value = item.code;
+          opt.textContent = item.name + " (" + item.code + ")";
+          group.appendChild(opt);
+        });
+        els.origin.appendChild(group);
+        delete groups[country];
+      }
+    });
+    const preferred = previous || CONFIG.defaultOrigin;
+    if ([].some.call(els.origin.options, function (opt) { return opt.value === preferred; })) {
+      els.origin.value = preferred;
+    } else if (els.origin.options.length) {
+      els.origin.selectedIndex = 0;
+    }
+  }
+
+  function fillDestinationSelect() {
+    const previous = els.destination.value;
+    const dests = destinationsForOrigin(els.origin.value);
+    els.destination.innerHTML = "";
+    dests.forEach(function (item) {
+      const opt = document.createElement("option");
+      opt.value = item.code;
+      opt.textContent = item.name;
+      els.destination.appendChild(opt);
+    });
+    if ([].some.call(els.destination.options, function (opt) { return opt.value === previous; })) {
+      els.destination.value = previous;
+    } else if ([].some.call(els.destination.options, function (opt) { return opt.value === CONFIG.fallbackDestination; })) {
+      els.destination.value = CONFIG.fallbackDestination;
+    } else if (els.destination.options.length) {
+      els.destination.selectedIndex = 0;
+    }
+  }
+
   function fillSelect(select, items, getValue, getLabel) {
     select.innerHTML = "";
     items.forEach(function (item) {
@@ -63,12 +157,6 @@
       opt.textContent = getLabel(item);
       select.appendChild(opt);
     });
-  }
-
-  function selectedDestination() {
-    return DESTINATIONS.find(function (d) {
-      return d.code === els.destination.value;
-    }) || DESTINATIONS[0];
   }
 
   function getClickTag() {
@@ -93,26 +181,30 @@
     return Date.now() - parsed <= CONFIG.maxDataAgeMinutes * 60 * 1000;
   }
 
-  function findFare(dest, month) {
+  function findFare(origin, dest, month) {
     if (!feed || !Array.isArray(feed.fares)) return null;
     for (let i = 0; i < feed.fares.length; i += 1) {
       const fare = feed.fares[i];
-      if (fare.destination === dest && fare.month === month) return fare;
+      if (fare.origin === origin && fare.destination === dest && fare.month === month) {
+        return fare;
+      }
     }
     return null;
   }
 
   function formatPrice(amount, currency) {
     if (typeof amount !== "number" || Number.isNaN(amount)) return null;
-    const symbol = currency === "EUR" ? "€" : currency + " ";
-    return "From " + symbol + Math.round(amount);
+    const symbols = { EUR: "€", USD: "$", GBP: "£" };
+    if (symbols[currency]) return "FROM " + symbols[currency] + Math.round(amount);
+    return "FROM " + (currency || "") + " " + Math.round(amount);
   }
 
   function showFallback(reason) {
-    const dest = selectedDestination();
+    const origin = selectedOriginMeta();
+    const destName = (els.destination.options[els.destination.selectedIndex] || {}).textContent || CONFIG.fallbackDestinationName;
     currentFare = null;
     els.banner.classList.add("is-fallback");
-    els.priceKicker.textContent = "Fly " + CONFIG.originName + " → " + dest.name;
+    els.priceKicker.textContent = "Fly " + (origin.name || CONFIG.fallbackOriginName) + " → " + destName;
     els.priceValue.textContent = "Discover our latest fares";
     els.priceValue.classList.add("fallback");
     els.routeLine.textContent = "";
@@ -121,7 +213,7 @@
   }
 
   function showFare(fare) {
-    const formatted = formatPrice(fare.price, fare.currency || "EUR");
+    const formatted = formatPrice(fare.price, fare.currency || "SAR");
     if (!formatted) {
       showFallback("invalid-price");
       return;
@@ -129,29 +221,30 @@
     currentFare = fare;
     els.banner.classList.remove("is-fallback");
     els.priceKicker.textContent = "From";
-    els.priceValue.textContent = formatted.replace(/^From /, "From ");
+    els.priceValue.textContent = formatted;
     els.priceValue.classList.remove("fallback");
-    // Display as "FROM €379"
-    els.priceValue.textContent = formatted.replace("From ", "FROM ");
     els.routeLine.textContent =
-      CONFIG.originName + " → " + (fare.destination_name || fare.destination);
+      (fare.origin_name || fare.origin) + " → " + (fare.destination_name || fare.destination);
     els.cta.setAttribute("href", resolveExitUrl(fare.deeplink));
     renderDebug("ok");
   }
 
   function updateView() {
-    const dest = els.destination.value;
-    const month = els.month.value;
     if (!feedLoaded || !feed || !isFresh(feed.updated_at)) {
       showFallback(!feedLoaded ? (feedError || "feed-unavailable") : "stale");
       return;
     }
-    const fare = findFare(dest, month);
+    const fare = findFare(els.origin.value, els.destination.value, els.month.value);
     if (!fare) {
       showFallback("missing-combo");
       return;
     }
     showFare(fare);
+  }
+
+  function onOriginChange() {
+    fillDestinationSelect();
+    updateView();
   }
 
   function ageLabel(updatedAt) {
@@ -170,15 +263,14 @@
 
   function renderDebug(status) {
     if (!debugEnabled) return;
-    const dest = selectedDestination();
-    const fareKey = CONFIG.origin + "-" + dest.code + "-" + els.month.value;
+    const fareKey = [els.origin.value, els.destination.value, els.month.value].join("-");
     const lines = [
       "Feed loaded: " + (feedLoaded && feed ? "YES" : "NO"),
       "Updated: " + (feed && feed.updated_at ? clock(feed.updated_at) : "n/a"),
       "Age: " + (feed && feed.updated_at ? ageLabel(feed.updated_at) : "n/a"),
       "Feed URL: " + resolveFeedUrl(),
       "Fare: " + fareKey,
-      "Price: " + (currentFare ? currentFare.price + " " + (currentFare.currency || "EUR") : "fallback"),
+      "Price: " + (currentFare ? currentFare.price + " " + (currentFare.currency || "") : "fallback"),
       "Status: " + status
     ];
     els.debug.hidden = false;
@@ -206,6 +298,8 @@
       feed = data;
       feedLoaded = true;
       feedError = "";
+      fillOriginSelect();
+      fillDestinationSelect();
     }).catch(function (err) {
       feed = null;
       feedLoaded = false;
@@ -216,24 +310,17 @@
     });
   }
 
-  fillSelect(els.destination, DESTINATIONS, function (d) { return d.code; }, function (d) {
-    return d.name;
-  });
   fillSelect(els.month, MONTHS, function (m) { return m.value; }, function (m) {
     return m.label;
   });
-  els.originLabel.textContent = CONFIG.originName + " (" + CONFIG.origin + ")";
-  els.destination.value = CONFIG.fallbackDestination;
   els.month.value = "2026-10";
-
+  els.origin.addEventListener("change", onOriginChange);
   els.destination.addEventListener("change", updateView);
   els.month.addEventListener("change", updateView);
   els.cta.addEventListener("click", function (event) {
     const url = resolveExitUrl(currentFare && currentFare.deeplink);
     els.cta.setAttribute("href", url);
-    if (!url) {
-      event.preventDefault();
-    }
+    if (!url) event.preventDefault();
   });
 
   showFallback("loading");
