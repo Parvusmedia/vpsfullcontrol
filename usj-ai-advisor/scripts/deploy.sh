@@ -132,8 +132,11 @@ for i in $(seq 1 25); do
 done
 
 resolved=""
-for i in $(seq 1 40); do
-  resolved="$(dig +short "$DOMAIN" A 2>/dev/null | tail -n1 || true)"
+for i in $(seq 1 20); do
+  resolved="$(dig +short "$DOMAIN" A @82.223.3.205 2>/dev/null | awk 'NF && $1 !~ /[A-Za-z]/ {print; exit}')"
+  if [[ -z "$resolved" ]]; then
+    resolved="$(dig +short "$DOMAIN" A @1.1.1.1 2>/dev/null | awk 'NF && $1 !~ /[A-Za-z]/ {print; exit}')"
+  fi
   echo "DNS $DOMAIN -> ${resolved:-none} (want $VPS_IP) try $i"
   if [[ "$resolved" == "$VPS_IP" ]]; then
     break
