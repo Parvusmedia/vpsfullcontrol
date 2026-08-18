@@ -59,7 +59,6 @@
   let feedLoaded = false;
   let feedError = "";
   let currentFare = null;
-  let cueTimers = [];
   let cueDone = false;
 
   function originMeta() {
@@ -241,29 +240,44 @@
       return;
     }
 
-    scheduleCue(function () {
-      originField.classList.add("is-cue", "is-open-cue");
-    }, 500);
-    scheduleCue(function () {
-      originField.classList.remove("is-open-cue");
-    }, 2100);
-    scheduleCue(function () {
-      originField.classList.remove("is-cue");
-      fillCueMenu(els.cueDest, els.destination, 3);
-      destField.classList.add("is-cue", "is-open-cue");
-    }, 2400);
-    scheduleCue(function () {
-      destField.classList.remove("is-open-cue");
-    }, 4100);
-    scheduleCue(function () {
-      destField.classList.remove("is-cue");
-      if (monthField) monthField.classList.add("is-cue");
-    }, 4400);
-    scheduleCue(function () {
-      if (monthField) monthField.classList.remove("is-cue");
-      cueDone = true;
-      pulseHint();
-    }, 5400);
+    let phase = "";
+    let elapsed = 0;
+    let last = 0;
+
+    function setPhase(name) {
+      if (phase === name) return;
+      phase = name;
+      originField.classList.toggle("is-cue", name === "from" || name === "from-hold");
+      originField.classList.toggle("is-open-cue", name === "from");
+      destField.classList.toggle("is-cue", name === "to" || name === "to-hold");
+      destField.classList.toggle("is-open-cue", name === "to");
+      if (monthField) monthField.classList.toggle("is-cue", name === "when");
+      if (name === "to") fillCueMenu(els.cueDest, els.destination, 3);
+    }
+
+    function tick(now) {
+      if (cueDone) return;
+      if (!last) last = now;
+      const dt = Math.min(now - last, 32);
+      last = now;
+      if (document.visibilityState === "visible") elapsed += dt;
+
+      if (elapsed < 500) setPhase("idle");
+      else if (elapsed < 2100) setPhase("from");
+      else if (elapsed < 2400) setPhase("from-hold");
+      else if (elapsed < 4200) setPhase("to");
+      else if (elapsed < 4500) setPhase("to-hold");
+      else if (elapsed < 5400) setPhase("when");
+      else {
+        setPhase("done");
+        cueDone = true;
+        pulseHint();
+        return;
+      }
+      window.requestAnimationFrame(tick);
+    }
+
+    window.requestAnimationFrame(tick);
   }
 
   function getClickTag() {
