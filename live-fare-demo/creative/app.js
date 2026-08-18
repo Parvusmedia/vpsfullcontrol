@@ -193,15 +193,9 @@
   }
 
   function clearCue() {
-    cueTimers.forEach(function (id) { window.clearTimeout(id); });
-    cueTimers = [];
     [].forEach.call(els.banner.querySelectorAll(".field"), function (field) {
       field.classList.remove("is-cue", "is-open-cue");
     });
-  }
-
-  function scheduleCue(fn, ms) {
-    cueTimers.push(window.setTimeout(fn, ms));
   }
 
   function pulseHint() {
