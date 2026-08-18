@@ -42,12 +42,15 @@ def strong_match_threshold() -> float:
 
 
 def public_programme(item: dict[str, Any]) -> dict[str, Any]:
+    modality = item.get("modality")
+    modality_es = "Semipresencial" if str(modality).lower() == "hybrid" else "Presencial"
     return {
         "id": item["id"],
         "name": item["name"],
-        "official_name": item.get("official_name"),
+        "official_name": item.get("official_name") or item["name"],
         "ects": item["ects"],
-        "modality": item["modality"],
+        "modality": modality,
+        "modality_es": modality_es,
         "places": item["places"],
         "start_date": item.get("start_date"),
         "url": item.get("url"),

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from advisor import engine, intent, store
+from advisor import engine, guide, intent, store
 from advisor.catalogue import programmes, public_programme, reload
 from advisor.llm import ai_mode
 
@@ -32,6 +32,11 @@ class AnalyseIn(BaseModel):
 class RecommendIn(BaseModel):
     message: str = Field(min_length=3, max_length=4000)
     priority: str | None = None
+    debug: bool = False
+
+
+class GuideIn(BaseModel):
+    answers: dict[str, str] = Field(default_factory=dict)
     debug: bool = False
 
 
@@ -90,10 +95,30 @@ def recommend(body: RecommendIn) -> dict[str, Any]:
         return {
             "has_strong_match": False,
             "fallback": True,
-            "message": "Let's help you find the right programme.",
+            "message": "Vamos a ayudarte a encontrar el programa adecuado.",
             "explore_url": "https://www.usj.es/estudios/posgrados/masteres",
             "best": None,
             "alternatives": [],
+        }
+
+
+@app.get("/api/guide")
+def get_guide() -> dict[str, Any]:
+    return guide.public_steps()
+
+
+@app.post("/api/guide")
+def post_guide(body: GuideIn) -> dict[str, Any]:
+    try:
+        return guide.run_guide(body.answers, debug=body.debug)
+    except Exception:
+        return {
+            "has_strong_match": False,
+            "fallback": True,
+            "message": "Vamos a ayudarte a encontrar el programa adecuado.",
+            "best": None,
+            "alternatives": [],
+            "remaining": [],
         }
 
 
@@ -103,7 +128,7 @@ def question(body: QuestionIn) -> dict[str, Any]:
         return engine.ask(body.question, body.message, body.priority, body.recommendation)
     except Exception:
         return {
-            "answer": "An USJ advisor can help with that. I can only use the approved programme catalogue.",
+            "answer": "Un asesor de USJ puede ayudarte. Solo uso el catálogo aprobado.",
             "source": "fallback",
         }
 

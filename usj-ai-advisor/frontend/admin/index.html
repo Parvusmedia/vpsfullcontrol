@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Catalogue — USJ AI Student Advisor</title>
+  <title>Catálogo — Orientador USJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet">
@@ -12,12 +12,12 @@
 <body>
   <div class="wrap">
     <nav class="nav">
-      <div class="brand"><span>Universidad San Jorge</span><strong>Programme catalogue</strong></div>
-      <div class="nav-links"><a href="/">Advisor</a></div>
+      <div class="brand"><span>Universidad San Jorge</span><strong>Catálogo de másteres</strong></div>
+      <div class="nav-links"><a href="/">Orientador</a></div>
     </nav>
-    <p class="kicker">Read-only demo admin</p>
-    <h1>Structured data, not model memory.</h1>
-    <p class="lede">Edit <code>backend/data/programmes.json</code> on the server, then restart the service or call <code>POST /api/admin/reload</code>. Future: USJ CMS → programme feed → this file → advisor engine.</p>
+    <p class="kicker">Admin de demostración (solo lectura)</p>
+    <h1>Datos estructurados, no memoria del modelo.</h1>
+    <p class="lede">Edita <code>backend/data/programmes.json</code> en el servidor y reinicia el servicio o llama a <code>POST /api/admin/reload</code>. Futuro: CMS de USJ → feed de programas → este archivo → motor de orientación.</p>
     <div id="cats"></div>
   </div>
   <script src="/shared.js"></script>
@@ -26,12 +26,12 @@
       document.getElementById("cats").innerHTML = data.programmes.map(function (p) {
         return '<article class="card" style="margin:16px 0">' +
           '<h2 class="program-title">' + p.name + '</h2>' +
-          '<div class="meta"><span class="pill">' + p.modality + '</span><span class="pill">' + p.ects + ' ECTS</span><span class="pill">' + p.places + ' places</span></div>' +
-          '<p><b>Areas</b> ' + p.areas.join(", ") + '</p>' +
-          '<p><b>Ideal profiles</b> ' + p.ideal_profiles.join(", ") + '</p>' +
-          '<p><b>Goals</b> ' + p.goals.join(", ") + '</p>' +
-          '<p><b>Eligibility preferred</b> ' + (p.eligibility.preferred_backgrounds || []).join(", ") + '</p>' +
-          '<p><b>Additional training</b> ' + (p.eligibility.additional_training_possible ? "possible" : "not listed") + '</p>' +
+          '<div class="meta"><span class="pill">' + (p.modality_es || p.modality) + '</span><span class="pill">' + p.ects + ' ECTS</span><span class="pill">' + p.places + ' plazas</span></div>' +
+          '<p><b>Áreas</b> ' + p.areas.join(", ") + '</p>' +
+          '<p><b>Perfiles ideales</b> ' + p.ideal_profiles.join(", ") + '</p>' +
+          '<p><b>Objetivos</b> ' + p.goals.join(", ") + '</p>' +
+          '<p><b>Acceso preferente</b> ' + (p.eligibility.preferred_backgrounds || []).join(", ") + '</p>' +
+          '<p><b>Complementos formativos</b> ' + (p.eligibility.additional_training_possible ? "posibles" : "no listados") + '</p>' +
           '<p class="footnote">' + (p.approved_facts || []).join(" ") + '</p>' +
         '</article>';
       }).join("");

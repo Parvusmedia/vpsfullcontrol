@@ -31,14 +31,13 @@ Message: *AI Student Advisor — from the first impression.*
 ## Architecture
 
 ```text
-free text
-    → parser (mock keywords | optional LLM)
-    → structured profile   (no PII)
-    → RULE / MATCH ENGINE  (deterministic scores)
-    → eligibility from programmes.json
-    → ranking
-    → explanation (templates | optional LLM, catalogue facts only)
-    → qualified lead
+opciones guiadas (3 preguntas)
+    → perfil estructurado (sin PII)
+    → motor de reglas + eliminaciones
+    → 1, 2 o 3 másteres restantes
+    → etiquetas de elegibilidad del catálogo
+    → explicación (plantillas | LLM opcional, solo hechos del catálogo)
+    → lead cualificado
 ```
 
 The LLM **never** decides academic requirements, modality, price, places, dates or admission.
@@ -74,7 +73,7 @@ Documented weights in `backend/data/programmes.json`:
 
 Priority chips apply small, documented boosts (e.g. *Learn new technology* → Applied AI). Scores are reproducible. Below `strong_match_threshold` (0.48) the UI **does not force** a recommendation.
 
-Eligibility labels: `GOOD MATCH` · `LIKELY ELIGIBLE` · `ADMISSION REQUIRES REVIEW`. Never `YOU ARE ACCEPTED`.
+Eligibility labels: `BUEN ENCAJE` · `PROBABLEMENTE ELEGIBLE` · `ADMISIÓN A REVISAR`. Never `YOU ARE ACCEPTED`.
 
 ## Lead intent
 
@@ -136,7 +135,7 @@ Future: USJ CMS → programme feed → this JSON → engine. Adding 10, 50 or 10
 
 ## DV360
 
-The `/ad` 300×600 unit is vanilla HTML/CSS/JS. It calls `POST /api/recommend` once. If `window.clickTag` exists it wraps the programme URL.
+The `/ad` units (300×250, 300×600, 970×250) are vanilla HTML/CSS/JS. They call `POST /api/guide`. If `window.clickTag` exists it wraps the programme URL.
 
 ## Tests covered
 

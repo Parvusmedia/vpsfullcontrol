@@ -64,6 +64,13 @@ def test_question_endpoint():
     assert "catalogue" in res.json()["source"] or "Hybrid" in res.json()["answer"]
 
 
-def test_mock_mode_no_external_key():
-    rec = client.post("/api/recommend", json={"message": PHYSIO}).json()
-    assert rec["ai_mode"] == "mock"
+def test_guide_lawyer_endpoint():
+    steps = client.get("/api/guide").json()
+    assert len(steps["steps"]) == 3
+    rec = client.post(
+        "/api/guide",
+        json={"answers": {"background": "law", "goal": "tech-law", "format": "work-study"}},
+    ).json()
+    assert rec["best"]["programme_id"] == "ai-applied"
+    assert rec["has_strong_match"] is False
+    assert "biomechanics" not in [x["programme_id"] for x in rec["remaining"]]

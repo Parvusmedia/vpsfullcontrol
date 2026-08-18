@@ -10,6 +10,15 @@ def _facts(programme: dict[str, Any]) -> str:
     return " ".join(programme.get("approved_facts") or [])
 
 
+def _modality(programme: dict[str, Any]) -> str:
+    raw = str(programme.get("modality") or "")
+    if raw.lower() == "hybrid":
+        return "semipresencial"
+    if "campus" in raw.lower() or "on campus" in raw.lower():
+        return "presencial"
+    return raw or "la modalidad del catálogo"
+
+
 def answer_question(
     question: str,
     profile: dict[str, Any],
@@ -28,43 +37,66 @@ def answer_question(
         programme = programme_by_id("biomechanics") if "biomech" in str(recommendation).lower() else None
 
     if not q:
-        return {"answer": "Ask anything about modality, background, or why this programme was suggested.", "source": "catalogue"}
+        return {"answer": "Pregunta por la modalidad, el acceso o por qué sale este máster.", "source": "catalogue"}
 
-    if "combine" in q or "work" in q or "job" in q and "with work" in q:
+    if "compatibil" in q or "trabajo" in q or "combine" in q or "work" in q:
         if programme and (programme.get("work_compatible") or str(programme.get("modality")).lower() == "hybrid"):
             return {
-                "answer": f"{programme['name']} is listed as {programme['modality']} in the catalogue, which can make it easier to combine with work. An advisor confirms the current timetable.",
+                "answer": (
+                    f"{programme['name']} figura como {_modality(programme)} en el catálogo, "
+                    "lo que puede facilitar compatibilizarlo con el trabajo. Un asesor confirma el horario vigente."
+                ),
                 "source": "catalogue",
             }
         if programme:
             return {
-                "answer": f"{programme['name']} is listed as {programme['modality']}. Combining it with a full-time job may be harder. An advisor can confirm options.",
+                "answer": (
+                    f"{programme['name']} figura como {_modality(programme)}. "
+                    "Compatibilizarlo con un trabajo a tiempo completo puede ser más difícil. Un asesor puede confirmar opciones."
+                ),
                 "source": "catalogue",
             }
 
-    if "business" in q and ("ai" in q or "artificial" in q):
+    if ("empresa" in q or "ade" in q or "business" in q) and (
+        "ia" in q or "inteligencia" in q or "artificial" in q or "ai" in q
+    ):
         ai = programme_by_id("ai-applied")
         elig = classify({"education": "business administration"}, "ai-applied")
-        extra = " Foundation / levelling modules are possible according to the catalogue." if ai and ai.get("foundation_modules_possible") else ""
+        extra = (
+            " El catálogo contempla complementos formativos si falta base técnica."
+            if ai and ai.get("foundation_modules_possible")
+            else ""
+        )
         return {
-            "answer": f"Business Administration is not a preferred STEM background for Applied Artificial Intelligence. Status: {elig['status']}.{extra} An advisor must review eligibility — this ad cannot admit anyone.",
+            "answer": (
+                "ADE no es un perfil STEM preferente para Inteligencia Artificial Aplicada. "
+                f"Estado: {elig['status']}.{extra} Un asesor debe revisar la elegibilidad: este anuncio no admite a nadie."
+            ),
             "source": "catalogue",
         }
 
-    if "technical" in q:
+    if "técnic" in q or "tecnic" in q or "technical" in q:
         if programme:
-            tech = "It is a technical programme." if programme.get("technical") else "It is not positioned as a highly technical STEM programme."
+            tech = (
+                "Es un programa técnico."
+                if programme.get("technical")
+                else "No está posicionado como un máster STEM altamente técnico."
+            )
             return {"answer": f"{tech} {_facts(programme)}", "source": "catalogue"}
 
-    if "why" in q or "recommend" in q:
+    if "por qué" in q or "porque" in q or "encaja" in q or "why" in q or "recommend" in q:
         reasons = (recommendation or {}).get("reasons") or []
         if reasons:
             return {
-                "answer": "We recommended it because: " + "; ".join(reasons) + ". Reasons come from the match engine, not from promises about salary or admission.",
+                "answer": (
+                    "Sale esta opción porque: "
+                    + "; ".join(reasons)
+                    + ". Las razones salen del motor de encaje, no de promesas de salario o admisión."
+                ),
                 "source": "match-engine",
             }
 
-    if "difference" in q or "between" in q:
+    if "diferencia" in q or "entre" in q or "difference" in q or "between" in q:
         names = []
         if programme:
             names.append(programme)
@@ -76,19 +108,22 @@ def answer_question(
             a, b = names[0], names[1]
             return {
                 "answer": (
-                    f"{a['name']} is {a['modality']}, focused on {', '.join(a['areas'][:3])}. "
-                    f"{b['name']} is {b['modality']}, focused on {', '.join(b['areas'][:3])}. "
-                    "Both are 60 ECTS in this demo catalogue."
+                    f"{a['name']} es {_modality(a)}, centrado en {', '.join(a['areas'][:3])}. "
+                    f"{b['name']} es {_modality(b)}, centrado en {', '.join(b['areas'][:3])}. "
+                    "Ambos son 60 ECTS en este catálogo demo."
                 ),
                 "source": "catalogue",
             }
 
     if programme:
         return {
-            "answer": f"From the approved catalogue: {_facts(programme)} I can only use these facts — for anything else, talk to an USJ advisor.",
+            "answer": (
+                f"Según el catálogo aprobado: {_facts(programme)} "
+                "Solo uso estos datos: para cualquier otra cosa, habla con un asesor de USJ."
+            ),
             "source": "catalogue",
         }
     return {
-        "answer": "I can only answer from the three demo programmes. An USJ advisor can help if you want to explore the wider catalogue.",
+        "answer": "Solo puedo responder con los tres másteres de este demo. Un asesor de USJ puede ayudarte con el resto del catálogo.",
         "source": "catalogue",
     }

@@ -45,12 +45,15 @@ def recommend(message: str, priority: str | None = None, debug: bool = False) ->
         if programme:
             best["programme_card"] = public_programme(programme)
         split["best"] = best
+        if elig["status"] == eligibility_mod.REVIEW:
+            split["has_strong_match"] = False
         for alt in split["alternatives"]:
             alt_el = eligibility_mod.classify(profile, alt["programme_id"])
             alt["eligibility"] = alt_el["status"]
     payload: dict[str, Any] = {
         "profile": {k: v for k, v in profile.items() if k != "raw_message" or debug},
         "has_strong_match": split["has_strong_match"],
+        "catalogue_limited": split.get("catalogue_limited", False),
         "best": split["best"],
         "alternatives": split["alternatives"],
         "ai_mode": llm.ai_mode(),

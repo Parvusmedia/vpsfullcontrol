@@ -4,9 +4,9 @@ from typing import Any
 
 from .catalogue import programme_by_id
 
-GOOD = "GOOD MATCH"
-LIKELY = "LIKELY ELIGIBLE"
-REVIEW = "ADMISSION REQUIRES REVIEW"
+GOOD = "BUEN ENCAJE"
+LIKELY = "PROBABLEMENTE ELEGIBLE"
+REVIEW = "ADMISIÓN A REVISAR"
 
 
 def _norm(value: str | None) -> str:
@@ -18,7 +18,7 @@ def classify(profile: dict[str, Any], programme_id: str) -> dict[str, Any]:
     if not programme:
         return {
             "status": REVIEW,
-            "note": "Programme not in the approved catalogue.",
+            "note": "Este programa no está en el catálogo aprobado.",
         }
     eligibility = programme.get("eligibility") or {}
     education = _norm(profile.get("education"))
@@ -29,19 +29,19 @@ def classify(profile: dict[str, Any], programme_id: str) -> dict[str, Any]:
     if education and any(education == p or education in p or p in education for p in preferred):
         return {
             "status": GOOD,
-            "note": "Background is among the preferred profiles in the catalogue. Admission is never automatic.",
+            "note": "Tu titulación está entre los perfiles preferentes del catálogo. La admisión nunca es automática.",
         }
     if education and any(education == a or education in a or a in education for a in accepted):
         return {
             "status": LIKELY,
-            "note": "Background is close to accepted profiles. An advisor still reviews every application.",
+            "note": "Tu titulación se acerca a los perfiles aceptados. Admisiones revisa cada caso.",
         }
     if extra:
         return {
             "status": REVIEW,
-            "note": "Foundation modules may be possible. An advisor must review eligibility.",
+            "note": "Puede haber complementos formativos. Un asesor debe revisar tu elegibilidad.",
         }
     return {
         "status": REVIEW,
-        "note": "This combination is not a listed match. An USJ advisor can review other options.",
+        "note": "Esta combinación no es un encaje listado. Un asesor de USJ puede valorar otras opciones.",
     }

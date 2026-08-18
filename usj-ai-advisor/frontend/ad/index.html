@@ -1,32 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>USJ AI Student Advisor — Ad format</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light">
+  <title>Formatos de anuncio — USJ</title>
   <link rel="stylesheet" href="/ad/ad.css">
 </head>
 <body>
   <header class="page">
-    <p>DV360-ready HTML5 unit. Same advisor API as the landing page. Google Studio is not used.</p>
-    <p><a href="/">Full demo</a> · <a href="/admissions">Admissions</a></p>
+    <p>Unidad HTML5 lista para DV360. Tres toques, mismo motor que la web. Fondo claro: no se queda en negro.</p>
+    <p><a href="/">Orientador</a> · <a href="/admissions">Admisiones</a></p>
   </header>
   <main class="stage">
     <section>
-      <h2>300 × 600</h2>
-      <div class="frame" style="width:300px;height:600px">
-        <iframe title="USJ advisor 300x600" src="/ad/unit.html?size=300x600" width="300" height="600"></iframe>
+      <h2>Móvil · 300 × 250</h2>
+      <div class="fit" data-w="300" data-h="250">
+        <iframe title="USJ 300x250" src="/ad/unit.html?size=300x250" width="300" height="250"></iframe>
       </div>
     </section>
     <section>
-      <h2>970 × 250</h2>
-      <div class="frame billboard" style="width:970px;height:250px">
-        <iframe title="USJ advisor 970x250" src="/ad/unit.html?size=970x250" width="970" height="250"></iframe>
+      <h2>Móvil / lateral · 300 × 600</h2>
+      <div class="fit" data-w="300" data-h="600">
+        <iframe title="USJ 300x600" src="/ad/unit.html?size=300x600" width="300" height="600"></iframe>
+      </div>
+    </section>
+    <section class="desktop-only">
+      <h2>Escritorio · 970 × 250</h2>
+      <div class="fit" data-w="970" data-h="250">
+        <iframe title="USJ 970x250" src="/ad/unit.html?size=970x250" width="970" height="250"></iframe>
       </div>
     </section>
   </main>
+  <script>
+    function fitAll() {
+      document.querySelectorAll(".fit").forEach(function (wrap) {
+        var w = Number(wrap.getAttribute("data-w"));
+        var h = Number(wrap.getAttribute("data-h"));
+        var iframe = wrap.querySelector("iframe");
+        var scale = Math.min(1, wrap.clientWidth / w);
+        iframe.style.transform = "scale(" + scale + ")";
+        wrap.style.height = (h * scale) + "px";
+      });
+    }
+    window.addEventListener("resize", fitAll);
+    fitAll();
+  </script>
 </body>
 </html>

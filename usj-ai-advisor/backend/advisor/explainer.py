@@ -10,6 +10,9 @@ FORBIDDEN = (
     "you are accepted",
     "job guarantee",
     "admission guaranteed",
+    "estás admitido",
+    "plaza garantizada",
+    "mejor salario garantizado",
 )
 
 
@@ -17,7 +20,7 @@ def _safe(text: str) -> str:
     low = text.lower()
     for bad in FORBIDDEN:
         if bad in low:
-            return "This recommendation is based on the catalogue match signals only."
+            return "Esta orientación se basa solo en las señales del motor de encaje y en el catálogo."
     return text
 
 
@@ -27,18 +30,21 @@ def explain(profile: dict[str, Any], match: dict[str, Any], eligibility: dict[st
     name = programme.get("name") or match.get("programme")
     bits = []
     if reasons:
-        joined = ", ".join(reasons[:3]).lower()
-        bits.append(f"This programme matches {joined}.")
+        bits.append("Encaja porque: " + "; ".join(reasons[:3]).lower() + ".")
     else:
-        bits.append(f"{name} is the closest catalogue option based on the signals we extracted.")
+        bits.append(f"{name} es la opción más cercana de este catálogo de demostración.")
     status = eligibility.get("status")
     if status == GOOD:
-        bits.append("Your background sits among the preferred profiles in the approved catalogue.")
+        bits.append("Tu titulación está entre los perfiles preferentes del catálogo.")
     elif status == LIKELY:
-        bits.append("Your background looks close to accepted profiles, but admission still requires review.")
+        bits.append("Tu perfil se acerca a los perfiles aceptados, pero la admisión sigue a revisión.")
     elif status == REVIEW:
-        bits.append("Eligibility is not automatic: an advisor needs to review your case.")
-    if "Hybrid format may fit your situation" in reasons:
-        bits.append("The hybrid format in the catalogue may help if you want to keep working.")
-    bits.append("This is orientation inside the ad, not an offer of admission.")
+        bits.append("La elegibilidad no es automática: un asesor debe revisar tu caso.")
+        if programme.get("foundation_modules_possible"):
+            bits.append("El catálogo contempla complementos formativos si falta base técnica.")
+    if any("semipresencial" in r.lower() or "hybrid" in r.lower() for r in reasons):
+        bits.append("La modalidad semipresencial del catálogo puede ayudar si sigues trabajando.")
+    if profile.get("education") == "law" and match.get("programme_id") == "ai-applied":
+        bits.append("Este demo no incluye un máster de derecho digital; IA Aplicada es la opción tecnológica más cercana.")
+    bits.append("Es orientación dentro del anuncio, no una oferta de plaza.")
     return _safe(" ".join(bits))

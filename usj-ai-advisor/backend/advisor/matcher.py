@@ -13,6 +13,9 @@ PRIORITY_BOOSTS = {
     "Higher salary": {"ai-applied": 0.02, "marketing": 0.02},
     "Research": {"ai-applied": 0.07, "biomechanics": 0.04},
     "Combine study + work": {"ai-applied": 0.06, "biomechanics": 0.06, "marketing": -0.05},
+    "Aprender tecnología": {"ai-applied": 0.08},
+    "Especialización": {"biomechanics": 0.08, "ai-applied": 0.03},
+    "Compatibilizar estudio y trabajo": {"ai-applied": 0.06, "biomechanics": 0.06, "marketing": -0.05},
 }
 
 
@@ -51,9 +54,9 @@ def _education_score(profile: dict[str, Any], programme: dict[str, Any]) -> tupl
     reasons: list[str] = []
     score = max(_overlap(edu, preferred) * 1.0, _overlap(edu, accepted) * 0.75, _overlap(edu, ideal) * 0.7)
     if score >= 0.7 and profile.get("education"):
-        reasons.append(f"{str(profile['education']).title()} background")
+        reasons.append("Tu titulación encaja con el perfil de acceso del catálogo")
     elif score >= 0.4 and profile.get("education"):
-        reasons.append(f"Partial overlap with {programme['name']} entry profiles")
+        reasons.append("Hay solapamiento parcial con los perfiles de acceso")
     return score, reasons
 
 
@@ -63,19 +66,22 @@ def _area_score(profile: dict[str, Any], programme: dict[str, Any]) -> tuple[flo
     score = _overlap(hay, areas)
     reasons: list[str] = []
     if "sports" in (profile.get("interests") or []) and "sports" in areas:
-        reasons.append("Sports experience")
+        reasons.append("Experiencia en deporte")
         score = max(score, 0.85)
     if "movement analysis" in (profile.get("interests") or []) and "movement" in areas:
-        reasons.append("Interest in movement analysis")
+        reasons.append("Interés en análisis del movimiento")
         score = max(score, 0.9)
-    if any(k in hay for k in ("ai", "artificial", "intelligence")) and "intelligence" in areas:
-        reasons.append("Interest in applying AI")
+    if any(k in hay for k in ("ai", "artificial", "intelligence", "tecnolog")) and "intelligence" in areas:
+        reasons.append("Interés en aplicar inteligencia artificial")
         score = max(score, 0.9)
+    if any(k in hay for k in ("law", "derecho", "digital")) and programme["id"] == "ai-applied":
+        reasons.append("Quieres acercarte a la tecnología desde un perfil no STEM")
+        score = max(score, 0.72)
     if any(k in hay for k in ("marketing", "brand", "communication")) and "marketing" in areas:
-        reasons.append("Marketing and communication experience")
+        reasons.append("Experiencia en marketing y comunicación")
         score = max(score, 0.88)
     if any(k in hay for k in ("software", "developer", "engineering")) and "software" in areas:
-        reasons.append("Software / technology profile")
+        reasons.append("Perfil de software o tecnología")
         score = max(score, 0.88)
     return min(1.0, score), reasons
 
@@ -87,13 +93,13 @@ def _goal_score(profile: dict[str, Any], programme: dict[str, Any]) -> tuple[flo
     reasons: list[str] = []
     g = (profile.get("goal") or "")
     if g == "specialization" and "specialization" in goals:
-        reasons.append("Looking for specialization")
+        reasons.append("Buscas una especialización")
         score = max(score, 0.95)
     if g in ("learn AI", "AI specialization", "apply AI professionally") and "ai" in " ".join(programme.get("goals", [])).lower():
-        reasons.append("Wants to apply AI professionally")
+        reasons.append("Quieres aplicar IA en el trabajo")
         score = max(score, 0.95)
     if g in ("marketing career", "career progression", "communication") and programme["id"] == "marketing":
-        reasons.append("Career progression in marketing / communication")
+        reasons.append("Quieres progresar en marketing y comunicación")
         score = max(score, 0.9)
     if g == "career change" and programme["id"] == "marketing":
         score = max(score, 0.55)
@@ -116,9 +122,9 @@ def _modality_score(profile: dict[str, Any], programme: dict[str, Any]) -> tuple
     reasons: list[str] = []
     if "combine work and study" in constraints:
         if programme.get("work_compatible") or str(programme.get("modality", "")).lower() == "hybrid":
-            reasons.append("Hybrid format may fit your situation")
+            reasons.append("La modalidad semipresencial puede encajar si sigues trabajando")
             return 1.0, reasons
-        reasons.append("On-campus format may be harder to combine with work")
+        reasons.append("La modalidad presencial puede ser más difícil de compatibilizar")
         return 0.25, reasons
     return 0.6, reasons
 
@@ -136,7 +142,12 @@ def _clamp(value: float) -> float:
     return round(max(0.0, min(1.0, value)), 4)
 
 
-def score_programme(profile: dict[str, Any], programme: dict[str, Any], priority: str | None = None) -> dict[str, Any]:
+def score_programme(
+    profile: dict[str, Any],
+    programme: dict[str, Any],
+    priority: str | None = None,
+    extra_boosts: dict[str, float] | None = None,
+) -> dict[str, Any]:
     w = weights()
     edu_s, edu_r = _education_score(profile, programme)
     area_s, area_r = _area_score(profile, programme)
@@ -156,6 +167,8 @@ def score_programme(profile: dict[str, Any], programme: dict[str, Any], priority
     total = sum(breakdown[k] * w[k] for k in w)
     boosts = PRIORITY_BOOSTS.get(priority or "", {})
     total += boosts.get(programme["id"], 0.0)
+    if extra_boosts:
+        total += float(extra_boosts.get(programme["id"], 0.0))
     total = _clamp(total)
 
     reasons = []
@@ -171,29 +184,39 @@ def score_programme(profile: dict[str, Any], programme: dict[str, Any], priority
         "breakdown": {k: _clamp(v) for k, v in breakdown.items()},
         "reasons": reasons[:6],
         "modality": programme["modality"],
+        "modality_es": "Semipresencial" if str(programme.get("modality")).lower() == "hybrid" else "Presencial",
         "ects": programme["ects"],
         "url": programme.get("url"),
         "foundation_modules_possible": bool(programme.get("foundation_modules_possible")),
     }
 
 
-def rank(profile: dict[str, Any], priority: str | None = None) -> list[dict[str, Any]]:
-    scored = [score_programme(profile, p, priority=priority or profile.get("priority")) for p in programmes()]
+def rank(
+    profile: dict[str, Any],
+    priority: str | None = None,
+    extra_boosts: dict[str, float] | None = None,
+) -> list[dict[str, Any]]:
+    scored = [
+        score_programme(
+            profile,
+            p,
+            priority=priority or profile.get("priority"),
+            extra_boosts=extra_boosts,
+        )
+        for p in programmes()
+    ]
     scored.sort(key=lambda x: (-x["score"], x["programme"]))
     return scored
 
 
 def split_matches(scored: list[dict[str, Any]]) -> dict[str, Any]:
     threshold = strong_match_threshold()
-    if not scored or scored[0]["score"] < threshold:
-        return {
-            "has_strong_match": False,
-            "best": None,
-            "alternatives": scored[:2],
-            "all": scored,
-        }
+    if not scored:
+        return {"has_strong_match": False, "catalogue_limited": True, "best": None, "alternatives": [], "all": []}
+    strong = scored[0]["score"] >= threshold
     return {
-        "has_strong_match": True,
+        "has_strong_match": strong,
+        "catalogue_limited": not strong,
         "best": scored[0],
         "alternatives": scored[1:3],
         "all": scored,

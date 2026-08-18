@@ -37,11 +37,18 @@ NORMALIZE = {
     "architect": "architecture",
     "arquitecto": "architecture",
     "arquitectura": "architecture",
+    "abogado": "law",
+    "abogada": "law",
+    "abogacia": "law",
+    "abogacía": "law",
+    "derecho": "law",
+    "lawyer": "law",
+    "jurista": "law",
 }
 
 GOAL_PATTERNS = [
     ("specialization", ("specialize", "specialise", "specialization", "especializar", "especializacion", "especialización")),
-    ("learn AI", ("apply ai", "inteligencia artificial", "learn ai", "machine learning")),
+    ("learn AI", ("apply ai", "inteligencia artificial", "learn ai", "machine learning", "tecnología", "tecnologia", "derecho digital", "tech")),
     ("career progression", ("progress", "management role", "promocion", "promoción", "career")),
     ("career change", ("career change", "become an architect", "cambiar de carrera", "switch")),
     ("research", ("research", "investigacion", "investigación", "phd", "doctorado")),
@@ -50,7 +57,8 @@ GOAL_PATTERNS = [
 INTEREST_PATTERNS = [
     ("sports", ("athlete", "athletes", "sports", "deporte", "deportista", "deportistas")),
     ("movement analysis", ("movement", "biomechanics", "locomotion", "analisis del movimiento", "análisis")),
-    ("artificial intelligence", ("ai", "artificial intelligence", "inteligencia artificial", "machine learning")),
+    ("artificial intelligence", ("ai", "artificial intelligence", "inteligencia artificial", "machine learning", "tecnología", "tecnologia")),
+    ("digital law", ("derecho digital", "legal tech", "law", "abogac", "jurídic")),
     ("software", ("software", "developer", "code", "programming")),
     ("digital marketing", ("digital marketing", "marketing digital", "campaigns")),
     ("brand", ("brand", "marca", "communication", "comunicacion")),
@@ -117,9 +125,11 @@ def _all_matches(text: str, table: list[tuple[str, tuple[str, ...]]]) -> list[st
 
 def _role_from_education(education: str | None, text: str) -> str | None:
     if "physiotherap" in text or "fisioterapeut" in text:
-        return "Physiotherapist"
+        return "Fisioterapeuta"
+    if "abogad" in text or "derecho" in text or "lawyer" in text:
+        return "Abogado/a"
     if "developer" in text or "desarrollador" in text or "software" in text:
-        return "Developer"
+        return "Desarrollador/a"
     if "digital marketing" in text or "marketing" in text:
         return "Digital marketing professional"
     if education == "culinary arts":

@@ -22,7 +22,6 @@
     sessionStorage.setItem("usj_events", JSON.stringify(events.slice(-80)));
     if (window.console && console.info) console.info("[advisor]", name, payload || {});
     api("/api/events", { method: "POST", body: JSON.stringify({ name: name, payload: payload || {} }) }).catch(function () {});
-    window.dispatchEvent(new CustomEvent("usj-track", { detail: row }));
   }
 
   function debugEnabled() {
@@ -54,32 +53,6 @@
     debugEnabled: debugEnabled,
     saveState: saveState,
     loadState: loadState,
-    clickThrough: clickThrough,
-    examples: [
-      {
-        label: "Physiotherapist",
-        text: "I'm a physiotherapist with three years of experience. I work with athletes and I'd like to specialize without leaving my current job."
-      },
-      {
-        label: "Software engineer",
-        text: "I studied software engineering and currently work as a developer. I want to understand how to apply AI to real business problems."
-      },
-      {
-        label: "Marketing",
-        text: "I studied Business Administration and work in digital marketing. I want to progress into a marketing management role."
-      }
-    ],
-    priorities: [
-      "Better job opportunities",
-      "Career change",
-      "Higher salary",
-      "Specialization",
-      "Research",
-      "Learn new technology",
-      "Combine study + work",
-      "Brand / communication career"
-    ]
+    clickThrough: clickThrough
   };
-
-  USJ.track("advisor_started", { path: location.pathname });
 })(window);

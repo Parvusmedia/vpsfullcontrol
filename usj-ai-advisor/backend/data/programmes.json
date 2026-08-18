@@ -16,7 +16,7 @@
   "programmes": [
     {
       "id": "ai-applied",
-      "name": "Applied Artificial Intelligence",
+      "name": "Inteligencia Artificial Aplicada",
       "official_name": "Máster Universitario en Inteligencia Artificial Aplicada",
       "ects": 60,
       "modality": "Hybrid",
@@ -34,7 +34,7 @@
         "ai", "artificial intelligence", "inteligencia artificial", "machine learning",
         "deep learning", "data", "software", "developer", "engineer", "engineering",
         "stem", "computer", "informatics", "informatica", "programmer", "python",
-        "technology", "tech", "algorithm", "generative"
+        "technology", "tech", "algorithm", "generative", "derecho digital", "legal tech"
       ],
       "eligibility": {
         "preferred_backgrounds": [
@@ -47,18 +47,18 @@
         "additional_training_possible": true
       },
       "approved_facts": [
-        "60 ECTS, one academic year.",
-        "Hybrid / blended modality (semipresencial).",
-        "30 places.",
-        "Designed for STEM graduates and working professionals who want to apply AI.",
-        "Foundation / levelling modules are possible when the technical base is incomplete.",
-        "Two tracks: professional and research.",
-        "Application modules include health, software, energy and logistics, industry and agrifood."
+        "60 ECTS, un curso académico.",
+        "Modalidad semipresencial.",
+        "30 plazas.",
+        "Pensado para perfiles STEM y profesionales que quieren aplicar IA.",
+        "Puede haber complementos formativos si falta base técnica.",
+        "Dos itinerarios: profesional e investigador.",
+        "Módulos de aplicación en salud, software, energía y logística, industria y agroalimentación."
       ]
     },
     {
       "id": "marketing",
-      "name": "Marketing and Corporate Communication",
+      "name": "Marketing y Comunicación Corporativa",
       "official_name": "Máster Universitario en Marketing y Comunicación Corporativa",
       "ects": 60,
       "modality": "On campus",
@@ -88,17 +88,17 @@
         "additional_training_possible": false
       },
       "approved_facts": [
-        "60 ECTS, one academic year.",
-        "On-campus modality in this demo catalogue.",
-        "30 new-intake places.",
-        "Aimed at marketing, communication, business and related social-science profiles.",
-        "Official university master's; can lead to doctoral studies.",
-        "Focus: corporate communication and marketing in digital, local and global contexts."
+        "60 ECTS, un curso académico.",
+        "Modalidad presencial en este catálogo demo.",
+        "30 plazas de nuevo ingreso.",
+        "Orientado a perfiles de marketing, comunicación, empresa y ciencias sociales afines.",
+        "Máster universitario oficial; puede dar acceso a estudios de doctorado.",
+        "Enfoque: comunicación corporativa y marketing en contextos digitales, locales y globales."
       ]
     },
     {
       "id": "biomechanics",
-      "name": "Biomechanics of Human Locomotion",
+      "name": "Biomecánica de la Locomoción Humana",
       "official_name": "Máster Universitario en Biomecánica de la Locomoción Humana",
       "ects": 60,
       "modality": "Hybrid",
@@ -129,11 +129,11 @@
       },
       "approved_facts": [
         "60 ECTS.",
-        "Hybrid / blended modality (semipresencial).",
-        "30 authorised places.",
-        "Faculty of Health Sciences.",
-        "Focus: biomechanics applied to human locomotion, assistive technologies and research methods.",
-        "Well suited to physiotherapists and sports-science professionals seeking specialisation."
+        "Modalidad semipresencial.",
+        "30 plazas autorizadas.",
+        "Facultad de Ciencias de la Salud.",
+        "Enfoque: biomecánica aplicada a la locomoción humana, tecnologías de apoyo y métodos de investigación.",
+        "Encaja bien con fisioterapeutas y profesionales de ciencias del deporte que buscan especializarse."
       ]
     }
   ]

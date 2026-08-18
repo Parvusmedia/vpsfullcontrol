@@ -47,7 +47,27 @@ def test_marketing_profile():
 def test_unrelated_not_forced():
     result = recommend(EDGE)
     assert result["has_strong_match"] is False
-    assert result["best"] is None
+    assert result["catalogue_limited"] is True
+    assert result["best"] is not None
+
+
+def test_lawyer_digital_gets_ai_option():
+    result = recommend(
+        "Soy abogado y quiero formarme en tecnología y derecho digital."
+    )
+    assert result["best"]["programme_id"] == "ai-applied"
+    assert result["best"]["eligibility"] == "ADMISIÓN A REVISAR"
+    assert result["has_strong_match"] is False
+
+
+def test_guide_lawyer_tech_law():
+    from advisor.guide import run_guide
+
+    out = run_guide({"background": "law", "goal": "tech-law", "format": "work-study"})
+    ids = [row["programme_id"] for row in out["remaining"]]
+    assert "biomechanics" not in ids
+    assert out["best"]["programme_id"] == "ai-applied"
+    assert 1 <= len(out["remaining"]) <= 3
 
 
 def test_priority_shifts_ranking():
@@ -57,6 +77,14 @@ def test_priority_shifts_ranking():
     ai_boost = next(x["score"] for x in boosted if x["programme_id"] == "ai-applied")
     assert ai_boost > ai_base
     assert boosted[0]["programme_id"] == "biomechanics"
+
+
+def test_guide_health_sports():
+    from advisor.guide import run_guide
+
+    out = run_guide({"background": "health", "goal": "sports-spec", "format": "work-study"})
+    assert out["best"]["programme_id"] == "biomechanics"
+    assert out["has_strong_match"] is True
 
 
 def test_parser_extracts_years():
@@ -69,7 +97,7 @@ def test_parser_extracts_years():
 def test_question_uses_catalogue():
     rec = recommend(PHYSIO)["best"]
     out = answer_question("Can I combine it with work?", parse_profile(PHYSIO), rec)
-    assert "Hybrid" in out["answer"] or "hybrid" in out["answer"].lower()
+    assert "semipresencial" in out["answer"].lower() or "hybrid" in out["answer"].lower()
 
 
 def test_intent_high_on_advisor():
