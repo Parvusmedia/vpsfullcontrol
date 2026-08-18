@@ -76,6 +76,13 @@
     };
   }
 
+  function cityLabel(name, code) {
+    if (!code) return name || "";
+    if (!name || name === code) return code;
+    if (name.indexOf("(" + code + ")") !== -1) return name;
+    return name + " (" + code + ")";
+  }
+
   function destinationsForOrigin(origin) {
     const seen = {};
     const out = [];
@@ -116,7 +123,7 @@
         groups[country].forEach(function (item) {
           const opt = document.createElement("option");
           opt.value = item.code;
-          opt.textContent = item.name + " (" + item.code + ")";
+          opt.textContent = cityLabel(item.name, item.code);
           group.appendChild(opt);
         });
         els.origin.appendChild(group);
@@ -138,7 +145,7 @@
     dests.forEach(function (item) {
       const opt = document.createElement("option");
       opt.value = item.code;
-      opt.textContent = item.name;
+      opt.textContent = cityLabel(item.name, item.code);
       els.destination.appendChild(opt);
     });
     if ([].some.call(els.destination.options, function (opt) { return opt.value === previous; })) {
