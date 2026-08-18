@@ -49,13 +49,18 @@
     routeLine: document.getElementById("routeLine"),
     cta: document.getElementById("cta"),
     debug: document.getElementById("debug"),
-    banner: document.getElementById("banner")
+    banner: document.getElementById("banner"),
+    hint: document.getElementById("interactHint"),
+    cueOrigin: document.getElementById("cueOrigin"),
+    cueDest: document.getElementById("cueDest")
   };
 
   let feed = null;
   let feedLoaded = false;
   let feedError = "";
   let currentFare = null;
+  let cueTimers = [];
+  let cueDone = false;
 
   function originMeta() {
     const list = (feed && feed.origins) || [];
@@ -167,6 +172,99 @@
     });
   }
 
+  function fillCueMenu(menu, select, count) {
+    if (!menu || !select) return;
+    menu.innerHTML = "";
+    const seen = {};
+    [].forEach.call(select.options, function (opt) {
+      if (!opt.value || seen[opt.value] || menu.childNodes.length >= count) return;
+      seen[opt.value] = true;
+      const row = document.createElement("div");
+      row.textContent = opt.textContent;
+      menu.appendChild(row);
+    });
+  }
+
+  function fieldOf(select) {
+    return select ? select.closest(".field") : null;
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function clearCue() {
+    cueTimers.forEach(function (id) { window.clearTimeout(id); });
+    cueTimers = [];
+    [].forEach.call(els.banner.querySelectorAll(".field"), function (field) {
+      field.classList.remove("is-cue", "is-open-cue");
+    });
+  }
+
+  function scheduleCue(fn, ms) {
+    cueTimers.push(window.setTimeout(fn, ms));
+  }
+
+  function pulseHint() {
+    if (!els.hint) return;
+    els.hint.classList.remove("is-pulse");
+    void els.hint.offsetWidth;
+    els.hint.classList.add("is-pulse");
+  }
+
+  function stopInteractCue() {
+    if (cueDone) {
+      clearCue();
+      return;
+    }
+    cueDone = true;
+    clearCue();
+    pulseHint();
+  }
+
+  function playInteractCue() {
+    if (cueDone) return;
+    fillCueMenu(els.cueOrigin, els.origin, 3);
+    fillCueMenu(els.cueDest, els.destination, 3);
+    const originField = fieldOf(els.origin);
+    const destField = fieldOf(els.destination);
+    const monthField = fieldOf(els.month);
+
+    if (
+      prefersReducedMotion() ||
+      !originField ||
+      !destField ||
+      !els.cueOrigin.childNodes.length
+    ) {
+      cueDone = true;
+      pulseHint();
+      return;
+    }
+
+    scheduleCue(function () {
+      originField.classList.add("is-cue", "is-open-cue");
+    }, 280);
+    scheduleCue(function () {
+      originField.classList.remove("is-open-cue");
+    }, 1480);
+    scheduleCue(function () {
+      originField.classList.remove("is-cue");
+      destField.classList.add("is-cue", "is-open-cue");
+    }, 1720);
+    scheduleCue(function () {
+      destField.classList.remove("is-open-cue");
+    }, 2920);
+    scheduleCue(function () {
+      destField.classList.remove("is-cue");
+      if (monthField) monthField.classList.add("is-cue");
+    }, 3160);
+    scheduleCue(function () {
+      if (monthField) monthField.classList.remove("is-cue");
+      cueDone = true;
+      pulseHint();
+    }, 4000);
+  }
+
   function getClickTag() {
     if (typeof window.clickTag === "string" && window.clickTag) return window.clickTag;
     if (typeof window.clickTAG === "string" && window.clickTAG) return window.clickTAG;
@@ -270,6 +368,7 @@
   }
 
   function onOriginChange() {
+    stopInteractCue();
     fillDestinationSelect();
     updateView();
   }
@@ -335,6 +434,7 @@
     }).then(function () {
       window.clearTimeout(timer);
       updateView();
+      playInteractCue();
     });
   }
 
@@ -343,8 +443,15 @@
   });
   els.month.value = "2026-10";
   els.origin.addEventListener("change", onOriginChange);
-  els.destination.addEventListener("change", updateView);
-  els.month.addEventListener("change", updateView);
+  els.destination.addEventListener("change", function () {
+    stopInteractCue();
+    updateView();
+  });
+  els.month.addEventListener("change", function () {
+    stopInteractCue();
+    updateView();
+  });
+  els.banner.addEventListener("pointerdown", stopInteractCue);
   els.cta.addEventListener("click", function (event) {
     const url = resolveExitUrl(currentBookingUrl());
     els.cta.setAttribute("href", url);

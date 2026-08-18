@@ -25,26 +25,33 @@
       <span class="sr-only" lang="ar">السعودية</span>
     </header>
 
-    <section class="field">
+    <section class="field" data-cue="origin">
       <label class="label" for="origin">From</label>
       <div class="select-wrap">
         <select id="origin" name="origin"></select>
+        <div class="cue-menu" id="cueOrigin" aria-hidden="true"></div>
       </div>
     </section>
 
-    <section class="field">
+    <section class="field" data-cue="destination">
       <label class="label" for="destination">To</label>
       <div class="select-wrap">
         <select id="destination" name="destination"></select>
+        <div class="cue-menu" id="cueDest" aria-hidden="true"></div>
       </div>
     </section>
 
-    <section class="field">
+    <section class="field" data-cue="month">
       <label class="label" for="month">When</label>
       <div class="select-wrap">
         <select id="month" name="month"></select>
       </div>
     </section>
+
+    <p class="interact-hint" id="interactHint">
+      <strong>Select yours</strong>
+      <span>Origin · destination · date</span>
+    </p>
 
     <section class="price-block" id="priceBlock">
       <p class="price-kicker" id="priceKicker">From</p>
