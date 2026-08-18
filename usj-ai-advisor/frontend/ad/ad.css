@@ -1,0 +1,11 @@
+body { margin: 0; font-family: Outfit, sans-serif; background: #efe8d6; color: #13241c; }
+.page { padding: 18px 24px 8px; }
+.page a { color: #1b4734; }
+.stage { padding: 10px 24px 40px; display: flex; flex-direction: column; gap: 28px; }
+h2 { font-family: Fraunces, serif; font-weight: 500; margin: 0 0 10px; }
+.frame { background: #111; padding: 0; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+.frame iframe { border: 0; display: block; }
+.billboard { max-width: 100%; }
+@media (max-width: 1000px) {
+  .billboard { transform-origin: top left; transform: scale(0.72); }
+}

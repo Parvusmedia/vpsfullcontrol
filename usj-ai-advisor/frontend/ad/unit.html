@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>USJ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --g:#1b4734; --p:#f7f1e3; --ink:#13241c; --gold:#c4a056; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { font-family: Outfit, sans-serif; background: linear-gradient(180deg,#204c38,#13281e 55%,#101a14); color: var(--p); overflow: hidden; }
+    .unit { height: 100%; padding: 16px; display: flex; flex-direction: column; }
+    .brand { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; opacity: .8; }
+    h1 { font-family: Fraunces, serif; font-weight: 500; margin: 8px 0 10px; line-height: 1.1; }
+    textarea { width: 100%; flex: 1; min-height: 72px; border: 0; border-radius: 12px; padding: 10px; resize: none; background: #fffdf8; color: var(--ink); font: 13px/1.35 Outfit, sans-serif; }
+    .go { margin-top: 10px; border: 0; background: var(--gold); color: #13241c; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; padding: 10px 12px; border-radius: 999px; cursor: pointer; }
+    .result { overflow: auto; flex: 1; }
+    .score { font-family: Fraunces, serif; font-size: 28px; margin: 0; color: var(--gold); }
+    .name { font-family: Fraunces, serif; font-size: 20px; margin: 4px 0 8px; }
+    .why { font-size: 12px; line-height: 1.4; opacity: .92; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .mini { border: 1px solid rgba(255,255,255,.2); background: transparent; color: inherit; border-radius: 999px; padding: 7px 10px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+    .billboard { flex-direction: row; gap: 16px; }
+    .billboard h1 { font-size: 28px; max-width: 11ch; }
+    .billboard .copy { width: 280px; flex-shrink: 0; }
+    .billboard textarea { min-height: 140px; }
+    .muted { font-size: 11px; opacity: .7; }
+  </style>
+</head>
+<body>
+  <div class="unit" id="unit">
+    <div class="copy">
+      <div class="brand">Universidad San Jorge</div>
+      <h1 id="headline">What’s your next career move?</h1>
+      <p class="muted" id="sub">Describe where you are and where you want to go.</p>
+    </div>
+    <textarea id="story" placeholder="I studied… I work as… I want to…"></textarea>
+    <button class="go" id="go">Find my master</button>
+  </div>
+  <script src="/shared.js"></script>
+  <script>
+    (function () {
+      var size = new URLSearchParams(location.search).get("size") || "300x600";
+      if (size === "970x250") document.getElementById("unit").classList.add("billboard");
+      var unit = document.getElementById("unit");
+      document.getElementById("go").onclick = run;
+
+      async function run() {
+        var message = document.getElementById("story").value.trim();
+        if (message.length < 8) return;
+        USJ.track("profile_submitted", { surface: "ad", size: size });
+        unit.innerHTML = '<div class="brand">Universidad San Jorge</div><h1>Finding your strongest matches…</h1><p class="muted">Checking the catalogue, not inventing requirements.</p>';
+        var payload;
+        try {
+          payload = await USJ.api("/api/recommend", { method: "POST", body: JSON.stringify({ message: message }) });
+        } catch (e) {
+          payload = { fallback: true };
+        }
+        USJ.track("recommendation_generated", { surface: "ad", match: payload.has_strong_match });
+        if (payload.fallback || !payload.has_strong_match) {
+          unit.innerHTML = '<div class="brand">Universidad San Jorge</div><h1>No forced match</h1><p class="why">We couldn’t find a strong match among these programmes. An USJ advisor can help you explore other options.</p><div class="row"><button class="mini" id="talk">Talk to an advisor</button></div>';
+          document.getElementById("talk").onclick = function () { location.href = "/?from=ad"; };
+          return;
+        }
+        var b = payload.best;
+        unit.innerHTML =
+          '<div class="result">' +
+          '<div class="brand">Your best match</div>' +
+          '<p class="score">' + b.score_pct + '% match</p>' +
+          '<div class="name">' + b.programme + '</div>' +
+          '<p class="muted">' + b.modality + ' · ' + b.ects + ' ECTS · ' + (b.eligibility || "") + '</p>' +
+          '<p class="why">' + (b.reasons || []).slice(0, 3).map(function (r) { return "✓ " + r; }).join("<br>") + '</p>' +
+          '<div class="row">' +
+          '<button class="mini" id="explore">Explore</button>' +
+          '<button class="mini" id="ask">Ask</button>' +
+          '<button class="mini" id="talk">Advisor</button>' +
+          '</div></div>';
+        document.getElementById("explore").onclick = function () {
+          USJ.track("programme_viewed", { id: b.programme_id, surface: "ad" });
+          USJ.clickThrough(b.url);
+        };
+        document.getElementById("talk").onclick = function () { location.href = "/?from=ad"; };
+        document.getElementById("ask").onclick = async function () {
+          var q = "Can I combine it with work?";
+          USJ.track("question_asked", { q: q, surface: "ad" });
+          try {
+            var res = await USJ.api("/api/question", { method: "POST", body: JSON.stringify({ question: q, message: message, recommendation: b }) });
+            alert(res.answer);
+          } catch (e) {
+            alert("An USJ advisor can help with that.");
+          }
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

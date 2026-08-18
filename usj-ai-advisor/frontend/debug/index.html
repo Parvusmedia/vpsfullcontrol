@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debug — USJ AI Student Advisor</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav"><div class="brand"><strong>Event log</strong></div><a href="/">Back</a></nav>
+    <p class="lede">Frontend events stay in this session and are also posted to <code>/api/events</code>. Add <code>?debug=1</code> on the advisor to see parsed profile and scores.</p>
+    <pre class="debug open" id="out"></pre>
+  </div>
+  <script src="/shared.js"></script>
+  <script>
+    Promise.all([
+      Promise.resolve(USJ.events()),
+      USJ.api("/api/events").catch(function () { return { events: [] }; })
+    ]).then(function (pair) {
+      document.getElementById("out").textContent = JSON.stringify({ local: pair[0], server: pair[1].events }, null, 2);
+    });
+  </script>
+</body>
+</html>

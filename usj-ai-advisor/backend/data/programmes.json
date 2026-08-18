@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "university": "Universidad San Jorge",
+  "disclaimer": "Demo catalogue for Parvus Media. Academic requirements, dates and places come only from this file — never from the LLM.",
+  "explore_url": "https://www.usj.es/estudios/posgrados/masteres",
+  "admissions_url": "https://www.usj.es/admision-y-ayudas",
+  "strong_match_threshold": 0.48,
+  "weights": {
+    "education": 0.30,
+    "professional_area": 0.20,
+    "career_goal": 0.20,
+    "interests": 0.15,
+    "modality": 0.10,
+    "experience": 0.05
+  },
+  "programmes": [
+    {
+      "id": "ai-applied",
+      "name": "Applied Artificial Intelligence",
+      "official_name": "Máster Universitario en Inteligencia Artificial Aplicada",
+      "ects": 60,
+      "modality": "Hybrid",
+      "places": 30,
+      "start_date": "2026-10-16",
+      "language": "Spanish",
+      "url": "https://www.usj.es/estudios/posgrados/masteres/inteligencia-artificial-aplicada",
+      "foundation_modules_possible": true,
+      "technical": true,
+      "work_compatible": true,
+      "areas": ["artificial intelligence", "technology", "software", "data"],
+      "ideal_profiles": ["STEM", "technology", "engineering", "software", "data"],
+      "goals": ["learn AI", "apply AI professionally", "technology career", "AI specialization"],
+      "keywords": [
+        "ai", "artificial intelligence", "inteligencia artificial", "machine learning",
+        "deep learning", "data", "software", "developer", "engineer", "engineering",
+        "stem", "computer", "informatics", "informatica", "programmer", "python",
+        "technology", "tech", "algorithm", "generative"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "computer science", "software engineering", "informatics", "data science",
+          "telecommunications", "mathematics", "physics", "engineering"
+        ],
+        "accepted_backgrounds": [
+          "STEM", "technology", "software", "developer", "data"
+        ],
+        "additional_training_possible": true
+      },
+      "approved_facts": [
+        "60 ECTS, one academic year.",
+        "Hybrid / blended modality (semipresencial).",
+        "30 places.",
+        "Designed for STEM graduates and working professionals who want to apply AI.",
+        "Foundation / levelling modules are possible when the technical base is incomplete.",
+        "Two tracks: professional and research.",
+        "Application modules include health, software, energy and logistics, industry and agrifood."
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing and Corporate Communication",
+      "official_name": "Máster Universitario en Marketing y Comunicación Corporativa",
+      "ects": 60,
+      "modality": "On campus",
+      "places": 30,
+      "start_date": "2026-10-15",
+      "language": "Spanish",
+      "url": "https://www.usj.es/estudios/posgrados/masteres/marketing-y-comunicacion-corporativa",
+      "foundation_modules_possible": false,
+      "technical": false,
+      "work_compatible": false,
+      "areas": ["marketing", "communication", "brand", "advertising", "digital"],
+      "ideal_profiles": ["marketing", "communication", "business", "advertising"],
+      "goals": ["marketing career", "communication", "brand", "digital marketing", "career progression"],
+      "keywords": [
+        "marketing", "communication", "comunicacion", "brand", "advertising", "publicidad",
+        "digital marketing", "business", "mba", "corporate", "campaign", "media",
+        "journalism", "periodismo", "management", "branding", "content"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "marketing", "communication", "advertising", "journalism", "business administration",
+          "public relations"
+        ],
+        "accepted_backgrounds": [
+          "business", "social sciences", "management", "digital marketing"
+        ],
+        "additional_training_possible": false
+      },
+      "approved_facts": [
+        "60 ECTS, one academic year.",
+        "On-campus modality in this demo catalogue.",
+        "30 new-intake places.",
+        "Aimed at marketing, communication, business and related social-science profiles.",
+        "Official university master's; can lead to doctoral studies.",
+        "Focus: corporate communication and marketing in digital, local and global contexts."
+      ]
+    },
+    {
+      "id": "biomechanics",
+      "name": "Biomechanics of Human Locomotion",
+      "official_name": "Máster Universitario en Biomecánica de la Locomoción Humana",
+      "ects": 60,
+      "modality": "Hybrid",
+      "places": 30,
+      "start_date": null,
+      "language": "Spanish",
+      "url": "https://www.usj.es/estudios/posgrados",
+      "foundation_modules_possible": false,
+      "technical": true,
+      "work_compatible": true,
+      "areas": ["biomechanics", "physiotherapy", "sports", "movement", "health"],
+      "ideal_profiles": ["physiotherapy", "sports science", "health", "rehabilitation"],
+      "goals": ["specialization", "sports", "movement analysis", "rehabilitation"],
+      "keywords": [
+        "physiotherapy", "fisioterapia", "physiotherapist", "fisioterapeuta",
+        "biomechanics", "biomecanica", "sports", "deporte", "athlete", "deportista",
+        "movement", "locomotion", "rehabilitation", "rehab", "health", "kinesiology",
+        "sport science", "ciencias del deporte"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "physiotherapy", "sports science", "kinesiology", "physical therapy"
+        ],
+        "accepted_backgrounds": [
+          "health", "rehabilitation", "medicine", "occupational therapy"
+        ],
+        "additional_training_possible": false
+      },
+      "approved_facts": [
+        "60 ECTS.",
+        "Hybrid / blended modality (semipresencial).",
+        "30 authorised places.",
+        "Faculty of Health Sciences.",
+        "Focus: biomechanics applied to human locomotion, assistive technologies and research methods.",
+        "Well suited to physiotherapists and sports-science professionals seeking specialisation."
+      ]
+    }
+  ]
+}

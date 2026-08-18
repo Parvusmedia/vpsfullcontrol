@@ -1,0 +1,74 @@
+name: deploy-usj-ai-advisor
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/usj-ai-advisor-8776
+      - main
+    paths:
+      - "usj-ai-advisor/**"
+      - ".github/workflows/deploy-usj-ai-advisor.yml"
+      - ".github/workflows/plesk-dns-usj-advisor.yml"
+
+concurrency:
+  group: deploy-usj-ai-advisor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python tests
+        run: |
+          python3 -m pip install -q -r usj-ai-advisor/backend/requirements.txt
+          python3 -m pytest usj-ai-advisor/tests -q
+
+  dns:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create usj-advisor.pmediaplus.com A record on Plesk
+        run: |
+          set -euo pipefail
+          sudo cp usj-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-usj-advisor
+          sudo chmod 755 /usr/local/sbin/plesk-add-usj-advisor
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/plesk-add-usj-advisor, /usr/local/sbin/plesk-add-usj-advisor *' > /tmp/ops-plesk-usj
+          sudo cp /tmp/ops-plesk-usj /etc/sudoers.d/ops-plesk-usj
+          sudo chmod 440 /etc/sudoers.d/ops-plesk-usj
+          sudo /usr/local/sbin/plesk-add-usj-advisor
+
+  deploy:
+    needs: [test, dns]
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect VPS
+        run: |
+          chmod +x usj-ai-advisor/scripts/*.sh
+          usj-ai-advisor/scripts/inspect-vps.sh
+      - name: Deploy nginx + systemd API
+        run: |
+          set -euo pipefail
+          sudo cp usj-ai-advisor/scripts/deploy.sh /usr/local/sbin/usj-ai-advisor-deploy
+          sudo chmod 755 /usr/local/sbin/usj-ai-advisor-deploy
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/usj-ai-advisor-deploy, /usr/local/sbin/usj-ai-advisor-deploy *' > /tmp/ops-usj-adv
+          sudo cp /tmp/ops-usj-adv /etc/sudoers.d/ops-usj-adv
+          sudo chmod 440 /etc/sudoers.d/ops-usj-adv
+          sudo /usr/local/sbin/usj-ai-advisor-deploy "$GITHUB_WORKSPACE/usj-ai-advisor"
+      - name: Validate
+        run: |
+          set -euo pipefail
+          usj-ai-advisor/scripts/validate.sh http://127.0.0.1:8021 || true
+          resolved="$(dig +short usj-advisor.pmediaplus.com A | tail -n1 || true)"
+          if [[ "$resolved" == "87.106.194.137" ]]; then
+            usj-ai-advisor/scripts/validate.sh https://usj-advisor.pmediaplus.com
+          else
+            echo "Public HTTPS skipped until DNS A usj-advisor.pmediaplus.com -> 87.106.194.137"
+            curl -fsS -H "Host: usj-advisor.pmediaplus.com" http://127.0.0.1/api/health || \
+              curl -fsSk --resolve usj-advisor.pmediaplus.com:80:127.0.0.1 http://usj-advisor.pmediaplus.com/api/health
+          fi

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admissions — USJ AI Student Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .prospect { margin: 18px 0; }
+    .intent { font-family: var(--serif); font-size: 28px; color: var(--forest); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span>Universidad San Jorge</span><strong>Admissions desk</strong></div>
+      <div class="nav-links"><a href="/">Advisor</a><a href="/ad">Ad</a></div>
+    </nav>
+    <p class="kicker">What the commercial team receives</p>
+    <h1>Qualified context, not a naked form.</h1>
+    <p class="lede">Each prospect includes the parsed career profile, match score, alternatives, questions asked and intent. PII only appears after the person asked to talk.</p>
+    <div id="list"></div>
+  </div>
+  <script src="/shared.js"></script>
+  <script>
+    USJ.api("/api/leads").then(function (data) {
+      var root = document.getElementById("list");
+      if (!data.leads.length) {
+        root.innerHTML = '<div class="card"><p>No prospects yet. Run the advisor and press Talk to an advisor.</p></div>';
+        return;
+      }
+      root.innerHTML = data.leads.map(function (lead) {
+        var rec = lead.recommendation || {};
+        var profile = lead.profile || {};
+        return '<article class="card prospect">' +
+          '<div class="kicker">New prospect</div>' +
+          '<h2 class="program-title">' + (lead.name || "Prospect") + '</h2>' +
+          '<p class="intent">Intent ' + (lead.lead_intent || "LOW") + '</p>' +
+          '<div class="grid2">' +
+          '<div><p class="label">Recommended programme</p><p>' + (rec.programme || "—") + '<br>' + (rec.score_pct || Math.round((rec.score||0)*100)) + '% match · ' + (rec.eligibility || "") + '</p></div>' +
+          '<div><p class="label">Profile</p><p>' + (profile.current_role || profile.education || "—") + '<br>' + (profile.experience_years != null ? profile.experience_years + " years experience" : "") + '</p></div>' +
+          '<div><p class="label">Goal</p><p>' + (profile.goal || "—") + '</p></div>' +
+          '<div><p class="label">Priority</p><p>' + (lead.priority || profile.priority || "—") + '</p></div>' +
+          '</div>' +
+          '<p class="label">Interests</p><p>' + ((profile.interests || []).join(", ") || "—") + '</p>' +
+          '<p class="label">Questions</p><p>' + ((lead.questions_asked || []).join(" · ") || "None yet") + '</p>' +
+          '<p class="label">Email / phone</p><p>' + lead.email + (lead.phone ? " · " + lead.phone : "") + '</p>' +
+        '</article>';
+      }).join("");
+    }).catch(function () {
+      document.getElementById("list").innerHTML = '<div class="card">Let\'s help you find the right programme.</div>';
+    });
+  </script>
+</body>
+</html>

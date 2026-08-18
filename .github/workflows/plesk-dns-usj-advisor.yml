@@ -1,0 +1,29 @@
+name: plesk-dns-usj-advisor
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/usj-ai-advisor-8776
+    paths:
+      - "usj-ai-advisor/scripts/plesk-add-a-record.sh"
+      - ".github/workflows/plesk-dns-usj-advisor.yml"
+
+concurrency:
+  group: plesk-dns-usj-advisor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dns:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create usj-advisor.pmediaplus.com A record
+        run: |
+          set -euo pipefail
+          sudo cp usj-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-usj-advisor
+          sudo chmod 755 /usr/local/sbin/plesk-add-usj-advisor
+          sudo /usr/local/sbin/plesk-add-usj-advisor
