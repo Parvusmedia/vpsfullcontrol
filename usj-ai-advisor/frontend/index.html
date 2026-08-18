@@ -7,7 +7,7 @@
   <title>Orientador de másteres — Universidad San Jorge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -24,13 +24,16 @@
       </div>
     </nav>
 
-    <section class="hero wizard" id="wizard">
-      <div class="kicker">Desde la primera impresión</div>
-      <h1>Encuentra el máster USJ que encaja contigo</h1>
-      <p class="lede">Tres preguntas. El catálogo se va reduciendo hasta 1, 2 o 3 másteres. Sin campo libre: eliges opciones.</p>
+    <header class="hero">
+      <p class="kicker">Desde la primera impresión</p>
+      <h1>Encuentra el máster que encaja contigo</h1>
+      <p class="lede">Tres preguntas. El catálogo se reduce hasta 1, 2 o 3 másteres.</p>
+    </header>
+
+    <section class="wizard-card" id="wizard">
       <p class="progress" id="progress">Pregunta 1 de 3</p>
       <div class="remaining" id="remaining"></div>
-      <h2 id="qtitle" class="program-title" style="font-size:28px"></h2>
+      <h2 id="qtitle" class="qtitle"></h2>
       <p class="lede" id="qsub"></p>
       <div class="choices" id="choices"></div>
       <button class="btn ghost" id="back" hidden>Volver</button>

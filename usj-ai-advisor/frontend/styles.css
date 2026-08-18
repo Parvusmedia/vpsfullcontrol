@@ -45,41 +45,46 @@ a { color: inherit; }
 .brand {
   display: flex;
   flex-direction: column;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 11px;
+  color: var(--muted);
 }
 .brand strong {
   font-family: var(--serif);
-  font-size: 18px;
-  letter-spacing: 0.04em;
+  font-size: 17px;
+  letter-spacing: 0;
   text-transform: none;
-  font-weight: 560;
+  font-weight: 600;
+  color: var(--ink);
 }
-.nav-links { display: flex; gap: 18px; font-size: 13px; color: var(--muted); }
+.nav-links { display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
 .nav-links a { text-decoration: none; }
 
-.hero { padding: 36px 0 28px; }
+.hero { padding: 18px 0 8px; }
 .kicker {
   color: var(--forest);
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-size: 11px;
-  margin-bottom: 14px;
+  margin: 0 0 10px;
 }
 h1 {
   font-family: var(--serif);
-  font-weight: 460;
-  font-size: clamp(34px, 6vw, 64px);
-  line-height: 1.05;
-  margin: 0 0 16px;
-  max-width: 14ch;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1.2rem + 1.6vw, 2.25rem);
+  line-height: 1.2;
+  margin: 0 0 10px;
+  max-width: 18em;
+  text-wrap: balance;
+  color: var(--forest-deep);
 }
 .lede {
-  max-width: 42ch;
-  font-size: 18px;
+  max-width: 38ch;
+  font-size: 16px;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .composer {
@@ -273,12 +278,14 @@ h1 {
 
 @media (max-width: 820px) {
   .result-grid, .lead { grid-template-columns: 1fr; }
-  h1 { max-width: none; font-size: clamp(28px, 9vw, 48px); }
-  .nav { flex-wrap: wrap; }
+  h1 { max-width: none; font-size: clamp(1.45rem, 6.4vw, 1.9rem); }
+  .nav { flex-wrap: wrap; padding-top: 16px; }
   .nav-links { font-size: 12px; gap: 10px; }
   .wrap { width: min(1080px, calc(100% - 24px)); }
   .choice { font-size: 15px; padding: 14px; }
   .program-title { font-size: 26px; }
+  .wizard-card { padding: 16px; border-radius: 18px; }
+  .qtitle { font-size: 1.25rem; }
 }
 
 .remaining {
@@ -295,6 +302,25 @@ h1 {
   font-size: 12px;
 }
 .remain.off { opacity: 0.35; text-decoration: line-through; }
+.wizard-card {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 20px 22px 18px;
+  margin: 16px 0 32px;
+}
+.qtitle {
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.55rem);
+  line-height: 1.25;
+  margin: 6px 0 6px;
+  font-weight: 600;
+  max-width: none;
+}
+.wizard-card .lede { max-width: none; font-size: 15px; }
+.wizard-card .choice,
+.wizard-card .remain { background: #fff; }
 .choices { display: grid; gap: 10px; margin: 16px 0 20px; }
 .choice {
   text-align: left;
@@ -307,6 +333,5 @@ h1 {
   line-height: 1.35;
 }
 .choice:hover, .choice:focus { border-color: var(--gold); }
-.progress { color: var(--muted); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
-.wizard { padding-bottom: 48px; }
+.progress { color: var(--muted); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 8px; }
 
