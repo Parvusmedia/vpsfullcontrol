@@ -1,3 +1,4 @@
 {
-  "install": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
+  "install": "python3 --version\npython3 -m py_compile scripts/n8n_unified.py",
+  "start": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
 }

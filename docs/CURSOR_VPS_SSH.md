@@ -70,7 +70,7 @@ Los pods de Cloud Agent **no** heredan tu `~/.ssh` local. Hay que inyectar la cl
 
    - `CURSOR_VPS_SSH_PRIVATE_KEY` = contenido completo de la clave privada (`-----BEGIN OPENSSH PRIVATE KEY-----` …)
 
-2. En cada environment (o en `.cursor/environment.json` del repo) ejecuta al install/start:
+2. En cada environment (o en `.cursor/environment.json` del repo) ejecuta al start:
 
 ```bash
 # desde el repo vpsfullcontrol, o copia el script a otros repos
@@ -85,11 +85,16 @@ Añade en `.cursor/environment.json`:
 
 ```json
 {
-  "install": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
+  "install": "python3 --version\npython3 -m py_compile scripts/n8n_unified.py",
+  "start": "bash scripts/cursor-env-ssh-bootstrap.sh || true"
 }
 ```
 
 (requiere el secret configurado en el environment de Cursor).
+
+> El bootstrap SSH va en `start` (no en `install`) para que la clave privada se
+> escriba en cada arranque desde el secret inyectado y **no** quede horneada en el
+> snapshot/build del environment.
 
 ### Sin secret (fallback)
 
