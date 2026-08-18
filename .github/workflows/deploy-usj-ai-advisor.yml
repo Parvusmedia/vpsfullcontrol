@@ -63,14 +63,11 @@ jobs:
       - name: Validate
         run: |
           set -euo pipefail
-          resolved="$(dig +short usj-advisor.pmediaplus.com A @82.223.3.205 | awk 'NF && $1 !~ /[A-Za-z]/ {print; exit}' || true)"
-          echo "ns DNS=$resolved"
-          if [[ "$resolved" == "87.106.194.137" ]]; then
-            usj-ai-advisor/scripts/validate.sh https://usj-advisor.pmediaplus.com || \
-              usj-ai-advisor/scripts/validate.sh http://usj-advisor.pmediaplus.com
-          else
-            echo "Public HTTPS skipped until DNS A usj-advisor.pmediaplus.com -> 87.106.194.137"
-            curl -fsS --max-time 15 -H "Host: usj-advisor.pmediaplus.com" http://127.0.0.1/api/health || \
-              curl -fsS --max-time 15 --resolve usj-advisor.pmediaplus.com:80:127.0.0.1 http://usj-advisor.pmediaplus.com/api/health
-            usj-ai-advisor/scripts/validate.sh http://127.0.0.1:8021
-          fi
+          # Recursor on the VPS often cannot resolve the new name; SNI via --resolve.
+          usj-ai-advisor/scripts/validate.sh http://127.0.0.1:8021
+          curl -fsSk --max-time 15 --resolve usj-advisor.pmediaplus.com:443:127.0.0.1 \
+            https://usj-advisor.pmediaplus.com/api/health
+          echo
+          curl -fsS --max-time 15 --resolve usj-advisor.pmediaplus.com:80:127.0.0.1 \
+            http://usj-advisor.pmediaplus.com/ | head -c 80
+          echo

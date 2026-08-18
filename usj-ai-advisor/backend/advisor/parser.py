@@ -139,26 +139,9 @@ def parse_profile(message: str, priority: str | None = None) -> dict[str, Any]:
     role = _role_from_education(education, text)
 
     if priority:
-        p = _norm(priority)
-        if "technolog" in p or "ai" in p:
-            if "artificial intelligence" not in interests:
-                interests.append("artificial intelligence")
-            goal = goal or "learn AI"
-        if "special" in p:
-            goal = "specialization"
-        if "brand" in p or "communication" in p or "marketing" in p:
-            if "brand" not in interests:
-                interests.append("brand")
-            goal = goal or "marketing career"
-        if "research" in p:
-            goal = "research"
-        if "combine" in p or "work" in p:
-            if "combine work and study" not in constraints:
-                constraints.append("combine work and study")
-        if "career change" in p:
-            goal = "career change"
-        if "salary" in p or "job opportunities" in p:
-            goal = goal or "career progression"
+        # Stored on the profile. Ranking nudges live in matcher.PRIORITY_BOOSTS.
+        # Do not rewrite education or invent a new career story from a chip.
+        pass
 
     return {
         "education": education,

@@ -5,14 +5,14 @@ from typing import Any
 from .catalogue import programmes, strong_match_threshold, weights
 
 PRIORITY_BOOSTS = {
-    "Learn new technology": {"ai-applied": 0.16},
-    "Specialization": {"biomechanics": 0.12, "ai-applied": 0.04},
-    "Brand / communication career": {"marketing": 0.16},
-    "Better job opportunities": {"ai-applied": 0.04, "marketing": 0.04, "biomechanics": 0.03},
-    "Career change": {"marketing": 0.10, "ai-applied": 0.06},
-    "Higher salary": {"ai-applied": 0.03, "marketing": 0.03},
-    "Research": {"ai-applied": 0.10, "biomechanics": 0.06},
-    "Combine study + work": {"ai-applied": 0.08, "biomechanics": 0.08, "marketing": -0.06},
+    "Learn new technology": {"ai-applied": 0.08},
+    "Specialization": {"biomechanics": 0.08, "ai-applied": 0.03},
+    "Brand / communication career": {"marketing": 0.10},
+    "Better job opportunities": {"ai-applied": 0.03, "marketing": 0.03, "biomechanics": 0.02},
+    "Career change": {"marketing": 0.08, "ai-applied": 0.04},
+    "Higher salary": {"ai-applied": 0.02, "marketing": 0.02},
+    "Research": {"ai-applied": 0.07, "biomechanics": 0.04},
+    "Combine study + work": {"ai-applied": 0.06, "biomechanics": 0.06, "marketing": -0.05},
 }
 
 

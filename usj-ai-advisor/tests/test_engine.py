@@ -56,6 +56,7 @@ def test_priority_shifts_ranking():
     ai_base = next(x["score"] for x in base if x["programme_id"] == "ai-applied")
     ai_boost = next(x["score"] for x in boosted if x["programme_id"] == "ai-applied")
     assert ai_boost > ai_base
+    assert boosted[0]["programme_id"] == "biomechanics"
 
 
 def test_parser_extracts_years():
