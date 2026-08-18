@@ -43,7 +43,34 @@
       window.open(String(window.clickTag) + encodeURIComponent(url), "_blank");
       return;
     }
-    window.open(url, "_blank");
+    var opened = window.open(url, "_blank");
+    if (!opened && window.top) window.top.location.href = url;
+  }
+
+  function whatsappText(ctx) {
+    ctx = ctx || {};
+    var prefix = "¡Hola quiero solicitar informacion sobre";
+    var programme = ctx.programme || "";
+    var labels = ctx.labels || [];
+    var text = prefix;
+    if (programme) text += " " + programme;
+    else text += " los másteres de Universidad San Jorge";
+    if (labels.length) text += ". Mi perfil: " + labels.join(", ");
+    return text + ".";
+  }
+
+  function whatsappUrl(ctx) {
+    return "https://api.whatsapp.com/send/?phone=" + encodeURIComponent("+34671940473") +
+      "&text=" + encodeURIComponent(whatsappText(ctx)) +
+      "&app_absent=0";
+  }
+
+  function openWhatsApp(ctx) {
+    track("whatsapp_clicked", {
+      programme: ctx && ctx.programme,
+      labels: ctx && ctx.labels
+    });
+    clickThrough(whatsappUrl(ctx));
   }
 
   root.USJ = {
@@ -53,6 +80,9 @@
     debugEnabled: debugEnabled,
     saveState: saveState,
     loadState: loadState,
-    clickThrough: clickThrough
+    clickThrough: clickThrough,
+    whatsappText: whatsappText,
+    whatsappUrl: whatsappUrl,
+    openWhatsApp: openWhatsApp
   };
 })(window);

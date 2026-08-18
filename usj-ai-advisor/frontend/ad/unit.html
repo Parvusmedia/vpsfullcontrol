@@ -15,8 +15,8 @@
       --line: rgba(23, 51, 40, 0.16);
     }
     html { background: #f4efe3; color-scheme: light; }
-    html, body { margin: 0; height: 100%; width: 100%; background: #f4efe3; color: var(--ink); }
-    body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; overflow: hidden; }
+    html, body { margin: 0; height: 100%; width: 100%; overflow: hidden; background: #f4efe3; color: var(--ink); }
+    body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
     * { box-sizing: border-box; }
     .unit {
       height: 100%;
@@ -27,25 +27,26 @@
       gap: 8px;
       background: #f4efe3;
       color: #173328;
+      overflow: hidden;
     }
-    .brand { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--forest); font-weight: 700; }
-    h1 { font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.15; margin: 0; font-weight: 600; }
-    .sub { font-size: 12px; color: rgba(23,51,40,.72); margin: 4px 0 0; line-height: 1.35; }
+    .brand { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--forest); font-weight: 700; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.15; margin: 0; font-weight: 600; }
+    .sub { font-size: 11px; color: rgba(23,51,40,.72); margin: 4px 0 0; line-height: 1.3; }
     .remain { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
     .tag { background: var(--cream); border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; font-size: 10px; }
     .tag.off { opacity: .4; text-decoration: line-through; }
-    .opts { display: flex; flex-direction: column; gap: 6px; overflow: auto; flex: 1; min-height: 0; }
+    .opts { display: flex; flex-direction: column; gap: 6px; overflow: hidden; flex: 1; min-height: 0; }
     .opt {
       border: 1px solid var(--line);
       background: var(--cream);
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 10px;
+      padding: 8px 10px;
       text-align: left;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
       color: var(--ink);
       width: 100%;
-      line-height: 1.25;
+      line-height: 1.2;
     }
     .opt:hover, .opt:focus { border-color: var(--gold); outline: none; }
     .cta {
@@ -55,36 +56,43 @@
       border-radius: 999px;
       padding: 9px 12px;
       font-size: 11px;
-      letter-spacing: .06em;
+      letter-spacing: .04em;
       text-transform: uppercase;
       cursor: pointer;
       font-weight: 700;
     }
     .ghost { background: var(--cream); color: var(--forest); border: 1px solid var(--line); }
-    .score { font-family: Georgia, serif; font-size: 28px; margin: 0; color: var(--forest); }
-    .name { font-family: Georgia, serif; font-size: 16px; margin: 0 0 4px; line-height: 1.2; }
+    .score { font-family: Georgia, serif; font-size: 26px; margin: 0; color: var(--forest); line-height: 1; }
+    .name { font-family: Georgia, serif; font-size: 15px; margin: 4px 0; line-height: 1.2; }
     .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
     .copy { flex-shrink: 0; }
 
-    .sz-300x250 { padding: 10px; gap: 6px; }
-    .sz-300x250 h1 { font-size: 16px; }
+    .sz-300x250 { padding: 8px; gap: 5px; }
+    .sz-300x250 h1 { font-size: 15px; }
     .sz-300x250 .remain { display: none; }
-    .sz-300x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .sz-300x250 .opt { padding: 8px 7px; font-size: 12px; min-height: 42px; }
+    .sz-300x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .sz-300x250 .opt { padding: 7px 6px; font-size: 11px; min-height: 38px; }
     .sz-300x250 .opt:last-child { grid-column: 1 / -1; }
     .sz-300x250 .score { font-size: 22px; }
-    .sz-300x250 .name { font-size: 14px; }
+    .sz-300x250 .name { font-size: 13px; }
+    .sz-300x250 .cta { width: 100%; }
+    .sz-300x250.is-result .row { flex-direction: column; }
 
-    .sz-300x600 { padding: 14px; }
-    .sz-300x600 h1 { font-size: 24px; }
-    .sz-300x600 .opt { font-size: 14px; padding: 12px; }
+    .sz-300x600 { padding: 12px; }
+    .sz-300x600 h1 { font-size: 22px; }
+    .sz-300x600 .opt { font-size: 13px; padding: 11px; }
+    .sz-300x600 .cta { min-height: 40px; }
 
-    .sz-970x250 { flex-direction: row; gap: 14px; padding: 14px 16px; }
-    .sz-970x250 .copy { width: 280px; }
-    .sz-970x250 h1 { font-size: 22px; }
+    .sz-970x250 { flex-direction: row; gap: 12px; padding: 10px 12px; }
+    .sz-970x250 .copy { width: 250px; }
+    .sz-970x250 h1 { font-size: 18px; }
     .sz-970x250 .opts { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
-    .sz-970x250 .opt { width: calc(50% - 6px); min-height: 52px; }
-    .sz-970x250 .remain { margin-top: 8px; }
+    .sz-970x250 .opt { width: calc(50% - 5px); min-height: 44px; }
+    .sz-970x250 .remain { margin-top: 6px; }
+    .sz-970x250.is-result { align-items: center; }
+    .sz-970x250.is-result .copy { width: auto; flex: 1; }
+    .sz-970x250.is-result .row { flex-direction: column; width: 240px; margin-top: 0; }
+    .sz-970x250.is-result .cta { width: 100%; }
   </style>
 </head>
 <body>
@@ -126,7 +134,21 @@
         return html || "<span class=\"tag\">3 másteres</span>";
       }
 
+      function waCtx(payload) {
+        return {
+          programme: payload && payload.best && payload.best.programme,
+          labels: (payload && payload.guide_labels) || []
+        };
+      }
+
+      function bindWhatsApp(id, payload) {
+        var btn = document.getElementById(id);
+        if (!btn) return;
+        btn.onclick = function () { USJ.openWhatsApp(waCtx(payload)); };
+      }
+
       function showStep() {
+        unit.className = "unit sz-" + size;
         var s = spec.steps[step];
         unit.innerHTML =
           "<div class=\"copy\">" +
@@ -165,39 +187,37 @@
 
       function showResult(payload) {
         USJ.track("recommendation_generated", { surface: "ad", id: payload.best && payload.best.programme_id });
+        unit.className = "unit sz-" + size + " is-result";
         if (!payload.best) {
           unit.innerHTML =
             "<div class=\"copy\"><div class=\"brand\">Universidad San Jorge</div>" +
-            "<h1>Hablemos con un asesor</h1>" +
+            "<h1>Seguir por WhatsApp</h1>" +
             "<p class=\"sub\">Este catálogo demo es limitado.</p></div>" +
-            "<div class=\"row\"><button class=\"cta\" id=\"talk\">Hablar con un asesor</button>" +
+            "<div class=\"row\"><button class=\"cta\" id=\"wa\">Seguir por WhatsApp</button>" +
             "<button class=\"cta ghost\" id=\"again\">Otra vez</button></div>";
-          document.getElementById("talk").onclick = function () { location.href = "/?from=ad"; };
+          bindWhatsApp("wa", payload);
           document.getElementById("again").onclick = restart;
           return;
         }
         var b = payload.best;
-        var alts = (payload.alternatives || []).map(function (a) { return a.programme; }).join(" · ");
         var title = payload.has_strong_match ? "Mejor encaje" : "Opción más cercana";
+        var extra = "";
+        if (!compact) {
+          extra = "<p class=\"sub\">" + (b.reasons || []).slice(0, 2).join(" · ") + "</p>";
+        }
         unit.innerHTML =
           "<div class=\"copy\">" +
           "<div class=\"brand\">" + title + "</div>" +
           "<p class=\"score\">" + b.score_pct + "%</p>" +
           "<div class=\"name\">" + b.programme + "</div>" +
           "<p class=\"sub\">" + (b.modality_es || b.modality) + " · " + (b.eligibility || "") + "</p>" +
-          (compact ? "" : "<p class=\"sub\">" + (b.reasons || []).slice(0, 2).join(" · ") + "</p>") +
-          (alts && !compact ? "<p class=\"sub\">También: " + alts + "</p>" : "") +
+          extra +
           "</div>" +
           "<div class=\"row\">" +
-          "<button class=\"cta\" id=\"explore\">Explorar</button>" +
-          "<button class=\"cta ghost\" id=\"talk\">Asesor</button>" +
+          "<button class=\"cta\" id=\"wa\">Seguir por WhatsApp</button>" +
           "<button class=\"cta ghost\" id=\"again\">Otra vez</button>" +
           "</div>";
-        document.getElementById("explore").onclick = function () {
-          USJ.track("programme_viewed", { id: b.programme_id, surface: "ad" });
-          USJ.clickThrough(b.url);
-        };
-        document.getElementById("talk").onclick = function () { location.href = "/?from=ad"; };
+        bindWhatsApp("wa", payload);
         document.getElementById("again").onclick = restart;
       }
 
@@ -215,10 +235,8 @@
           "<div class=\"brand\">Universidad San Jorge</div>" +
           "<h1>Encuentra tu máster</h1>" +
           "<p class=\"sub\">Vamos a ayudarte a encontrar el programa adecuado.</p>" +
-          "<button class=\"cta\" id=\"go\">Ver másteres</button>";
-        document.getElementById("go").onclick = function () {
-          location.href = "https://www.usj.es/estudios/posgrados/masteres";
-        };
+          "<button class=\"cta\" id=\"wa\">Seguir por WhatsApp</button>";
+        bindWhatsApp("wa", {});
       });
     })();
   </script>

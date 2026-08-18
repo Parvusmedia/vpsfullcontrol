@@ -126,10 +126,9 @@
           "<div class=\"actions\">" +
             "<button class=\"btn\" id=\"explore\">Explorar este máster</button>" +
             "<button class=\"btn ghost\" id=\"ask\">Preguntar</button>" +
-            "<button class=\"btn gold\" id=\"talk\">Hablar con un asesor</button>" +
+            "<button class=\"btn gold\" id=\"talk\">Seguir por WhatsApp</button>" +
           "</div>" +
           "<div class=\"askbox\" id=\"askbox\"><textarea id=\"q\" placeholder=\"¿Puedo compatibilizarlo con el trabajo?\"></textarea><button class=\"btn ghost\" id=\"askgo\">Enviar pregunta</button><div class=\"answer\" id=\"answer\" hidden></div></div>" +
-          "<div class=\"lead\" id=\"leadform\"></div>" +
         "</article>" +
         "<aside class=\"card\">" +
           "<div class=\"label\">Otras opciones que quedan</div>" +
@@ -149,7 +148,13 @@
     };
     document.getElementById("askgo").onclick = askQuestion;
     document.getElementById("restart").onclick = restart;
-    wireLead();
+    document.getElementById("talk").onclick = function () {
+      USJ.track("lead_started", { channel: "whatsapp" });
+      USJ.openWhatsApp({
+        programme: best.programme,
+        labels: payload.guide_labels || []
+      });
+    };
     if (USJ.debugEnabled() && payload.debug) {
       $debug.classList.add("open");
       $debug.textContent = JSON.stringify(payload.debug, null, 2);
@@ -189,46 +194,6 @@
       var box2 = document.getElementById("answer");
       box2.hidden = false;
       box2.textContent = "Un asesor de USJ puede ayudarte con eso.";
-    }
-  }
-
-  function wireLead() {
-    var talk = document.getElementById("talk");
-    if (!talk) return;
-    talk.onclick = function () {
-      USJ.track("lead_started");
-      var form = document.getElementById("leadform");
-      form.classList.add("open");
-      form.innerHTML =
-        "<input id=\"n\" placeholder=\"Nombre\" autocomplete=\"name\">" +
-        "<input id=\"e\" placeholder=\"Email\" type=\"email\" autocomplete=\"email\">" +
-        "<input id=\"p\" placeholder=\"Teléfono\" autocomplete=\"tel\">" +
-        "<button class=\"btn gold\" id=\"sendlead\">Enviar a admisiones</button>" +
-        "<p class=\"footnote\" id=\"leadmsg\"></p>";
-      document.getElementById("sendlead").onclick = sendLead;
-    };
-  }
-
-  async function sendLead() {
-    var rec = state.last || {};
-    try {
-      var out = await USJ.api("/api/lead", {
-        method: "POST",
-        body: JSON.stringify({
-          name: document.getElementById("n").value,
-          email: document.getElementById("e").value,
-          phone: document.getElementById("p").value,
-          profile: rec.profile || {},
-          recommendation: rec.best,
-          alternatives: rec.alternatives || [],
-          questions_asked: state.questions || [],
-          signals: { lead_submitted: true, programme_viewed: true }
-        })
-      });
-      USJ.track("lead_submitted", { intent: out.lead_intent });
-      document.getElementById("leadmsg").textContent = "Contexto enviado. Intención " + out.lead_intent + ". Ábrelo en Admisiones.";
-    } catch (e) {
-      document.getElementById("leadmsg").textContent = "Vamos a ayudarte a encontrar el programa adecuado.";
     }
   }
 })();

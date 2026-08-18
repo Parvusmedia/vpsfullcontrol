@@ -31,7 +31,7 @@
     USJ.api("/api/leads").then(function (data) {
       var root = document.getElementById("list");
       if (!data.leads.length) {
-        root.innerHTML = '<div class="card"><p>Aún no hay interesados. Completa el orientador y pulsa Hablar con un asesor.</p></div>';
+        root.innerHTML = '<div class="card"><p>Aún no hay interesados. Completa el orientador y pulsa Seguir por WhatsApp.</p></div>';
         return;
       }
       root.innerHTML = data.leads.map(function (lead) {
