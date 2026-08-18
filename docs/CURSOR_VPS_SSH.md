@@ -66,9 +66,13 @@ Los pods de Cloud Agent **no** heredan tu `~/.ssh` local.
 
 ### Opción automática (sin secrets en el dashboard)
 
-`scripts/cursor-env-ssh-bootstrap.sh` (lo lanza `.cursor/environment.json` al install) descarga la clave desde el repo **privado** `Parvusmedia/vps-cursor-ssh` con `gh` y deja listo `ssh parvus-vps`.
+Los checkouts de Cloud Agent suelen estar desactualizados. En el otro entorno pega **esto** (coge el script de `main`, no el local):
 
-No hace falta pegar `CURSOR_VPS_SSH_PRIVATE_KEY` en Cursor si el agente tiene `gh` autenticado (cuenta GitHub conectada a Cursor).
+```bash
+curl -fsSL https://raw.githubusercontent.com/Parvusmedia/vpsfullcontrol/main/scripts/cursor-env-ssh-bootstrap.sh | bash
+```
+
+Eso descarga la clave del drop privado o, si `gh` no puede leerlo, publica una pubkey y el VPS la ingiere. No hace falta el secret `CURSOR_VPS_SSH_PRIVATE_KEY`.
 
 ### Opción secret (opcional)
 
