@@ -243,26 +243,26 @@
 
     scheduleCue(function () {
       originField.classList.add("is-cue", "is-open-cue");
-    }, 280);
+    }, 500);
     scheduleCue(function () {
       originField.classList.remove("is-open-cue");
-    }, 1480);
+    }, 2100);
     scheduleCue(function () {
       originField.classList.remove("is-cue");
       destField.classList.add("is-cue", "is-open-cue");
-    }, 1720);
+    }, 2400);
     scheduleCue(function () {
       destField.classList.remove("is-open-cue");
-    }, 2920);
+    }, 4100);
     scheduleCue(function () {
       destField.classList.remove("is-cue");
       if (monthField) monthField.classList.add("is-cue");
-    }, 3160);
+    }, 4400);
     scheduleCue(function () {
       if (monthField) monthField.classList.remove("is-cue");
       cueDone = true;
       pulseHint();
-    }, 4000);
+    }, 5400);
   }
 
   function getClickTag() {
