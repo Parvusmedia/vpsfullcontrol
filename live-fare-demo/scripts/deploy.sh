@@ -56,9 +56,15 @@ systemctl start live-fare-updater.timer
 systemctl start live-fare-updater.service || true
 
 echo "=== local smoke (Host: $DOMAIN) ==="
-curl -fsS -H "Host: $DOMAIN" "http://127.0.0.1/fares/MAD.json" | head -c 200
+SMOKE_BASE="http://127.0.0.1"
+SMOKE_OPTS=(-fsS -H "Host: $DOMAIN")
+if curl -skI -H "Host: $DOMAIN" --max-time 5 "https://127.0.0.1/health" | grep -qi "200 OK"; then
+  SMOKE_BASE="https://127.0.0.1"
+  SMOKE_OPTS=(-fsSk -H "Host: $DOMAIN")
+fi
+curl "${SMOKE_OPTS[@]}" "$SMOKE_BASE/fares/network.json" | head -c 200
 echo
-curl -fsS -H "Host: $DOMAIN" "http://127.0.0.1/health"
+curl "${SMOKE_OPTS[@]}" "$SMOKE_BASE/health"
 echo
 
 resolved="$(dig +short "$DOMAIN" A 2>/dev/null | tail -n1 || true)"
