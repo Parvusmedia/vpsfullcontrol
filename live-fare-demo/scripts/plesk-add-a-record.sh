@@ -114,43 +114,84 @@ command -v plesk >/dev/null && echo "plesk present" || echo "plesk not on this h
 
 found_key_files
 
-SSH_OK=""
-USERS=(root cursorbot admin ubuntu ops)
-PORTS=(22 2222)
-IDENTS=()
-for ident in \
-  /home/cursorbot/.ssh/id_ed25519 \
-  /home/cursorbot/.ssh/id_rsa \
-  /home/cursorbot/.ssh/cursor_vps_access \
-  /root/.ssh/id_ed25519 \
-  /root/.ssh/id_rsa \
-  /home/ops/.ssh/id_ed25519 \
-  /home/ops/.ssh/id_rsa \
-  "$HOME/.ssh/id_ed25519" \
-  "$HOME/.ssh/id_rsa"
-do
-  [[ -f "$ident" ]] && IDENTS+=("$ident")
+echo "=== ssh config hosts (no keys) ==="
+for cfg in /root/.ssh/config /home/cursorbot/.ssh/config /home/ops/.ssh/config; do
+  if [[ -f "$cfg" ]]; then
+    echo "CONFIG $cfg"
+    awk 'BEGIN{IGNORECASE=1} $1=="Host"||$1=="HostName"||$1=="User"||$1=="Port"||$1=="IdentityFile"{print}' "$cfg"
+  fi
 done
-# Also try default agent keys (empty ident)
-IDENTS+=("")
 
-for user in "${USERS[@]}"; do
-  for port in "${PORTS[@]}"; do
-    for ident in "${IDENTS[@]}"; do
-      label="${user}:${port}:${ident:-default}"
-      if out="$(try_ssh "$user" "$port" "$ident" 2>/dev/null)"; then
-        echo "SSH_SUCCESS $label"
-        printf '%s\n' "$out" | sed -n '1,5p'
-        if add_via_ssh "$user" "$port" "$ident"; then
-          SSH_OK=1
-          break 3
+echo "=== plesk-named files (paths only) ==="
+find /home/cursorbot /root /etc /opt/apps /etc/svcopctl -iname '*plesk*' 2>/dev/null | head -50 || true
+
+SSH_OK=""
+USERS=(root cursorbot admin ubuntu ops pmediaplus parvusmedia parvus emiliano psaadm)
+PORTS=(22 2222)
+mapfile -t IDENTS < <(
+  find /root/.ssh /home/cursorbot/.ssh /home/ops/.ssh "$HOME/.ssh" \
+    -type f \( -name 'id_*' -o -name '*ed25519' -o -name '*rsa' -o -name '*ecdsa' \) \
+    ! -name '*.pub' 2>/dev/null | sort -u
+)
+
+echo "=== identity files to try ==="
+printf '%s\n' "${IDENTS[@]:-}"
+
+try_config_hosts() {
+  local cfg="$1"
+  [[ -f "$cfg" ]] || return 1
+  local hosts
+  hosts="$(awk '$1=="Host"{for(i=2;i<=NF;i++) if($i !~ /[*?]/) print $i}' "$cfg")"
+  local h
+  for h in $hosts; do
+    echo "Trying ssh config Host $h"
+    if out="$(ssh -F "$cfg" -o BatchMode=yes -o ConnectTimeout=8 "$h" 'echo SSH_OK; hostname; command -v plesk || true' 2>/dev/null)"; then
+      echo "SSH_SUCCESS config:$h"
+      printf '%s\n' "$out" | sed -n '1,5p'
+      ssh -F "$cfg" -o BatchMode=yes -o ConnectTimeout=8 "$h" bash -s -- "$DOMAIN" "$HOST" "$IP" "$TTL" <<'REMOTE'
+set -euo pipefail
+DOMAIN="$1"; HOST="$2"; IP="$3"; TTL="$4"
+command -v plesk >/dev/null || { echo "plesk CLI missing"; exit 2; }
+info="$(plesk bin dns --info "$DOMAIN" || true)"
+if printf '%s\n' "$info" | grep -E "${HOST}" | grep -q "$IP"; then
+  echo "Plesk already has ${HOST} A ${IP}"
+  exit 0
+fi
+plesk bin dns --add "$DOMAIN" -a "$HOST" -ip "$IP" -ttl "$TTL"
+echo "PLESK_DNS_ADDED"
+REMOTE
+      return 0
+    fi
+  done
+  return 1
+}
+
+for cfg in /home/cursorbot/.ssh/config /root/.ssh/config; do
+  if try_config_hosts "$cfg"; then
+    SSH_OK=1
+    break
+  fi
+done
+
+if [[ -z "$SSH_OK" ]]; then
+  for user in "${USERS[@]}"; do
+    for port in "${PORTS[@]}"; do
+      for ident in "${IDENTS[@]}"; do
+        label="${user}:${port}:${ident}"
+        if out="$(try_ssh "$user" "$port" "$ident" 2>/dev/null)"; then
+          echo "SSH_SUCCESS $label"
+          printf '%s\n' "$out" | sed -n '1,5p'
+          if add_via_ssh "$user" "$port" "$ident"; then
+            SSH_OK=1
+            break 3
+          fi
+        else
+          echo "SSH_FAIL $label"
         fi
-      else
-        echo "SSH_FAIL $label"
-      fi
+      done
     done
   done
-done
+fi
 
 API_KEY="${PLESK_API_KEY:-}"
 if [[ -z "$API_KEY" && -n "${PLESK_API_KEY_FILE:-}" && -f "${PLESK_API_KEY_FILE}" ]]; then
@@ -184,6 +225,11 @@ elif [[ -z "$SSH_OK" && -z "$API_KEY" ]]; then
   echo "No Plesk API key available in env or known files"
 fi
 
+if [[ -z "$SSH_OK" ]]; then
+  echo "FAILED to create DNS record (no SSH/API success); skipping wait"
+  exit 1
+fi
+
 echo "=== wait for DNS ==="
 for i in $(seq 1 12); do
   got="$(dig +short "$FQDN" A @${PLESK_IP} | tail -n1 || true)"
@@ -195,9 +241,5 @@ for i in $(seq 1 12); do
   sleep 5
 done
 
-if [[ -n "$SSH_OK" ]]; then
-  echo "Record submitted but public/ns lookup not visible yet"
-  exit 0
-fi
-echo "FAILED to create DNS record"
-exit 1
+echo "Record submitted but public/ns lookup not visible yet"
+exit 0
