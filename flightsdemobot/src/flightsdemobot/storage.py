@@ -76,6 +76,13 @@ class Store:
                 """
             )
             conn.commit()
+            try:
+                conn.execute(
+                    "ALTER TABLE unlocks ADD COLUMN key_fp TEXT NOT NULL DEFAULT ''"
+                )
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
             conn.close()
 
     def get(self, chat_id: int) -> ChatState:
