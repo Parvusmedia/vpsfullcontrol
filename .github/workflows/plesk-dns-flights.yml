@@ -33,8 +33,8 @@ jobs:
       - name: Issue TLS if DNS is live
         run: |
           set -euo pipefail
-          resolved="$(dig +short flights.pmediaplus.com A | tail -n1 || true)"
-          echo "public DNS=$resolved"
+          resolved="$(dig +short flights.pmediaplus.com A @82.223.3.205 | tail -n1 || true)"
+          echo "ns DNS=$resolved"
           if [[ "$resolved" == "87.106.194.137" && -x /usr/local/sbin/live-fare-deploy ]]; then
             sudo /usr/local/sbin/live-fare-deploy /opt/apps/live-fare-demo
           else
