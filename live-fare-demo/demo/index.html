@@ -45,13 +45,26 @@
       border: 0;
       display: block;
     }
+    .feed-toggle {
+      margin-top: 20px;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: #8a6a24;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
     .meta {
       width: min(520px, 92vw);
-      margin-top: 28px;
+      margin-top: 12px;
       background: #fff;
       padding: 18px 20px;
       border: 1px solid #ddd6c8;
     }
+    .meta[hidden] { display: none; }
     .meta p { margin: 0 0 8px; font-size: 14px; }
     a { color: #8a6a24; }
     .actions { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
@@ -68,11 +81,12 @@
 </head>
 <body>
   <h1>DV360 Live Fare POC</h1>
-  <p class="sub">300 × 600 HTML5 · Saudia live fares · no Google Studio</p>
+  <p class="sub">300 × 600 HTML5 · Saudia live fares</p>
   <div class="stage">
     <iframe title="Live fare creative" src="/creative/index.html"></iframe>
   </div>
-  <div class="meta">
+  <button type="button" id="feedToggle" class="feed-toggle" aria-expanded="false" aria-controls="feedMeta">Ver</button>
+  <div class="meta" id="feedMeta" hidden>
     <p><strong>Feed last update:</strong> <span id="updated">loading…</span></p>
     <p><strong>Health:</strong> <span id="health">loading…</span></p>
     <div class="actions">
@@ -106,6 +120,22 @@
       .catch(function () {
         document.getElementById("health").textContent = "unavailable";
       });
+    (function () {
+      const toggle = document.getElementById("feedToggle");
+      const meta = document.getElementById("feedMeta");
+      toggle.addEventListener("click", function () {
+        const open = meta.hasAttribute("hidden");
+        if (open) {
+          meta.removeAttribute("hidden");
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.textContent = "Ocultar";
+        } else {
+          meta.setAttribute("hidden", "");
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.textContent = "Ver";
+        }
+      });
+    })();
   </script>
 </body>
 </html>

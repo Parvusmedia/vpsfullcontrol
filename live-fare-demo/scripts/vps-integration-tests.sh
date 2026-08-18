@@ -44,6 +44,12 @@ curl_h "$BASE/creative/app.js" | grep -q "cityLabel"
 curl_h "$BASE/creative/app.js" | grep -q "B_LOCATION"
 curl_h "$BASE/creative/app.js" | grep -q "network.json"
 curl_h "$BASE/demo/" | grep -q "DV360 Live Fare POC"
+curl_h "$BASE/demo/" | grep -q 'id="feedToggle"'
+curl_h "$BASE/demo/" | grep -q 'id="feedMeta" hidden'
+if curl_h "$BASE/demo/" | grep -q "no Google Studio"; then
+  echo "demo still mentions Google Studio" >&2
+  exit 1
+fi
 echo "creative/demo HTML OK"
 
 echo "=== pin fare JED-RUH 299 ==="
