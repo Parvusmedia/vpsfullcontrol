@@ -1,0 +1,45 @@
+name: plesk-dns-flights
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/live-fare-dv360-poc-e420
+    paths:
+      - "live-fare-demo/scripts/plesk-add-a-record.sh"
+      - ".github/workflows/plesk-dns-flights.yml"
+
+concurrency:
+  group: plesk-dns-flights
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dns:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create flights.pmediaplus.com A record on Plesk
+        env:
+          PLESK_API_KEY: ${{ secrets.PLESK_API_KEY }}
+          PLESK_API_ORIGIN: ${{ secrets.PLESK_API_ORIGIN }}
+        run: |
+          set -euo pipefail
+          sudo cp live-fare-demo/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-a-record
+          sudo chmod 755 /usr/local/sbin/plesk-add-a-record
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/plesk-add-a-record, /usr/local/sbin/plesk-add-a-record *' > /tmp/ops-plesk-dns
+          sudo cp /tmp/ops-plesk-dns /etc/sudoers.d/ops-plesk-dns
+          sudo chmod 440 /etc/sudoers.d/ops-plesk-dns
+          sudo --preserve-env=PLESK_API_KEY,PLESK_API_ORIGIN /usr/local/sbin/plesk-add-a-record
+      - name: Issue TLS if DNS is live
+        run: |
+          set -euo pipefail
+          resolved="$(dig +short flights.pmediaplus.com A | tail -n1 || true)"
+          echo "public DNS=$resolved"
+          if [[ "$resolved" == "87.106.194.137" && -x /usr/local/sbin/live-fare-deploy ]]; then
+            sudo /usr/local/sbin/live-fare-deploy /opt/apps/live-fare-demo
+          else
+            echo "Skipping certbot until public DNS matches"
+          fi
