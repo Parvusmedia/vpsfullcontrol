@@ -1,0 +1,25 @@
+name: deploy-flightsdemobot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, vps-ops]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install flightsdemobot
+        run: |
+          set -euo pipefail
+          sudo bash flightsdemobot/scripts/install-vps.sh
+
+      - name: Verify service
+        run: |
+          set -euo pipefail
+          sudo systemctl is-active flightsdemobot.service
+          sudo journalctl -u flightsdemobot.service -n 40 --no-pager

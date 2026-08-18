@@ -1,0 +1,18 @@
+[Unit]
+Description=Parvus Media Saudia fares demo Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+EnvironmentFile=-/etc/flightsdemobot/app.env
+WorkingDirectory=/opt/apps/flightsdemobot
+ExecStart=/opt/apps/flightsdemobot/scripts/run.sh
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
