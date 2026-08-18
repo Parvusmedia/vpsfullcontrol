@@ -454,7 +454,6 @@
   });
   [els.origin, els.destination, els.month].forEach(function (select) {
     select.addEventListener("pointerdown", stopInteractCue);
-    select.addEventListener("focus", stopInteractCue);
   });
   els.cta.addEventListener("click", function (event) {
     const url = resolveExitUrl(currentBookingUrl());
