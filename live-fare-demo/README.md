@@ -44,6 +44,8 @@ live-fare-demo/scripts/deploy.sh
 
 El deploy hace `nginx -t` y **reload**. No reinicia friendinme, prosegur ni otros servicios.
 
+Si existe `/etc/letsencrypt/live/flights.pmediaplus.com/fullchain.pem`, el script vuelve a escribir el server `443` (CORS, TTL 30s, `access_log off`). No usa `certbot --nginx`: ese comando muta el vhost y el siguiente deploy lo pisaba, dejando el default_server en 443 (certificado ajeno y 410).
+
 ```bash
 # Reiniciar solo el updater
 sudo systemctl restart live-fare-updater.timer

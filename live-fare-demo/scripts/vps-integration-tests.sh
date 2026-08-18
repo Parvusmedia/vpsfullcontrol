@@ -4,22 +4,27 @@ set -euo pipefail
 DOMAIN="${LIVE_FARE_DOMAIN:-flights.pmediaplus.com}"
 APP="${1:-/opt/apps/live-fare-demo}"
 PY=(sudo -u cursorbot /usr/bin/python3 "$APP/feed/updater/update.py")
-H=(-H "Host: $DOMAIN")
-INSECURE=()
-BASE="http://127.0.0.1"
-if curl -skI --max-time 5 "${H[@]}" "https://127.0.0.1/health" | grep -qi "200 OK"; then
-  BASE="https://127.0.0.1"
+CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
+KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
+
+if [[ -f "$CERT" && -f "$KEY" ]]; then
+  BASE="https://${DOMAIN}"
+  RESOLVE=(--resolve "${DOMAIN}:443:127.0.0.1")
   INSECURE=(-k)
+else
+  BASE="http://${DOMAIN}"
+  RESOLVE=(--resolve "${DOMAIN}:80:127.0.0.1")
+  INSECURE=()
 fi
 export LIVE_FARE_TEST_BASE="$BASE"
 
 curl_h() {
-  curl -fsS "${INSECURE[@]}" "${H[@]}" "$@"
+  curl -fsS "${INSECURE[@]}" "${RESOLVE[@]}" "$@"
 }
 
-echo "=== using $BASE ==="
+echo "=== using $BASE (--resolve → 127.0.0.1) ==="
 echo "=== headers ==="
-curl -sS "${INSECURE[@]}" -D - -o /dev/null "${H[@]}" "$BASE/fares/network.json" | tr -d '\r' | tee /tmp/live-fare-headers.txt
+curl -sS "${INSECURE[@]}" -D - -o /dev/null "${RESOLVE[@]}" "$BASE/fares/network.json" | tr -d '\r' | tee /tmp/live-fare-headers.txt
 python3 - <<'PY'
 from pathlib import Path
 text = Path("/tmp/live-fare-headers.txt").read_text().lower()
@@ -37,12 +42,11 @@ echo "creative/demo HTML OK"
 
 echo "=== pin fare JED-RUH 299 ==="
 "${PY[@]}" --set JED RUH 2026-10 299
+curl_h -o /tmp/live-fare-jed.json "$BASE/fares/JED.json"
 python3 - <<'PY'
-import json, os, ssl, urllib.request
-base = os.environ["LIVE_FARE_TEST_BASE"]
-ctx = ssl._create_unverified_context() if base.startswith("https") else None
-req = urllib.request.Request(base + "/fares/JED.json", headers={"Host": "flights.pmediaplus.com"})
-data = json.load(urllib.request.urlopen(req, timeout=10, context=ctx))
+import json
+from pathlib import Path
+data = json.loads(Path("/tmp/live-fare-jed.json").read_text())
 hit = next(f for f in data["fares"] if f["destination"] == "RUH" and f["month"] == "2026-10")
 assert hit["price"] == 299, hit
 print("pinned", hit["price"], hit.get("currency"))
@@ -53,13 +57,12 @@ echo "=== restore JED-RUH 380 ==="
 
 echo "=== stale then refresh ==="
 "${PY[@]}" --stale 45
+curl_h -o /tmp/live-fare-network.json "$BASE/fares/network.json"
 python3 - <<'PY'
 from datetime import datetime, timezone
-import json, os, ssl, urllib.request
-base = os.environ["LIVE_FARE_TEST_BASE"]
-ctx = ssl._create_unverified_context() if base.startswith("https") else None
-req = urllib.request.Request(base + "/fares/network.json", headers={"Host": "flights.pmediaplus.com"})
-data = json.load(urllib.request.urlopen(req, timeout=10, context=ctx))
+import json
+from pathlib import Path
+data = json.loads(Path("/tmp/live-fare-network.json").read_text())
 updated = datetime.strptime(data["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 age_min = (datetime.now(timezone.utc) - updated).total_seconds() / 60
 assert age_min >= 40, age_min
@@ -69,7 +72,7 @@ PY
 
 echo "=== missing feed 404 ==="
 mv "$APP/feed/public/network.json" "$APP/feed/public/network.json.bak"
-code="$(curl -sS "${INSECURE[@]}" -o /dev/null -w "%{http_code}" "${H[@]}" "$BASE/fares/network.json" || true)"
+code="$(curl -sS "${INSECURE[@]}" -o /dev/null -w "%{http_code}" "${RESOLVE[@]}" "$BASE/fares/network.json" || true)"
 mv "$APP/feed/public/network.json.bak" "$APP/feed/public/network.json"
 chown cursorbot:cursorbot "$APP/feed/public/network.json"
 [[ "$code" == "404" ]] || { echo "expected 404, got $code"; exit 1; }

@@ -50,11 +50,15 @@ jobs:
           sudo /usr/local/sbin/live-fare-deploy "$GITHUB_WORKSPACE/live-fare-demo"
       - name: Validate over localhost vhost
         run: |
-          curl -fsSk -H "Host: flights.pmediaplus.com" https://127.0.0.1/fares/network.json | head -c 400
+          set -euo pipefail
+          # --resolve keeps SNI on flights.pmediaplus.com; https://127.0.0.1 hits default_server.
+          curl -fsSk --resolve flights.pmediaplus.com:443:127.0.0.1 \
+            -o /tmp/live-fare-localhost-network.json \
+            https://flights.pmediaplus.com/fares/network.json
+          python3 -c "import json; d=json.load(open('/tmp/live-fare-localhost-network.json')); assert len(d['fares'])>=200; print('fares', len(d['fares']), d['updated_at'])"
+          curl -fsSk --resolve flights.pmediaplus.com:443:127.0.0.1 https://flights.pmediaplus.com/health
           echo
-          curl -fsSk -H "Host: flights.pmediaplus.com" https://127.0.0.1/health
-          echo
-          curl -skI -H "Host: flights.pmediaplus.com" https://127.0.0.1/fares/network.json | sed -n '1,20p'
+          curl -skI --resolve flights.pmediaplus.com:443:127.0.0.1 https://flights.pmediaplus.com/fares/network.json | sed -n '1,25p'
       - name: Validate public HTTPS if DNS is live
         run: |
           resolved="$(dig +short flights.pmediaplus.com A | tail -n1 || true)"
