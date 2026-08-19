@@ -20,6 +20,16 @@ Añade estos secrets en el dashboard del Cloud Agent (o exporta las mismas varia
 
 - `N8N_URL` = `https://pmedia.app.n8n.cloud`
 - `N8N_API_KEY` = tu JWT `public-api` o clave `n8n_api_...`
+- `N8N_MCP_TOKEN` = opcional, JWT `mcp-server-api` para MCP
+
+## Cursor MCP (proyecto)
+
+- [`.cursor/mcp.json`](../.cursor/mcp.json) — URL MCP (OAuth al conectar en Cursor IDE).
+- Con token MCP en `config/n8n.local.env`:
+
+```bash
+python3 scripts/sync_cursor_mcp.py
+```
 
 ## Dos tokens distintos
 

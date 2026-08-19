@@ -25,7 +25,10 @@ def deploy_workflow(base_url: str, api_key: str, workflow_file: Path, workflow_n
         "name": workflow["name"],
         "nodes": workflow["nodes"],
         "connections": workflow["connections"],
-        "settings": workflow.get("settings", {}),
+        "settings": {
+            **workflow.get("settings", {}),
+            "availableInMCP": True,
+        },
     }
 
     target_id = workflow_id

@@ -4,5 +4,8 @@ config/*.local.env
 .env.*
 !.env.example
 
+# MCP local con token (si sync_cursor_mcp añade Authorization)
+.cursor/mcp.local.json
+
 # Exports n8n
 n8n_export_latest/

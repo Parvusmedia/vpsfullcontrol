@@ -74,7 +74,10 @@ def main() -> int:
         "name": workflow["name"],
         "nodes": workflow["nodes"],
         "connections": workflow["connections"],
-        "settings": workflow.get("settings", {}),
+        "settings": {
+            **workflow.get("settings", {}),
+            "availableInMCP": True,
+        },
     }
 
     existing = next((w for w in list_workflows(base_url, api_key) if w.get("name") == WORKFLOW_NAME), None)
