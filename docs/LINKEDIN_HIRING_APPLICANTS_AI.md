@@ -56,9 +56,8 @@ Conecta credencial **Google Sheets OAuth2** en los nodos `Read Existing IDs` y `
 
 ```
 Manual Trigger / Cron 30 min
-  → Config
-  → Read Existing IDs (dedup)
-  → Fetch Applicants (Unipile, ratings=UNRATED)
+  → Config ─┬→ Read Existing IDs (dedup, en paralelo)
+            └→ Fetch Applicants (Unipile)
   → Split and Filter New
   → Prepare AI Prompt
   → OpenAI Analysis
@@ -66,9 +65,11 @@ Manual Trigger / Cron 30 min
   → Append to Google Sheet
 ```
 
+**Importante:** `Read Existing IDs` y `Fetch Applicants` corren en paralelo desde `Config`. Si la hoja está vacía, el flujo ya no se corta antes de llamar a Unipile.
+
 ## Notas
 
-- Solo procesa candidatos con rating `UNRATED` en LinkedIn.
+- Procesa candidatos con cualquier rating (`UNRATED`, `MAYBE`, `GOOD_FIT`, `NOT_A_FIT`).
 - Evita duplicados comparando `application_id` con la hoja.
 - El token de ChatGPT va en el nodo `Config`, no en credenciales de n8n.
 - Ajusta `job_criteria` según el puesto concreto.

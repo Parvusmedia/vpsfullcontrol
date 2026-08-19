@@ -171,7 +171,7 @@
             },
             {
               "name": "ratings",
-              "value": "UNRATED"
+              "value": "UNRATED,MAYBE,GOOD_FIT,NOT_A_FIT"
             },
             {
               "name": "limit",
@@ -192,7 +192,14 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -205,7 +212,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const cfg = $('Config').first().json;\nconst response = $('Fetch Applicants (Unipile)').first().json;\nconst applicants = Array.isArray(response.items) ? response.items : [];\n\nconst existingRows = $('Read Existing IDs').all().map((item) => item.json);\nconst existingIds = new Set();\n\nfor (const row of existingRows) {\n  const raw = row.application_id ?? row['application_id'] ?? row['Application ID'] ?? row['ID'] ?? Object.values(row)[0];\n  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {\n    existingIds.add(String(raw).trim());\n  }\n}\n\nconst fresh = applicants.filter((applicant) => {\n  const id = String(applicant.id ?? applicant.application_id ?? '').trim();\n  return id && !existingIds.has(id);\n});\n\nif (!fresh.length) {\n  return [];\n}\n\nreturn fresh.map((applicant) => ({\n  json: {\n    applicant,\n    config: cfg,\n  },\n}));"
+        "jsCode": "const cfg = $('Config').first().json;\nconst http = $('Fetch Applicants (Unipile)').first().json;\nconst response = http.body ?? http;\nconst statusCode = http.statusCode ?? response?.status ?? 200;\n\nif (statusCode >= 400) {\n  throw new Error(`Unipile HTTP ${statusCode}: ${JSON.stringify(response).slice(0, 800)}`);\n}\nif (response?.error || response?.title) {\n  throw new Error(`Unipile error: ${response.title || response.error || JSON.stringify(response).slice(0, 800)}`);\n}\n\nconst applicants = Array.isArray(response.items) ? response.items : [];\n\nconst existingRows = $('Read Existing IDs').all().map((item) => item.json);\nconst existingIds = new Set();\n\nfor (const row of existingRows) {\n  const raw = row.application_id ?? row['application_id'] ?? row['Application ID'] ?? row['ID'] ?? Object.values(row)[0];\n  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {\n    existingIds.add(String(raw).trim());\n  }\n}\n\nconst fresh = applicants.filter((applicant) => {\n  const id = String(applicant.id ?? applicant.application_id ?? '').trim();\n  return id && !existingIds.has(id);\n});\n\nif (!fresh.length) {\n  return [];\n}\n\nreturn fresh.map((applicant) => ({\n  json: {\n    applicant,\n    config: cfg,\n  },\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -482,19 +489,18 @@
             "node": "Read Existing IDs",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Read Existing IDs": {
-      "main": [
-        [
+          },
           {
             "node": "Fetch Applicants (Unipile)",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Read Existing IDs": {
+      "main": [
+        []
       ]
     },
     "Fetch Applicants (Unipile)": {
