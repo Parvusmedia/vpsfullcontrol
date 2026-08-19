@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any
 import os
 
+from n8n_env import load_n8n_env
+
 
 def _is_jwt(value: str) -> bool:
     return value.count(".") == 2
@@ -180,7 +182,7 @@ def _detect_tokens() -> tuple[str | None, str | None]:
     legacy = os.getenv("N8N_API_KEY")
 
     if legacy:
-        if not rest_key and legacy.startswith("n8n_api_"):
+        if not rest_key and (legacy.startswith("n8n_api_") or _is_jwt(legacy)):
             rest_key = legacy
         if not mcp_token and _is_jwt(legacy):
             mcp_token = legacy
@@ -404,6 +406,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    load_n8n_env()
     args = parse_args()
     n8n_url = os.getenv("N8N_URL")
     if not n8n_url:

@@ -10,6 +10,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from n8n_env import load_n8n_env
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_FILE = ROOT / "n8n" / "workflows" / "linkedin-hiring-applicants-ai.json"
 WORKFLOW_NAME = "LinkedIn Hiring Applicants AI"
@@ -55,6 +57,7 @@ def list_workflows(base_url: str, api_key: str) -> list[dict]:
 
 
 def main() -> int:
+    load_n8n_env()
     base_url = os.getenv("N8N_URL", "https://pmedia.app.n8n.cloud")
     api_key = os.getenv("N8N_REST_API_KEY") or os.getenv("N8N_API_KEY")
     if not api_key:

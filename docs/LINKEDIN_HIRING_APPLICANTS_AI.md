@@ -15,10 +15,10 @@ Archivo: [`n8n/workflows/linkedin-hiring-applicants-ai.json`](../n8n/workflows/l
 
 ### Opción B — Deploy por API
 
+Crea `config/n8n.local.env` (ver [`docs/N8N_ONE_WINDOW.md`](N8N_ONE_WINDOW.md)) y ejecuta:
+
 ```bash
-export N8N_URL=https://pmedia.app.n8n.cloud
-export N8N_API_KEY=...
-python3 scripts/deploy_linkedin_applicants_workflow.py
+python3 scripts/deploy_n8n_workflows.py
 ```
 
 ## Configurar nodo `Config`

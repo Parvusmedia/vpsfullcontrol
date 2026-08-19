@@ -1,0 +1,11 @@
+{
+  "base_url": "https://pmedia.app.n8n.cloud",
+  "mcp_endpoint": "https://pmedia.app.n8n.cloud/mcp-server/http",
+  "workflows": [
+    {
+      "file": "n8n/workflows/linkedin-hiring-applicants-ai.json",
+      "n8n_name": "LinkedIn Hiring Applicants AI",
+      "workflow_id": "sFefLQ6Js3pPV3oB"
+    }
+  ]
+}

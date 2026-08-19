@@ -1,0 +1,8 @@
+# Secrets locales (copiar desde config/n8n.local.env.example)
+config/*.local.env
+.env
+.env.*
+!.env.example
+
+# Exports n8n
+n8n_export_latest/
