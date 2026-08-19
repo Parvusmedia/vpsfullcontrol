@@ -75,4 +75,5 @@ Manual Trigger / Cron 30 min
 - Si devuelve **503 No client session**, reconecta la cuenta LinkedIn en Unipile y verifica DSN/puerto/account_id.
 - Evita duplicados comparando `application_id` con la hoja.
 - El token de ChatGPT va en el nodo `Config`, no en credenciales de n8n.
-- Ajusta `job_criteria` según el puesto concreto.
+- Ajusta `job_title` y `job_criteria` en el nodo `Config` según la oferta de LinkedIn.
+- El scoring es conservador: prioriza experiencia en agencias, publishers y AdTech reconocidos en GCC.
