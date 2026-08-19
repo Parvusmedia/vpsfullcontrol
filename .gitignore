@@ -9,3 +9,5 @@ config/*.local.env
 
 # Exports n8n
 n8n_export_latest/
+__pycache__/
+*.pyc
