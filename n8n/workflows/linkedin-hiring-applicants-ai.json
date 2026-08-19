@@ -135,12 +135,12 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "={{ $('Config').item.json.google_sheet_id }}",
+          "value": "={{ $('Config').first().json.google_sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
           "__rl": true,
-          "value": "={{ $('Config').item.json.sheet_name }}",
+          "value": "={{ $('Config').first().json.sheet_name }}",
           "mode": "id"
         },
         "options": {}
@@ -295,12 +295,12 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "={{ $('Config').item.json.google_sheet_id }}",
+          "value": "={{ $('Config').first().json.google_sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
           "__rl": true,
-          "value": "={{ $('Config').item.json.sheet_name }}",
+          "value": "={{ $('Config').first().json.sheet_name }}",
           "mode": "id"
         },
         "columns": {
