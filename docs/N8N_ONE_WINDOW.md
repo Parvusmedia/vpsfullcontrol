@@ -21,10 +21,18 @@ Añade estos secrets en el dashboard del Cloud Agent (o exporta las mismas varia
 - `N8N_URL` = `https://pmedia.app.n8n.cloud`
 - `N8N_API_KEY` = tu JWT `public-api` o clave `n8n_api_...`
 
-Opcional para MCP (token distinto, `aud: mcp-server-api`):
+## Dos tokens distintos
 
-- `N8N_MCP_TOKEN`
-- `N8N_MCP_ENDPOINT` = `https://pmedia.app.n8n.cloud/mcp-server/http`
+| Uso | Dónde obtenerlo | Variable |
+|-----|-----------------|----------|
+| REST API / deploy scripts | API o JWT `public-api` | `N8N_API_KEY` |
+| MCP (Cursor, agentes) | Settings → Instance-level MCP → **Access token** | `N8N_MCP_TOKEN` |
+
+Server URL MCP: `https://pmedia.app.n8n.cloud/mcp-server/http` → `N8N_MCP_ENDPOINT`
+
+En Cursor: **Settings → MCP → N8N_** con esa URL y el Access token de la pantalla MCP (no el de REST).
+
+Además, en n8n hay que **habilitar MCP en al menos un workflow** (Settings del workflow → Available in MCP).
 
 ## Secrets soportados
 
