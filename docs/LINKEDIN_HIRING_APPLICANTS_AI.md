@@ -33,12 +33,20 @@ python3 scripts/deploy_n8n_workflows.py
 | `openai_model` | Modelo (por defecto `gpt-4o-mini`) |
 | `job_title` | Título del puesto |
 | `job_criteria` | Criterios must-have / nice-to-have |
-| `google_sheet_id` | ID del spreadsheet de Google |
-| `sheet_name` | Pestaña (por defecto `Candidatos`) |
+| `google_sheet_id` | `1a6dDwT5VWQH5YMGx1kX-7HVVnozD-bspuzPLThjL1bQ` |
+| `sheet_name` | `gid=0` (primera pestaña) |
 
 ## Google Sheet
 
-Crea una hoja con estas columnas en la primera fila:
+Hoja: https://docs.google.com/spreadsheets/d/1a6dDwT5VWQH5YMGx1kX-7HVVnozD-bspuzPLThjL1bQ/edit
+
+Inicializar cabeceras (si hace falta):
+
+```bash
+python3 scripts/init_candidatos_sheet_headers.py
+```
+
+Columnas en fila 1:
 
 `application_id | nombre | perfil_url | headline | email | telefono | fecha_aplicacion | score | recomendacion | por_que_si | por_que_no | resumen | argumento | fecha_analisis`
 

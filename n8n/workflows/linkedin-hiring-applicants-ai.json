@@ -102,13 +102,13 @@
             {
               "id": "cfg-sheet-id",
               "name": "google_sheet_id",
-              "value": "",
+              "value": "1a6dDwT5VWQH5YMGx1kX-7HVVnozD-bspuzPLThjL1bQ",
               "type": "string"
             },
             {
               "id": "cfg-sheet-name",
               "name": "sheet_name",
-              "value": "Candidatos",
+              "value": "gid=0",
               "type": "string"
             }
           ]
@@ -135,7 +135,7 @@
         "sheetName": {
           "__rl": true,
           "value": "={{ $('Config').item.json.sheet_name }}",
-          "mode": "name"
+          "mode": "id"
         },
         "options": {}
       },
@@ -149,8 +149,8 @@
       "name": "Read Existing IDs",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REPLACE_GOOGLE_SHEETS_CREDENTIAL",
-          "name": "Google Sheets account"
+          "id": "iTqnN5NwN0dwUViP",
+          "name": "Google ParvusAccount"
         }
       }
     },
@@ -284,7 +284,7 @@
         "sheetName": {
           "__rl": true,
           "value": "={{ $('Config').item.json.sheet_name }}",
-          "mode": "name"
+          "mode": "id"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -446,8 +446,8 @@
       "name": "Append to Google Sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REPLACE_GOOGLE_SHEETS_CREDENTIAL",
-          "name": "Google Sheets account"
+          "id": "iTqnN5NwN0dwUViP",
+          "name": "Google ParvusAccount"
         }
       }
     }

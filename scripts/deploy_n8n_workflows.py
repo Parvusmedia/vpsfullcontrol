@@ -21,6 +21,30 @@ DEPLOY_CONFIG = ROOT / "config" / "n8n-deploy.json"
 def deploy_workflow(base_url: str, api_key: str, workflow_file: Path, workflow_name: str, workflow_id: str | None) -> str:
     workflow = json.loads(workflow_file.read_text(encoding="utf-8"))
     workflow["name"] = workflow_name
+
+    target_id = workflow_id
+    if not target_id:
+        existing = next((w for w in list_workflows(base_url, api_key) if w.get("name") == workflow_name), None)
+        target_id = existing["id"] if existing else None
+
+    if target_id:
+        remote = request("GET", f"{base_url.rstrip('/')}/api/v1/workflows/{target_id}", api_key)
+        remote_nodes = {n.get("name"): n for n in remote.get("nodes", []) if isinstance(n, dict)}
+        for node in workflow.get("nodes", []):
+            if node.get("name") != "Config" or node.get("name") not in remote_nodes:
+                continue
+            remote_assignments = {
+                a.get("name"): a.get("value")
+                for a in remote_nodes["Config"].get("parameters", {})
+                .get("assignments", {})
+                .get("assignments", [])
+                if isinstance(a, dict)
+            }
+            for assignment in node.get("parameters", {}).get("assignments", {}).get("assignments", []):
+                name = assignment.get("name")
+                if not assignment.get("value") and remote_assignments.get(name):
+                    assignment["value"] = remote_assignments[name]
+
     payload = {
         "name": workflow["name"],
         "nodes": workflow["nodes"],

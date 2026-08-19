@@ -83,6 +83,21 @@ def main() -> int:
     existing = next((w for w in list_workflows(base_url, api_key) if w.get("name") == WORKFLOW_NAME), None)
     if existing:
         workflow_id = existing["id"]
+        remote = request("GET", f"{base_url.rstrip('/')}/api/v1/workflows/{workflow_id}", api_key)
+        remote_nodes = {n.get("name"): n for n in remote.get("nodes", []) if isinstance(n, dict)}
+        if "Config" in remote_nodes:
+            remote_assignments = {
+                a.get("name"): a.get("value")
+                for a in remote_nodes["Config"].get("parameters", {})
+                .get("assignments", {})
+                .get("assignments", [])
+                if isinstance(a, dict)
+            }
+            config_node = next(n for n in workflow["nodes"] if n.get("name") == "Config")
+            for item in config_node.get("parameters", {}).get("assignments", {}).get("assignments", []):
+                if not item.get("value") and remote_assignments.get(item.get("name")):
+                    item["value"] = remote_assignments[item["name"]]
+        payload["nodes"] = workflow["nodes"]
         request("PUT", f"{base_url.rstrip('/')}/api/v1/workflows/{workflow_id}", api_key, payload)
         print(f"Workflow actualizado: {workflow_id}")
     else:
