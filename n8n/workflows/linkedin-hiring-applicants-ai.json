@@ -54,13 +54,13 @@
             {
               "id": "cfg-unipile-dsn",
               "name": "unipile_dsn",
-              "value": "api1.unipile.com",
+              "value": "api46.unipile.com",
               "type": "string"
             },
             {
               "id": "cfg-unipile-port",
               "name": "unipile_port",
-              "value": "13111",
+              "value": "17682",
               "type": "string"
             },
             {

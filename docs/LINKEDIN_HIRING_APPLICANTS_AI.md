@@ -25,8 +25,8 @@ python3 scripts/deploy_n8n_workflows.py
 
 | Variable | Descripción |
 |----------|-------------|
-| `unipile_dsn` | DSN de Unipile (copiar del dashboard, ej: `api1.unipile.com`) |
-| `unipile_port` | Puerto del DSN (copiar del dashboard, ej: `13111`). **Obligatorio** en HTTPS 443 |
+| `unipile_dsn` | DSN de Unipile (copiar del dashboard, ej: `api46.unipile.com`) |
+| `unipile_port` | Puerto del DSN (copiar del dashboard, ej: `17682`). **Obligatorio** en HTTPS 443 |
 | `unipile_api_key` | Access Token de Unipile |
 | `unipile_account_id` | ID cuenta LinkedIn en Unipile (`acc_xxx`) |
 | `linkedin_job_id` | ID de la oferta (ej: `4456186543`) |
