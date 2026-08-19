@@ -25,7 +25,8 @@ python3 scripts/deploy_n8n_workflows.py
 
 | Variable | Descripción |
 |----------|-------------|
-| `unipile_dsn` | DSN de Unipile (ej: `api1.unipile.com`) |
+| `unipile_dsn` | DSN de Unipile (copiar del dashboard, ej: `api1.unipile.com`) |
+| `unipile_port` | Puerto del DSN (copiar del dashboard, ej: `13111`). **Obligatorio** en HTTPS 443 |
 | `unipile_api_key` | Access Token de Unipile |
 | `unipile_account_id` | ID cuenta LinkedIn en Unipile (`acc_xxx`) |
 | `linkedin_job_id` | ID de la oferta (ej: `4456186543`) |
@@ -70,6 +71,8 @@ Manual Trigger / Cron 30 min
 ## Notas
 
 - Procesa candidatos con cualquier rating (`UNRATED`, `MAYBE`, `GOOD_FIT`, `NOT_A_FIT`).
+- Si Unipile devuelve **502**, falta `unipile_port` o el DSN es incorrecto.
+- Si devuelve **503 No client session**, reconecta la cuenta LinkedIn en Unipile y verifica DSN/puerto/account_id.
 - Evita duplicados comparando `application_id` con la hoja.
 - El token de ChatGPT va en el nodo `Config`, no en credenciales de n8n.
 - Ajusta `job_criteria` según el puesto concreto.

@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Configuracion\n\nEdita **solo** el nodo `Config`:\n- `unipile_dsn` (ej: api1.unipile.com)\n- `unipile_api_key`\n- `unipile_account_id` (acc_xxx)\n- `linkedin_job_id` (4456186543)\n- `openai_api_key` (token ChatGPT)\n- `job_title` y `job_criteria`\n- `google_sheet_id` y `sheet_name`\n\nConecta credencial **Google Sheets OAuth2** en los nodos de Sheets.\n\nActiva el workflow y usa **Ejecutar workflow** o espera el cron (30 min).",
+        "content": "## Configuracion\n\nEdita **solo** el nodo `Config`:\n- `unipile_dsn` (copiar del dashboard Unipile, ej: api1.unipile.com)\n- `unipile_port` (copiar del dashboard Unipile, ej: 13111)\n- `unipile_api_key`\n- `unipile_account_id` (acc_xxx)\n- `linkedin_job_id` (4456186543)\n- `openai_api_key` (token ChatGPT)\n- `job_title` y `job_criteria`\n- `google_sheet_id` y `sheet_name`\n\nSin `unipile_port` Unipile devuelve 502 Bad Gateway.\n\nConecta credencial **Google Sheets OAuth2** en los nodos de Sheets.\n\nActiva el workflow y usa **Ejecutar workflow** o espera el cron (30 min).",
         "height": 320,
         "width": 460
       },
@@ -55,6 +55,12 @@
               "id": "cfg-unipile-dsn",
               "name": "unipile_dsn",
               "value": "api1.unipile.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-unipile-port",
+              "name": "unipile_port",
+              "value": "13111",
               "type": "string"
             },
             {
@@ -176,6 +182,10 @@
             {
               "name": "limit",
               "value": "50"
+            },
+            {
+              "name": "port",
+              "value": "={{ $('Config').item.json.unipile_port }}"
             }
           ]
         },
@@ -212,7 +222,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const cfg = $('Config').first().json;\nconst http = $('Fetch Applicants (Unipile)').first().json;\nconst response = http.body ?? http;\nconst statusCode = http.statusCode ?? response?.status ?? 200;\n\nif (statusCode >= 400) {\n  throw new Error(`Unipile HTTP ${statusCode}: ${JSON.stringify(response).slice(0, 800)}`);\n}\nif (response?.error || response?.title) {\n  throw new Error(`Unipile error: ${response.title || response.error || JSON.stringify(response).slice(0, 800)}`);\n}\n\nconst applicants = Array.isArray(response.items) ? response.items : [];\n\nconst existingRows = $('Read Existing IDs').all().map((item) => item.json);\nconst existingIds = new Set();\n\nfor (const row of existingRows) {\n  const raw = row.application_id ?? row['application_id'] ?? row['Application ID'] ?? row['ID'] ?? Object.values(row)[0];\n  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {\n    existingIds.add(String(raw).trim());\n  }\n}\n\nconst fresh = applicants.filter((applicant) => {\n  const id = String(applicant.id ?? applicant.application_id ?? '').trim();\n  return id && !existingIds.has(id);\n});\n\nif (!fresh.length) {\n  return [];\n}\n\nreturn fresh.map((applicant) => ({\n  json: {\n    applicant,\n    config: cfg,\n  },\n}));"
+        "jsCode": "const cfg = $('Config').first().json;\nconst http = $('Fetch Applicants (Unipile)').first().json;\nconst response = http.body ?? http;\nconst statusCode = http.statusCode ?? response?.status ?? 200;\n\nif (statusCode === 502) {\n  throw new Error('Unipile 502 Bad Gateway: revisa unipile_dsn y unipile_port en Config (copialos del dashboard Unipile).');\n}\nif (statusCode === 503 && (response?.type === 'errors/no_client_session' || String(response?.title || '').includes('No client session'))) {\n  throw new Error('Unipile 503: sesion de cuenta no activa. Reconecta la cuenta LinkedIn en Unipile y confirma DSN/puerto/account_id en Config.');\n}\nif (statusCode >= 400) {\n  throw new Error(`Unipile HTTP ${statusCode}: ${JSON.stringify(response).slice(0, 800)}`);\n}\nif (response?.error || response?.title) {\n  throw new Error(`Unipile error: ${response.title || response.error || JSON.stringify(response).slice(0, 800)}`);\n}\n\nconst applicants = Array.isArray(response.items) ? response.items : [];\n\nconst existingRows = $('Read Existing IDs').all().map((item) => item.json);\nconst existingIds = new Set();\n\nfor (const row of existingRows) {\n  const raw = row.application_id ?? row['application_id'] ?? row['Application ID'] ?? row['ID'] ?? Object.values(row)[0];\n  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {\n    existingIds.add(String(raw).trim());\n  }\n}\n\nconst fresh = applicants.filter((applicant) => {\n  const id = String(applicant.id ?? applicant.application_id ?? '').trim();\n  return id && !existingIds.has(id);\n});\n\nif (!fresh.length) {\n  return [];\n}\n\nreturn fresh.map((applicant) => ({\n  json: {\n    applicant,\n    config: cfg,\n  },\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
