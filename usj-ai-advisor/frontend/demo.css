@@ -1,3 +1,27 @@
+.demo-ref {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 0 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.demo-ref strong {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  font-weight: 600;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
 .demo-map-mount { margin: 16px 0 24px; }
 
 .demo-map {

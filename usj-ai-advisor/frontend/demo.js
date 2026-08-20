@@ -94,6 +94,18 @@
     }
   }
 
+  function renderDemoRef() {
+    var nav = document.querySelector(".nav");
+    if (!nav || document.querySelector(".demo-ref")) return;
+    nav.insertAdjacentHTML(
+      "afterend",
+      '<div class="demo-ref" aria-label="Referencia del producto">' +
+      "<span>Universidad San Jorge</span>" +
+      "<strong>Orientador en display</strong>" +
+      "</div>"
+    );
+  }
+
   function applyPresentMode() {
     if (USJ.presentEnabled && USJ.presentEnabled()) {
       document.body.classList.add("present-mode");
@@ -115,6 +127,7 @@
     opts = opts || {};
     applyPresentMode();
     enhanceNav();
+    renderDemoRef();
     var active = opts.active || detectActive();
     var mapMount = document.getElementById("demo-map-mount");
     if (mapMount) {
