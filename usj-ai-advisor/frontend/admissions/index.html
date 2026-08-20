@@ -4,9 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admisiones — Orientador USJ</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/demo.css">
   <style>
@@ -23,9 +21,13 @@
     <div id="demo-map-mount" class="demo-map-mount"></div>
     <div id="demo-here-mount"></div>
 
-    <p class="kicker">Paso 3 · Conversión</p>
-    <h1>Contexto cualificado, no un formulario vacío.</h1>
-    <p class="lede">Cada interesado llega con perfil, puntuación, alternativas y respuestas del wizard. Los datos personales solo aparecen si pulsó Dejar mis datos o contactó por WhatsApp (simulado en demo).</p>
+    <header class="hero hero-step">
+      <p class="kicker">Paso 3 · Conversión</p>
+      <h1>Contexto cualificado, no un formulario vacío.</h1>
+      <p class="lede">Cada interesado llega con perfil, puntuación, alternativas y respuestas del wizard. Los datos personales solo aparecen si pulsó Dejar mis datos o contactó por WhatsApp (simulado en demo).</p>
+    </header>
+
+    <div id="summary" class="leads-summary" hidden></div>
     <div id="list"></div>
     <div id="demo-linear-mount"></div>
     <p class="footnote">Si la lista está vacía, completa el <a href="/orientador">Orientador</a> (paso 1) o un <a href="/ad">Anuncio</a> (paso 2).</p>
@@ -34,34 +36,62 @@
   <script src="/demo.js"></script>
   <script>USJ.mountDemoChrome();</script>
   <script>
+    function intentClass(intent) {
+      var value = String(intent || "LOW").toUpperCase();
+      if (value === "HIGH") return "intent-chip intent-high";
+      if (value === "MEDIUM") return "intent-chip intent-medium";
+      return "intent-chip intent-low";
+    }
+
+    function renderLeadCard(lead) {
+      var rec = lead.recommendation || {};
+      var profile = lead.profile || {};
+      var seedClass = lead.demo_seed ? " prospect demo-seed" : " prospect";
+      var seedBadge = lead.demo_seed ? '<span class="demo-seed-badge">Ejemplo demo</span>' : "";
+      var kicker = lead.demo_seed ? "Interesado de ejemplo" : "Nuevo interesado";
+      var intent = lead.lead_intent || "LOW";
+      return '<article class="card' + seedClass + '">' +
+        seedBadge +
+        '<div class="kicker">' + kicker + '</div>' +
+        '<h2 class="program-title">' + (lead.name || "Interesado") + '</h2>' +
+        '<span class="' + intentClass(intent) + '">Intención ' + intent + '</span>' +
+        '<div class="grid2">' +
+        '<div><p class="label">Máster recomendado</p><p>' + (rec.programme || "—") + '<br>' + (rec.score_pct || Math.round((rec.score || 0) * 100)) + '% de encaje · ' + (rec.eligibility || "") + '</p></div>' +
+        '<div><p class="label">Perfil</p><p>' + (profile.current_role || profile.education || "—") + '<br>' + (profile.experience_years != null ? profile.experience_years + " años de experiencia" : "") + '</p></div>' +
+        '<div><p class="label">Objetivo</p><p>' + (profile.goal || "—") + '</p></div>' +
+        '<div><p class="label">Prioridad</p><p>' + (lead.priority || profile.priority || "—") + '</p></div>' +
+        '</div>' +
+        '<p class="label">Intereses</p><p>' + ((profile.interests || []).join(", ") || "—") + '</p>' +
+        '<p class="label">Preguntas</p><p>' + ((lead.questions_asked || []).join(" · ") || "Ninguna todavía") + '</p>' +
+        '<p class="label">Email / teléfono</p><p>' + lead.email + (lead.phone ? " · " + lead.phone : "") + '</p>' +
+      '</article>';
+    }
+
+    function renderSections(leads) {
+      var seeds = leads.filter(function (l) { return l.demo_seed; });
+      var live = leads.filter(function (l) { return !l.demo_seed; });
+      var summary = document.getElementById("summary");
+      summary.hidden = false;
+      summary.textContent = seeds.length + " ejemplo" + (seeds.length === 1 ? "" : "s") + " fijo" + (seeds.length === 1 ? "" : "s") + " · " + live.length + " lead" + (live.length === 1 ? "" : "s") + " generado" + (live.length === 1 ? "" : "s") + " en esta sesión";
+
+      var html = "";
+      if (live.length) {
+        html += '<section class="leads-section"><h2>Generados en esta sesión</h2>' + live.map(renderLeadCard).join("") + "</section>";
+      }
+      if (seeds.length) {
+        html += '<section class="leads-section"><h2>Ejemplos fijos del demo</h2>' + seeds.map(renderLeadCard).join("") + "</section>";
+      }
+      return html;
+    }
+
     USJ.api("/api/leads").then(function (data) {
       var root = document.getElementById("list");
       if (!data.leads.length) {
+        document.getElementById("summary").hidden = true;
         root.innerHTML = '<div class="card"><p>Aún no hay interesados en este demo.</p><p>Ve al <a href="/orientador">Orientador</a> (paso 1), completa las 3 preguntas y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>.</p></div>';
         return;
       }
-      root.innerHTML = data.leads.map(function (lead) {
-        var rec = lead.recommendation || {};
-        var profile = lead.profile || {};
-        var seedClass = lead.demo_seed ? ' prospect demo-seed' : ' prospect';
-        var seedBadge = lead.demo_seed ? '<span class="demo-seed-badge">Ejemplo demo</span>' : '';
-        var kicker = lead.demo_seed ? 'Interesado de ejemplo' : 'Nuevo interesado';
-        return '<article class="card' + seedClass + '">' +
-          seedBadge +
-          '<div class="kicker">' + kicker + '</div>' +
-          '<h2 class="program-title">' + (lead.name || "Interesado") + '</h2>' +
-          '<p class="intent">Intención ' + (lead.lead_intent || "LOW") + '</p>' +
-          '<div class="grid2">' +
-          '<div><p class="label">Máster recomendado</p><p>' + (rec.programme || "—") + '<br>' + (rec.score_pct || Math.round((rec.score||0)*100)) + '% de encaje · ' + (rec.eligibility || "") + '</p></div>' +
-          '<div><p class="label">Perfil</p><p>' + (profile.current_role || profile.education || "—") + '<br>' + (profile.experience_years != null ? profile.experience_years + " años de experiencia" : "") + '</p></div>' +
-          '<div><p class="label">Objetivo</p><p>' + (profile.goal || "—") + '</p></div>' +
-          '<div><p class="label">Prioridad</p><p>' + (lead.priority || profile.priority || "—") + '</p></div>' +
-          '</div>' +
-          '<p class="label">Intereses</p><p>' + ((profile.interests || []).join(", ") || "—") + '</p>' +
-          '<p class="label">Preguntas</p><p>' + ((lead.questions_asked || []).join(" · ") || "Ninguna todavía") + '</p>' +
-          '<p class="label">Email / teléfono</p><p>' + lead.email + (lead.phone ? " · " + lead.phone : "") + '</p>' +
-        '</article>';
-      }).join("");
+      root.innerHTML = renderSections(data.leads);
     }).catch(function () {
       document.getElementById("list").innerHTML = '<div class="card">No se pudo cargar la lista de leads.</div>';
     });

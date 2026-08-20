@@ -28,6 +28,36 @@
     return new URLSearchParams(location.search).get("debug") === "1";
   }
 
+  function presentEnabled() {
+    return new URLSearchParams(location.search).get("present") === "1";
+  }
+
+  function scenarioParam() {
+    return new URLSearchParams(location.search).get("scenario");
+  }
+
+  function appendPresent(href) {
+    if (!presentEnabled()) return href;
+    try {
+      var u = new URL(href, location.origin);
+      u.searchParams.set("present", "1");
+      return u.pathname + u.search;
+    } catch (e) {
+      return href;
+    }
+  }
+
+  function appendScenario(href, scenario) {
+    if (!scenario) return href;
+    try {
+      var u = new URL(href, location.origin);
+      u.searchParams.set("scenario", scenario);
+      return u.pathname + u.search;
+    } catch (e) {
+      return href;
+    }
+  }
+
   function saveState(state) {
     sessionStorage.setItem("usj_state", JSON.stringify(state));
   }
@@ -73,16 +103,39 @@
     clickThrough(whatsappUrl(ctx));
   }
 
+  function submitLead(data) {
+    return api("/api/lead", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  }
+
+  function prefetch(href, as) {
+    var head = document.head;
+    if (!head || head.querySelector('link[rel="prefetch"][href="' + href + '"]')) return;
+    var el = document.createElement("link");
+    el.rel = "prefetch";
+    el.href = href;
+    if (as) el.as = as;
+    head.appendChild(el);
+  }
+
   root.USJ = {
     api: api,
     track: track,
     events: function () { return events.slice(); },
     debugEnabled: debugEnabled,
+    presentEnabled: presentEnabled,
+    scenarioParam: scenarioParam,
+    appendPresent: appendPresent,
+    appendScenario: appendScenario,
     saveState: saveState,
     loadState: loadState,
     clickThrough: clickThrough,
     whatsappText: whatsappText,
     whatsappUrl: whatsappUrl,
-    openWhatsApp: openWhatsApp
+    openWhatsApp: openWhatsApp,
+    submitLead: submitLead,
+    prefetch: prefetch
   };
 })(window);

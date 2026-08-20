@@ -25,6 +25,8 @@
     }
   ];
 
+  var USJ = root.USJ || {};
+
   function detectActive() {
     var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
     if (path === "/" || path === "/index.html") return "hub";
@@ -35,11 +37,9 @@
     return "hub";
   }
 
-  function stepById(id) {
-    for (var i = 0; i < STEPS.length; i++) {
-      if (STEPS[i].id === id) return STEPS[i];
-    }
-    return null;
+  function hrefWithFlags(href) {
+    href = USJ.appendPresent ? USJ.appendPresent(href) : href;
+    return href;
   }
 
   function renderDemoMap(active) {
@@ -48,7 +48,7 @@
       if (step.id === active) cls += " active";
       if (active === "hub" && step.id === "orientador") cls += " demo-pill-next";
       return (
-        '<a class="' + cls + '" href="' + step.href + '">' +
+        '<a class="' + cls + '" href="' + hrefWithFlags(step.href) + '">' +
         '<span class="num">' + step.num + '</span>' +
         "<div><b>" + step.title + "</b><small>" + step.hint + "</small></div></a>"
       );
@@ -76,12 +76,13 @@
     if (idx < 0) return "";
     var prev = idx > 0 ? STEPS[idx - 1] : null;
     var next = idx < STEPS.length - 1 ? STEPS[idx + 1] : null;
+    var homeHref = hrefWithFlags("/");
     var prevHtml = prev
-      ? '<a class="demo-nav-btn ghost" href="' + prev.href + '">← ' + prev.title + "</a>"
-      : '<a class="demo-nav-btn ghost" href="/">Inicio</a>';
+      ? '<a class="demo-nav-btn ghost" href="' + hrefWithFlags(prev.href) + '">← ' + prev.title + "</a>"
+      : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Inicio</a>';
     var nextHtml = next
-      ? '<a class="demo-nav-btn" href="' + next.href + '">' + next.title + " →</a>"
-      : '<a class="demo-nav-btn ghost" href="/">Fin del demo</a>';
+      ? '<a class="demo-nav-btn" href="' + hrefWithFlags(next.href) + '">' + next.title + " →</a>"
+      : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Fin del demo</a>";
     return (
       '<nav class="demo-linear" aria-label="Recorrido del demo">' +
       prevHtml +
@@ -96,19 +97,54 @@
       return '<p class="demo-here">Estás en el <b>inicio del demo</b>. Los números del menú siguen el orden del recorrido: 1 Orientador → 2 Anuncio → 3 Admisiones.</p>';
     }
     if (active === "catalogo") {
-      return '<p class="demo-here"><b>Catálogo</b> (referencia, fuera del recorrido). <a href="/orientador">Ir al paso 1 · Orientador</a> · <a href="/">Inicio del demo</a></p>';
+      return '<p class="demo-here"><b>Catálogo</b> (referencia, fuera del recorrido). <a href="' + hrefWithFlags("/orientador") + '">Ir al paso 1 · Orientador</a> · <a href="' + hrefWithFlags("/") + '">Inicio del demo</a></p>';
     }
     var tips = {
-      orientador: "Completa el wizard y pulsa <b>Seguir por WhatsApp</b> o deja datos. Siguiente: <a href=\"/ad\">Anuncio</a>.",
-      anuncio: "Prueba los creativos embebidos. Siguiente: <a href=\"/admissions\">Admisiones</a> para ver el lead.",
-      admisiones: "Si está vacío, vuelve al <a href=\"/orientador\">Orientador</a> y genera un lead."
+      orientador: "Completa el wizard y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>. Siguiente: <a href=\"" + hrefWithFlags("/ad") + "\">Anuncio</a>.",
+      anuncio: "Prueba los creativos embebidos. Siguiente: <a href=\"" + hrefWithFlags("/admissions") + "\">Admisiones</a> para ver el lead.",
+      admisiones: "Si está vacío, vuelve al <a href=\"" + hrefWithFlags("/orientador") + "\">Orientador</a> y genera un lead."
     };
     return '<p class="demo-here">' + (tips[active] || "") + "</p>";
   }
 
-  root.USJ = root.USJ || {};
+  function enhanceNav() {
+    var nav = document.querySelector(".nav");
+    if (!nav || nav.dataset.enhanced === "1") return;
+    nav.dataset.enhanced = "1";
+    var brand = nav.querySelector(".brand");
+    if (brand && !brand.querySelector(".nav-logo")) {
+      brand.insertAdjacentHTML("afterbegin", '<img class="nav-logo" src="/logo.svg" alt="" width="36" height="36">');
+      brand.classList.add("brand-with-logo");
+    }
+    if (!nav.querySelector(".nav-home")) {
+      nav.insertAdjacentHTML("beforeend", '<a class="nav-home" href="' + hrefWithFlags("/") + '">Inicio del demo</a>');
+    }
+  }
+
+  function applyPresentMode() {
+    if (USJ.presentEnabled && USJ.presentEnabled()) {
+      document.body.classList.add("present-mode");
+    }
+  }
+
+  function prefetchForStep(active) {
+    if (!USJ.prefetch) return;
+    if (active === "hub") {
+      USJ.prefetch("/orientador");
+      USJ.prefetch("/api/guide");
+    } else if (active === "orientador") {
+      USJ.prefetch("/ad/unit.html?size=300x600");
+      USJ.prefetch("/ad");
+    } else if (active === "anuncio") {
+      USJ.prefetch("/admissions");
+    }
+  }
+
+  root.USJ = USJ;
   root.USJ.mountDemoChrome = function (opts) {
     opts = opts || {};
+    applyPresentMode();
+    enhanceNav();
     var active = opts.active || detectActive();
     var mapMount = document.getElementById("demo-map-mount");
     if (mapMount) {
@@ -125,5 +161,7 @@
 
     var guideMount = document.getElementById("demo-guide-mount");
     if (guideMount && opts.showGuide) guideMount.innerHTML = renderDemoGuide();
+
+    prefetchForStep(active);
   };
 })(window);

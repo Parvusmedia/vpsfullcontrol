@@ -17,6 +17,11 @@
 
   USJ.api("/api/guide").then(function (spec) {
     state.spec = spec;
+    if (USJ.scenarioParam() === "lawyer") {
+      state.answers = { background: "law", goal: "tech-law", format: "work-study" };
+      finish();
+      return;
+    }
     renderIntro();
   }).catch(function () {
     $intro.innerHTML = "<div class=\"card\"><p>Vamos a ayudarte a encontrar el programa adecuado.</p><p><a class=\"btn\" href=\"https://www.usj.es/estudios/posgrados/masteres\">Ver másteres USJ</a></p></div>";
@@ -51,6 +56,21 @@
     return step.subtitle || hints[index] || "";
   }
 
+  function updateStepProgress() {
+    var bar = document.getElementById("step-progress");
+    if (!bar) return;
+    var segments = bar.querySelectorAll("i");
+    for (var i = 0; i < segments.length; i++) {
+      segments[i].classList.toggle("on", state.phase === "step" && i <= state.step);
+    }
+  }
+
+  function animateFlow() {
+    $flow.classList.remove("flow-enter");
+    void $flow.offsetWidth;
+    $flow.classList.add("flow-enter");
+  }
+
   function renderIntro() {
     state.phase = "intro";
     state.answers = {};
@@ -58,6 +78,7 @@
     $flow.hidden = true;
     $results.classList.remove("visible");
     $results.innerHTML = "";
+    updateStepProgress();
     var copy = introCopy();
     var roadmap = (state.spec.steps || []).map(function (s, i) {
       return "<li><span class=\"step-num\">" + (i + 1) + "</span><div><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></div></li>";
@@ -81,6 +102,7 @@
     $flow.hidden = false;
     renderStep();
     refreshRemaining();
+    USJ.prefetch("/ad/unit.html?size=300x600");
   }
 
   function renderStep() {
@@ -99,6 +121,8 @@
       box.appendChild(b);
     });
     document.getElementById("back").hidden = false;
+    updateStepProgress();
+    animateFlow();
   }
 
   function pick(stepId, optionId) {
@@ -149,6 +173,41 @@
     return (card.approved_facts || []).slice(0, limit || 4);
   }
 
+  function bindLeadForm(payload) {
+    var leadBtn = document.getElementById("lead");
+    var leadbox = document.getElementById("leadbox");
+    if (!leadBtn || !leadbox) return;
+    leadBtn.onclick = function () {
+      USJ.track("lead_started", { channel: "form", surface: "orientador" });
+      leadbox.classList.add("open");
+      leadBtn.hidden = true;
+    };
+    document.getElementById("leadsend").onclick = function () {
+      var name = (document.getElementById("lname").value || "").trim();
+      var email = (document.getElementById("lemail").value || "").trim();
+      if (!name || !email) return;
+      var phone = (document.getElementById("lphone").value || "").trim();
+      USJ.submitLead({
+        name: name,
+        email: email,
+        phone: phone,
+        profile: payload.profile || { answers: state.answers, parser: "guide" },
+        recommendation: payload.best,
+        alternatives: payload.alternatives || [],
+        questions_asked: state.questions || [],
+        priority: (payload.guide_labels || []).join(" · "),
+        signals: { lead_submitted: true, from_orientador: true }
+      }).then(function () {
+        document.getElementById("leadok").hidden = false;
+        document.getElementById("leadsend").disabled = true;
+        USJ.track("lead_submitted", { surface: "orientador" });
+      }).catch(function () {
+        document.getElementById("leadok").textContent = "No se pudo enviar. Prueba por WhatsApp.";
+        document.getElementById("leadok").hidden = false;
+      });
+    };
+  }
+
   function renderResults(payload) {
     USJ.track("recommendation_generated", {
       match: payload.has_strong_match,
@@ -159,6 +218,11 @@
     $flow.hidden = true;
     $intro.innerHTML = "";
     $results.classList.add("visible");
+    updateStepProgress();
+    if ($debug) {
+      $debug.classList.remove("open");
+      $debug.textContent = "";
+    }
     if (payload.fallback || !payload.best) {
       $results.innerHTML = "<div class=\"card\"><h2>Vamos a ayudarte a encontrar el programa adecuado.</h2><p><a class=\"btn\" href=\"https://www.usj.es/estudios/posgrados/masteres\">Ver másteres</a></p><p><button class=\"btn ghost\" id=\"restart\">Empezar de nuevo</button></p></div>";
       document.getElementById("restart").onclick = renderIntro;
@@ -168,7 +232,11 @@
     var alts = payload.alternatives || [];
     var title = payload.has_strong_match ? "Mejor encaje" : "Opciones más cercanas de este catálogo";
     var facts = factsOf(best, 4);
+    var scenarioNote = USJ.scenarioParam() === "lawyer"
+      ? "<p class=\"scenario-note\">Escenario demo: abogado/a + derecho digital → <em>Inteligencia Artificial Aplicada</em> (admisión a revisar).</p>"
+      : "";
     $results.innerHTML =
+      scenarioNote +
       "<div class=\"result-grid\">" +
         "<article class=\"card\">" +
           "<div class=\"label\">" + title + "</div>" +
@@ -183,6 +251,14 @@
             "<button class=\"btn\" id=\"explore\">Explorar este máster</button>" +
             "<button class=\"btn ghost\" id=\"ask\">Preguntar</button>" +
             "<button class=\"btn gold\" id=\"talk\">Seguir por WhatsApp</button>" +
+            "<button class=\"btn ghost\" id=\"lead\">Dejar mis datos</button>" +
+          "</div>" +
+          "<div class=\"lead\" id=\"leadbox\">" +
+            "<input type=\"text\" id=\"lname\" placeholder=\"Nombre\" autocomplete=\"name\">" +
+            "<input type=\"email\" id=\"lemail\" placeholder=\"Email\" autocomplete=\"email\">" +
+            "<input type=\"tel\" id=\"lphone\" placeholder=\"Teléfono (opcional)\" autocomplete=\"tel\">" +
+            "<button class=\"btn\" id=\"leadsend\" type=\"button\">Enviar</button>" +
+            "<p class=\"lead-ok\" id=\"leadok\" hidden>Gracias. Te contactará un asesor de USJ.</p>" +
           "</div>" +
           "<div class=\"askbox\" id=\"askbox\"><textarea id=\"q\" placeholder=\"¿Puedo compatibilizarlo con el trabajo?\"></textarea><button class=\"btn ghost\" id=\"askgo\">Enviar pregunta</button><div class=\"answer\" id=\"answer\" hidden></div></div>" +
         "</article>" +
@@ -211,10 +287,12 @@
         labels: payload.guide_labels || []
       });
     };
-    if (USJ.debugEnabled() && payload.debug) {
+    bindLeadForm(payload);
+    if (USJ.debugEnabled() && payload.debug && $debug) {
       $debug.classList.add("open");
       $debug.textContent = JSON.stringify(payload.debug, null, 2);
     }
+    USJ.prefetch("/ad");
   }
 
   async function askQuestion() {

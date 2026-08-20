@@ -230,3 +230,44 @@
   .demo-linear-count { text-align: center; order: -1; }
   .demo-nav-btn { width: 100%; justify-content: center; }
 }
+
+/* Present mode for screen sharing */
+body.present-mode {
+  font-size: 17px;
+}
+
+body.present-mode .footnote,
+body.present-mode .demo-catalog-link,
+body.present-mode .demo-guide {
+  display: none;
+}
+
+body.present-mode h1 {
+  font-size: clamp(1.85rem, 1.5rem + 2vw, 2.6rem);
+}
+
+body.present-mode .demo-map-mount {
+  margin-bottom: 16px;
+}
+
+body.present-mode .demo-pill small {
+  display: none;
+}
+
+body.present-mode .demo-here {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+body.present-mode .wrap {
+  width: min(900px, calc(100% - 32px));
+}
+
+body.present-mode .wizard-card {
+  padding: 28px 30px;
+}
+
+body.present-mode .choice {
+  min-height: 56px;
+  font-size: 16px;
+}
