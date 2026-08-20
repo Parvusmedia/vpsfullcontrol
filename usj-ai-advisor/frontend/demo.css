@@ -95,8 +95,12 @@ body.demo-hub .hub-cta .demo-start:hover {
 
 body.demo-hub .hub-footer-nav {
   margin-top: auto;
-  padding: 20px 0 8px;
+  padding: 20px 0 16px;
   border-top: 1px solid var(--line);
+}
+
+body.demo-hub .wrap {
+  padding-bottom: 24px;
 }
 
 body.demo-hub .hub-footer-nav .demo-map-mount {
