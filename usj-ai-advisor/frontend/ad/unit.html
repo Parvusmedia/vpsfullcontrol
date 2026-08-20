@@ -119,26 +119,38 @@
     .sz-300x600.is-intro .outcome { display: none; }
 
     .sz-970x250 { flex-direction: row; height: 100%; }
-    .sz-970x250 .hero { width: 300px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 18px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
-    .sz-970x250 .panel { width: 670px; height: 100%; min-height: 0; padding: 12px 18px 12px 20px; }
+    .sz-970x250 .hero { width: 280px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
+    .sz-970x250 .panel { width: 690px; height: 100%; min-height: 0; padding: 12px 18px 12px 20px; }
     .sz-970x250 h1 { font-size: 20px; }
     .sz-970x250 .roadmap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     .sz-970x250 .roadmap li { flex-direction: column; gap: 6px; padding: 10px; }
     .sz-970x250 .roadmap .num { width: 100%; height: 24px; }
-    .sz-970x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
-    .sz-970x250 .opt { width: auto; max-height: none; min-height: 40px; padding: 0 12px; font-size: 12px; }
-    .sz-970x250.is-intro .panel { display: flex; flex-direction: column; gap: 0; }
-    .sz-970x250.is-intro h1 { font-size: 17px; margin: 0 0 4px; line-height: 1.2; flex-shrink: 0; }
-    .sz-970x250.is-intro .intro-lede { font-size: 11px; line-height: 1.35; margin: 0 0 8px; flex-shrink: 0; }
-    .sz-970x250.is-intro .roadmap { margin: 0 0 8px; gap: 6px; flex: 1; min-height: 0; align-content: start; }
-    .sz-970x250.is-intro .roadmap li { padding: 6px 8px; gap: 4px; }
-    .sz-970x250.is-intro .roadmap .num { height: 20px; font-size: 10px; }
-    .sz-970x250.is-intro .roadmap b { font-size: 11px; margin: 0; line-height: 1.25; }
-    .sz-970x250.is-intro .roadmap span { display: none; }
+    .sz-970x250 .opts { display: grid; gap: 6px; align-content: stretch; flex: 1; min-height: 0; }
+    .sz-970x250 .opts-c5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .sz-970x250 .opts-c4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .sz-970x250 .opts-c3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+    .sz-970x250 .opt {
+      width: auto; min-height: 0; height: 100%; padding: 6px 10px;
+      font-size: 11px; line-height: 1.28; white-space: normal; align-items: center;
+    }
+    .sz-970x250 .opt:after { font-size: 15px; flex-shrink: 0; margin-left: 6px; }
+    .sz-970x250.is-step .panel { display: flex; flex-direction: column; padding: 10px 18px 10px 20px; }
+    .sz-970x250.is-step .navline { margin-bottom: 6px; min-height: 20px; }
+    .sz-970x250.is-step h1 { font-size: 16px; margin: 0 0 4px; line-height: 1.2; }
+    .sz-970x250.is-step .sub { font-size: 11px; margin: 0 0 6px; line-height: 1.35; }
+    .sz-970x250.is-step .remain { display: none; }
+    .sz-970x250.is-intro .panel { display: flex; flex-direction: column; gap: 0; padding: 14px 18px 12px 20px; }
+    .sz-970x250.is-intro h1 { font-size: 22px; margin: 0 0 6px; line-height: 1.15; flex-shrink: 0; }
+    .sz-970x250.is-intro .intro-lede { font-size: 13px; line-height: 1.4; margin: 0 0 10px; flex-shrink: 0; max-width: 52em; }
+    .sz-970x250.is-intro .roadmap { margin: 0 0 10px; gap: 8px; flex: 1; min-height: 0; align-content: start; }
+    .sz-970x250.is-intro .roadmap li { padding: 8px 10px; gap: 5px; }
+    .sz-970x250.is-intro .roadmap .num { height: 22px; font-size: 11px; }
+    .sz-970x250.is-intro .roadmap b { font-size: 12px; margin: 0 0 3px; line-height: 1.2; }
+    .sz-970x250.is-intro .roadmap span { display: block; font-size: 10px; line-height: 1.3; }
     .sz-970x250.is-intro .outcome { display: none; }
-    .sz-970x250.is-intro .intro-foot { margin-top: auto; flex-shrink: 0; padding-top: 4px; }
+    .sz-970x250.is-intro .intro-foot { margin-top: auto; flex-shrink: 0; padding-top: 2px; }
     .sz-970x250.is-intro .row { margin: 0; }
-    .sz-970x250.is-intro .cta { min-height: 36px; font-size: 10px; letter-spacing: .08em; max-width: 240px; }
+    .sz-970x250.is-intro .cta { min-height: 38px; font-size: 11px; letter-spacing: .1em; max-width: 260px; }
     .sz-970x250.is-result .result-main { display: grid; grid-template-columns: 1fr auto; gap: 12px 20px; align-items: start; flex: 1; min-height: 0; }
     .sz-970x250.is-result .result-copy { min-width: 0; }
     .sz-970x250.is-result .score { font-size: 36px; text-align: right; margin: 0; }
@@ -172,7 +184,13 @@
         return USJ.api(path);
       }
       function introCopy() { return (spec && spec.intro_screen) || {}; }
-      function labelOf(opt) { return wide ? (opt.short_label || opt.label) : opt.label; }
+      function labelOf(opt) { return opt.label; }
+      function optsGridClass(n) {
+        if (!wide) return "opts";
+        if (n >= 5) return "opts opts-c5";
+        if (n === 4) return "opts opts-c4";
+        return "opts opts-c3";
+      }
       function stepHint(s, i) {
         var hints = ["Descartamos programas incompatibles", "Te ayudamos a orientarte mejor", "Ajustamos por modalidad de estudio"];
         return s.subtitle || hints[i] || "";
@@ -315,7 +333,7 @@
         lastPayload = null;
         unit.className = "unit sz-" + size + " is-intro";
         var copy = introCopy();
-        var lede = wide ? (copy.compact_lede || "Titulación · objetivo · formato") : (copy.lede || "");
+        var lede = wide ? (copy.lede || copy.compact_lede || "") : (copy.lede || "");
         unit.innerHTML =
           staticHero("<p class=\"kicker\">Orientador de másteres</p>") +
           "<div class=\"panel\">" +
@@ -333,7 +351,7 @@
       }
 
       function showStep() {
-        unit.className = "unit sz-" + size;
+        unit.className = "unit sz-" + size + " is-step";
         var s = spec.steps[step];
         var sub = stepHint(s, step);
         unit.innerHTML =
@@ -342,7 +360,7 @@
           "<h1>" + s.title + "</h1>" +
           (sub ? "<p class=\"sub\">" + sub + "</p>" : "") +
           "<div class=\"remain\" id=\"remain\"></div>" +
-          "<div class=\"opts\" id=\"opts\"></div></div>";
+          "<div class=\"" + optsGridClass(s.options.length) + "\" id=\"opts\"></div></div>";
         s.options.forEach(function (opt) {
           var btn = document.createElement("button");
           btn.type = "button";
