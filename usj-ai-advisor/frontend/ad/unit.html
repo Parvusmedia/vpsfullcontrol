@@ -118,15 +118,27 @@
     .sz-300x600 .roadmap span { display: none; }
     .sz-300x600.is-intro .outcome { display: none; }
 
-    .sz-970x250 { flex-direction: row; }
-    .sz-970x250 .hero { width: 300px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 18px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
-    .sz-970x250 .panel { width: 670px; padding: 14px 20px 14px 22px; }
+    .sz-970x250 { flex-direction: row; height: 100%; }
+    .sz-970x250 .hero { width: 300px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 18px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
+    .sz-970x250 .panel { width: 670px; height: 100%; min-height: 0; padding: 12px 18px 12px 20px; }
     .sz-970x250 h1 { font-size: 20px; }
     .sz-970x250 .roadmap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     .sz-970x250 .roadmap li { flex-direction: column; gap: 6px; padding: 10px; }
     .sz-970x250 .roadmap .num { width: 100%; height: 24px; }
     .sz-970x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
-    .sz-970x250 .opt { width: auto; max-height: none; }
+    .sz-970x250 .opt { width: auto; max-height: none; min-height: 40px; padding: 0 12px; font-size: 12px; }
+    .sz-970x250.is-intro .panel { display: flex; flex-direction: column; gap: 0; }
+    .sz-970x250.is-intro h1 { font-size: 17px; margin: 0 0 4px; line-height: 1.2; flex-shrink: 0; }
+    .sz-970x250.is-intro .intro-lede { font-size: 11px; line-height: 1.35; margin: 0 0 8px; flex-shrink: 0; }
+    .sz-970x250.is-intro .roadmap { margin: 0 0 8px; gap: 6px; flex: 1; min-height: 0; align-content: start; }
+    .sz-970x250.is-intro .roadmap li { padding: 6px 8px; gap: 4px; }
+    .sz-970x250.is-intro .roadmap .num { height: 20px; font-size: 10px; }
+    .sz-970x250.is-intro .roadmap b { font-size: 11px; margin: 0; line-height: 1.25; }
+    .sz-970x250.is-intro .roadmap span { display: none; }
+    .sz-970x250.is-intro .outcome { display: none; }
+    .sz-970x250.is-intro .intro-foot { margin-top: auto; flex-shrink: 0; padding-top: 4px; }
+    .sz-970x250.is-intro .row { margin: 0; }
+    .sz-970x250.is-intro .cta { min-height: 36px; font-size: 10px; letter-spacing: .08em; max-width: 240px; }
     .sz-970x250.is-result .result-main { display: grid; grid-template-columns: 1fr auto; gap: 12px 20px; align-items: start; flex: 1; min-height: 0; }
     .sz-970x250.is-result .result-copy { min-width: 0; }
     .sz-970x250.is-result .score { font-size: 36px; text-align: right; margin: 0; }
@@ -134,7 +146,6 @@
     .sz-970x250.is-result .cta.sm { flex: 1; min-width: 130px; }
     .sz-970x250.is-result .leadbox { flex-direction: row; flex-wrap: wrap; align-self: end; }
     .sz-970x250.is-result .leadbox input { flex: 1; min-width: 120px; }
-    .sz-970x250.is-intro .roadmap { grid-template-columns: 1fr 1fr 1fr; }
   </style>
 </head>
 <body>
@@ -304,15 +315,17 @@
         lastPayload = null;
         unit.className = "unit sz-" + size + " is-intro";
         var copy = introCopy();
+        var lede = wide ? (copy.compact_lede || "Titulación · objetivo · formato") : (copy.lede || "");
         unit.innerHTML =
           staticHero("<p class=\"kicker\">Orientador de másteres</p>") +
           "<div class=\"panel\">" +
           "<h1>" + (copy.headline || "Encuentra tu máster en 3 pasos") + "</h1>" +
-          "<p class=\"sub\">" + (copy.lede || "") + "</p>" +
+          "<p class=\"sub intro-lede\">" + lede + "</p>" +
           roadmapHtml() +
+          "<div class=\"intro-foot\">" +
           "<p class=\"sub outcome\">" + (copy.outcome || "") + "</p>" +
           "<div class=\"row\"><button type=\"button\" class=\"cta\" id=\"start\">" + (copy.cta || "Empezar") + "</button></div>" +
-          "</div>";
+          "</div></div>";
         document.getElementById("start").onclick = function () {
           USJ.track("guide_started", { surface: "ad", size: size });
           showStep();
