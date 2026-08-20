@@ -7,21 +7,21 @@
       href: "/orientador",
       num: "1",
       title: "Orientador",
-      hint: "Empieza aquí · wizard web"
+      hint: "Wizard de orientación"
     },
     {
       id: "anuncio",
       href: "/ad/",
       num: "2",
       title: "Anuncio",
-      hint: "Creativos DSP-ready"
+      hint: "Formatos display"
     },
     {
       id: "admisiones",
       href: "/admissions",
       num: "3",
       title: "Admisiones",
-      hint: "Leads al CRM"
+      hint: "Leads cualificados"
     }
   ];
 
@@ -89,9 +89,9 @@
       : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Inicio</a>';
     var nextHtml = next
       ? '<a class="demo-nav-btn" href="' + hrefWithFlags(next.href) + '">' + next.title + " →</a>"
-      : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Fin del demo</a>";
+      : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Volver al inicio</a>';
     return (
-      '<nav class="demo-linear" aria-label="Recorrido del demo">' +
+      '<nav class="demo-linear" aria-label="Recorrido">' +
       prevHtml +
       '<span class="demo-linear-count">Paso ' + STEPS[idx].num + " de 3</span>" +
       nextHtml +
@@ -100,18 +100,7 @@
   }
 
   function hereBanner(active) {
-    if (active === "hub") {
-      return '<p class="demo-here">Estás en el <b>inicio del demo</b>. Los números del menú siguen el orden del recorrido: 1 Orientador → 2 Anuncio → 3 Admisiones.</p>';
-    }
-    if (active === "catalogo") {
-      return '<p class="demo-here"><b>Catálogo</b> (referencia, fuera del recorrido). <a href="' + hrefWithFlags("/orientador") + '">Ir al paso 1 · Orientador</a> · <a href="' + hrefWithFlags("/") + '">Inicio del demo</a></p>';
-    }
-    var tips = {
-      orientador: "Completa el wizard y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>. <b>Siguiente:</b> <a href=\"" + hrefWithFlags("/ad/") + "\">Paso 2 · Anuncios</a>.",
-      anuncio: "Estás en el <b>paso 2 · Anuncios</b>. Los creativos están abajo ↓ Prueba 300×600 y 970×250. Siguiente: <a href=\"" + hrefWithFlags("/admissions") + "\">Admisiones</a>.",
-      admisiones: "Si está vacío, vuelve al <a href=\"" + hrefWithFlags("/orientador") + "\">Orientador</a> y genera un lead."
-    };
-    return '<p class="demo-here">' + (tips[active] || "") + "</p>";
+    return "";
   }
 
   function enhanceNav() {
@@ -124,7 +113,7 @@
       brand.classList.add("brand-with-logo");
     }
     if (!nav.querySelector(".nav-home")) {
-      nav.insertAdjacentHTML("beforeend", '<a class="nav-home" href="' + hrefWithFlags("/") + '">Inicio del demo</a>');
+      nav.insertAdjacentHTML("beforeend", '<a class="nav-home" href="' + hrefWithFlags("/") + '">Inicio</a>');
     }
   }
 
@@ -167,7 +156,7 @@
     }
 
     var guideMount = document.getElementById("demo-guide-mount");
-    if (guideMount && opts.showGuide) guideMount.innerHTML = renderDemoGuide();
+    if (guideMount && opts.showGuide) guideMount.innerHTML = "";
 
     prefetchForStep(active);
   };

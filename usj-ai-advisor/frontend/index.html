@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Demo USJ · Orientador de másteres</title>
+  <title>Universidad San Jorge · Orientador de másteres</title>
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
@@ -15,40 +15,31 @@
     <nav class="nav">
       <div class="brand">
         <span>Universidad San Jorge</span>
-        <strong>Demo · Orientador de másteres</strong>
+        <strong>Orientador de másteres</strong>
       </div>
     </nav>
 
     <header class="hero hub-hero">
-      <p class="kicker">Inicio del demo</p>
+      <p class="kicker">Universidad San Jorge</p>
       <h1>Tres pasos. Un recorrido completo.</h1>
-      <p class="lede">Orientador web → anuncio display → lead en admisiones. Catálogo demo con 3 másteres; no es la web pública de USJ.</p>
+      <p class="lede">Orientador web, captación display y admisiones con contexto cualificado en cada lead.</p>
     </header>
 
     <div id="demo-map-mount" class="demo-map-mount"></div>
 
-    <div class="hub-scenario-row demo-start-wrap">
-      <a class="btn demo-start" href="/orientador">Empezar demo · paso 1</a>
-      <a class="btn ghost hub-scenario" href="/orientador?scenario=lawyer">Ver escenario abogado</a>
-    </div>
+    <p class="demo-start-wrap"><a class="btn demo-start" href="/orientador">Comenzar · paso 1</a></p>
 
     <a class="hub-step2-link" href="/ad/">
       <p class="kicker">Paso 2 · Anuncios</p>
       <b>Creativos display 300×600 y 970×250</b>
-      <span>Mismo orientador en formatos IAB. WhatsApp o formulario al CRM.</span>
+      <span>Mismo orientador en formatos IAB. WhatsApp o formulario de contacto.</span>
     </a>
-
-    <div id="demo-guide-mount"></div>
-
-    <p class="demo-catalog-link"><a href="/admin">Ver catálogo de datos</a> — referencia opcional. <a href="/debug">Analytics del demo</a> (embudo de eventos).</p>
-
-    <p class="footnote">Sugerencia para la demo en vivo: abogado + derecho digital → <em>Inteligencia Artificial Aplicada</em> (admisión a revisar). Luego revisa el anuncio y admisiones. Modo presentación: añade <code>?present=1</code> a la URL.</p>
   </div>
   <script src="/shared.js"></script>
   <script src="/demo.js"></script>
   <script>
-    USJ.mountDemoChrome({ showGuide: true });
-    document.querySelectorAll(".hub-scenario-row a, .hub-step2-link").forEach(function (a) {
+    USJ.mountDemoChrome();
+    document.querySelectorAll(".demo-start, .hub-step2-link").forEach(function (a) {
       a.href = USJ.appendPresent(a.getAttribute("href"));
     });
   </script>

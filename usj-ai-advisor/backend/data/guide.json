@@ -1,8 +1,8 @@
 {
-  "intro": "Responde tres preguntas. El catálogo se va reduciendo hasta 1, 2 o 3 másteres.",
+  "intro": "Responde tres preguntas. El catálogo se va reduciendo hasta los másteres que mejor encajan contigo.",
   "intro_screen": {
     "headline": "Encuentra tu máster en 3 preguntas",
-    "lede": "Sin escribir texto libre: eliges opciones y el catálogo demo se va reduciendo en tiempo real.",
+    "lede": "Sin escribir texto libre: eliges opciones y ves en tiempo real qué programas encajan.",
     "outcome": "Al final verás tu máster recomendado con un resumen claro.",
     "cta": "Empezar orientación",
     "compact_headline": "Tu máster en 3 toques",
