@@ -58,8 +58,8 @@
   function renderDemoGuide() {
     return (
       '<section class="demo-guide">' +
-      '<p class="kicker">Qué ver en cada paso</p>' +
-      "<h2>Sin guion previo</h2>" +
+      '<p class="kicker">Recorrido</p>' +
+      "<h2>Qué ver en cada paso</h2>" +
       '<ol class="demo-flow">' +
       "<li><span class=\"flow-num\">1</span><span><b>Orientador</b> — completa las 3 preguntas. Prueba abogado + derecho digital: recomienda IA Aplicada, no inventa un máster jurídico.</span></li>" +
       "<li><span class=\"flow-num\">2</span><span><b>Anuncio</b> — mismo motor en 300×600 y 970×250. Cierra por WhatsApp o formulario al CRM.</span></li>" +

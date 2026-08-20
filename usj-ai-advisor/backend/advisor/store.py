@@ -5,6 +5,7 @@ import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from functools import lru_cache
 from threading import Lock
 from typing import Any
 
@@ -13,6 +14,24 @@ _lock = Lock()
 DATA_DIR = Path(os.getenv("USJ_DATA_DIR") or Path(__file__).resolve().parent.parent / "storage")
 LEADS_PATH = DATA_DIR / "leads.json"
 EVENTS_PATH = DATA_DIR / "events.json"
+DEMO_LEADS_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_leads.json"
+_DEMO_BLOCKLIST = {"emiliano tichauer"}
+
+
+@lru_cache(maxsize=1)
+def _demo_leads() -> list[dict[str, Any]]:
+    if not DEMO_LEADS_PATH.exists():
+        return []
+    try:
+        payload = json.loads(DEMO_LEADS_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    return payload if isinstance(payload, list) else []
+
+
+def _blocked_lead(record: dict[str, Any]) -> bool:
+    name = str(record.get("name") or "").strip().casefold()
+    return name in _DEMO_BLOCKLIST
 
 
 def _read(path: Path) -> list[Any]:
@@ -51,8 +70,15 @@ def append_lead(lead: dict[str, Any]) -> dict[str, Any]:
 
 
 def list_leads(limit: int = 50) -> list[dict[str, Any]]:
+    demo_ids = {row.get("id") for row in _demo_leads()}
     with _lock:
-        return _read(LEADS_PATH)[:limit]
+        live = [
+            row
+            for row in _read(LEADS_PATH)
+            if not row.get("demo_seed") and row.get("id") not in demo_ids and not _blocked_lead(row)
+        ]
+    merged = _demo_leads() + live
+    return merged[:limit]
 
 
 def append_event(event: dict[str, Any]) -> None:
