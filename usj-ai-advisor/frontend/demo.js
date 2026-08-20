@@ -118,14 +118,15 @@
     var active = opts.active || detectActive();
     var mapMount = document.getElementById("demo-map-mount");
     if (mapMount) {
-      mapMount.innerHTML = '<div class="demo-map">' + renderDemoMap(active) + "</div>";
+      var mapClass = active === "concepto" ? "demo-map demo-map-compact" : "demo-map";
+      mapMount.innerHTML = '<div class="' + mapClass + '">' + renderDemoMap(active) + "</div>";
     }
 
     var hereMount = document.getElementById("demo-here-mount");
     if (hereMount) hereMount.innerHTML = "";
 
     var linearMount = document.getElementById("demo-linear-mount");
-    if (linearMount && active !== "catalogo" && active !== "orientador") {
+    if (linearMount && active !== "catalogo" && active !== "orientador" && active !== "concepto") {
       linearMount.innerHTML = renderLinearNav(active);
     }
 
