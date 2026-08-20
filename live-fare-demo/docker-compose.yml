@@ -1,0 +1,22 @@
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ./deploy/nginx-local.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./feed/public:/usr/share/nginx/html/fares:ro
+      - ./creative:/usr/share/nginx/html/creative:ro
+      - ./demo:/usr/share/nginx/html/demo:ro
+    depends_on:
+      - updater
+
+  updater:
+    image: python:3.12-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      UPDATE_INTERVAL_SECONDS: "60"
+      DEEPLINK_BASE: https://www.saudia.com/booking
+    command: ["python", "feed/updater/update.py", "--loop", "--interval", "60"]

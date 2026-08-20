@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ad managed by Parvus Media for demo purposes</title>
+  <style>
+    :root {
+      --bg: #efe6d4;
+      --ink: #063e22;
+      --gold: #c4a46c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #f7f4ee, var(--bg));
+      color: var(--ink);
+      font-family: "Avenir Next", "Century Gothic", "Segoe UI", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 16px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      max-width: 340px;
+      letter-spacing: 0.04em;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.35;
+    }
+    .sub {
+      margin: 0 0 28px;
+      color: #5b6570;
+      font-size: 14px;
+    }
+    .stage {
+      width: 300px;
+      height: 600px;
+      box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
+      background: #000;
+    }
+    iframe {
+      width: 300px;
+      height: 600px;
+      border: 0;
+      display: block;
+    }
+    .feed-toggle {
+      margin-top: 20px;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: #8a6a24;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .meta {
+      width: min(520px, 92vw);
+      margin-top: 12px;
+      background: #fff;
+      padding: 18px 20px;
+      border: 1px solid #ddd6c8;
+    }
+    .meta[hidden] { display: none; }
+    .meta p { margin: 0 0 8px; font-size: 14px; }
+    a { color: #8a6a24; }
+    .actions { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .actions a {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--gold);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ad managed by Parvus Media for demo purposes</h1>
+  <p class="sub">300 × 600 HTML5 · Saudia live fares</p>
+  <div class="stage">
+    <iframe title="Live fare creative" src="/creative/index.html"></iframe>
+  </div>
+  <button type="button" id="feedToggle" class="feed-toggle" aria-expanded="false" aria-controls="feedMeta">Ver</button>
+  <div class="meta" id="feedMeta" hidden>
+    <p><strong>Feed last update:</strong> <span id="updated">loading…</span></p>
+    <p><strong>Health:</strong> <span id="health">loading…</span></p>
+    <div class="actions">
+      <a href="/fares/network.json" target="_blank" rel="noopener">Open network JSON</a>
+      <a href="/fares/JED.json" target="_blank" rel="noopener">Open JED.json</a>
+      <a href="/creative/index.html?debug=1" target="_blank" rel="noopener">Open creative with debug</a>
+      <a href="/health" target="_blank" rel="noopener">Health</a>
+    </div>
+  </div>
+  <script>
+    function formatStamp(iso) {
+      if (!iso) return "unavailable";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toUTCString().replace(" GMT", " UTC");
+    }
+    fetch("/fares/network.json", { cache: "no-cache" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        document.getElementById("updated").textContent = formatStamp(data.updated_at);
+      })
+      .catch(function () {
+        document.getElementById("updated").textContent = "unavailable";
+      });
+    fetch("/health", { cache: "no-cache" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        document.getElementById("health").textContent =
+          (data.status || "?") + " · " + (data.fares_count || 0) + " fares · age " + data.feed_age_seconds + "s";
+      })
+      .catch(function () {
+        document.getElementById("health").textContent = "unavailable";
+      });
+    (function () {
+      const toggle = document.getElementById("feedToggle");
+      const meta = document.getElementById("feedMeta");
+      toggle.addEventListener("click", function () {
+        const open = meta.hasAttribute("hidden");
+        if (open) {
+          meta.removeAttribute("hidden");
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.textContent = "Ocultar";
+        } else {
+          meta.setAttribute("hidden", "");
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.textContent = "Ver";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2290 @@
+{
+  "updated_at": "2026-08-18T07:48:22Z",
+  "origins": [
+    {
+      "code": "JED",
+      "name": "Jeddah",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "RUH",
+      "name": "Riyadh",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "MED",
+      "name": "Medina",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "DMM",
+      "name": "Dammam",
+      "country": "SA",
+      "country_name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "DXB",
+      "name": "Dubai",
+      "country": "AE",
+      "country_name": "United Arab Emirates",
+      "currency": "AED"
+    },
+    {
+      "code": "AUH",
+      "name": "Abu Dhabi",
+      "country": "AE",
+      "country_name": "United Arab Emirates",
+      "currency": "AED"
+    },
+    {
+      "code": "JFK",
+      "name": "New York",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "IAD",
+      "name": "Washington",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "LAX",
+      "name": "Los Angeles",
+      "country": "US",
+      "country_name": "United States",
+      "currency": "USD"
+    }
+  ],
+  "fares": [
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 380,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 399,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 418,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-10",
+      "price": 280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MED&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-11",
+      "price": 294,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MED&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-12",
+      "price": 308,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MED&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-10",
+      "price": 420,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DMM&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-11",
+      "price": 441,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DMM&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-12",
+      "price": 462,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DMM&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-10",
+      "price": 520,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DXB&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-11",
+      "price": 546,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DXB&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-12",
+      "price": 572,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DXB&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-10",
+      "price": 560,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=AUH&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-11",
+      "price": 588,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=AUH&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-12",
+      "price": 616,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=AUH&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-10",
+      "price": 980,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CAI&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-11",
+      "price": 1029,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CAI&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-12",
+      "price": 1078,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CAI&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-10",
+      "price": 1180,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IST&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-11",
+      "price": 1239,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IST&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-12",
+      "price": 1298,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IST&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-10",
+      "price": 2450,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=LHR&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-11",
+      "price": 2572,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=LHR&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-12",
+      "price": 2695,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=LHR&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-10",
+      "price": 2380,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CDG&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-11",
+      "price": 2499,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CDG&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-12",
+      "price": 2618,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=CDG&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MAD",
+      "destination_name": "Madrid",
+      "month": "2026-10",
+      "price": 1890,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MAD&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MAD",
+      "destination_name": "Madrid",
+      "month": "2026-11",
+      "price": 1984,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MAD&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MAD",
+      "destination_name": "Madrid",
+      "month": "2026-12",
+      "price": 2079,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MAD&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BCN",
+      "destination_name": "Barcelona",
+      "month": "2026-10",
+      "price": 1920,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BCN&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BCN",
+      "destination_name": "Barcelona",
+      "month": "2026-11",
+      "price": 2016,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BCN&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BCN",
+      "destination_name": "Barcelona",
+      "month": "2026-12",
+      "price": 2112,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BCN&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "FCO",
+      "destination_name": "Rome",
+      "month": "2026-10",
+      "price": 2100,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=FCO&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "FCO",
+      "destination_name": "Rome",
+      "month": "2026-11",
+      "price": 2205,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=FCO&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "FCO",
+      "destination_name": "Rome",
+      "month": "2026-12",
+      "price": 2310,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=FCO&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-10",
+      "price": 4200,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JFK&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-11",
+      "price": 4410,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JFK&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-12",
+      "price": 4620,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JFK&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-10",
+      "price": 4100,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IAD&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-11",
+      "price": 4305,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IAD&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-12",
+      "price": 4510,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=IAD&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-10",
+      "price": 1450,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BOM&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-11",
+      "price": 1522,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BOM&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-12",
+      "price": 1595,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BOM&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-10",
+      "price": 1520,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DEL&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-11",
+      "price": 1596,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DEL&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-12",
+      "price": 1672,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=DEL&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-10",
+      "price": 1780,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BKK&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-11",
+      "price": 1869,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BKK&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-12",
+      "price": 1958,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=BKK&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-10",
+      "price": 1850,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=KUL&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-11",
+      "price": 1942,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=KUL&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-12",
+      "price": 2035,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=KUL&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-10",
+      "price": 2450,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JNB&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-11",
+      "price": 2572,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JNB&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-12",
+      "price": 2695,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=JNB&month=2026-12"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MNL",
+      "destination_name": "Manila",
+      "month": "2026-10",
+      "price": 2100,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MNL&month=2026-10"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MNL",
+      "destination_name": "Manila",
+      "month": "2026-11",
+      "price": 2205,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MNL&month=2026-11"
+    },
+    {
+      "origin": "JED",
+      "origin_name": "Jeddah",
+      "destination": "MNL",
+      "destination_name": "Manila",
+      "month": "2026-12",
+      "price": 2310,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=JED&destination=MNL&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 380,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 399,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 418,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-10",
+      "price": 350,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MED&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-11",
+      "price": 368,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MED&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-12",
+      "price": 385,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MED&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-10",
+      "price": 320,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DMM&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-11",
+      "price": 336,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DMM&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-12",
+      "price": 352,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DMM&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-10",
+      "price": 540,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DXB&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-11",
+      "price": 567,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DXB&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-12",
+      "price": 594,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DXB&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-10",
+      "price": 580,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=AUH&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-11",
+      "price": 609,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=AUH&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-12",
+      "price": 638,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=AUH&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-10",
+      "price": 1020,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CAI&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-11",
+      "price": 1071,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CAI&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-12",
+      "price": 1122,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CAI&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-10",
+      "price": 1280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IST&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-11",
+      "price": 1344,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IST&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-12",
+      "price": 1408,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IST&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-10",
+      "price": 2520,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LHR&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-11",
+      "price": 2646,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LHR&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LHR",
+      "destination_name": "London",
+      "month": "2026-12",
+      "price": 2772,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LHR&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-10",
+      "price": 2480,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CDG&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-11",
+      "price": 2604,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CDG&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "CDG",
+      "destination_name": "Paris",
+      "month": "2026-12",
+      "price": 2728,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=CDG&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "FRA",
+      "destination_name": "Frankfurt",
+      "month": "2026-10",
+      "price": 2350,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=FRA&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "FRA",
+      "destination_name": "Frankfurt",
+      "month": "2026-11",
+      "price": 2468,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=FRA&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "FRA",
+      "destination_name": "Frankfurt",
+      "month": "2026-12",
+      "price": 2585,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=FRA&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MXP",
+      "destination_name": "Milan",
+      "month": "2026-10",
+      "price": 2280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MXP&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MXP",
+      "destination_name": "Milan",
+      "month": "2026-11",
+      "price": 2394,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MXP&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "MXP",
+      "destination_name": "Milan",
+      "month": "2026-12",
+      "price": 2508,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=MXP&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "GVA",
+      "destination_name": "Geneva",
+      "month": "2026-10",
+      "price": 2410,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=GVA&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "GVA",
+      "destination_name": "Geneva",
+      "month": "2026-11",
+      "price": 2530,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=GVA&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "GVA",
+      "destination_name": "Geneva",
+      "month": "2026-12",
+      "price": 2651,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=GVA&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-10",
+      "price": 4350,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JFK&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-11",
+      "price": 4568,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JFK&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JFK",
+      "destination_name": "New York",
+      "month": "2026-12",
+      "price": 4785,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JFK&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-10",
+      "price": 4280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IAD&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-11",
+      "price": 4494,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IAD&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "IAD",
+      "destination_name": "Washington",
+      "month": "2026-12",
+      "price": 4708,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=IAD&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LAX",
+      "destination_name": "Los Angeles",
+      "month": "2026-10",
+      "price": 4800,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LAX&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LAX",
+      "destination_name": "Los Angeles",
+      "month": "2026-11",
+      "price": 5040,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LAX&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "LAX",
+      "destination_name": "Los Angeles",
+      "month": "2026-12",
+      "price": 5280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=LAX&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-10",
+      "price": 1510,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BOM&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-11",
+      "price": 1586,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BOM&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-12",
+      "price": 1661,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BOM&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-10",
+      "price": 1580,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DEL&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-11",
+      "price": 1659,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DEL&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-12",
+      "price": 1738,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=DEL&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-10",
+      "price": 1840,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BKK&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-11",
+      "price": 1932,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BKK&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "BKK",
+      "destination_name": "Bangkok",
+      "month": "2026-12",
+      "price": 2024,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=BKK&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-10",
+      "price": 1910,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=KUL&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-11",
+      "price": 2006,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=KUL&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "KUL",
+      "destination_name": "Kuala Lumpur",
+      "month": "2026-12",
+      "price": 2101,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=KUL&month=2026-12"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-10",
+      "price": 2520,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JNB&month=2026-10"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-11",
+      "price": 2646,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JNB&month=2026-11"
+    },
+    {
+      "origin": "RUH",
+      "origin_name": "Riyadh",
+      "destination": "JNB",
+      "destination_name": "Johannesburg",
+      "month": "2026-12",
+      "price": 2772,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=RUH&destination=JNB&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 280,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 294,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 308,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 350,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 368,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 385,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-10",
+      "price": 450,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DMM&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-11",
+      "price": 472,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DMM&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-12",
+      "price": 495,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DMM&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-10",
+      "price": 610,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DXB&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-11",
+      "price": 640,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DXB&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-12",
+      "price": 671,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DXB&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-10",
+      "price": 890,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=CAI&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-11",
+      "price": 934,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=CAI&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-12",
+      "price": 979,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=CAI&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-10",
+      "price": 1050,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=IST&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-11",
+      "price": 1102,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=IST&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "IST",
+      "destination_name": "Istanbul",
+      "month": "2026-12",
+      "price": 1155,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=IST&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KHI",
+      "destination_name": "Karachi",
+      "month": "2026-10",
+      "price": 980,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KHI&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KHI",
+      "destination_name": "Karachi",
+      "month": "2026-11",
+      "price": 1029,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KHI&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KHI",
+      "destination_name": "Karachi",
+      "month": "2026-12",
+      "price": 1078,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KHI&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DAC",
+      "destination_name": "Dhaka",
+      "month": "2026-10",
+      "price": 1320,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DAC&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DAC",
+      "destination_name": "Dhaka",
+      "month": "2026-11",
+      "price": 1386,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DAC&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "DAC",
+      "destination_name": "Dhaka",
+      "month": "2026-12",
+      "price": 1452,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=DAC&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-10",
+      "price": 1380,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=BOM&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-11",
+      "price": 1449,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=BOM&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-12",
+      "price": 1518,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=BOM&month=2026-12"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KWI",
+      "destination_name": "Kuwait",
+      "month": "2026-10",
+      "price": 720,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KWI&month=2026-10"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KWI",
+      "destination_name": "Kuwait",
+      "month": "2026-11",
+      "price": 756,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KWI&month=2026-11"
+    },
+    {
+      "origin": "MED",
+      "origin_name": "Medina",
+      "destination": "KWI",
+      "destination_name": "Kuwait",
+      "month": "2026-12",
+      "price": 792,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=MED&destination=KWI&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 420,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 441,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 462,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 320,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 336,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 352,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-10",
+      "price": 450,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MED&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-11",
+      "price": 472,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MED&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-12",
+      "price": 495,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MED&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-10",
+      "price": 480,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DXB&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-11",
+      "price": 504,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DXB&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DXB",
+      "destination_name": "Dubai",
+      "month": "2026-12",
+      "price": 528,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DXB&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-10",
+      "price": 510,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=AUH&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-11",
+      "price": 536,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=AUH&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "AUH",
+      "destination_name": "Abu Dhabi",
+      "month": "2026-12",
+      "price": 561,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=AUH&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-10",
+      "price": 1390,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BOM&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-11",
+      "price": 1460,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BOM&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BOM",
+      "destination_name": "Mumbai",
+      "month": "2026-12",
+      "price": 1529,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BOM&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-10",
+      "price": 1460,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DEL&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-11",
+      "price": 1533,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DEL&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "DEL",
+      "destination_name": "Delhi",
+      "month": "2026-12",
+      "price": 1606,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=DEL&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-10",
+      "price": 940,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=CAI&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-11",
+      "price": 987,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=CAI&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "CAI",
+      "destination_name": "Cairo",
+      "month": "2026-12",
+      "price": 1034,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=CAI&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BAH",
+      "destination_name": "Bahrain",
+      "month": "2026-10",
+      "price": 390,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BAH&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BAH",
+      "destination_name": "Bahrain",
+      "month": "2026-11",
+      "price": 410,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BAH&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "BAH",
+      "destination_name": "Bahrain",
+      "month": "2026-12",
+      "price": 429,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=BAH&month=2026-12"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MCT",
+      "destination_name": "Muscat",
+      "month": "2026-10",
+      "price": 520,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MCT&month=2026-10"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MCT",
+      "destination_name": "Muscat",
+      "month": "2026-11",
+      "price": 546,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MCT&month=2026-11"
+    },
+    {
+      "origin": "DMM",
+      "origin_name": "Dammam",
+      "destination": "MCT",
+      "destination_name": "Muscat",
+      "month": "2026-12",
+      "price": 572,
+      "currency": "SAR",
+      "deeplink": "https://www.saudia.com/book?origin=DMM&destination=MCT&month=2026-12"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 720,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 756,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 792,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 780,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 819,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 858,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-10",
+      "price": 690,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=MED&month=2026-10"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-11",
+      "price": 724,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=MED&month=2026-11"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-12",
+      "price": 759,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=MED&month=2026-12"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-10",
+      "price": 810,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=DMM&month=2026-10"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-11",
+      "price": 850,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=DMM&month=2026-11"
+    },
+    {
+      "origin": "DXB",
+      "origin_name": "Dubai",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-12",
+      "price": 891,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=DXB&destination=DMM&month=2026-12"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 760,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 798,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 836,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 820,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 861,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 902,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-10",
+      "price": 730,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=MED&month=2026-10"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-11",
+      "price": 766,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=MED&month=2026-11"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "MED",
+      "destination_name": "Medina",
+      "month": "2026-12",
+      "price": 803,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=MED&month=2026-12"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-10",
+      "price": 850,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=DMM&month=2026-10"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-11",
+      "price": 892,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=DMM&month=2026-11"
+    },
+    {
+      "origin": "AUH",
+      "origin_name": "Abu Dhabi",
+      "destination": "DMM",
+      "destination_name": "Dammam",
+      "month": "2026-12",
+      "price": 935,
+      "currency": "AED",
+      "deeplink": "https://www.saudia.com/book?origin=AUH&destination=DMM&month=2026-12"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 980,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 1029,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 1078,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 1020,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 1071,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "JFK",
+      "origin_name": "New York",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 1122,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=JFK&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 940,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 987,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 1034,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 990,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 1040,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "IAD",
+      "origin_name": "Washington",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 1089,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-12"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 1180,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=JED&month=2026-10"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 1239,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=JED&month=2026-11"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 1298,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=JED&month=2026-12"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 1240,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=RUH&month=2026-10"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 1302,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=RUH&month=2026-11"
+    },
+    {
+      "origin": "LAX",
+      "origin_name": "Los Angeles",
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 1364,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=LAX&destination=RUH&month=2026-12"
+    }
+  ]
+}

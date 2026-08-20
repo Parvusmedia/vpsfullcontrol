@@ -1,0 +1,69 @@
+name: deploy-live-fare-demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - cursor/live-fare-dv360-poc-e420
+    paths:
+      - "live-fare-demo/**"
+      - ".github/workflows/deploy-live-fare-demo.yml"
+
+concurrency:
+  group: deploy-live-fare-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Updater unit tests
+        run: python3 live-fare-demo/feed/updater/test_update.py
+      - name: Generate feed + DV360 zip
+        run: |
+          python3 live-fare-demo/feed/updater/update.py --once
+          chmod +x live-fare-demo/scripts/*.sh
+          live-fare-demo/scripts/build-dv360.sh
+
+  deploy:
+    needs: test
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect VPS
+        run: |
+          chmod +x live-fare-demo/scripts/*.sh
+          live-fare-demo/scripts/inspect-vps.sh
+      - name: Deploy (nginx reload only + updater timer)
+        run: |
+          set -euo pipefail
+          sudo cp live-fare-demo/scripts/deploy.sh /usr/local/sbin/live-fare-deploy
+          sudo chmod 755 /usr/local/sbin/live-fare-deploy
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/live-fare-deploy, /usr/local/sbin/live-fare-deploy *' > /tmp/ops-live-fare
+          sudo cp /tmp/ops-live-fare /etc/sudoers.d/ops-live-fare
+          sudo chmod 440 /etc/sudoers.d/ops-live-fare
+          sudo /usr/local/sbin/live-fare-deploy "$GITHUB_WORKSPACE/live-fare-demo"
+      - name: Validate over localhost vhost
+        run: |
+          set -euo pipefail
+          # --resolve keeps SNI on flights.pmediaplus.com; https://127.0.0.1 hits default_server.
+          curl -fsSk --resolve flights.pmediaplus.com:443:127.0.0.1 \
+            -o /tmp/live-fare-localhost-network.json \
+            https://flights.pmediaplus.com/fares/network.json
+          python3 -c "import json; d=json.load(open('/tmp/live-fare-localhost-network.json')); assert len(d['fares'])>=200; print('fares', len(d['fares']), d['updated_at'])"
+          curl -fsSk --resolve flights.pmediaplus.com:443:127.0.0.1 https://flights.pmediaplus.com/health
+          echo
+          curl -skI --resolve flights.pmediaplus.com:443:127.0.0.1 https://flights.pmediaplus.com/fares/network.json | sed -n '1,25p'
+      - name: Validate public HTTPS if DNS is live
+        run: |
+          resolved="$(dig +short flights.pmediaplus.com A | tail -n1 || true)"
+          if [[ "$resolved" == "87.106.194.137" ]]; then
+            live-fare-demo/scripts/validate-poc.sh https://flights.pmediaplus.com
+          else
+            echo "Public HTTPS skipped until DNS A flights.pmediaplus.com -> 87.106.194.137"
+          fi

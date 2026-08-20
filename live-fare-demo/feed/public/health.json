@@ -1,0 +1,18 @@
+{
+  "status": "ok",
+  "feed_exists": true,
+  "feed_age_seconds": 0,
+  "updated_at": "2026-08-18T07:48:22Z",
+  "fares_count": 222,
+  "origins": [
+    "JED",
+    "RUH",
+    "MED",
+    "DMM",
+    "DXB",
+    "AUH",
+    "JFK",
+    "IAD",
+    "LAX"
+  ]
+}

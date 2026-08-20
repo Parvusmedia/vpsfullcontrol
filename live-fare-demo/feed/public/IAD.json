@@ -1,0 +1,55 @@
+{
+  "origin": "IAD",
+  "origin_name": "Washington",
+  "updated_at": "2026-08-18T07:48:22Z",
+  "fares": [
+    {
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-10",
+      "price": 940,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-10"
+    },
+    {
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-11",
+      "price": 987,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-11"
+    },
+    {
+      "destination": "JED",
+      "destination_name": "Jeddah",
+      "month": "2026-12",
+      "price": 1034,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=JED&month=2026-12"
+    },
+    {
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-10",
+      "price": 990,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-10"
+    },
+    {
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-11",
+      "price": 1040,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-11"
+    },
+    {
+      "destination": "RUH",
+      "destination_name": "Riyadh",
+      "month": "2026-12",
+      "price": 1089,
+      "currency": "USD",
+      "deeplink": "https://www.saudia.com/book?origin=IAD&destination=RUH&month=2026-12"
+    }
+  ]
+}

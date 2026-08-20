@@ -1,0 +1,320 @@
+:root {
+  --green: #0a5c32;
+  --green-deep: #063e22;
+  --green-mid: #0e6b3a;
+  --sand: #c4a46c;
+  --sand-deep: #b0894a;
+  --sand-soft: rgba(196, 164, 108, 0.38);
+  --blue: #163a66;
+  --cream: #f7f4ee;
+  --muted: rgba(247, 244, 238, 0.68);
+  --line: rgba(196, 164, 108, 0.42);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 300px;
+  height: 600px;
+  overflow: hidden;
+  background: #063e22;
+}
+
+.banner {
+  position: relative;
+  width: 300px;
+  height: 600px;
+  padding: 16px 20px 34px;
+  color: var(--cream);
+  background:
+    radial-gradient(900px 240px at 50% -90px, rgba(196, 164, 108, 0.16), transparent 58%),
+    linear-gradient(168deg, #147a42 0%, var(--green) 38%, var(--green-deep) 100%);
+  font-family: "Avenir Next", "Century Gothic", "Futura", "Segoe UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.livery {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.livery-green { flex: 5; background: var(--green-mid); }
+.livery-sand { flex: 2; background: var(--sand); }
+.livery-blue { flex: 2; background: var(--blue); }
+
+.dunes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.brand {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 14px 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.logo {
+  display: block;
+  width: 228px;
+  height: auto;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px 8px;
+}
+
+.field.is-open-cue {
+  z-index: 6;
+}
+
+.field.is-cue select {
+  border-color: var(--sand);
+  box-shadow: 0 0 0 2px rgba(196, 164, 108, 0.7);
+}
+
+.field.is-cue .select-wrap::after {
+  animation: chevron-bounce 0.45s ease-in-out 3;
+}
+
+.label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sand);
+  margin-bottom: 5px;
+}
+
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--sand);
+  border-bottom: 1.5px solid var(--sand);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+select {
+  width: 100%;
+  height: 40px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(6, 62, 34, 0.45);
+  color: var(--cream);
+  font: inherit;
+  font-size: 14px;
+  padding: 0 32px 0 12px;
+  outline: none;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+select:focus {
+  border-color: var(--sand);
+}
+
+.cue-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - 1px);
+  z-index: 4;
+  background: #063e22;
+  border: 1px solid var(--sand);
+  border-top: none;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: max-height 0.32s ease, opacity 0.18s ease;
+}
+
+.field.is-open-cue .cue-menu {
+  max-height: 108px;
+  opacity: 1;
+}
+
+.cue-menu div {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--cream);
+  border-top: 1px solid var(--line);
+}
+
+.interact-hint {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 6px 8px;
+  min-height: 34px;
+}
+
+.interact-hint strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sand);
+  font-weight: 700;
+}
+
+.interact-hint span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.interact-hint.is-pulse strong {
+  animation: hint-pulse 0.7s ease;
+}
+
+.price-block {
+  position: relative;
+  z-index: 1;
+  margin: auto 0 14px 8px;
+  padding-top: 2px;
+  min-height: 92px;
+}
+
+@keyframes chevron-bounce {
+  0%, 100% { transform: translateY(-70%) rotate(45deg); }
+  50% { transform: translateY(-40%) rotate(45deg); }
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  40% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field.is-cue .select-wrap::after,
+  .interact-hint.is-pulse strong {
+    animation: none;
+  }
+  .cue-menu {
+    transition: none;
+  }
+}
+
+.price-kicker {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sand);
+}
+
+.price {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.08;
+  margin: 4px 0 8px;
+}
+
+.price.fallback {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.route {
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+}
+
+.cta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  margin-left: 8px;
+  background: var(--sand);
+  color: var(--green-deep);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cta:hover,
+.cta:focus {
+  background: #d4b57e;
+}
+
+.legal {
+  position: relative;
+  z-index: 1;
+  margin: 8px 0 0 8px;
+  font-size: 9px;
+  color: var(--cream);
+  letter-spacing: 0.03em;
+}
+
+.debug {
+  position: absolute;
+  left: 16px;
+  right: 8px;
+  bottom: 8px;
+  padding: 8px;
+  background: rgba(6, 62, 34, 0.92);
+  border: 1px solid var(--sand-soft);
+  color: #e8f6ec;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  z-index: 5;
+}
+
+.banner.is-fallback .price-kicker {
+  color: var(--muted);
+}
