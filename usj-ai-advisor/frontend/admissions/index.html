@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admisiones — Orientador USJ</title>
+  <title>Destino del lead — USJ</title>
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/demo.css">
@@ -15,18 +15,31 @@
 <body>
   <div class="wrap">
     <nav class="nav">
-      <div class="brand"><span>Universidad San Jorge</span><strong>Mesa de admisiones</strong></div>
+      <div class="brand"><span>Universidad San Jorge</span><strong>Destino del lead</strong></div>
     </nav>
 
     <div id="demo-map-mount" class="demo-map-mount"></div>
-    <div id="demo-here-mount"></div>
 
     <header class="hero hero-step">
-      <p class="kicker">Paso 3 · Conversión</p>
-      <h1>Contexto cualificado, no un formulario vacío.</h1>
-      <p class="lede">Cada interesado llega con perfil, puntuación, alternativas y respuestas del orientador.</p>
+      <p class="kicker">Paso 3 · Destino USJ</p>
+      <h1>Así recibe la universidad al interesado cualificado</h1>
+      <p class="lede">No es un formulario vacío: cada lead llega con perfil, puntuación de encaje, máster recomendado, alternativas y respuestas del orientador embebido en el anuncio.</p>
     </header>
 
+    <section class="outcome-grid">
+      <article class="outcome-card">
+        <span class="outcome-num">1</span>
+        <h2>CRM · nuevo lead</h2>
+        <p>La información puede viajar directamente al CRM de USJ y abrir un lead con todos los campos ya completos: datos de contacto, perfil, recomendación, intención y preguntas formuladas.</p>
+      </article>
+      <article class="outcome-card">
+        <span class="outcome-num">2</span>
+        <h2>WhatsApp · conversación previa</h2>
+        <p>Alternativa o complemento: abrir comunicación por WhatsApp con un agente automático o humano asistido que resuelva dudas antes de iniciar una solicitud formal de admisión.</p>
+      </article>
+    </section>
+
+    <p class="kicker section-kicker">Ficha del interesado</p>
     <div id="list"></div>
     <div id="demo-linear-mount"></div>
   </div>
@@ -63,15 +76,14 @@
     USJ.api("/api/leads").then(function (data) {
       var root = document.getElementById("list");
       if (!data.leads.length) {
-        root.innerHTML = '<div class="card"><p>Aún no hay interesados registrados.</p></div>';
+        root.innerHTML = '<div class="card"><p>Completa el orientador en el <a href="/ad/">anuncio</a> (paso 2) y deja tus datos o contacta por WhatsApp para ver la ficha aquí.</p></div>';
         return;
       }
       var live = data.leads.filter(function (l) { return !l.demo_seed; });
       var seeds = data.leads.filter(function (l) { return l.demo_seed; });
-      var ordered = live.concat(seeds);
-      root.innerHTML = ordered.map(renderLeadCard).join("");
+      root.innerHTML = live.concat(seeds).map(renderLeadCard).join("");
     }).catch(function () {
-      document.getElementById("list").innerHTML = '<div class="card">No se pudo cargar la lista de interesados.</div>';
+      document.getElementById("list").innerHTML = '<div class="card">No se pudo cargar la información del interesado.</div>';
     });
   </script>
 </body>

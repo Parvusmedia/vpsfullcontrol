@@ -535,6 +535,113 @@ body.demo-hub .hub-hero .kicker { color: var(--gold-soft); }
 body.demo-hub .hub-hero h1 { color: #fff; max-width: none; }
 body.demo-hub .hub-hero .lede { color: rgba(255, 255, 255, 0.78); max-width: none; }
 
+/* Concept screen (paso 1) */
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin: 0 0 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.concept-card h2 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--navy-deep);
+}
+
+.concept-card p {
+  margin: 0 0 12px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.concept-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.logic-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 16px;
+}
+
+.logic-card {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.logic-card h3 {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--navy);
+}
+
+.logic-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Destino USJ (paso 3) */
+.outcome-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0 0 28px;
+}
+
+.outcome-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.outcome-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.outcome-card h2 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--navy-deep);
+}
+
+.outcome-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.section-kicker { margin: 0 0 14px; }
+
 /* Admissions prospects */
 .prospect {
   margin: 20px 0;
@@ -870,6 +977,7 @@ body.demo-hub .hub-hero .lede { color: rgba(255, 255, 255, 0.78); max-width: non
   .qtitle { font-size: 1.2rem; }
   body.demo-hub .hub-hero { padding: 24px 20px; }
   .hero-step { padding: 20px 18px; }
+  .logic-split, .outcome-grid { grid-template-columns: 1fr; }
   .nav-home { font-size: 12px; padding: 7px 12px; }
   .brand-with-logo { gap: 10px; }
   .nav-logo { width: 32px; height: 32px; }

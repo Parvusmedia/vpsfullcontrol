@@ -76,8 +76,8 @@
     return (
       '<div class="demo-next-banner">' +
       '<p class="kicker">Siguiente · paso 2</p>' +
-      "<p><b>Anuncios display</b> — el orientador en creativos IAB 300×600 y 970×250.</p>" +
-      '<a class="btn" href="' + href + '">Ver anuncios →</a>' +
+      "<p><b>Anuncio interactivo</b> — el mismo orientador dentro del creativo display.</p>" +
+      '<a class="btn" href="' + href + '">Ver ejemplo en vivo →</a>' +
       "</div>"
     );
   }

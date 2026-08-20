@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Universidad San Jorge · Orientador de másteres</title>
+  <title>Universidad San Jorge · Orientador en display</title>
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
@@ -15,31 +15,59 @@
     <nav class="nav">
       <div class="brand">
         <span>Universidad San Jorge</span>
-        <strong>Orientador de másteres</strong>
+        <strong>Orientador en display</strong>
       </div>
     </nav>
 
     <header class="hero hub-hero">
-      <p class="kicker">Universidad San Jorge</p>
-      <h1>Tres pasos. Un recorrido completo.</h1>
-      <p class="lede">Orientador web, captación display y admisiones con contexto cualificado en cada lead.</p>
+      <p class="kicker">Paso 1 · Concepto</p>
+      <h1>Orientación automática dentro del anuncio display</h1>
+      <p class="lede">Este recorrido muestra cómo un creativo HTML5 puede cualificar interesados en másteres sin sacarlos del banner: perfil, recomendación y conversión en el mismo espacio publicitario.</p>
     </header>
+
+    <section class="concept-card">
+      <p class="kicker">El orientador, dentro del anuncio</p>
+      <h2>No es una landing aparte</h2>
+      <p>El usuario responde tres preguntas guiadas dentro del propio creativo (300×600 o 970×250). El catálogo se reduce en tiempo real hasta uno o varios másteres y ve por qué encaja cada opción, con puntuación y elegibilidad.</p>
+      <ul class="concept-list">
+        <li>Titulación y perfil profesional</li>
+        <li>Objetivo formativo</li>
+        <li>Modalidad preferida</li>
+      </ul>
+    </section>
+
+    <section class="logic-split">
+      <article class="logic-card">
+        <p class="kicker">Motor principal</p>
+        <h3>Secuencia guiada + catálogo</h3>
+        <p>Las respuestas activan reglas sobre un catálogo estructurado de másteres. El sistema descarta programas incompatibles, pondera el encaje y nunca inventa titulaciones que no existen.</p>
+      </article>
+      <article class="logic-card">
+        <p class="kicker">Capa opcional de IA</p>
+        <h3>Explicación y dudas</h3>
+        <p>La inteligencia artificial puede redactar el porqué del match o responder preguntas, siempre anclada a hechos aprobados del catálogo. No sustituye las reglas de admisión.</p>
+      </article>
+    </section>
+
+    <section class="concept-card">
+      <p class="kicker">Recorrido</p>
+      <h2>Tres pantallas</h2>
+      <p>Concepto → ejemplo en vivo en el anuncio → cómo recibe la información Universidad San Jorge.</p>
+    </section>
 
     <div id="demo-map-mount" class="demo-map-mount"></div>
 
-    <p class="demo-start-wrap"><a class="btn demo-start" href="/orientador">Comenzar · paso 1</a></p>
+    <p class="demo-start-wrap">
+      <a class="btn demo-start" href="/ad/">Ver ejemplo en vivo · paso 2</a>
+    </p>
 
-    <a class="hub-step2-link" href="/ad/">
-      <p class="kicker">Paso 2 · Anuncios</p>
-      <b>Creativos display 300×600 y 970×250</b>
-      <span>Mismo orientador en formatos IAB. WhatsApp o formulario de contacto.</span>
-    </a>
+    <div id="demo-linear-mount"></div>
   </div>
   <script src="/shared.js"></script>
   <script src="/demo.js"></script>
   <script>
     USJ.mountDemoChrome();
-    document.querySelectorAll(".demo-start, .hub-step2-link").forEach(function (a) {
+    document.querySelectorAll(".demo-start").forEach(function (a) {
       a.href = USJ.appendPresent(a.getAttribute("href"));
     });
   </script>

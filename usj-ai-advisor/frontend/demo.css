@@ -218,6 +218,11 @@
   background: var(--surface-muted);
 }
 
+.demo-nav-spacer {
+  flex: 1;
+  min-width: 80px;
+}
+
 @media (min-width: 640px) {
   .demo-map { grid-template-columns: repeat(3, 1fr); }
 }
