@@ -44,6 +44,34 @@
 
 .ad-wrap { width: min(1040px, calc(100% - 36px)); margin: 0 auto; }
 
+.hero-compact {
+  padding: 18px 22px;
+  margin-bottom: 0;
+}
+
+.hero-compact h1 {
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.75rem);
+  margin-bottom: 6px;
+}
+
+.hero-compact .lede {
+  font-size: 0.95rem;
+}
+
+.stage-jump {
+  margin: 0 0 4px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.stage {
+  margin-top: 0;
+  padding-top: 16px;
+}
+
 @media (max-width: 800px) {
   .stage { padding-left: 12px; padding-right: 12px; }
 }

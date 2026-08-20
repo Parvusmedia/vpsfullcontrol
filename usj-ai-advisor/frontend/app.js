@@ -71,6 +71,17 @@
     $flow.classList.add("flow-enter");
   }
 
+  function nextStepBanner() {
+    var href = USJ.appendPresent ? USJ.appendPresent("/ad/") : "/ad/";
+    return (
+      '<div class="demo-next-banner">' +
+      '<p class="kicker">Siguiente en el demo · paso 2</p>' +
+      "<p><b>Anuncios display</b> — el mismo orientador en creativos IAB 300×600 y 970×250. Cierra por WhatsApp o formulario al CRM.</p>" +
+      '<a class="btn" href="' + href + '">Ver anuncios →</a>' +
+      "</div>"
+    );
+  }
+
   function renderIntro() {
     state.phase = "intro";
     state.answers = {};
@@ -81,11 +92,11 @@
     updateStepProgress();
     var copy = introCopy();
     var roadmap = (state.spec.steps || []).map(function (s, i) {
-      return "<li><span class=\"step-num\">" + (i + 1) + "</span><div><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></div></li>";
+      return "<li><span class=\"step-num\">" + (i + 1) + "</span><div><b>Pregunta " + (i + 1) + " · " + s.title + "</b><span>" + stepHint(s, i) + "</span></div></li>";
     }).join("");
     $intro.innerHTML =
-      "<p class=\"progress\">Cómo funciona</p>" +
-      "<h2 class=\"qtitle\">" + (copy.headline || "Encuentra tu máster en 3 pasos") + "</h2>" +
+      "<p class=\"progress\">Dentro del paso 1 · Orientador web</p>" +
+      "<h2 class=\"qtitle\">" + (copy.headline || "Encuentra tu máster en 3 preguntas") + "</h2>" +
       "<p class=\"lede\">" + (copy.lede || state.spec.intro || "") + "</p>" +
       "<ol class=\"intro-roadmap\">" + roadmap + "</ol>" +
       "<p class=\"lede intro-outcome\">" + (copy.outcome || "") + "</p>" +
@@ -236,6 +247,7 @@
       ? "<p class=\"scenario-note\">Escenario demo: abogado/a + derecho digital → <em>Inteligencia Artificial Aplicada</em> (admisión a revisar).</p>"
       : "";
     $results.innerHTML =
+      nextStepBanner() +
       scenarioNote +
       "<div class=\"result-grid\">" +
         "<article class=\"card\">" +

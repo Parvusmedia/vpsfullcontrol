@@ -32,9 +32,15 @@
       <a class="btn ghost hub-scenario" href="/orientador?scenario=lawyer">Ver escenario abogado</a>
     </div>
 
+    <a class="hub-step2-link" href="/ad/">
+      <p class="kicker">Paso 2 · Anuncios</p>
+      <b>Creativos display 300×600 y 970×250</b>
+      <span>Mismo orientador en formatos IAB. WhatsApp o formulario al CRM.</span>
+    </a>
+
     <div id="demo-guide-mount"></div>
 
-    <p class="demo-catalog-link"><a href="/admin">Ver catálogo de datos</a> — referencia opcional (plazas, modalidades, hechos aprobados).</p>
+    <p class="demo-catalog-link"><a href="/admin">Ver catálogo de datos</a> — referencia opcional. <a href="/debug">Analytics del demo</a> (embudo de eventos).</p>
 
     <p class="footnote">Sugerencia para la demo en vivo: abogado + derecho digital → <em>Inteligencia Artificial Aplicada</em> (admisión a revisar). Luego revisa el anuncio y admisiones. Modo presentación: añade <code>?present=1</code> a la URL.</p>
   </div>
@@ -42,7 +48,7 @@
   <script src="/demo.js"></script>
   <script>
     USJ.mountDemoChrome({ showGuide: true });
-    document.querySelectorAll(".hub-scenario-row a").forEach(function (a) {
+    document.querySelectorAll(".hub-scenario-row a, .hub-step2-link").forEach(function (a) {
       a.href = USJ.appendPresent(a.getAttribute("href"));
     });
   </script>

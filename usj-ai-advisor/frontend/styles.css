@@ -693,6 +693,79 @@ body.demo-hub .hub-hero .lede { color: rgba(255, 255, 255, 0.78); max-width: non
   border-radius: var(--radius-sm);
 }
 
+.demo-next-banner {
+  margin: 0 0 20px;
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, var(--navy-deep) 0%, var(--navy-mid) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-next-banner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.demo-next-banner .kicker { color: var(--gold-soft); margin-bottom: 8px; }
+
+.demo-next-banner p {
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.5;
+  max-width: none;
+}
+
+.demo-next-banner .btn {
+  background: linear-gradient(180deg, #d4b56a 0%, var(--gold) 100%);
+  color: var(--navy-deep);
+}
+
+.demo-next-banner .btn:hover {
+  background: linear-gradient(180deg, #e0c078 0%, #d4b56a 100%);
+}
+
+.hub-step2-link {
+  display: block;
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hub-step2-link:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow);
+}
+
+.hub-step2-link .kicker { margin-bottom: 6px; }
+
+.hub-step2-link b {
+  display: block;
+  font-size: 16px;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.hub-step2-link span {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 /* Admissions */
 .leads-summary {
   margin: 0 0 20px;

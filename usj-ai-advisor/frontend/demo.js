@@ -11,7 +11,7 @@
     },
     {
       id: "anuncio",
-      href: "/ad",
+      href: "/ad/",
       num: "2",
       title: "Anuncio",
       hint: "Creativos DSP-ready"
@@ -43,10 +43,17 @@
   }
 
   function renderDemoMap(active) {
+    var completed = false;
+    try {
+      var saved = USJ.loadState && USJ.loadState();
+      completed = !!(saved && saved.result && saved.result.best);
+    } catch (e) { completed = false; }
     return STEPS.map(function (step) {
       var cls = "demo-pill";
       if (step.id === active) cls += " active";
       if (active === "hub" && step.id === "orientador") cls += " demo-pill-next";
+      if (active === "orientador" && completed && step.id === "anuncio") cls += " demo-pill-next";
+      if (active === "hub" && completed && step.id === "anuncio") cls += " demo-pill-next";
       return (
         '<a class="' + cls + '" href="' + hrefWithFlags(step.href) + '">' +
         '<span class="num">' + step.num + '</span>' +
@@ -100,8 +107,8 @@
       return '<p class="demo-here"><b>Catálogo</b> (referencia, fuera del recorrido). <a href="' + hrefWithFlags("/orientador") + '">Ir al paso 1 · Orientador</a> · <a href="' + hrefWithFlags("/") + '">Inicio del demo</a></p>';
     }
     var tips = {
-      orientador: "Completa el wizard y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>. Siguiente: <a href=\"" + hrefWithFlags("/ad") + "\">Anuncio</a>.",
-      anuncio: "Prueba los creativos embebidos. Siguiente: <a href=\"" + hrefWithFlags("/admissions") + "\">Admisiones</a> para ver el lead.",
+      orientador: "Completa el wizard y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>. <b>Siguiente:</b> <a href=\"" + hrefWithFlags("/ad/") + "\">Paso 2 · Anuncios</a>.",
+      anuncio: "Estás en el <b>paso 2 · Anuncios</b>. Los creativos están abajo ↓ Prueba 300×600 y 970×250. Siguiente: <a href=\"" + hrefWithFlags("/admissions") + "\">Admisiones</a>.",
       admisiones: "Si está vacío, vuelve al <a href=\"" + hrefWithFlags("/orientador") + "\">Orientador</a> y genera un lead."
     };
     return '<p class="demo-here">' + (tips[active] || "") + "</p>";
