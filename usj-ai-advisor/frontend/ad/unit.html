@@ -60,12 +60,7 @@
 
     .roadmap { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
     .roadmap li {
-      display: flex; gap: 10px; align-items: flex-start;
       padding: 8px 10px; background: var(--btn); border: 1px solid var(--line); border-radius: 2px;
-    }
-    .roadmap .num {
-      width: 22px; height: 22px; flex: none; display: flex; align-items: center; justify-content: center;
-      background: var(--navy); color: #fff; font-size: 11px; font-weight: 700; border-radius: 2px;
     }
     .roadmap b { display: block; font-size: 12px; font-weight: 700; line-height: 1.25; margin-bottom: 2px; }
     .roadmap span { display: block; font-size: 11px; line-height: 1.35; color: var(--muted); }
@@ -123,8 +118,7 @@
     .sz-970x250 .panel { width: 690px; height: 100%; min-height: 0; padding: 12px 18px 12px 20px; }
     .sz-970x250 h1 { font-size: 20px; }
     .sz-970x250 .roadmap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .sz-970x250 .roadmap li { flex-direction: column; gap: 6px; padding: 10px; }
-    .sz-970x250 .roadmap .num { width: 100%; height: 24px; }
+    .sz-970x250 .roadmap li { padding: 10px; }
     .sz-970x250 .opts { display: grid; gap: 6px; align-content: stretch; flex: 1; min-height: 0; }
     .sz-970x250 .opts-c5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
     .sz-970x250 .opts-c4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
@@ -143,8 +137,7 @@
     .sz-970x250.is-intro h1 { font-size: 22px; margin: 0 0 6px; line-height: 1.15; flex-shrink: 0; }
     .sz-970x250.is-intro .intro-lede { font-size: 13px; line-height: 1.4; margin: 0 0 10px; flex-shrink: 0; max-width: 52em; }
     .sz-970x250.is-intro .roadmap { margin: 0 0 10px; gap: 8px; flex: 1; min-height: 0; align-content: start; }
-    .sz-970x250.is-intro .roadmap li { padding: 8px 10px; gap: 5px; }
-    .sz-970x250.is-intro .roadmap .num { height: 22px; font-size: 11px; }
+    .sz-970x250.is-intro .roadmap li { padding: 8px 10px; }
     .sz-970x250.is-intro .roadmap b { font-size: 12px; margin: 0 0 3px; line-height: 1.2; }
     .sz-970x250.is-intro .roadmap span { display: block; font-size: 10px; line-height: 1.3; }
     .sz-970x250.is-intro .outcome { display: none; }
@@ -211,7 +204,7 @@
       }
       function roadmapHtml() {
         return "<ol class=\"roadmap\">" + (spec.steps || []).map(function (s, i) {
-          return "<li><span class=\"num\">" + (i + 1) + "</span><div><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></div></li>";
+          return "<li><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></li>";
         }).join("") + "</ol>";
       }
       function paintRemain(data) {
