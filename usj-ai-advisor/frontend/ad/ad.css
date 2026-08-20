@@ -1,27 +1,20 @@
-html, body {
-  margin: 0;
-  background: #1a1f27;
-  color: #e8e4dc;
-  color-scheme: dark;
-  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-}
-.page { padding: 18px 18px 8px; max-width: 1040px; }
-.page a { color: #d4b45a; }
 .stage {
   padding: 8px 18px 48px;
   display: flex;
   flex-direction: column;
   gap: 28px;
   align-items: flex-start;
+  background: #1a1f27;
+  color: #e8e4dc;
 }
-figcaption {
+.stage figcaption {
   font-family: Georgia, serif;
   font-weight: 600;
   margin: 0 0 8px;
   font-size: 14px;
   color: #c9c3b6;
 }
-figcaption b { color: #fff; font-size: 15px; }
+.stage figcaption b { color: #fff; font-size: 15px; }
 .slot { margin: 0; }
 .scroller { max-width: 100%; overflow-x: auto; }
 .frame {
@@ -38,6 +31,7 @@ figcaption b { color: #fff; font-size: 15px; }
   height: 100%;
   background: #0b1f3a;
 }
+.ad-wrap { width: min(1040px, calc(100% - 36px)); margin: 0 auto; }
 @media (max-width: 800px) {
-  .page, .stage { padding-left: 12px; padding-right: 12px; }
+  .stage { padding-left: 12px; padding-right: 12px; }
 }

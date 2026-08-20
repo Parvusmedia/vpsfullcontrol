@@ -5,13 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Anuncios IAB — USJ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
   <link rel="stylesheet" href="/ad/ad.css">
 </head>
 <body>
-  <header class="page">
-    <p>Creatividades HTML5 a tamaño IAB real, con look de campaña USJ (foto de campus, marino y cruz de San Jorge). <strong>Seguir por WhatsApp</strong> abre la conversación con el máster y el perfil.</p>
-    <p><a href="/">Orientador</a> · <a href="/admissions">Admisiones</a></p>
-  </header>
+  <div class="wrap ad-wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Universidad San Jorge</span>
+        <strong>Anuncios display</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+    <div id="demo-here-mount"></div>
+
+    <header class="hero">
+      <p class="kicker">Paso 1 · Captación</p>
+      <h1>Creativos HTML5 a tamaño IAB real</h1>
+      <p class="lede">Mismo wizard que el orientador web, embebido en banner. <strong>Seguir por WhatsApp</strong> o <strong>Dejar mis datos</strong> cierran el flujo.</p>
+    </header>
+  </div>
+
   <main class="stage">
     <figure class="slot">
       <figcaption><b>300 × 600</b> · half-page · tamaño real</figcaption>
@@ -28,5 +47,13 @@
       </div>
     </figure>
   </main>
+
+  <div class="wrap">
+    <p class="footnote">Tras probar un anuncio, continúa en el <a href="/">Orientador</a> (paso 2) o revisa <a href="/admissions">Admisiones</a> (paso 3) si dejaste datos.</p>
+  </div>
+
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>USJ.mountDemoChrome();</script>
 </body>
 </html>

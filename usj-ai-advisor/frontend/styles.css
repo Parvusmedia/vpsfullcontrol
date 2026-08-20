@@ -61,6 +61,8 @@ a { color: inherit; }
 .nav-links { display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
 .nav-links a { text-decoration: none; }
 
+/* legacy small links — demo uses .demo-map */
+
 .hero { padding: 18px 0 8px; }
 .kicker {
   color: var(--forest);
@@ -265,6 +267,7 @@ h1 {
   font-size: 12px;
   padding: 20px 0 40px;
 }
+.footnote a { color: var(--forest); font-weight: 600; }
 
 .remain-count {
   font-size: 12px;

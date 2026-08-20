@@ -6,21 +6,28 @@
   <title>Catálogo — Orientador USJ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
 </head>
 <body>
   <div class="wrap">
     <nav class="nav">
       <div class="brand"><span>Universidad San Jorge</span><strong>Catálogo de másteres</strong></div>
-      <div class="nav-links"><a href="/">Orientador</a></div>
     </nav>
-    <p class="kicker">Admin de demostración (solo lectura)</p>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+    <div id="demo-here-mount"></div>
+
+    <p class="kicker">Paso 0 · Base de datos</p>
     <h1>Datos estructurados, no memoria del modelo.</h1>
-    <p class="lede">Edita <code>backend/data/programmes.json</code> en el servidor y reinicia el servicio o llama a <code>POST /api/admin/reload</code>. Futuro: CMS de USJ → feed de programas → este archivo → motor de orientación.</p>
+    <p class="lede">Todo lo que muestran el anuncio y el orientador sale de aquí: plazas, modalidades, perfiles de acceso y hechos aprobados. Demo con 3 másteres; en producción vendría del CMS de USJ.</p>
     <div id="cats"></div>
+    <p class="footnote">Siguiente paso recomendado: <a href="/ad">Anuncio</a> (captación) → <a href="/">Orientador</a> → <a href="/admissions">Admisiones</a>.</p>
   </div>
   <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>USJ.mountDemoChrome();</script>
   <script>
     USJ.api("/api/programmes").then(function (data) {
       document.getElementById("cats").innerHTML = data.programmes.map(function (p) {

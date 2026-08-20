@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
 </head>
 <body>
   <div class="wrap">
@@ -18,17 +19,16 @@
         <span>Universidad San Jorge</span>
         <strong>Orientador de másteres</strong>
       </div>
-      <div class="nav-links">
-        <a href="/ad">Anuncio</a>
-        <a href="/admissions">Admisiones</a>
-        <a href="/admin">Catálogo</a>
-      </div>
     </nav>
 
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+    <div id="demo-guide-mount"></div>
+    <div id="demo-here-mount"></div>
+
     <header class="hero">
-      <p class="kicker">Desde la primera impresión</p>
+      <p class="kicker">Paso 2 · Experiencia web</p>
       <h1>Encuentra el máster que encaja contigo</h1>
-      <p class="lede">Tres preguntas. El catálogo se reduce hasta 1, 2 o 3 másteres.</p>
+      <p class="lede">Tres preguntas guiadas. El catálogo demo se reduce hasta 1, 2 o 3 másteres y ves por qué encaja cada uno.</p>
     </header>
 
     <section class="wizard-card" id="wizard">
@@ -48,6 +48,8 @@
     <p class="footnote">Demo de Parvus Media para Universidad San Jorge. Los requisitos salen del catálogo, no de la IA. Esto es orientación, no una oferta de plaza.</p>
   </div>
   <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
   <script src="/app.js"></script>
+  <script>USJ.mountDemoChrome({ showGuide: true });</script>
 </body>
 </html>
