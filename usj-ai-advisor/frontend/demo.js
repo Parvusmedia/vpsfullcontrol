@@ -37,47 +37,46 @@
     return "concepto";
   }
 
+  function resolveStepActive(active) {
+    if (active === "orientador") return "anuncio";
+    if (active === "concepto" || active === "anuncio" || active === "destino") return active;
+    return null;
+  }
+
   function hrefWithFlags(href) {
     href = USJ.appendPresent ? USJ.appendPresent(href) : href;
     return href;
   }
 
   function renderDemoMap(active) {
-    return STEPS.map(function (step) {
+    var stepActive = resolveStepActive(active);
+    var activeIdx = -1;
+    if (stepActive) {
+      for (var i = 0; i < STEPS.length; i++) {
+        if (STEPS[i].id === stepActive) {
+          activeIdx = i;
+          break;
+        }
+      }
+    }
+    return STEPS.map(function (step, i) {
       var cls = "demo-pill";
-      if (step.id === active) cls += " active";
-      if (active === "concepto" && step.id === "anuncio") cls += " demo-pill-next";
-      if (active === "anuncio" && step.id === "destino") cls += " demo-pill-next";
+      var hintExtra = "";
+      if (stepActive && step.id === stepActive) {
+        cls += " active";
+        hintExtra = "Estás aquí · ";
+      } else if (activeIdx >= 0 && i === activeIdx + 1) {
+        cls += " demo-pill-next";
+        hintExtra = "Siguiente · ";
+      } else if (activeIdx >= 0 && i < activeIdx) {
+        cls += " demo-pill-done";
+      }
       return (
         '<a class="' + cls + '" href="' + hrefWithFlags(step.href) + '">' +
-        '<span class="num">' + step.num + '</span>' +
-        "<div><b>" + step.title + "</b><small>" + step.hint + "</small></div></a>"
+        '<span class="num" aria-hidden="true">' + step.num + "</span>" +
+        "<div><b>" + step.title + "</b><small>" + hintExtra + step.hint + "</small></div></a>"
       );
     }).join("");
-  }
-
-  function renderLinearNav(active) {
-    var idx = -1;
-    for (var i = 0; i < STEPS.length; i++) {
-      if (STEPS[i].id === active) { idx = i; break; }
-    }
-    if (idx < 0) return "";
-    var prev = idx > 0 ? STEPS[idx - 1] : null;
-    var next = idx < STEPS.length - 1 ? STEPS[idx + 1] : null;
-    var homeHref = hrefWithFlags("/");
-    var prevHtml = prev
-      ? '<a class="demo-nav-btn ghost" href="' + hrefWithFlags(prev.href) + '">← ' + prev.title + "</a>"
-      : '<span class="demo-nav-spacer"></span>';
-    var nextHtml = next
-      ? '<a class="demo-nav-btn" href="' + hrefWithFlags(next.href) + '">' + next.title + " →</a>"
-      : '<a class="demo-nav-btn ghost" href="' + homeHref + '">Volver al inicio</a>';
-    return (
-      '<nav class="demo-linear" aria-label="Recorrido">' +
-      prevHtml +
-      '<span class="demo-linear-count">Paso ' + STEPS[idx].num + " de 3</span>" +
-      nextHtml +
-      "</nav>"
-    );
   }
 
   function enhanceNav() {
@@ -94,17 +93,38 @@
     }
   }
 
-  function renderDemoRef(active) {
+  function renderDemoRef() {
     var nav = document.querySelector(".nav");
     if (!nav || document.querySelector(".demo-ref")) return;
-    var clean = active === "anuncio" || active === "destino";
     nav.insertAdjacentHTML(
       "afterend",
-      '<div class="demo-ref' + (clean ? " demo-ref-clean" : "") + '" aria-label="Referencia del producto">' +
+      '<div class="demo-ref" aria-label="Referencia del producto">' +
       "<span>Universidad San Jorge</span>" +
       "<strong>Orientador en display</strong>" +
       "</div>"
     );
+  }
+
+  function positionMapMount() {
+    var mount = document.getElementById("demo-map-mount");
+    if (!mount) {
+      var ref = document.querySelector(".demo-ref");
+      var nav = document.querySelector(".nav");
+      var anchor = ref || nav;
+      if (!anchor) return null;
+      anchor.insertAdjacentHTML(
+        "afterend",
+        '<div id="demo-map-mount" class="demo-map-mount demo-map-mount-top"></div>'
+      );
+      return document.getElementById("demo-map-mount");
+    }
+    mount.classList.add("demo-map-mount-top");
+    mount.hidden = false;
+    var refNode = document.querySelector(".demo-ref");
+    if (refNode && mount.previousElementSibling !== refNode) {
+      refNode.insertAdjacentElement("afterend", mount);
+    }
+    return mount;
   }
 
   function applyPresentMode() {
@@ -129,17 +149,13 @@
     applyPresentMode();
     var active = opts.active || detectActive();
     enhanceNav();
-    renderDemoRef(active);
-    var mapMount = document.getElementById("demo-map-mount");
+    renderDemoRef();
+    var mapMount = positionMapMount();
     if (mapMount) {
-      if (active === "anuncio" || active === "destino") {
-        mapMount.innerHTML = "";
-        mapMount.hidden = true;
-      } else {
-        mapMount.hidden = false;
-        var mapClass = active === "concepto" ? "demo-map demo-map-compact" : "demo-map";
-        mapMount.innerHTML = '<div class="' + mapClass + '">' + renderDemoMap(active) + "</div>";
-      }
+      mapMount.innerHTML =
+        '<div class="demo-map-rail" aria-label="Recorrido del demo">' +
+        '<p class="demo-map-label">Recorrido del demo</p>' +
+        '<div class="demo-map">' + renderDemoMap(active) + "</div></div>";
     }
 
     var hereMount = document.getElementById("demo-here-mount");
@@ -148,7 +164,7 @@
     var linearMount = document.getElementById("demo-linear-mount");
     if (linearMount) {
       linearMount.innerHTML = "";
-      linearMount.hidden = active === "anuncio" || active === "destino";
+      linearMount.hidden = true;
     }
 
     prefetchForStep(active);
