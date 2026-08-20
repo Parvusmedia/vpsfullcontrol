@@ -29,7 +29,8 @@
     <h1>Contexto cualificado, no un formulario vacío.</h1>
     <p class="lede">Cada interesado llega con perfil, puntuación, alternativas y respuestas del wizard. Los datos personales solo aparecen si pulsó Dejar mis datos o contactó por WhatsApp (simulado en demo).</p>
     <div id="list"></div>
-    <p class="footnote">Si la lista está vacía, completa el <a href="/">Orientador</a> o un <a href="/ad">Anuncio</a> y envía el formulario o WhatsApp.</p>
+    <div id="demo-linear-mount"></div>
+    <p class="footnote">Si la lista está vacía, completa el <a href="/orientador">Orientador</a> (paso 1) o un <a href="/ad">Anuncio</a> (paso 2).</p>
   </div>
   <script src="/shared.js"></script>
   <script src="/demo.js"></script>
@@ -38,7 +39,7 @@
     USJ.api("/api/leads").then(function (data) {
       var root = document.getElementById("list");
       if (!data.leads.length) {
-        root.innerHTML = '<div class="card"><p>Aún no hay interesados en este demo.</p><p>Ve al <a href="/">Orientador</a>, completa las 3 preguntas y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b> en el anuncio.</p></div>';
+        root.innerHTML = '<div class="card"><p>Aún no hay interesados en este demo.</p><p>Ve al <a href="/orientador">Orientador</a> (paso 1), completa las 3 preguntas y pulsa <b>Seguir por WhatsApp</b> o <b>Dejar mis datos</b>.</p></div>';
         return;
       }
       root.innerHTML = data.leads.map(function (lead) {

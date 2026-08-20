@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Orientador de másteres — Universidad San Jorge</title>
+  <title>Demo USJ · Orientador de másteres</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,39 +17,28 @@
     <nav class="nav">
       <div class="brand">
         <span>Universidad San Jorge</span>
-        <strong>Orientador de másteres</strong>
+        <strong>Demo · Orientador de másteres</strong>
       </div>
     </nav>
 
-    <div id="demo-map-mount" class="demo-map-mount"></div>
-    <div id="demo-guide-mount"></div>
-    <div id="demo-here-mount"></div>
-
-    <header class="hero">
-      <p class="kicker">Paso 2 · Experiencia web</p>
-      <h1>Encuentra el máster que encaja contigo</h1>
-      <p class="lede">Tres preguntas guiadas. El catálogo demo se reduce hasta 1, 2 o 3 másteres y ves por qué encaja cada uno.</p>
+    <header class="hero hub-hero">
+      <p class="kicker">Inicio del demo</p>
+      <h1>Tres pasos. Un recorrido completo.</h1>
+      <p class="lede">Orientador web → anuncio display → lead en admisiones. Catálogo demo con 3 másteres; no es la web pública de USJ.</p>
     </header>
 
-    <section class="wizard-card" id="wizard">
-      <div id="intro-panel"></div>
-      <div id="flow-panel" hidden>
-        <p class="progress" id="progress">Pregunta 1 de 3</p>
-        <div class="remaining" id="remaining"></div>
-        <h2 id="qtitle" class="qtitle"></h2>
-        <p class="lede" id="qsub"></p>
-        <div class="choices" id="choices"></div>
-        <button class="btn ghost" id="back" hidden>Volver</button>
-      </div>
-    </section>
+    <div id="demo-map-mount" class="demo-map-mount"></div>
 
-    <section class="panel" id="results"></section>
-    <pre class="debug" id="debug"></pre>
-    <p class="footnote">Demo de Parvus Media para Universidad San Jorge. Los requisitos salen del catálogo, no de la IA. Esto es orientación, no una oferta de plaza.</p>
+    <p class="demo-start-wrap"><a class="btn demo-start" href="/orientador">Empezar demo · paso 1</a></p>
+
+    <div id="demo-guide-mount"></div>
+
+    <p class="demo-catalog-link"><a href="/admin">Ver catálogo de datos</a> — referencia opcional (plazas, modalidades, hechos aprobados).</p>
+
+    <p class="footnote">Sugerencia para la demo en vivo: abogado + derecho digital → <em>Inteligencia Artificial Aplicada</em> (admisión a revisar). Luego revisa el anuncio y admisiones.</p>
   </div>
   <script src="/shared.js"></script>
   <script src="/demo.js"></script>
-  <script src="/app.js"></script>
   <script>USJ.mountDemoChrome({ showGuide: true });</script>
 </body>
 </html>

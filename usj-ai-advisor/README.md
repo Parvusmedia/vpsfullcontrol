@@ -13,10 +13,11 @@ That turns anonymous traffic into **context-rich prospects** before Admissions s
 
 | Recurso | URL |
 |---------|-----|
-| Advisor | https://usjdemo.pmediaplus.com/ |
-| Ad 300×600 | https://usjdemo.pmediaplus.com/ad |
-| Admissions | https://usjdemo.pmediaplus.com/admissions |
-| Catalogue | https://usjdemo.pmediaplus.com/admin |
+| Demo hub (inicio) | https://usjdemo.pmediaplus.com/ |
+| Orientador (paso 1) | https://usjdemo.pmediaplus.com/orientador |
+| Ad (paso 2) | https://usjdemo.pmediaplus.com/ad |
+| Admissions (paso 3) | https://usjdemo.pmediaplus.com/admissions |
+| Catalogue (referencia) | https://usjdemo.pmediaplus.com/admin |
 | Debug events | https://usjdemo.pmediaplus.com/debug |
 | Health | https://usjdemo.pmediaplus.com/api/health |
 
