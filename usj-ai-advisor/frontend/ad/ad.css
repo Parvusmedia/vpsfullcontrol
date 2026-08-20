@@ -1,9 +1,12 @@
 .stage {
-  padding: 8px 18px 48px;
+  margin-top: 0;
+  padding: 24px 24px 48px;
   display: flex;
-  flex-direction: column;
-  gap: 28px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: flex-start;
+  gap: 28px 32px;
   background: linear-gradient(180deg, var(--navy-deep) 0%, #0d2138 100%);
   color: rgba(255, 255, 255, 0.88);
 }
@@ -11,19 +14,30 @@
 .stage figcaption {
   font-family: var(--serif);
   font-weight: 600;
-  margin: 0 0 8px;
-  font-size: 14px;
+  margin: 0 0 10px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  width: 100%;
 }
 
 .stage figcaption b {
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
 }
 
-.slot { margin: 0; }
+.slot {
+  margin: 0;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-.scroller { max-width: 100%; overflow-x: auto; }
+.slot .scroller {
+  max-width: 100%;
+  overflow: visible;
+}
 
 .frame {
   flex: none;
@@ -58,18 +72,18 @@
   font-size: 0.95rem;
 }
 
-.stage-jump {
-  margin: 0 0 4px;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 600;
-}
+@media (max-width: 1310px) {
+  .stage {
+    flex-direction: column;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 
-.stage {
-  margin-top: 0;
-  padding-top: 16px;
+  .slot.wide .scroller {
+    overflow-x: auto;
+    max-width: calc(100vw - 32px);
+  }
 }
 
 @media (max-width: 800px) {
