@@ -94,12 +94,13 @@
     }
   }
 
-  function renderDemoRef() {
+  function renderDemoRef(active) {
     var nav = document.querySelector(".nav");
     if (!nav || document.querySelector(".demo-ref")) return;
+    var clean = active === "anuncio" || active === "destino";
     nav.insertAdjacentHTML(
       "afterend",
-      '<div class="demo-ref" aria-label="Referencia del producto">' +
+      '<div class="demo-ref' + (clean ? " demo-ref-clean" : "") + '" aria-label="Referencia del producto">' +
       "<span>Universidad San Jorge</span>" +
       "<strong>Orientador en display</strong>" +
       "</div>"
@@ -126,21 +127,28 @@
   root.USJ.mountDemoChrome = function (opts) {
     opts = opts || {};
     applyPresentMode();
-    enhanceNav();
-    renderDemoRef();
     var active = opts.active || detectActive();
+    enhanceNav();
+    renderDemoRef(active);
     var mapMount = document.getElementById("demo-map-mount");
     if (mapMount) {
-      var mapClass = active === "concepto" ? "demo-map demo-map-compact" : "demo-map";
-      mapMount.innerHTML = '<div class="' + mapClass + '">' + renderDemoMap(active) + "</div>";
+      if (active === "anuncio" || active === "destino") {
+        mapMount.innerHTML = "";
+        mapMount.hidden = true;
+      } else {
+        mapMount.hidden = false;
+        var mapClass = active === "concepto" ? "demo-map demo-map-compact" : "demo-map";
+        mapMount.innerHTML = '<div class="' + mapClass + '">' + renderDemoMap(active) + "</div>";
+      }
     }
 
     var hereMount = document.getElementById("demo-here-mount");
     if (hereMount) hereMount.innerHTML = "";
 
     var linearMount = document.getElementById("demo-linear-mount");
-    if (linearMount && active !== "catalogo" && active !== "orientador" && active !== "concepto") {
-      linearMount.innerHTML = renderLinearNav(active);
+    if (linearMount) {
+      linearMount.innerHTML = "";
+      linearMount.hidden = active === "anuncio" || active === "destino";
     }
 
     prefetchForStep(active);

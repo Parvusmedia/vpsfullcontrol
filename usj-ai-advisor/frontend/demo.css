@@ -22,7 +22,21 @@
   line-height: 1.2;
 }
 
+.demo-ref.demo-ref-clean {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 10px;
+}
+
 .demo-map-mount { margin: 16px 0 24px; }
+
+.demo-map-mount[hidden] {
+  display: none;
+}
+
+#demo-linear-mount[hidden] {
+  display: none;
+}
 
 .demo-map {
   display: grid;
