@@ -13,7 +13,6 @@
       --navy: #0a1b33;
       --navy-2: #122844;
       --gold: #c4a35a;
-      --cross: #b91c1c;
       --white: #fff;
       --panel: #fff;
       --btn: #f4f6f8;
@@ -24,7 +23,7 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; width: 100%; overflow: hidden; background: var(--navy); }
     body { font-family: InterAd, "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
-    button { font-family: inherit; }
+    button, input { font-family: inherit; }
     .unit { height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--panel); }
 
     .hero {
@@ -42,9 +41,8 @@
     .brand b { display: block; font-size: 13px; letter-spacing: .16em; font-weight: 700; opacity: 1; }
     .kicker { margin: 10px 0 0; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
 
-    .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; background: var(--panel); }
-    .panel.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .navline { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; min-height: 24px; }
+    .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; background: var(--panel); overflow: hidden; }
+    .navline { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; min-height: 24px; flex-shrink: 0; }
     .back, .back-ph { width: 24px; height: 24px; flex: none; }
     .back {
       border: 0; background: transparent; color: var(--navy); padding: 0;
@@ -59,7 +57,6 @@
     .sub { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
     .remain { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
     .tag { font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--navy); background: var(--btn); padding: 4px 8px; }
-    .tag.off { display: none; }
 
     .roadmap { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
     .roadmap li {
@@ -73,19 +70,13 @@
     .roadmap b { display: block; font-size: 12px; font-weight: 700; line-height: 1.25; margin-bottom: 2px; }
     .roadmap span { display: block; font-size: 11px; line-height: 1.35; color: var(--muted); }
 
-    .sect { margin: 0 0 12px; }
     .sect-h {
-      margin: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+      margin: 0 0 4px; font-size: 10px; font-weight: 700; letter-spacing: .14em;
       text-transform: uppercase; color: var(--muted);
     }
-    .bullets { list-style: none; margin: 0; padding: 0; }
-    .bullets li {
-      position: relative; padding: 4px 0 4px 14px; font-size: 12px; line-height: 1.4; color: var(--ink);
-    }
-    .bullets li:before { content: "✓"; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 11px; }
-    .facts li:before { content: "•"; color: var(--navy); }
-    .alt-line { font-size: 11px; line-height: 1.4; color: var(--muted); margin: 0 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
-    .alt-line b { color: var(--ink); font-weight: 600; }
+    .result-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .result-name { margin: 0 0 8px; font-size: 17px; line-height: 1.2; }
+    .summary { margin: 0 0 10px; font-size: 12px; line-height: 1.35; }
 
     .opts { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
     .opt {
@@ -101,60 +92,48 @@
     .row { display: flex; gap: 8px; margin-top: auto; flex-shrink: 0; }
     .cta {
       flex: 1; min-height: 44px; border: 0; background: var(--navy); color: #fff;
-      font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
       cursor: pointer; border-radius: 2px;
     }
     .cta:hover { background: var(--navy-2); }
-    .ghost { flex: 0 0 auto; background: #fff; color: var(--navy); border: 1px solid var(--line); min-width: 88px; }
-    .score { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -.03em; color: var(--navy); line-height: 1; }
-    .name { margin: 0 0 8px; font-size: 16px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
-    .pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
-    .pill { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 4px 8px; }
+    .cta.sm { min-height: 34px; font-size: 10px; letter-spacing: .06em; text-transform: none; font-weight: 600; }
+    .cta.outline { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    .cta-stack { display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex-shrink: 0; }
 
-    .sz-300x250 .hero { min-height: 46px; padding: 8px 12px; background-image: linear-gradient(90deg, rgba(10,27,51,.88), rgba(10,27,51,.55)), url("/ad/img/campus-wide.jpg"); }
-    .sz-300x250 .kicker { display: none; }
-    .sz-300x250 .panel { padding: 10px 12px 12px; }
-    .sz-300x250 .navline { margin-bottom: 8px; }
-    .sz-300x250 h1 { font-size: 15px; margin-bottom: 6px; }
-    .sz-300x250 .sub { font-size: 11px; margin-bottom: 8px; }
-    .sz-300x250 .remain { display: none; }
-    .sz-300x250 .roadmap { gap: 4px; margin-bottom: 8px; }
-    .sz-300x250 .roadmap li { padding: 5px 8px; gap: 8px; }
-    .sz-300x250 .roadmap span { display: none; }
-    .sz-300x250 .roadmap b { margin: 0; font-size: 11px; }
-    .sz-300x250 .sect { margin-bottom: 8px; }
-    .sz-300x250 .bullets li { font-size: 11px; padding-left: 12px; }
-    .sz-300x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .sz-300x250 .opt { min-height: 38px; padding: 0 10px; font-size: 12px; }
-    .sz-300x250 .opt:last-child { grid-column: 1 / -1; }
-    .sz-300x250 .row { flex-direction: column; }
-    .sz-300x250 .ghost { min-width: 0; width: 100%; }
-    .sz-300x250.is-intro .outcome { display: none; }
+    .score { margin: 0 0 2px; font-size: 32px; font-weight: 700; letter-spacing: -.03em; color: var(--navy); line-height: 1; }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
+    .pill { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; }
 
-    .sz-300x600 .hero { height: 154px; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px 16px; background-image: linear-gradient(180deg, rgba(10,27,51,.2) 0%, rgba(10,27,51,.82) 100%), url("/ad/img/campus-arch.jpg"); }
-    .sz-300x600 .opt { flex: 1; }
-    .sz-300x600 .row { flex-direction: column; }
-    .sz-300x600 .ghost { width: 100%; }
-    .sz-300x600.is-result .hero { height: 168px; }
-    .sz-300x600.is-result .name, .sz-300x600.is-result .score, .sz-300x600.is-result .kicker { color: #fff; }
-    .sz-300x600.is-result .score { font-size: 34px; }
+    .leadbox { display: none; flex-direction: column; gap: 6px; margin-top: auto; flex-shrink: 0; }
+    .leadbox.open { display: flex; }
+    .leadbox input {
+      width: 100%; min-height: 34px; border: 1px solid var(--line); border-radius: 2px;
+      padding: 0 10px; font-size: 12px; background: var(--btn);
+    }
+    .lead-ok { font-size: 11px; color: var(--navy); margin: 0; line-height: 1.35; }
+
+    .sz-300x600 .hero { height: 120px; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px 16px; background-image: linear-gradient(180deg, rgba(10,27,51,.2) 0%, rgba(10,27,51,.82) 100%), url("/ad/img/campus-arch.jpg"); }
     .sz-300x600.is-intro .hero { height: 120px; }
+    .sz-300x600 .opt { flex: 1; max-height: 52px; }
+    .sz-300x600 .roadmap span { display: none; }
+    .sz-300x600.is-intro .outcome { display: none; }
 
     .sz-970x250 { flex-direction: row; }
     .sz-970x250 .hero { width: 300px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px 18px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
-    .sz-970x250 .panel { width: 670px; padding: 16px 20px 16px 22px; }
-    .sz-970x250 h1 { font-size: 22px; margin-bottom: 10px; }
+    .sz-970x250 .panel { width: 670px; padding: 14px 20px 14px 22px; }
+    .sz-970x250 h1 { font-size: 20px; }
     .sz-970x250 .roadmap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     .sz-970x250 .roadmap li { flex-direction: column; gap: 6px; padding: 10px; }
     .sz-970x250 .roadmap .num { width: 100%; height: 24px; }
     .sz-970x250 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
-    .sz-970x250 .opt { width: auto; }
-    .sz-970x250.is-result .hero .name, .sz-970x250.is-result .hero .kicker, .sz-970x250.is-result .hero .sub, .sz-970x250.is-result .hero .score { color: #fff; }
-    .sz-970x250.is-result .name { font-size: 20px; }
-    .sz-970x250.is-result .sub { color: rgba(255,255,255,.8); }
-    .sz-970x250.is-result .result-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
-    .sz-970x250.is-result .row { margin-top: 12px; }
-    .sz-970x250.is-result .cta { min-width: 200px; flex: 0 0 auto; padding: 0 20px; }
+    .sz-970x250 .opt { width: auto; max-height: none; }
+    .sz-970x250.is-result .result-main { display: grid; grid-template-columns: 1fr auto; gap: 12px 20px; align-items: start; flex: 1; min-height: 0; }
+    .sz-970x250.is-result .result-copy { min-width: 0; }
+    .sz-970x250.is-result .score { font-size: 36px; text-align: right; margin: 0; }
+    .sz-970x250.is-result .cta-stack { flex-direction: row; flex-wrap: wrap; margin-top: 0; align-self: end; }
+    .sz-970x250.is-result .cta.sm { flex: 1; min-width: 130px; }
+    .sz-970x250.is-result .leadbox { flex-direction: row; flex-wrap: wrap; align-self: end; }
+    .sz-970x250.is-result .leadbox input { flex: 1; min-width: 120px; }
     .sz-970x250.is-intro .roadmap { grid-template-columns: 1fr 1fr 1fr; }
   </style>
 </head>
@@ -164,13 +143,13 @@
   <script>
     (function () {
       var size = new URLSearchParams(location.search).get("size") || "300x600";
-      var compact = size === "300x250";
+      if (size === "300x250") size = "300x600";
       var wide = size === "970x250";
       var unit = document.getElementById("unit");
       var answers = {};
       var spec = null;
-      var phase = "intro";
       var step = 0;
+      var lastPayload = null;
       var names = { "ai-applied": "IA Aplicada", marketing: "Marketing", biomechanics: "Biomecánica" };
       var LOGO =
         "<div class=\"logo\">" +
@@ -182,10 +161,13 @@
         return USJ.api(path);
       }
       function introCopy() { return (spec && spec.intro_screen) || {}; }
-      function labelOf(opt) { return compact || wide ? (opt.short_label || opt.label) : opt.label; }
+      function labelOf(opt) { return wide ? (opt.short_label || opt.label) : opt.label; }
       function stepHint(s, i) {
-        var hints = ["Descartamos programas incompatibles", "Filtramos por tu meta profesional", "Ajustamos por modalidad de estudio"];
+        var hints = ["Descartamos programas incompatibles", "Te ayudamos a orientarte mejor", "Ajustamos por modalidad de estudio"];
         return s.subtitle || hints[i] || "";
+      }
+      function staticHero(extra) {
+        return "<div class=\"hero\">" + LOGO + (extra || "") + "</div>";
       }
       function navHtml(at, opts) {
         opts = opts || {};
@@ -208,35 +190,96 @@
           return "<span class=\"tag\">" + (names[row.programme_id] || row.programme) + "</span>";
         }).join("");
       }
-      function bullets(items, cls) {
-        if (!items || !items.length) return "";
-        return "<ul class=\"bullets" + (cls ? " " + cls : "") + "\">" +
-          items.map(function (t) { return "<li>" + t + "</li>"; }).join("") + "</ul>";
+      function shortSummary(b) {
+        return (b.reasons || []).slice(0, 2).join(" · ");
       }
-      function factsOf(b, n) {
-        var card = b.programme_card || {};
-        return (card.approved_facts || []).slice(0, n || 4);
+      function resultLabel(payload) {
+        return payload.has_strong_match ? "Mejor encaje" : "Opción más cercana";
       }
-      function whyBlock(b, rich) {
-        var html = "<div class=\"sect\"><p class=\"sect-h\">Por qué encaja contigo</p>";
-        if (rich && b.explanation) html += "<p class=\"sub\">" + b.explanation + "</p>";
-        html += bullets(b.reasons || [], "why") + "</div>";
-        return html;
+      function resultCore(b, payload) {
+        var label = resultLabel(payload);
+        var pills = "<div class=\"pills\"><span class=\"pill\">" + (b.modality_es || "") + "</span><span class=\"pill\">" + (b.eligibility || "") + "</span></div>";
+        var summary = shortSummary(b);
+        if (wide) {
+          return "<div class=\"result-main\">" +
+            "<div class=\"result-copy\">" +
+              "<p class=\"sect-h\">" + label + "</p>" +
+              "<h1 class=\"result-name\">" + b.programme + "</h1>" +
+              pills +
+              (summary ? "<p class=\"sub summary\">" + summary + "</p>" : "") +
+            "</div>" +
+            "<p class=\"score\">" + b.score_pct + "%</p>" +
+          "</div>";
+        }
+        return "<div class=\"result-body\">" +
+          "<p class=\"sect-h\">" + label + "</p>" +
+          "<p class=\"score\">" + b.score_pct + "%</p>" +
+          "<h1 class=\"result-name\">" + b.programme + "</h1>" +
+          pills +
+          (summary ? "<p class=\"sub summary\">" + summary + "</p>" : "") +
+        "</div>";
       }
-      function offerBlock(b, n) {
-        var facts = factsOf(b, n);
-        if (!facts.length) return "";
-        return "<div class=\"sect\"><p class=\"sect-h\">Qué ofrece este máster</p>" + bullets(facts, "facts") + "</div>";
-      }
-      function altsBlock(payload) {
-        var alts = payload.alternatives || [];
-        if (!alts.length || compact) return "";
-        return "<p class=\"alt-line\"><b>Otras opciones:</b> " + alts.map(function (a) {
-          return a.programme + " (" + a.score_pct + "%)";
-        }).join(" · ") + "</p>";
+      function ctaBlock() {
+        return "<div class=\"cta-stack\" id=\"ctas\">" +
+          "<button type=\"button\" class=\"cta sm\" id=\"wa\">Seguir por WhatsApp</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"lead\">Dejar mis datos</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"again\">Reiniciar</button>" +
+        "</div>" +
+        "<div class=\"leadbox\" id=\"leadbox\">" +
+          "<p class=\"sect-h\">Déjanos tus datos</p>" +
+          "<input type=\"text\" id=\"lname\" placeholder=\"Nombre\" autocomplete=\"name\">" +
+          "<input type=\"email\" id=\"lemail\" placeholder=\"Email\" autocomplete=\"email\">" +
+          "<input type=\"tel\" id=\"lphone\" placeholder=\"Teléfono (opcional)\" autocomplete=\"tel\">" +
+          "<button type=\"button\" class=\"cta sm\" id=\"leadsend\">Enviar</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"leadback\">Volver</button>" +
+          "<p class=\"lead-ok\" id=\"leadok\" hidden>Gracias. Te contactará un asesor de USJ.</p>" +
+        "</div>";
       }
       function waCtx(payload) {
         return { programme: payload && payload.best && payload.best.programme, labels: (payload && payload.guide_labels) || [] };
+      }
+      function bindResultActions(payload) {
+        bindWhatsApp("wa", payload);
+        document.getElementById("again").onclick = showIntro;
+        var ctas = document.getElementById("ctas");
+        var leadbox = document.getElementById("leadbox");
+        document.getElementById("lead").onclick = function () {
+          USJ.track("lead_started", { surface: "ad", size: size, channel: "form" });
+          var body = document.querySelector(".result-body, .result-main");
+          if (body) body.style.display = "none";
+          ctas.style.display = "none";
+          leadbox.classList.add("open");
+        };
+        document.getElementById("leadback").onclick = function () {
+          var body = document.querySelector(".result-body, .result-main");
+          if (body) body.style.display = "";
+          leadbox.classList.remove("open");
+          ctas.style.display = "";
+        };
+        document.getElementById("leadsend").onclick = function () {
+          var name = (document.getElementById("lname").value || "").trim();
+          var email = (document.getElementById("lemail").value || "").trim();
+          if (!name || !email) return;
+          var phone = (document.getElementById("lphone").value || "").trim();
+          api("/api/lead", {
+            name: name,
+            email: email,
+            phone: phone,
+            profile: { answers: answers, parser: "guide" },
+            recommendation: payload.best,
+            alternatives: payload.alternatives || [],
+            questions_asked: [],
+            priority: (payload.guide_labels || []).join(" · "),
+            signals: { lead_submitted: true, from_ad: true, size: size }
+          }).then(function () {
+            document.getElementById("leadok").hidden = false;
+            document.getElementById("leadsend").disabled = true;
+            USJ.track("lead_submitted", { surface: "ad", size: size });
+          }).catch(function () {
+            document.getElementById("leadok").textContent = "No se pudo enviar. Prueba por WhatsApp.";
+            document.getElementById("leadok").hidden = false;
+          });
+        };
       }
       function bindWhatsApp(id, payload) {
         var btn = document.getElementById(id);
@@ -256,19 +299,16 @@
       }
 
       function showIntro() {
-        phase = "intro";
         answers = {};
         step = 0;
+        lastPayload = null;
         unit.className = "unit sz-" + size + " is-intro";
         var copy = introCopy();
-        var headline = compact ? (copy.compact_headline || copy.headline) : copy.headline;
-        var lede = compact ? (copy.compact_lede || copy.lede) : copy.lede;
-        var heroKicker = compact ? "" : "<p class=\"kicker\">Orientador de másteres</p>";
         unit.innerHTML =
-          "<div class=\"hero\">" + LOGO + heroKicker + "</div>" +
+          staticHero("<p class=\"kicker\">Orientador de másteres</p>") +
           "<div class=\"panel\">" +
-          "<h1>" + headline + "</h1>" +
-          "<p class=\"sub\">" + lede + "</p>" +
+          "<h1>" + (copy.headline || "Encuentra tu máster en 3 pasos") + "</h1>" +
+          "<p class=\"sub\">" + (copy.lede || "") + "</p>" +
           roadmapHtml() +
           "<p class=\"sub outcome\">" + (copy.outcome || "") + "</p>" +
           "<div class=\"row\"><button type=\"button\" class=\"cta\" id=\"start\">" + (copy.cta || "Empezar") + "</button></div>" +
@@ -280,12 +320,11 @@
       }
 
       function showStep() {
-        phase = "step";
         unit.className = "unit sz-" + size;
         var s = spec.steps[step];
         var sub = stepHint(s, step);
         unit.innerHTML =
-          "<div class=\"hero\">" + LOGO + "<p class=\"kicker\">Paso " + (step + 1) + " de " + spec.steps.length + "</p></div>" +
+          staticHero("<p class=\"kicker\">Paso " + (step + 1) + " de " + spec.steps.length + "</p>") +
           "<div class=\"panel\">" + navHtml(step, { toIntro: step === 0 }) +
           "<h1>" + s.title + "</h1>" +
           (sub ? "<p class=\"sub\">" + sub + "</p>" : "") +
@@ -315,43 +354,31 @@
       }
 
       function showResult(payload) {
-        phase = "result";
+        lastPayload = payload;
         USJ.track("recommendation_generated", { surface: "ad", id: payload.best && payload.best.programme_id });
         unit.className = "unit sz-" + size + " is-result";
-        var wa = "<div class=\"row\"><button type=\"button\" class=\"cta\" id=\"wa\">Seguir por WhatsApp</button><button type=\"button\" class=\"cta ghost\" id=\"again\">Reiniciar</button></div>";
         if (!payload.best) {
-          unit.innerHTML = "<div class=\"hero\">" + LOGO + "</div><div class=\"panel scroll\">" + navHtml(2, { noBack: true, hideCount: true }) +
-            "<h1>Hablemos por WhatsApp</h1><p class=\"sub\">Este catálogo demo es limitado. Un asesor puede orientarte con el catálogo completo.</p>" + wa + "</div>";
-        } else {
-          var b = payload.best;
-          var title = payload.has_strong_match ? "Mejor encaje" : "Opción más cercana";
-          var pills = "<div class=\"pills\"><span class=\"pill\">" + (b.modality_es || "") + "</span><span class=\"pill\">" + (b.eligibility || "") + "</span></div>";
-          if (wide) {
-            unit.innerHTML =
-              "<div class=\"hero\">" + LOGO + "<p class=\"kicker\">" + title + "</p><p class=\"score\">" + b.score_pct + "%</p><div class=\"name\">" + b.programme + "</div></div>" +
-              "<div class=\"panel scroll\">" + navHtml(2, { noBack: true }) +
-              "<div class=\"result-cols\">" + whyBlock(b, true) + offerBlock(b, 4) + "</div>" +
-              altsBlock(payload) + pills + wa + "</div>";
-          } else if (size === "300x600") {
-            unit.innerHTML =
-              "<div class=\"hero\">" + LOGO + "<p class=\"kicker\">" + title + "</p><p class=\"score\">" + b.score_pct + "%</p><div class=\"name\">" + b.programme + "</div></div>" +
-              "<div class=\"panel scroll\">" + navHtml(2, { noBack: true }) + pills +
-              whyBlock(b, true) + offerBlock(b, 4) + altsBlock(payload) + wa + "</div>";
-          } else {
-            unit.innerHTML =
-              "<div class=\"hero\">" + LOGO + "</div><div class=\"panel scroll\">" + navHtml(2, { noBack: true, hideCount: true }) +
-              "<h1>" + b.programme + "</h1>" + pills +
-              "<p class=\"score\">" + b.score_pct + "%</p>" +
-              whyBlock(b, false) + offerBlock(b, 2) + wa + "</div>";
-          }
+          unit.innerHTML = staticHero() +
+            "<div class=\"panel\">" +
+            "<h1>Hablemos por WhatsApp</h1>" +
+            "<p class=\"sub\">Este catálogo demo es limitado.</p>" +
+            "<div class=\"cta-stack\"><button type=\"button\" class=\"cta sm\" id=\"wa\">Seguir por WhatsApp</button>" +
+            "<button type=\"button\" class=\"cta sm outline\" id=\"again\">Reiniciar</button></div></div>";
+          bindWhatsApp("wa", payload);
+          document.getElementById("again").onclick = showIntro;
+          return;
         }
-        bindWhatsApp("wa", payload);
-        document.getElementById("again").onclick = showIntro;
+        var b = payload.best;
+        unit.innerHTML =
+          staticHero() +
+          "<div class=\"panel\">" + navHtml(2, { noBack: true }) +
+          resultCore(b, payload) + ctaBlock() + "</div>";
+        bindResultActions(payload);
       }
 
       api("/api/guide").then(function (s) { spec = s; showIntro(); }).catch(function () {
         unit.className = "unit sz-" + size;
-        unit.innerHTML = "<div class=\"hero\">" + LOGO + "</div><div class=\"panel\"><h1>Encuentra tu máster</h1><button type=\"button\" class=\"cta\" id=\"wa\">Seguir por WhatsApp</button></div>";
+        unit.innerHTML = staticHero() + "<div class=\"panel\"><h1>Encuentra tu máster</h1><button type=\"button\" class=\"cta sm\" id=\"wa\">Seguir por WhatsApp</button></div>";
         bindWhatsApp("wa", {});
       });
     })();

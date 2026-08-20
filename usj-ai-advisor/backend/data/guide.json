@@ -3,7 +3,7 @@
   "intro_screen": {
     "headline": "Encuentra tu máster en 3 pasos",
     "lede": "Sin escribir texto libre: eliges opciones y el catálogo demo se va reduciendo en tiempo real.",
-    "outcome": "Al final verás por qué encaja cada máster contigo y qué ofrece según el catálogo oficial — no prometemos admisión ni empleo.",
+    "outcome": "Al final verás tu máster recomendado con un resumen claro.",
     "cta": "Empezar orientación",
     "compact_headline": "Tu máster en 3 toques",
     "compact_lede": "Titulación · objetivo · formato → resultado personalizado"
@@ -59,7 +59,7 @@
     {
       "id": "goal",
       "title": "¿Qué quieres conseguir?",
-      "subtitle": "La meta filtra el catálogo. No prometemos empleo ni admisión.",
+      "subtitle": "Elige tu meta y te ayudamos a orientarte mejor.",
       "options": [
         {
           "id": "sports-spec",

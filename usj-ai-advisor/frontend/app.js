@@ -45,7 +45,7 @@
   function stepHint(step, index) {
     var hints = [
       "Descartamos programas claramente incompatibles con tu titulación.",
-      "Filtramos por tu meta profesional. No prometemos empleo ni admisión.",
+      "Filtramos por tu meta profesional y te ayudamos a orientarte mejor.",
       "Ajustamos por modalidad según el catálogo, no según la IA."
     ];
     return step.subtitle || hints[index] || "";

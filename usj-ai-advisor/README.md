@@ -135,7 +135,7 @@ Future: USJ CMS → programme feed → this JSON → engine. Adding 10, 50 or 10
 
 ## DV360
 
-The `/ad` preview shows IAB frames at **exact** 300×250, 300×600 and 970×250. Each iframe is the live HTML5 unit (`/ad/unit.html?size=`). **Seguir por WhatsApp** opens `api.whatsapp.com` with the selected master's and profile. If `window.clickTag` exists it wraps that URL.
+The `/ad` preview shows IAB frames at **exact** 300×600 and 970×250. Each iframe is the live HTML5 unit (`/ad/unit.html?size=`). **Seguir por WhatsApp** opens `api.whatsapp.com` with the selected master's and profile. If `window.clickTag` exists it wraps that URL.
 
 ## Tests covered
 
