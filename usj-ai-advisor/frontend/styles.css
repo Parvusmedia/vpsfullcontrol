@@ -642,6 +642,184 @@ body.demo-hub .hub-hero .lede { color: rgba(255, 255, 255, 0.78); max-width: non
 
 .section-kicker { margin: 0 0 14px; }
 
+/* WhatsApp mockup */
+.wa-section {
+  margin: 0 0 36px;
+}
+
+.wa-section-intro {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+.wa-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.wa-phone {
+  width: min(100%, 340px);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(10, 27, 51, 0.08);
+  background: #111b21;
+  flex: none;
+}
+
+.wa-topbar {
+  background: #1f2c34;
+  color: #e9edef;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 24px 36px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.wa-back {
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.wa-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.wa-contact b {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wa-contact span {
+  display: block;
+  font-size: 11px;
+  color: #8696a0;
+  margin-top: 1px;
+}
+
+.wa-chat {
+  min-height: 320px;
+  padding: 12px 10px 16px;
+  background:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4cFC7' fill-opacity='0.08'%3E%3Cpath d='M0 0h30v30H0zm30 30h30v30H30z'/%3E%3C/g%3E%3C/svg%3E"),
+    #0b141a;
+}
+
+.wa-date {
+  width: fit-content;
+  margin: 0 auto 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #182229;
+  color: #8696a0;
+  font-size: 11px;
+}
+
+.wa-bubble {
+  max-width: 88%;
+  padding: 7px 9px 5px;
+  border-radius: 8px;
+  margin: 0 0 8px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+}
+
+.wa-bubble p {
+  margin: 0 0 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wa-bubble .wa-time {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  font-size: 10px;
+  color: #667781;
+}
+
+.wa-out {
+  margin-left: auto;
+  background: #005c4b;
+  color: #e9edef;
+  border-top-right-radius: 0;
+}
+
+.wa-out .wa-time { color: rgba(233, 237, 239, 0.65); }
+
+.wa-in {
+  margin-right: auto;
+  background: #202c33;
+  color: #e9edef;
+  border-top-left-radius: 0;
+}
+
+.wa-in .wa-time { color: #8696a0; }
+
+.wa-caption {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8696a0;
+  margin: 0 0 4px 2px;
+}
+
+.wa-input-bar {
+  background: #1f2c34;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wa-input-fake {
+  flex: 1;
+  height: 34px;
+  border-radius: 999px;
+  background: #2a3942;
+  color: #8696a0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.wa-note {
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.wa-note b { color: var(--navy); }
+
 /* Admissions prospects */
 .prospect {
   margin: 20px 0;
