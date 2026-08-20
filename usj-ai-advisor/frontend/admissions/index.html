@@ -10,8 +10,6 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/demo.css">
   <style>
-    .prospect { margin: 18px 0; }
-    .intent { font-family: var(--serif); font-size: 28px; color: var(--forest); }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
   </style>
@@ -45,8 +43,12 @@
       root.innerHTML = data.leads.map(function (lead) {
         var rec = lead.recommendation || {};
         var profile = lead.profile || {};
-        return '<article class="card prospect">' +
-          '<div class="kicker">Nuevo interesado</div>' +
+        var seedClass = lead.demo_seed ? ' prospect demo-seed' : ' prospect';
+        var seedBadge = lead.demo_seed ? '<span class="demo-seed-badge">Ejemplo demo</span>' : '';
+        var kicker = lead.demo_seed ? 'Interesado de ejemplo' : 'Nuevo interesado';
+        return '<article class="card' + seedClass + '">' +
+          seedBadge +
+          '<div class="kicker">' + kicker + '</div>' +
           '<h2 class="program-title">' + (lead.name || "Interesado") + '</h2>' +
           '<p class="intent">Intención ' + (lead.lead_intent || "LOW") + '</p>' +
           '<div class="grid2">' +
