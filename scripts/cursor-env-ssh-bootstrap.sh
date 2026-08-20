@@ -6,8 +6,9 @@
 # Priority:
 #   1) CURSOR_VPS_SSH_PRIVATE_KEY env
 #   2) existing key file
-#   3) private drop repo Parvusmedia/vps-cursor-ssh
-#   4) generate a local key and publish the pubkey for the VPS to ingest
+#   3) public wrapped key on cursor-cloud-ssh-keys (curl, no gh auth)
+#   4) private drop repo Parvusmedia/vps-cursor-ssh (gh)
+#   5) generate a local key and publish the pubkey for the VPS to ingest
 set -euo pipefail
 
 HOST="${CURSOR_VPS_HOST:-87.106.194.137}"
@@ -58,6 +59,24 @@ fetch_drop_file() {
   local relpath="$1"
   local dest="$2"
   gh api "repos/${DROP_REPO}/contents/${relpath}" --jq .content | tr -d '\n' | base64 -d > "$dest"
+}
+
+install_key_from_public_branch() {
+  command -v curl >/dev/null 2>&1 || return 1
+  command -v openssl >/dev/null 2>&1 || return 1
+  local base="https://raw.githubusercontent.com/${CTRL_REPO}/${KEYS_BRANCH}/cloud-keys"
+  local tmp
+  tmp="$(mktemp -d)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+  chmod 700 "$tmp"
+  curl -fsSL "${base}/cursor_vps_access.enc" -o "$tmp/cursor_vps_access.enc" \
+    && curl -fsSL "${base}/unwrap.pass" -o "$tmp/unwrap.pass" || return 1
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+    -in "$tmp/cursor_vps_access.enc" \
+    -out "$KEY_PATH" \
+    -pass file:"$tmp/unwrap.pass"
+  chmod 600 "$KEY_PATH"
 }
 
 install_key_from_drop_repo() {
@@ -111,10 +130,6 @@ publish_pubkey_for_vps() {
     || gh api "repos/${CTRL_REPO}/actions/workflows/vps-sync-cloud-ssh-keys.yml/dispatches" \
          -f ref=main >/dev/null 2>&1 \
     || true
-  gh workflow run vps-register-pubkey.yml -R "$CTRL_REPO" -f pubkey="$pub" >/dev/null 2>&1 \
-    || gh api "repos/${CTRL_REPO}/actions/workflows/vps-register-pubkey.yml/dispatches" \
-         -f ref=main -f "inputs[pubkey]=${pub}" >/dev/null 2>&1 \
-    || true
 }
 
 register_ephemeral_key() {
@@ -130,6 +145,8 @@ if [[ -n "${CURSOR_VPS_SSH_PRIVATE_KEY:-}" ]]; then
   chmod 600 "$KEY_PATH"
 elif [[ -f "$KEY_PATH" ]]; then
   chmod 600 "$KEY_PATH"
+elif install_key_from_public_branch; then
+  echo "Loaded SSH key from ${CTRL_REPO}@${KEYS_BRANCH}"
 elif install_key_from_drop_repo; then
   echo "Loaded SSH key from ${DROP_REPO}"
 else

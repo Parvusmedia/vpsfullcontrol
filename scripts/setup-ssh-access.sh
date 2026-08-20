@@ -57,6 +57,22 @@ chown -R cursorbot:cursorbot "$CB_HOME/.ssh"
 chmod 700 "$CB_HOME/.ssh"
 chmod 600 "$CB_HOME/.ssh/authorized_keys"
 
+# Ingest Cursor Cloud agent pubkeys from the public keys branch.
+SYNC_SRC=""
+if [[ -x /usr/local/sbin/vps-sync-cloud-ssh-keys.sh ]]; then
+  SYNC_SRC="/usr/local/sbin/vps-sync-cloud-ssh-keys.sh"
+elif [[ -x "$(dirname "$0")/vps-sync-cloud-ssh-keys.sh" ]]; then
+  SYNC_SRC="$(dirname "$0")/vps-sync-cloud-ssh-keys.sh"
+fi
+if [[ -n "$SYNC_SRC" ]]; then
+  TMP_KEYS="$(mktemp -d)"
+  if git clone --depth 1 --branch cursor-cloud-ssh-keys \
+      https://github.com/Parvusmedia/vpsfullcontrol.git "$TMP_KEYS/repo" >/dev/null 2>&1; then
+    bash "$SYNC_SRC" "$TMP_KEYS/repo/cloud-keys" || true
+  fi
+  rm -rf "$TMP_KEYS"
+fi
+
 sshd -t
 systemctl daemon-reload
 systemctl restart ssh.socket
