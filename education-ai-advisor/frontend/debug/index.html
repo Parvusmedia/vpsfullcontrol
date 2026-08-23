@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debug — EDU Advisor</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span>Demo University</span><strong>Event log</strong></div>
+    </nav>
+    <p class="lede">Browser events are kept in this session and also sent to <code>/api/events</code>. Add <code>?debug=1</code> on the advisor page to see profile and scores.</p>
+
+    <section class="funnel-panel" id="funnel"></section>
+
+    <pre class="debug open" id="out"></pre>
+    <p class="footnote"><a href="/">Home</a> · <a href="/orientador">Advisor</a></p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>
+    EDU.mountDemoChrome();
+
+    var FUNNEL = [
+      { name: "advisor_started", label: "Demo opened" },
+      { name: "guide_started", label: "Wizard started" },
+      { name: "profile_submitted", label: "Profile submitted" },
+      { name: "recommendation_generated", label: "Recommendation generated" },
+      { name: "lead_started", label: "Conversion started" },
+      { name: "lead_submitted", label: "Lead sent to CRM" },
+      { name: "whatsapp_clicked", label: "WhatsApp clicked" }
+    ];
+
+    function countEvents(events, name) {
+      return events.filter(function (e) { return e.name === name; }).length;
+    }
+
+    Promise.all([
+      Promise.resolve(EDU.events()),
+      EDU.api("/api/events").catch(function () { return { events: [] }; })
+    ]).then(function (pair) {
+      var local = pair[0];
+      var server = pair[1].events || [];
+      var merged = local.concat(server);
+
+      document.getElementById("funnel").innerHTML =
+        "<h2>Demo funnel (session)</h2>" +
+        "<ol class=\"funnel-steps\">" +
+        FUNNEL.map(function (step) {
+          var count = countEvents(merged, step.name);
+          var cls = count > 0 ? " on" : "";
+          return "<li class=\"" + cls.trim() + "\"><b>" + step.label + "</b><span>" + count + "</span></li>";
+        }).join("") +
+        "</ol>";
+
+      document.getElementById("out").textContent = JSON.stringify({ local: local, server: server }, null, 2);
+    });
+  </script>
+</body>
+</html>

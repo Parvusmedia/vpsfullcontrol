@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Demo University · Advising in display</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+</head>
+<body class="demo-hub">
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Demo University</span>
+        <strong>Concept</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount demo-map-mount-top"></div>
+
+    <header class="hero hub-hero">
+      <p class="kicker">Step 1 · Concept</p>
+      <h1>Automated advising inside the display ad</h1>
+      <p class="lede">This walkthrough shows how an HTML5 creative can qualify prospects for graduate programmes without leaving the banner: profile, recommendation, and conversion in the same ad space.</p>
+    </header>
+
+    <section class="concept-card">
+      <p class="kicker">The advisor, inside the ad</p>
+      <h2>Not a separate landing page</h2>
+      <p>The user answers three guided questions inside the creative itself (300×600 or 970×250). The catalogue narrows in real time to one or more programmes, showing why each option fits, with score and eligibility.</p>
+      <ul class="concept-list">
+        <li>Degree and professional profile</li>
+        <li>Learning goal</li>
+        <li>Preferred study mode</li>
+      </ul>
+    </section>
+
+    <section class="logic-split">
+      <article class="logic-card">
+        <p class="kicker">Core engine</p>
+        <h3>Guided sequence + catalogue</h3>
+        <p>Answers trigger rules over a structured programme catalogue. The system filters out incompatible programmes, weights fit, and never invents qualifications that do not exist.</p>
+      </article>
+      <article class="logic-card">
+        <p class="kicker">Optional AI layer</p>
+        <h3>Explanation and Q&amp;A</h3>
+        <p>Artificial intelligence can explain the match or answer questions, always grounded in approved catalogue facts. It does not replace admission rules.</p>
+      </article>
+    </section>
+
+    <p class="demo-start-wrap hub-cta">
+      <a class="btn demo-start" href="/ad/">See live example · step 2</a>
+    </p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>
+    EDU.mountDemoChrome();
+    document.querySelectorAll(".demo-start").forEach(function (a) {
+      a.href = EDU.appendPresent(a.getAttribute("href"));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+{
+  "intro": "Answer three questions. The catalogue narrows down to the graduate programmes that best match you.",
+  "intro_screen": {
+    "headline": "Find your programme in 3 questions",
+    "lede": "No free text: pick options and see in real time which programmes fit.",
+    "outcome": "At the end you get a recommended programme with a clear summary.",
+    "cta": "Start advising",
+    "compact_headline": "Your programme in 3 taps",
+    "compact_lede": "Background · goal · format → personalised result"
+  },
+  "steps": [
+    {
+      "id": "background",
+      "title": "What is your academic background?",
+      "subtitle": "Pick the closest option. This rules out clearly incompatible programmes.",
+      "options": [
+        {
+          "id": "health",
+          "label": "Physiotherapy or health sciences",
+          "short_label": "Health",
+          "profile": { "education": "physiotherapy", "current_role": "Physiotherapist" },
+          "boosts": { "biomechanics": 0.34 },
+          "eliminate": []
+        },
+        {
+          "id": "stem",
+          "label": "Engineering, computer science or STEM",
+          "short_label": "STEM",
+          "profile": { "education": "software engineering", "current_role": "Technology professional" },
+          "boosts": { "ai-applied": 0.34 },
+          "eliminate": []
+        },
+        {
+          "id": "business",
+          "label": "Business, management or marketing",
+          "short_label": "Business",
+          "profile": { "education": "business administration", "current_role": "Business professional" },
+          "boosts": { "marketing": 0.34 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "law",
+          "label": "Law or legal practice",
+          "short_label": "Law",
+          "profile": { "education": "law", "current_role": "Lawyer" },
+          "boosts": {},
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "other",
+          "label": "Other degree",
+          "short_label": "Other",
+          "profile": { "education": "other" },
+          "boosts": {},
+          "eliminate": []
+        }
+      ]
+    },
+    {
+      "id": "goal",
+      "title": "What do you want to achieve?",
+      "subtitle": "Choose your goal so we can guide you better.",
+      "options": [
+        {
+          "id": "sports-spec",
+          "label": "Specialise in sport and movement",
+          "short_label": "Sport",
+          "profile": { "goal": "specialization", "interests": ["sports", "movement analysis"] },
+          "boosts": { "biomechanics": 0.28 },
+          "eliminate": ["marketing"]
+        },
+        {
+          "id": "apply-ai",
+          "label": "Apply artificial intelligence at work",
+          "short_label": "Apply AI",
+          "profile": { "goal": "learn AI", "interests": ["artificial intelligence"] },
+          "boosts": { "ai-applied": 0.28 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "marketing-career",
+          "label": "Grow in marketing and communications",
+          "short_label": "Marketing",
+          "profile": { "goal": "marketing career", "interests": ["brand", "digital marketing"] },
+          "boosts": { "marketing": 0.28 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "tech-law",
+          "label": "Train in technology and digital law",
+          "short_label": "Digital law",
+          "profile": { "goal": "learn AI", "interests": ["artificial intelligence", "digital law"] },
+          "boosts": { "ai-applied": 0.30, "marketing": 0.10 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "career-change",
+          "label": "Change sector completely",
+          "short_label": "Career change",
+          "profile": { "goal": "career change" },
+          "boosts": { "ai-applied": 0.06, "marketing": 0.06 },
+          "eliminate": []
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "title": "How do you want to study?",
+      "subtitle": "Format comes from the catalogue, not from the AI.",
+      "options": [
+        {
+          "id": "work-study",
+          "label": "Combine with my job",
+          "short_label": "With work",
+          "profile": { "constraints": ["combine work and study"] },
+          "boosts": { "ai-applied": 0.08, "biomechanics": 0.08, "marketing": -0.14 },
+          "eliminate": []
+        },
+        {
+          "id": "campus",
+          "label": "On campus",
+          "short_label": "On campus",
+          "profile": { "constraints": [] },
+          "boosts": { "marketing": 0.08 },
+          "eliminate": []
+        },
+        {
+          "id": "either",
+          "label": "Either works for me",
+          "short_label": "Either",
+          "profile": {},
+          "boosts": {},
+          "eliminate": []
+        }
+      ]
+    }
+  ]
+}

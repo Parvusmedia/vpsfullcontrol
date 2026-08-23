@@ -1,0 +1,91 @@
+[
+  {
+    "id": "lead-demo-laura",
+    "demo_seed": true,
+    "name": "Laura Martin",
+    "email": "laura.martin@example.com",
+    "phone": "+44 7700 900456",
+    "lead_intent": "HIGH",
+    "priority": "Physiotherapy or health sciences · Specialise in sport and movement · Combine with my job",
+    "questions_asked": [
+      "Can I combine it with work?",
+      "When does the programme start?"
+    ],
+    "profile": {
+      "education": "physiotherapy",
+      "experience_years": 3,
+      "current_role": "Physiotherapist",
+      "interests": ["sports", "movement analysis"],
+      "goal": "specialization",
+      "constraints": ["combine work and study"],
+      "parser": "guide",
+      "answers": {
+        "background": "health",
+        "goal": "sports-spec",
+        "format": "work-study"
+      }
+    },
+    "recommendation": {
+      "programme_id": "biomechanics",
+      "programme": "Human Locomotion Biomechanics",
+      "score": 1.0,
+      "score_pct": 100,
+      "modality_label": "Hybrid",
+      "ects": 60,
+      "eligibility": "STRONG FIT",
+      "url": "https://educationdemo.pmediaplus.com/admin"
+    },
+    "alternatives": [
+      {
+        "programme_id": "ai-applied",
+        "programme": "Applied Artificial Intelligence",
+        "score_pct": 42,
+        "eligibility": "ADMISSION REVIEW"
+      }
+    ],
+    "created_at": "2026-08-18T10:15:00+00:00"
+  },
+  {
+    "id": "lead-demo-ana",
+    "demo_seed": true,
+    "name": "Ana Brooks",
+    "email": "ana.brooks@example.com",
+    "phone": "+44 7700 900789",
+    "lead_intent": "MEDIUM",
+    "priority": "Law or legal practice · Train in technology and digital law · Combine with my job",
+    "questions_asked": [],
+    "profile": {
+      "education": "law",
+      "experience_years": 8,
+      "current_role": "Lawyer",
+      "interests": ["artificial intelligence", "digital law"],
+      "goal": "learn AI",
+      "constraints": ["combine work and study"],
+      "parser": "guide",
+      "answers": {
+        "background": "law",
+        "goal": "tech-law",
+        "format": "work-study"
+      }
+    },
+    "recommendation": {
+      "programme_id": "ai-applied",
+      "programme": "Applied Artificial Intelligence",
+      "score": 0.72,
+      "score_pct": 72,
+      "modality_label": "Hybrid",
+      "ects": 60,
+      "eligibility": "ADMISSION REVIEW",
+      "url": "https://educationdemo.pmediaplus.com/admin"
+    },
+    "alternatives": [
+      {
+        "programme_id": "marketing",
+        "programme": "Marketing & Corporate Communications",
+        "score_pct": 38,
+        "eligibility": "ADMISSION REVIEW"
+      }
+    ],
+    "created_at": "2026-08-18T11:30:00+00:00"
+  }
+]

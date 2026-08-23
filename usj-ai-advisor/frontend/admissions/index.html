@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Destino del lead — USJ</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+  <style>
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span>Universidad San Jorge</span><strong>Destino del lead</strong></div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+
+    <header class="hero hero-step">
+      <h1>Así recibe la universidad al interesado cualificado</h1>
+      <p class="lede">No es un formulario vacío: cada lead llega con perfil, puntuación de encaje, máster recomendado, alternativas y respuestas del orientador embebido en el anuncio.</p>
+    </header>
+
+    <section class="outcome-grid">
+      <article class="outcome-card">
+        <span class="outcome-num">1</span>
+        <h2>CRM · nuevo lead</h2>
+        <p>La información puede viajar directamente al CRM de USJ y abrir un lead con todos los campos ya completos: datos de contacto, perfil, recomendación, intención y preguntas formuladas.</p>
+      </article>
+      <article class="outcome-card">
+        <span class="outcome-num">2</span>
+        <h2>WhatsApp · conversación previa</h2>
+        <p>Alternativa o complemento: abrir comunicación por WhatsApp con un agente automático o humano asistido que resuelva dudas antes de iniciar una solicitud formal de admisión.</p>
+      </article>
+    </section>
+
+    <section class="wa-section" aria-label="Mockup WhatsApp">
+      <p class="kicker section-kicker">Mensaje desde el anuncio</p>
+      <p class="wa-section-intro">Al pulsar <b>Seguir por WhatsApp</b> en el creativo, el interesado abre una conversación con el texto ya redactado: máster recomendado y respuestas del orientador.</p>
+      <div class="wa-layout">
+        <div class="wa-phone">
+          <div class="wa-topbar">
+            <span class="wa-back" aria-hidden="true">←</span>
+            <div class="wa-avatar" aria-hidden="true">USJ</div>
+            <div class="wa-contact">
+              <b>Universidad San Jorge</b>
+              <span>Admisiones · en línea</span>
+            </div>
+          </div>
+          <div class="wa-chat">
+            <div class="wa-date">Hoy</div>
+            <p class="wa-caption">Interesado · desde el anuncio</p>
+            <div class="wa-bubble wa-out">
+              <p id="wa-user-msg"></p>
+              <span class="wa-time">12:34</span>
+            </div>
+            <p class="wa-caption">USJ · respuesta automática o asesor</p>
+            <div class="wa-bubble wa-in">
+              <p id="wa-reply-msg">Hola, gracias por contactar con Universidad San Jorge. He recibido tu orientación. ¿Quieres que te explique el proceso de admisión o resolver alguna duda sobre el máster?</p>
+              <span class="wa-time">12:35</span>
+            </div>
+            <div class="wa-quick-replies" aria-label="Opciones de respuesta">
+              <button type="button" class="wa-quick-btn">Resolver dudas</button>
+              <button type="button" class="wa-quick-btn">Hablar con un asesor</button>
+              <button type="button" class="wa-quick-btn">Hacer solicitud de admisión</button>
+            </div>
+          </div>
+          <div class="wa-input-bar">
+            <div class="wa-input-fake">Escribe un mensaje</div>
+          </div>
+        </div>
+        <aside class="wa-note">
+          <p><b>Texto prefijado</b> — generado al cerrar el anuncio con la recomendación y las tres respuestas del wizard.</p>
+          <p style="margin-top:10px">Las opciones rápidas guían al interesado: resolver dudas, hablar con un asesor o iniciar la solicitud de admisión.</p>
+        </aside>
+      </div>
+    </section>
+
+    <p class="kicker section-kicker">Ficha del interesado</p>
+    <div id="list"></div>
+    <div id="demo-linear-mount"></div>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>USJ.mountDemoChrome();</script>
+  <script>
+    function intentClass(intent) {
+      var value = String(intent || "LOW").toUpperCase();
+      if (value === "HIGH") return "intent-chip intent-high";
+      if (value === "MEDIUM") return "intent-chip intent-medium";
+      return "intent-chip intent-low";
+    }
+
+    function waContext() {
+      var saved = USJ.loadState();
+      if (saved && saved.result && saved.result.best) {
+        return {
+          programme: saved.result.best.programme,
+          labels: saved.result.guide_labels || []
+        };
+      }
+      return {
+        programme: "Inteligencia Artificial Aplicada",
+        labels: [
+          "Derecho o abogacía",
+          "Formarme en tecnología y derecho digital",
+          "Compatibilizarlo con mi trabajo"
+        ]
+      };
+    }
+
+    function renderWhatsAppMockup() {
+      var ctx = waContext();
+      document.getElementById("wa-user-msg").textContent = USJ.whatsappText(ctx);
+      var prog = ctx.programme || "el máster recomendado";
+      document.getElementById("wa-reply-msg").textContent =
+        "Hola, gracias por contactar con Universidad San Jorge. He recibido tu orientación sobre " +
+        prog + ". ¿Quieres que te explique el proceso de admisión o resolver alguna duda sobre el máster?";
+    }
+
+    function renderLeadCard(lead) {
+      var rec = lead.recommendation || {};
+      var profile = lead.profile || {};
+      return '<article class="card prospect">' +
+        '<div class="kicker">Interesado</div>' +
+        '<h2 class="program-title">' + (lead.name || "Interesado") + '</h2>' +
+        '<span class="' + intentClass(lead.lead_intent) + '">Intención ' + (lead.lead_intent || "LOW") + '</span>' +
+        '<div class="grid2">' +
+        '<div><p class="label">Máster recomendado</p><p>' + (rec.programme || "—") + '<br>' + (rec.score_pct || Math.round((rec.score||0)*100)) + '% de encaje · ' + (rec.eligibility || "") + '</p></div>' +
+        '<div><p class="label">Perfil</p><p>' + (profile.current_role || profile.education || "—") + '<br>' + (profile.experience_years != null ? profile.experience_years + " años de experiencia" : "") + '</p></div>' +
+        '<div><p class="label">Objetivo</p><p>' + (profile.goal || "—") + '</p></div>' +
+        '<div><p class="label">Prioridad</p><p>' + (lead.priority || profile.priority || "—") + '</p></div>' +
+        '</div>' +
+        '<p class="label">Intereses</p><p>' + ((profile.interests || []).join(", ") || "—") + '</p>' +
+        '<p class="label">Preguntas</p><p>' + ((lead.questions_asked || []).join(" · ") || "Ninguna todavía") + '</p>' +
+        '<p class="label">Email / teléfono</p><p>' + lead.email + (lead.phone ? " · " + lead.phone : "") + '</p>' +
+      '</article>';
+    }
+
+    renderWhatsAppMockup();
+
+    USJ.api("/api/leads").then(function (data) {
+      var root = document.getElementById("list");
+      if (!data.leads.length) {
+        root.innerHTML = '<div class="card"><p>Completa el orientador en el <a href="/ad/">anuncio</a> (paso 2) y deja tus datos o contacta por WhatsApp para ver la ficha aquí.</p></div>';
+        return;
+      }
+      var live = data.leads.filter(function (l) { return !l.demo_seed; });
+      var seeds = data.leads.filter(function (l) { return l.demo_seed; });
+      root.innerHTML = live.concat(seeds).map(renderLeadCard).join("");
+    }).catch(function () {
+      document.getElementById("list").innerHTML = '<div class="card">No se pudo cargar la información del interesado.</div>';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "university": "Demo University",
+  "disclaimer": "Demo catalogue for Parvus Media. Requirements, dates and places come only from this file — never from the LLM.",
+  "explore_url": "https://educationdemo.pmediaplus.com/admin",
+  "admissions_url": "https://educationdemo.pmediaplus.com/admissions",
+  "strong_match_threshold": 0.48,
+  "weights": {
+    "education": 0.30,
+    "professional_area": 0.20,
+    "career_goal": 0.20,
+    "interests": 0.15,
+    "modality": 0.10,
+    "experience": 0.05
+  },
+  "programmes": [
+    {
+      "id": "ai-applied",
+      "name": "Applied Artificial Intelligence",
+      "official_name": "Master in Applied Artificial Intelligence",
+      "ects": 60,
+      "modality": "Hybrid",
+      "places": 30,
+      "start_date": "2026-10-16",
+      "language": "English",
+      "url": "https://educationdemo.pmediaplus.com/admin",
+      "foundation_modules_possible": true,
+      "technical": true,
+      "work_compatible": true,
+      "areas": ["artificial intelligence", "technology", "software", "data"],
+      "ideal_profiles": ["STEM", "technology", "engineering", "software", "data"],
+      "goals": ["learn AI", "apply AI professionally", "technology career", "AI specialization"],
+      "keywords": [
+        "ai", "artificial intelligence", "machine learning", "deep learning", "data",
+        "software", "developer", "engineer", "engineering", "stem", "computer",
+        "informatics", "programmer", "python", "technology", "tech", "algorithm",
+        "generative", "digital law", "legal tech"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "computer science", "software engineering", "informatics", "data science",
+          "telecommunications", "mathematics", "physics", "engineering"
+        ],
+        "accepted_backgrounds": [
+          "STEM", "technology", "software", "developer", "data"
+        ],
+        "additional_training_possible": true
+      },
+      "approved_facts": [
+        "60 ECTS, one academic year.",
+        "Hybrid delivery.",
+        "30 places.",
+        "Designed for STEM profiles and professionals who want to apply AI.",
+        "Foundation modules available if technical background is limited.",
+        "Two tracks: professional and research.",
+        "Application modules in health, software, energy, logistics, industry and agri-food."
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing & Corporate Communications",
+      "official_name": "Master in Marketing & Corporate Communications",
+      "ects": 60,
+      "modality": "On campus",
+      "places": 30,
+      "start_date": "2026-10-15",
+      "language": "English",
+      "url": "https://educationdemo.pmediaplus.com/admin",
+      "foundation_modules_possible": false,
+      "technical": false,
+      "work_compatible": false,
+      "areas": ["marketing", "communication", "brand", "advertising", "digital"],
+      "ideal_profiles": ["marketing", "communication", "business", "advertising"],
+      "goals": ["marketing career", "communication", "brand", "digital marketing", "career progression"],
+      "keywords": [
+        "marketing", "communication", "brand", "advertising", "digital marketing",
+        "business", "mba", "corporate", "campaign", "media", "journalism",
+        "management", "branding", "content", "public relations"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "marketing", "communication", "advertising", "journalism", "business administration",
+          "public relations"
+        ],
+        "accepted_backgrounds": [
+          "business", "social sciences", "management", "digital marketing"
+        ],
+        "additional_training_possible": false
+      },
+      "approved_facts": [
+        "60 ECTS, one academic year.",
+        "On-campus delivery in this demo catalogue.",
+        "30 new intake places.",
+        "For marketing, communications, business and related social science profiles.",
+        "Official master's degree; may lead to doctoral studies.",
+        "Focus: corporate communications and marketing in digital, local and global contexts."
+      ]
+    },
+    {
+      "id": "biomechanics",
+      "name": "Human Locomotion Biomechanics",
+      "official_name": "Master in Human Locomotion Biomechanics",
+      "ects": 60,
+      "modality": "Hybrid",
+      "places": 30,
+      "start_date": null,
+      "language": "English",
+      "url": "https://educationdemo.pmediaplus.com/admin",
+      "foundation_modules_possible": false,
+      "technical": true,
+      "work_compatible": true,
+      "areas": ["biomechanics", "physiotherapy", "sports", "movement", "health"],
+      "ideal_profiles": ["physiotherapy", "sports science", "health", "rehabilitation"],
+      "goals": ["specialization", "sports", "movement analysis", "rehabilitation"],
+      "keywords": [
+        "physiotherapy", "physiotherapist", "biomechanics", "sports", "athlete",
+        "movement", "locomotion", "rehabilitation", "rehab", "health", "kinesiology",
+        "sport science"
+      ],
+      "eligibility": {
+        "preferred_backgrounds": [
+          "physiotherapy", "sports science", "kinesiology", "physical therapy"
+        ],
+        "accepted_backgrounds": [
+          "health", "rehabilitation", "medicine", "occupational therapy"
+        ],
+        "additional_training_possible": false
+      },
+      "approved_facts": [
+        "60 ECTS.",
+        "Hybrid delivery.",
+        "30 authorised places.",
+        "School of Health Sciences.",
+        "Focus: biomechanics applied to human locomotion, assistive technologies and research methods.",
+        "Strong fit for physiotherapists and sport science professionals seeking specialisation."
+      ]
+    }
+  ]
+}

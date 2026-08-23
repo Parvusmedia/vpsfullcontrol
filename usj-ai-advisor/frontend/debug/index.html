@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Depuración — Orientador USJ</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span>Universidad San Jorge</span><strong>Registro de eventos</strong></div>
+    </nav>
+    <p class="lede">Los eventos del navegador se quedan en esta sesión y también se envían a <code>/api/events</code>. Añade <code>?debug=1</code> en el orientador para ver el perfil y las puntuaciones.</p>
+
+    <section class="funnel-panel" id="funnel"></section>
+
+    <pre class="debug open" id="out"></pre>
+    <p class="footnote"><a href="/">Inicio</a> · <a href="/orientador">Orientador</a></p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>
+    USJ.mountDemoChrome();
+
+    var FUNNEL = [
+      { name: "advisor_started", label: "Demo abierto" },
+      { name: "guide_started", label: "Wizard iniciado" },
+      { name: "profile_submitted", label: "Perfil enviado" },
+      { name: "recommendation_generated", label: "Recomendación generada" },
+      { name: "lead_started", label: "Conversión iniciada" },
+      { name: "lead_submitted", label: "Lead enviado al CRM" },
+      { name: "whatsapp_clicked", label: "WhatsApp pulsado" }
+    ];
+
+    function countEvents(events, name) {
+      return events.filter(function (e) { return e.name === name; }).length;
+    }
+
+    Promise.all([
+      Promise.resolve(USJ.events()),
+      USJ.api("/api/events").catch(function () { return { events: [] }; })
+    ]).then(function (pair) {
+      var local = pair[0];
+      var server = pair[1].events || [];
+      var merged = local.concat(server);
+
+      document.getElementById("funnel").innerHTML =
+        "<h2>Embudo del demo (sesión)</h2>" +
+        "<ol class=\"funnel-steps\">" +
+        FUNNEL.map(function (step) {
+          var count = countEvents(merged, step.name);
+          var cls = count > 0 ? " on" : "";
+          return "<li class=\"" + cls.trim() + "\"><b>" + step.label + "</b><span>" + count + "</span></li>";
+        }).join("") +
+        "</ol>";
+
+      document.getElementById("out").textContent = JSON.stringify({ local: local, server: server }, null, 2);
+    });
+  </script>
+</body>
+</html>
