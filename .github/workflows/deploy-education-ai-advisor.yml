@@ -1,0 +1,76 @@
+name: deploy-education-ai-advisor
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/education-demo-8776
+      - main
+    paths:
+      - "education-ai-advisor/**"
+      - ".github/workflows/deploy-education-ai-advisor.yml"
+      - ".github/workflows/plesk-dns-education-advisor.yml"
+
+concurrency:
+  group: deploy-education-ai-advisor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python tests
+        run: |
+          python3 -m pip install -q -r education-ai-advisor/backend/requirements.txt
+          python3 -m pytest education-ai-advisor/tests -q
+
+  dns:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create educationdemo.pmediaplus.com A record on Plesk
+        env:
+          DNS_HOST: educationdemo
+        run: |
+          set -euo pipefail
+          sudo cp education-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-education-advisor
+          sudo chmod 755 /usr/local/sbin/plesk-add-education-advisor
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/plesk-add-education-advisor, /usr/local/sbin/plesk-add-education-advisor *' > /tmp/ops-plesk-edu
+          sudo cp /tmp/ops-plesk-edu /etc/sudoers.d/ops-plesk-edu
+          sudo chmod 440 /etc/sudoers.d/ops-plesk-edu
+          sudo DNS_HOST=educationdemo /usr/local/sbin/plesk-add-education-advisor
+
+  deploy:
+    needs: [test, dns]
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy nginx + systemd API
+        env:
+          EDU_ADVISOR_DOMAIN: educationdemo.pmediaplus.com
+          EDU_ADVISOR_PORT: "8022"
+        run: |
+          set -euo pipefail
+          sudo cp education-ai-advisor/scripts/deploy.sh /usr/local/sbin/education-ai-advisor-deploy
+          sudo chmod 755 /usr/local/sbin/education-ai-advisor-deploy
+          printf '%s\n' 'ops ALL=(root) NOPASSWD: /usr/local/sbin/education-ai-advisor-deploy, /usr/local/sbin/education-ai-advisor-deploy *' > /tmp/ops-edu-adv
+          sudo cp /tmp/ops-edu-adv /etc/sudoers.d/ops-edu-adv
+          sudo chmod 440 /etc/sudoers.d/ops-edu-adv
+          sudo EDU_ADVISOR_DOMAIN=educationdemo.pmediaplus.com EDU_ADVISOR_PORT=8022 \
+            /usr/local/sbin/education-ai-advisor-deploy "$GITHUB_WORKSPACE/education-ai-advisor"
+      - name: Validate
+        run: |
+          set -euo pipefail
+          education-ai-advisor/scripts/validate.sh http://127.0.0.1:8022
+          curl -fsSk --max-time 15 --resolve educationdemo.pmediaplus.com:443:127.0.0.1 \
+            https://educationdemo.pmediaplus.com/api/health || \
+            curl -fsS --max-time 15 --resolve educationdemo.pmediaplus.com:80:127.0.0.1 \
+              http://educationdemo.pmediaplus.com/api/health
+          echo
+          curl -fsS --max-time 15 --resolve educationdemo.pmediaplus.com:80:127.0.0.1 \
+            http://educationdemo.pmediaplus.com/ | head -c 80
+          echo
