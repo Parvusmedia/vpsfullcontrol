@@ -1,0 +1,15 @@
+[Unit]
+Description=Movistar Para ti Telegram polling (dev/demo)
+After=network.target movistar-parati-api.service
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/movistar-parati/backend
+ExecStart=/opt/apps/movistar-parati/backend/.venv/bin/python scripts/run_polling.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
