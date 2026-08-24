@@ -14,9 +14,9 @@ cd /opt/apps/prospeccion-consultoras
 ./run.sh rescore             # re-aplica hard excludes (no toca seeds)
 ./run.sh ready               # marca score>=4 como connection_ready
 ./run.sh contact --limit 4   # dry-run invitaciones Unipile
-./run.sh contact --limit 4 --live  # envía (delay 30–90s entre invites)
+./run.sh contact --limit 4 --live  # envía (pausa 30–90s antes de cada invite)
 ./run.sh poll-acceptances --live   # detecta aceptaciones → status accepted
-./run.sh followup --live --limit 3 # mensaje tras aceptación (status followup_sent)
+./run.sh followup --live --limit 3 # mensaje tras aceptación (pausa antes de cada uno)
 ./run.sh outreach --live             # poll + followup + contact (cron diario)
 ./run.sh list
 ```
@@ -38,6 +38,7 @@ Cron VPS (L–V 10:40 Europe/Madrid): `scripts/unipile-drain.sh`
 - Score ≥ 4: mensaje de conexión generado, status `reviewed`
 - Seeds (`source_query=seed:*`): no se re-scorean
 - Límite práctico Unipile/LinkedIn: ~6 invitaciones/día
+- Pausa aleatoria 30–90 s antes de **cada** acción Unipile (invite, poll, follow-up), en dry-run y live
 
 ## NocoDB
 

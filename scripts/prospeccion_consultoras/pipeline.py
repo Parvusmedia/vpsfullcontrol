@@ -55,10 +55,10 @@ NOCODB_COLUMNS: list[tuple[str, str]] = [
 
 INVITE_MIN_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MIN_WAIT", "30"))
 INVITE_MAX_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MAX_WAIT", "90"))
-FOLLOWUP_MIN_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_WAIT", "20"))
-FOLLOWUP_MAX_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MAX_WAIT", "60"))
-POLL_MIN_WAIT = int(os.environ.get("CONSULTORAS_POLL_MIN_WAIT", "2"))
-POLL_MAX_WAIT = int(os.environ.get("CONSULTORAS_POLL_MAX_WAIT", "8"))
+POLL_MIN_WAIT = int(os.environ.get("CONSULTORAS_POLL_MIN_WAIT", "30"))
+POLL_MAX_WAIT = int(os.environ.get("CONSULTORAS_POLL_MAX_WAIT", "90"))
+FOLLOWUP_MIN_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_WAIT", "30"))
+FOLLOWUP_MAX_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MAX_WAIT", "90"))
 DEFAULT_FOLLOWUP_MIN_HOURS = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_HOURS", "0"))
 
 HARD_EXCLUDE = (
@@ -1024,8 +1024,7 @@ def cmd_contact(args: argparse.Namespace) -> int:
     print(f"contact {'DRY-RUN' if dry_run else 'LIVE'} limit={args.limit or len(rows)} rows={len(rows)}")
     results: list[dict[str, Any]] = []
     for i, row in enumerate(rows[: args.limit or len(rows)], 1):
-        if not dry_run and i > 1:
-            random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label="between invites")
+        random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label=f"before invite {i}/{min(len(rows), args.limit or len(rows))}")
         rid = row.get("Id")
         note = row.get("connection_message") or ""
         url = row.get("linkedin_url") or ""
@@ -1060,8 +1059,7 @@ def cmd_poll_acceptances(args: argparse.Namespace) -> int:
     print(f"poll-acceptances {'DRY-RUN' if dry_run else 'LIVE'} rows={len(rows)}")
     results: list[dict[str, Any]] = []
     for i, row in enumerate(rows, 1):
-        if i > 1:
-            random_wait(POLL_MIN_WAIT, POLL_MAX_WAIT, label="between profile checks")
+        random_wait(POLL_MIN_WAIT, POLL_MAX_WAIT, label=f"before profile check {i}/{len(rows)}")
         name = f"{row.get('first_name')} {row.get('last_name')}".strip()
         public_id = unipile_public_id(row.get("linkedin_url") or "")
         if not public_id:
@@ -1115,9 +1113,9 @@ def cmd_followup(args: argparse.Namespace) -> int:
         f"eligible={len(eligible)} min_hours={min_hours} limit={args.limit}"
     )
     results: list[dict[str, Any]] = []
+    total = min(len(eligible), args.limit or len(eligible))
     for i, row in enumerate(eligible[: args.limit or len(eligible)], 1):
-        if not dry_run and i > 1:
-            random_wait(FOLLOWUP_MIN_WAIT, FOLLOWUP_MAX_WAIT, label="between follow-ups")
+        random_wait(FOLLOWUP_MIN_WAIT, FOLLOWUP_MAX_WAIT, label=f"before follow-up {i}/{total}")
         rid = row.get("Id")
         name = f"{row.get('first_name')} {row.get('last_name')}".strip()
         message = (row.get("followup_message") or "").strip()
