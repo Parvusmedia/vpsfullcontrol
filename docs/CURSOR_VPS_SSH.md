@@ -123,3 +123,23 @@ Host parvus-vps-2
   User cursorbot
   IdentityFile ~/.ssh/cursor_vps_access
 ```
+
+
+## 6) Otro Cloud Agent / otro entorno
+
+Los pods de Cloud Agent están aislados: un agente **no** puede inyectar SSH, MCP ni GitHub tokens en otro `bc-*` que ya está corriendo.
+
+Para que **otro entorno** tenga el mismo acceso al VPS que un agente en `vps-cursor-ssh`:
+
+1. En ese chat, ejecutar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Parvusmedia/vpsfullcontrol/main/scripts/cursor-env-ssh-bootstrap.sh | bash
+ssh parvus-vps 'hostname; whoami; ls /opt/apps'
+```
+
+2. Para que quede automático en **agentes nuevos** de este repo, `start` (y `install`) ya corren ese bootstrap. En otros repos, poned el mismo comando en **Start** del entorno (dashboard) o en `.cursor/environment.json`.
+
+3. Misma clave: `cursor-vpsfullcontrol-cloud@parvus` (drop `Parvusmedia/vps-cursor-ssh` / rama `cursor-cloud-ssh-keys`). Ya está en `authorized_keys` de `cursorbot`.
+
+MCP (Make, Slack, Zapier, n8n) no se copian entre entornos: van con la cuenta Cursor del usuario y hay que autenticarlos en ese entorno si faltan.
