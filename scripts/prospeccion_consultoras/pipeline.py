@@ -7,11 +7,13 @@ import argparse
 import asyncio
 import json
 import os
+import random
 import re
 import sqlite3
+import time
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -45,7 +47,19 @@ NOCODB_COLUMNS: list[tuple[str, str]] = [
     ("headline", "LongText"),
     ("location", "SingleLineText"),
     ("dedupe_key", "SingleLineText"),
+    ("invitation_id", "SingleLineText"),
+    ("connection_sent_at", "DateTime"),
+    ("accepted_at", "DateTime"),
+    ("followup_sent_at", "DateTime"),
 ]
+
+INVITE_MIN_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MIN_WAIT", "30"))
+INVITE_MAX_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MAX_WAIT", "90"))
+FOLLOWUP_MIN_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_WAIT", "20"))
+FOLLOWUP_MAX_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MAX_WAIT", "60"))
+POLL_MIN_WAIT = int(os.environ.get("CONSULTORAS_POLL_MIN_WAIT", "2"))
+POLL_MAX_WAIT = int(os.environ.get("CONSULTORAS_POLL_MAX_WAIT", "8"))
+DEFAULT_FOLLOWUP_MIN_HOURS = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_HOURS", "0"))
 
 HARD_EXCLUDE = (
     "recruiter",
@@ -778,6 +792,39 @@ def cmd_sync(args: argparse.Namespace) -> int:
 NOTE_MAX_CHARS = 300
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def iso_utc(dt: datetime | None = None) -> str:
+    return (dt or utc_now()).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_iso_utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def random_wait(min_s: int, max_s: int, *, label: str) -> int:
+    wait_s = random.randint(min_s, max(min_s, max_s))
+    if wait_s > 0:
+        print(f"    waiting {wait_s}s ({label})…")
+        time.sleep(wait_s)
+    return wait_s
+
+
 def truncate_note(text: str, max_chars: int = NOTE_MAX_CHARS) -> str:
     note = re.sub(r"\s+", " ", (text or "").strip())
     if len(note) <= max_chars:
@@ -786,19 +833,23 @@ def truncate_note(text: str, max_chars: int = NOTE_MAX_CHARS) -> str:
     return cut.rstrip(".,;") + "…"
 
 
-def list_connection_ready(*, limit: int = 50) -> list[dict[str, Any]]:
+def list_rows_by_status(status: str, *, limit: int = 50) -> list[dict[str, Any]]:
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Accept": "application/json"}
     with httpx.Client(timeout=30) as client:
         r = client.get(
             f"{base}/api/v2/tables/{TABLE_ID}/records",
             headers=headers,
-            params={"where": "(status,eq,connection_ready)", "limit": limit},
+            params={"where": f"(status,eq,{status})", "limit": limit},
         )
         r.raise_for_status()
         rows = r.json().get("list") or []
     rows.sort(key=lambda x: (-int(x.get("score") or 0), x.get("country") or ""))
     return rows
+
+
+def list_connection_ready(*, limit: int = 50) -> list[dict[str, Any]]:
+    return list_rows_by_status("connection_ready", limit=limit)
 
 
 def patch_row(rid: int, fields: dict[str, Any]) -> None:
@@ -810,6 +861,43 @@ def patch_row(rid: int, fields: dict[str, Any]) -> None:
             headers=headers,
             json={"Id": rid, **fields},
         ).raise_for_status()
+
+
+def unipile_public_id(linkedin_url: str) -> str | None:
+    url = normalize_linkedin_url(linkedin_url) or linkedin_url
+    m = re.search(r"linkedin\.com/in/([^/?#]+)", url or "", re.I)
+    return m.group(1) if m else None
+
+
+def lookup_unipile_profile(public_id: str) -> dict[str, Any]:
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        return {"ok": False, "reason": "missing_unipile_config"}
+    headers = {"X-API-KEY": api_key, "Accept": "application/json"}
+    with httpx.Client(timeout=45) as client:
+        resp = client.get(
+            f"{base_url}/users/{public_id}",
+            params={"account_id": account_id},
+            headers=headers,
+        )
+        if resp.status_code >= 400:
+            return {"ok": False, "http_status": resp.status_code, "error": (resp.text or "")[:500]}
+        body = resp.json() if resp.content else {}
+        return {
+            "ok": True,
+            "provider_id": body.get("provider_id") or body.get("id"),
+            "network_distance": body.get("network_distance"),
+            "is_relationship": bool(body.get("is_relationship")),
+            "public_identifier": body.get("public_identifier"),
+        }
+
+
+def profile_is_connected(profile: dict[str, Any]) -> bool:
+    if profile.get("is_relationship"):
+        return True
+    return str(profile.get("network_distance") or "").upper() == "FIRST_DEGREE"
 
 
 def send_unipile_invite(
@@ -825,8 +913,7 @@ def send_unipile_invite(
         return {"ok": False, "reason": "missing_unipile_config"}
 
     url = normalize_linkedin_url(linkedin_url) or linkedin_url
-    m = re.search(r"linkedin\.com/in/([^/?#]+)", url or "", re.I)
-    public_id = m.group(1) if m else None
+    public_id = unipile_public_id(url or "")
     note = truncate_note(note)
 
     if dry_run:
@@ -856,7 +943,53 @@ def send_unipile_invite(
         resp = client.post(f"{base_url}/users/invite", headers=headers, json=payload)
         if resp.status_code >= 400:
             return {"ok": False, "http_status": resp.status_code, "error": (resp.text or "")[:500]}
-        return {"ok": True, "http_status": resp.status_code}
+        body = resp.json() if resp.content else {}
+        invitation_id = body.get("invitation_id")
+        if not invitation_id and isinstance(body.get("object"), str):
+            invitation_id = body.get("id")
+        return {
+            "ok": True,
+            "http_status": resp.status_code,
+            "invitation_id": invitation_id,
+            "provider_id": provider_id,
+        }
+
+
+def send_unipile_message(
+    *,
+    provider_id: str,
+    text: str,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        return {"ok": False, "reason": "missing_unipile_config"}
+    if not provider_id:
+        return {"ok": False, "reason": "missing_provider_id"}
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "reason": "missing_message"}
+
+    if dry_run:
+        return {"ok": True, "dry_run": True, "provider_id": provider_id, "text_preview": text[:120]}
+
+    headers = {"X-API-KEY": api_key, "Accept": "application/json"}
+    with httpx.Client(timeout=45) as client:
+        resp = client.post(
+            f"{base_url}/chats",
+            headers=headers,
+            data={
+                "account_id": account_id,
+                "text": text,
+                "attendees_ids": provider_id,
+            },
+        )
+        if resp.status_code >= 400:
+            return {"ok": False, "http_status": resp.status_code, "error": (resp.text or "")[:500]}
+        body = resp.json() if resp.content else {}
+        return {"ok": True, "http_status": resp.status_code, "chat_id": body.get("chat_id") or body.get("id")}
 
 
 def cmd_ready(_: argparse.Namespace) -> int:
@@ -891,6 +1024,8 @@ def cmd_contact(args: argparse.Namespace) -> int:
     print(f"contact {'DRY-RUN' if dry_run else 'LIVE'} limit={args.limit or len(rows)} rows={len(rows)}")
     results: list[dict[str, Any]] = []
     for i, row in enumerate(rows[: args.limit or len(rows)], 1):
+        if not dry_run and i > 1:
+            random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label="between invites")
         rid = row.get("Id")
         note = row.get("connection_message") or ""
         url = row.get("linkedin_url") or ""
@@ -902,11 +1037,128 @@ def cmd_contact(args: argparse.Namespace) -> int:
         if dry_run:
             print(f"    note ({len(truncate_note(note))} chars): {truncate_note(note)[:120]}…")
         elif out.get("ok") and rid is not None:
-            patch_row(int(rid), {"status": "connection_sent"})
+            patch_row(
+                int(rid),
+                {
+                    "status": "connection_sent",
+                    "connection_sent_at": iso_utc(),
+                    "invitation_id": out.get("invitation_id") or row.get("invitation_id") or "",
+                },
+            )
     path = DATA_DIR / "contact_results.json"
     path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"wrote {path}")
     return 0
+
+
+def cmd_poll_acceptances(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    rows = list_rows_by_status("connection_sent", limit=args.limit or 100)
+    if not rows:
+        print("No hay filas con status=connection_sent")
+        return 0
+    print(f"poll-acceptances {'DRY-RUN' if dry_run else 'LIVE'} rows={len(rows)}")
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(rows, 1):
+        if i > 1:
+            random_wait(POLL_MIN_WAIT, POLL_MAX_WAIT, label="between profile checks")
+        name = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        public_id = unipile_public_id(row.get("linkedin_url") or "")
+        if not public_id:
+            out = {"ok": False, "reason": "missing_public_id", "id": row.get("Id"), "name": name}
+            results.append(out)
+            print(f"[{i}] {name} -> {json.dumps(out, ensure_ascii=False)}")
+            continue
+        profile = lookup_unipile_profile(public_id)
+        connected = profile.get("ok") and profile_is_connected(profile)
+        out = {
+            "id": row.get("Id"),
+            "name": name,
+            "connected": connected,
+            "network_distance": profile.get("network_distance"),
+            "is_relationship": profile.get("is_relationship"),
+        }
+        results.append(out)
+        print(f"[{i}] {name} -> {json.dumps(out, ensure_ascii=False)}")
+        if connected and not dry_run and row.get("Id") is not None:
+            patch_row(
+                int(row["Id"]),
+                {
+                    "status": "accepted",
+                    "accepted_at": iso_utc(),
+                },
+            )
+    path = DATA_DIR / "poll_acceptances.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"wrote {path}")
+    return 0
+
+
+def cmd_followup(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    min_hours = args.min_hours_after_accept
+    rows = list_rows_by_status("accepted", limit=args.limit or 50)
+    if not rows:
+        print("No hay filas con status=accepted")
+        return 0
+    cutoff = utc_now() - timedelta(hours=min_hours)
+    eligible: list[dict[str, Any]] = []
+    for row in rows:
+        accepted_at = parse_iso_utc(row.get("accepted_at"))
+        if accepted_at is None or accepted_at <= cutoff:
+            eligible.append(row)
+    if not eligible:
+        print(f"No hay aceptaciones listas para follow-up (min_hours={min_hours})")
+        return 0
+    print(
+        f"followup {'DRY-RUN' if dry_run else 'LIVE'} "
+        f"eligible={len(eligible)} min_hours={min_hours} limit={args.limit}"
+    )
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(eligible[: args.limit or len(eligible)], 1):
+        if not dry_run and i > 1:
+            random_wait(FOLLOWUP_MIN_WAIT, FOLLOWUP_MAX_WAIT, label="between follow-ups")
+        rid = row.get("Id")
+        name = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        message = (row.get("followup_message") or "").strip()
+        public_id = unipile_public_id(row.get("linkedin_url") or "")
+        profile = lookup_unipile_profile(public_id or "")
+        provider_id = profile.get("provider_id") if profile.get("ok") else None
+        if not provider_id:
+            out = {"ok": False, "reason": "missing_provider_id", "id": rid, "name": name}
+            results.append(out)
+            print(f"[{i}] {name} -> {json.dumps(out, ensure_ascii=False)}")
+            continue
+        out = send_unipile_message(provider_id=str(provider_id), text=message, dry_run=dry_run)
+        out["id"] = rid
+        out["name"] = name
+        results.append(out)
+        print(f"[{i}] {name} -> {json.dumps({k: out[k] for k in out if k != 'text_preview'}, ensure_ascii=False)}")
+        if dry_run:
+            preview = out.get("text_preview") or message[:120]
+            print(f"    message ({len(message)} chars): {preview}…")
+        elif out.get("ok") and rid is not None:
+            patch_row(
+                int(rid),
+                {
+                    "status": "followup_sent",
+                    "followup_sent_at": iso_utc(),
+                },
+            )
+    path = DATA_DIR / "followup_results.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"wrote {path}")
+    return 0
+
+
+def cmd_outreach(args: argparse.Namespace) -> int:
+    """Poll acceptances, send follow-ups, then drain pending invites."""
+    poll_args = argparse.Namespace(live=args.live, limit=args.limit)
+    follow_args = argparse.Namespace(live=args.live, limit=args.followup_limit, min_hours_after_accept=args.min_hours_after_accept)
+    contact_args = argparse.Namespace(live=args.live, limit=args.contact_limit)
+    cmd_poll_acceptances(poll_args)
+    cmd_followup(follow_args)
+    return cmd_contact(contact_args)
 
 
 def cmd_rescore(_: argparse.Namespace) -> int:
@@ -1031,6 +1283,24 @@ def main() -> int:
     p_contact = sub.add_parser("contact")
     p_contact.add_argument("--limit", type=int, default=4)
     p_contact.add_argument("--live", action="store_true")
+    p_poll = sub.add_parser("poll-acceptances")
+    p_poll.add_argument("--limit", type=int, default=100)
+    p_poll.add_argument("--live", action="store_true")
+    p_follow = sub.add_parser("followup")
+    p_follow.add_argument("--limit", type=int, default=3)
+    p_follow.add_argument("--live", action="store_true")
+    p_follow.add_argument(
+        "--min-hours-after-accept",
+        type=int,
+        default=DEFAULT_FOLLOWUP_MIN_HOURS,
+        help="Horas tras accepted_at antes de enviar follow-up (0 = inmediato tras detectar aceptación)",
+    )
+    p_outreach = sub.add_parser("outreach")
+    p_outreach.add_argument("--live", action="store_true")
+    p_outreach.add_argument("--contact-limit", type=int, default=6)
+    p_outreach.add_argument("--followup-limit", type=int, default=3)
+    p_outreach.add_argument("--limit", type=int, default=100)
+    p_outreach.add_argument("--min-hours-after-accept", type=int, default=DEFAULT_FOLLOWUP_MIN_HOURS)
     args = parser.parse_args()
     if args.cmd == "provision-columns":
         provision_columns()
@@ -1051,6 +1321,12 @@ def main() -> int:
         return cmd_ready(args)
     if args.cmd == "contact":
         return cmd_contact(args)
+    if args.cmd == "poll-acceptances":
+        return cmd_poll_acceptances(args)
+    if args.cmd == "followup":
+        return cmd_followup(args)
+    if args.cmd == "outreach":
+        return cmd_outreach(args)
     return 1
 
 
