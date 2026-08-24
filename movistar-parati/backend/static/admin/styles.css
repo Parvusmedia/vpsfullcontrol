@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #0b2739;
+  color: #f5f8fb;
+}
+header, section { padding: 1.25rem 1.5rem; }
+.demo { color: #9db3c7; font-size: .85rem; }
+.config { display: flex; gap: .75rem; align-items: end; background: #12344f; }
+.config input { padding: .6rem; border-radius: 8px; border: none; min-width: 240px; }
+.config button, .cta {
+  background: #019df4;
+  color: white;
+  border: none;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.metric {
+  background: #12344f;
+  border-radius: 14px;
+  padding: 1rem;
+}
+.metric strong { display: block; font-size: 1.6rem; margin-top: .35rem; }
+.controls { background: #0f3047; }
+pre {
+  background: #081a28;
+  padding: 1rem;
+  border-radius: 10px;
+  overflow: auto;
+  font-size: .85rem;
+}

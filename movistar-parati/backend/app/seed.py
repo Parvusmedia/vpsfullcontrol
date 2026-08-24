@@ -1,0 +1,170 @@
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.models import Campaign, Product
+
+
+def seed_database(db: Session) -> None:
+    if db.query(Product).count() > 0:
+        return
+
+    products = [
+        Product(
+            id="iphone-17",
+            name="Apple iPhone 17 256GB",
+            brand="Apple",
+            category="smartphone",
+            image_url="https://via.placeholder.com/400x400?text=iPhone",
+            monthly_price=24.0,
+            original_monthly_price=29.0,
+            savings_eur=120,
+            stock=15,
+            promotion_label=None,
+            purchase_url="https://www.movistar.es/",
+            conditions="Concept Demo",
+        ),
+        Product(
+            id="galaxy-s26",
+            name="Samsung Galaxy S26 256GB",
+            brand="Samsung",
+            category="smartphone",
+            image_url="https://via.placeholder.com/400x400?text=Galaxy",
+            monthly_price=14.0,
+            original_monthly_price=18.0,
+            savings_eur=96,
+            stock=20,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="pixel-11",
+            name="Google Pixel 11 256GB",
+            brand="Google",
+            category="smartphone",
+            image_url="https://via.placeholder.com/400x400?text=Pixel",
+            monthly_price=12.0,
+            original_monthly_price=15.0,
+            savings_eur=72,
+            stock=12,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="xiaomi-15",
+            name="Xiaomi 15 256GB",
+            brand="Xiaomi",
+            category="smartphone",
+            image_url="https://via.placeholder.com/400x400?text=Xiaomi",
+            monthly_price=8.0,
+            original_monthly_price=11.0,
+            savings_eur=36,
+            stock=25,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="ps5-pro",
+            name="PlayStation 5 Pro",
+            brand="Sony",
+            category="gaming",
+            image_url="https://via.placeholder.com/400x400?text=PS5",
+            monthly_price=18.0,
+            original_monthly_price=22.0,
+            savings_eur=96,
+            stock=8,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="samsung-tv-55",
+            name="Samsung TV 55\" QLED",
+            brand="Samsung",
+            category="tv",
+            image_url="https://via.placeholder.com/400x400?text=TV",
+            monthly_price=16.0,
+            original_monthly_price=21.0,
+            savings_eur=120,
+            stock=10,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="lg-tv-65",
+            name="LG TV 65\" OLED",
+            brand="LG",
+            category="tv",
+            image_url="https://via.placeholder.com/400x400?text=LG+TV",
+            monthly_price=22.0,
+            original_monthly_price=28.0,
+            savings_eur=144,
+            stock=6,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="macbook-air",
+            name="MacBook Air M4",
+            brand="Apple",
+            category="computing",
+            image_url="https://via.placeholder.com/400x400?text=MacBook",
+            monthly_price=28.0,
+            original_monthly_price=34.0,
+            savings_eur=144,
+            stock=7,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="ipad-pro",
+            name="iPad Pro 13\"",
+            brand="Apple",
+            category="computing",
+            image_url="https://via.placeholder.com/400x400?text=iPad",
+            monthly_price=19.0,
+            original_monthly_price=24.0,
+            savings_eur=120,
+            stock=9,
+            purchase_url="https://www.movistar.es/",
+            preorder_open=False,
+        ),
+        Product(
+            id="watch-ultra",
+            name="Apple Watch Ultra 3",
+            brand="Apple",
+            category="wearable",
+            image_url="https://via.placeholder.com/400x400?text=Watch",
+            monthly_price=12.0,
+            original_monthly_price=15.0,
+            savings_eur=72,
+            stock=14,
+            purchase_url="https://www.movistar.es/",
+        ),
+        Product(
+            id="iphone-next",
+            name="Nuevo iPhone — Próximamente",
+            brand="Apple",
+            category="smartphone",
+            image_url="https://via.placeholder.com/400x400?text=Nuevo+iPhone",
+            monthly_price=0.0,
+            original_monthly_price=0.0,
+            savings_eur=0,
+            stock=0,
+            purchase_url="https://www.movistar.es/",
+            preorder_open=False,
+        ),
+    ]
+
+    db.add_all(products)
+    db.add_all(
+        [
+            Campaign(
+                id="black-friday-2026",
+                name="Black Friday Movistar",
+                campaign_type="black_friday",
+                active=False,
+                config={},
+            ),
+            Campaign(
+                id="iphone-preorder-2026",
+                name="Preventa iPhone",
+                campaign_type="preorder",
+                active=True,
+                config={"product_id": "iphone-next"},
+            ),
+        ]
+    )
+    db.commit()

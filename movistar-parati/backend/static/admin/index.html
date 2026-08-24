@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movistar Para ti — Demo Control</title>
+  <link rel="stylesheet" href="/static/admin/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Movistar Para ti — Demo Control</h1>
+    <p class="demo">Concept Demo — Not Live Movistar Data</p>
+  </header>
+  <section class="config">
+    <label>Admin API Key <input id="adminKey" type="password" placeholder="X-Admin-Key" /></label>
+    <button id="saveKey">Guardar</button>
+  </section>
+  <section id="dashboard" class="grid"></section>
+  <section class="controls">
+    <h2>Pixel 11</h2>
+    <p>Precio actual: <strong id="pixelPrice">—</strong></p>
+    <button class="cta" id="dropPixel">🔥 BAJAR A 8,50 €/MES</button>
+    <pre id="pixelResult"></pre>
+
+    <h2>Preventa iPhone</h2>
+    <button class="cta" id="openPreorder">OPEN IPHONE PREORDER</button>
+    <pre id="preorderResult"></pre>
+
+    <h2>Black Friday</h2>
+    <button class="cta" id="activateBf">ACTIVATE BLACK FRIDAY</button>
+    <pre id="bfResult"></pre>
+  </section>
+  <script src="/static/admin/app.js"></script>
+</body>
+</html>

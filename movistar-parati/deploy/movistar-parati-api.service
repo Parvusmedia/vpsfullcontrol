@@ -1,0 +1,15 @@
+[Unit]
+Description=Movistar Para ti API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/movistar-parati/backend
+ExecStart=/opt/apps/movistar-parati/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8020
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
