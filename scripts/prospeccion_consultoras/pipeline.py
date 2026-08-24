@@ -145,7 +145,7 @@ SEEDS: list[dict[str, Any]] = [
     {
         "first_name": "AbdulMouhsen",
         "last_name": "Al-Madani",
-        "linkedin_url": "https://www.linkedin.com/in/abdulmouhsen-almadani",
+        "linkedin_url": "https://www.linkedin.com/in/ACwAAADlVv0Bmk_mLHoMlaBAThUk81PDsH0Q8Jk",
         "company": "Deloitte",
         "company_tier": "deloitte",
         "country": "Saudi Arabia",
@@ -181,7 +181,7 @@ SEEDS: list[dict[str, Any]] = [
     {
         "first_name": "Saudamini",
         "last_name": "Dubey",
-        "linkedin_url": "https://www.linkedin.com/in/saudaminidubey",
+        "linkedin_url": "https://www.linkedin.com/in/ACwAAAA76c0BnMv5QxQsHam_SXHNSRHqFz4INfU",
         "company": "Deloitte",
         "company_tier": "deloitte",
         "country": "United Arab Emirates",
@@ -775,6 +775,140 @@ def cmd_sync(args: argparse.Namespace) -> int:
     return 0
 
 
+NOTE_MAX_CHARS = 300
+
+
+def truncate_note(text: str, max_chars: int = NOTE_MAX_CHARS) -> str:
+    note = re.sub(r"\s+", " ", (text or "").strip())
+    if len(note) <= max_chars:
+        return note
+    cut = note[: max_chars - 1].rsplit(" ", 1)[0]
+    return cut.rstrip(".,;") + "…"
+
+
+def list_connection_ready(*, limit: int = 50) -> list[dict[str, Any]]:
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Accept": "application/json"}
+    with httpx.Client(timeout=30) as client:
+        r = client.get(
+            f"{base}/api/v2/tables/{TABLE_ID}/records",
+            headers=headers,
+            params={"where": "(status,eq,connection_ready)", "limit": limit},
+        )
+        r.raise_for_status()
+        rows = r.json().get("list") or []
+    rows.sort(key=lambda x: (-int(x.get("score") or 0), x.get("country") or ""))
+    return rows
+
+
+def patch_row(rid: int, fields: dict[str, Any]) -> None:
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Content-Type": "application/json"}
+    with httpx.Client(timeout=45) as client:
+        client.patch(
+            f"{base}/api/v2/tables/{TABLE_ID}/records",
+            headers=headers,
+            json={"Id": rid, **fields},
+        ).raise_for_status()
+
+
+def send_unipile_invite(
+    *,
+    linkedin_url: str,
+    note: str,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        return {"ok": False, "reason": "missing_unipile_config"}
+
+    url = normalize_linkedin_url(linkedin_url) or linkedin_url
+    m = re.search(r"linkedin\.com/in/([^/?#]+)", url or "", re.I)
+    public_id = m.group(1) if m else None
+    note = truncate_note(note)
+
+    if dry_run:
+        return {"ok": True, "dry_run": True, "note": note, "linkedin_url": url, "public_id": public_id}
+
+    headers = {"X-API-KEY": api_key, "Accept": "application/json", "Content-Type": "application/json"}
+    provider_id = None
+    with httpx.Client(timeout=45) as client:
+        if public_id:
+            lookup = client.get(
+                f"{base_url}/users/{public_id}",
+                params={"account_id": account_id},
+                headers=headers,
+            )
+            if lookup.status_code < 400 and lookup.content:
+                body = lookup.json()
+                provider_id = body.get("provider_id") or body.get("id")
+
+        payload: dict[str, Any] = {"account_id": account_id, "message": note}
+        if provider_id:
+            payload["provider_id"] = provider_id
+        elif public_id:
+            payload["provider_public_id"] = public_id
+        else:
+            return {"ok": False, "reason": "missing_public_id"}
+
+        resp = client.post(f"{base_url}/users/invite", headers=headers, json=payload)
+        if resp.status_code >= 400:
+            return {"ok": False, "http_status": resp.status_code, "error": (resp.text or "")[:500]}
+        return {"ok": True, "http_status": resp.status_code}
+
+
+def cmd_ready(_: argparse.Namespace) -> int:
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Accept": "application/json"}
+    with httpx.Client(timeout=30) as client:
+        r = client.get(f"{base}/api/v2/tables/{TABLE_ID}/records", headers=headers, params={"limit": 200})
+        r.raise_for_status()
+        rows = r.json().get("list") or []
+    n = 0
+    for row in rows:
+        if int(row.get("score") or 0) < 4:
+            continue
+        if row.get("status") in {"connection_sent", "accepted", "followup_ready", "followup_sent"}:
+            continue
+        rid = row.get("Id")
+        if rid is None:
+            continue
+        patch_row(int(rid), {"status": "connection_ready"})
+        n += 1
+        print(f"ready id={rid} {row.get('first_name')} {row.get('last_name')} score={row.get('score')}")
+    print(f"marked connection_ready: {n}")
+    return 0
+
+
+def cmd_contact(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    rows = list_connection_ready(limit=args.limit or 50)
+    if not rows:
+        print("No hay filas con status=connection_ready")
+        return 0
+    print(f"contact {'DRY-RUN' if dry_run else 'LIVE'} limit={args.limit or len(rows)} rows={len(rows)}")
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(rows[: args.limit or len(rows)], 1):
+        rid = row.get("Id")
+        note = row.get("connection_message") or ""
+        url = row.get("linkedin_url") or ""
+        out = send_unipile_invite(linkedin_url=url, note=note, dry_run=dry_run)
+        out["id"] = rid
+        out["name"] = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        results.append(out)
+        print(f"[{i}] {out['name']} -> {json.dumps({k: out[k] for k in out if k != 'note'}, ensure_ascii=False)}")
+        if dry_run:
+            print(f"    note ({len(truncate_note(note))} chars): {truncate_note(note)[:120]}…")
+        elif out.get("ok") and rid is not None:
+            patch_row(int(rid), {"status": "connection_sent"})
+    path = DATA_DIR / "contact_results.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"wrote {path}")
+    return 0
+
+
 def cmd_rescore(_: argparse.Namespace) -> int:
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Accept": "application/json"}
@@ -893,6 +1027,10 @@ def main() -> int:
     p_sync.add_argument("--limit", type=int, default=0)
     sub.add_parser("list")
     sub.add_parser("rescore")
+    sub.add_parser("ready")
+    p_contact = sub.add_parser("contact")
+    p_contact.add_argument("--limit", type=int, default=4)
+    p_contact.add_argument("--live", action="store_true")
     args = parser.parse_args()
     if args.cmd == "provision-columns":
         provision_columns()
@@ -909,6 +1047,10 @@ def main() -> int:
         return cmd_list(args)
     if args.cmd == "rescore":
         return cmd_rescore(args)
+    if args.cmd == "ready":
+        return cmd_ready(args)
+    if args.cmd == "contact":
+        return cmd_contact(args)
     return 1
 
 

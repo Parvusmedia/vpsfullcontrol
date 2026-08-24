@@ -12,6 +12,9 @@ cd /opt/apps/prospeccion-consultoras
 ./run.sh discover --max-queries 11 --max-per-query 6
 ./run.sh sync
 ./run.sh rescore             # re-aplica hard excludes (no toca seeds)
+./run.sh ready               # marca score>=4 como connection_ready
+./run.sh contact --limit 4   # dry-run invitaciones Unipile
+./run.sh contact --limit 4 --live  # envía (máx 4 por ejecución; respeta límites LinkedIn)
 ./run.sh list
 ```
 
@@ -20,7 +23,7 @@ cd /opt/apps/prospeccion-consultoras
 - Hard excludes: RRHH, audit, tax, cyber, data engineering, SAP, junior, sales director, manager genérico
 - Score ≥ 4: mensaje de conexión generado, status `reviewed`
 - Seeds (`source_query=seed:*`): no se re-scorean
-- **No envía conexiones** — revisión manual en NocoDB
+- Envío manual: `ready` → `contact` (dry-run) → `contact --live` (máx ~6/día vía Unipile)
 
 ## NocoDB
 
