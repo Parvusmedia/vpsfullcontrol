@@ -1,33 +1,59 @@
-# Movistar Para ti
+# Movistar Para Ti
 
-Plataforma demo de commerce + demanda + alertas en Telegram.
+Demo de **commerce + alertas personalizadas** en Telegram. El catálogo vive en **NocoDB** (CMS); no hay scraper.
 
-## Componentes
+## Arquitectura
 
-- **API** FastAPI (`8020`)
-- **Bot** `@Movistarparatibot` (webhook)
-- **Mini App** `/app`
-- **Demo Control** `/panel`
-
-## Setup VPS
-
-1. Crear DB Postgres:
-
-```bash
-sudo -u postgres psql -c "CREATE USER movistar_parati WITH PASSWORD '...';"
-sudo -u postgres psql -c "CREATE DATABASE movistar_parati OWNER movistar_parati;"
+```text
+NocoDB (movistar_products, movistar_alerts, movistar_events)
+        ↓
+FastAPI backend (poll cambios cada 60s)
+        ↓
+Telegram Bot @Movistarparatibot
+        ↓
+Usuario
 ```
 
-2. Copiar `.env.example` → `.env` en `/opt/apps/movistar-parati/backend/`
-3. Configurar `TELEGRAM_BOT_TOKEN`, `PUBLIC_BASE_URL` (HTTPS), `ADMIN_API_KEY`
-4. `./scripts/deploy.sh`
-5. Configurar nginx + SSL apuntando a `127.0.0.1:8020`
-6. Registrar webhook:
+## Setup NocoDB
 
 ```bash
-curl -X POST https://TU_DOMINIO/api/telegram/setup-webhook -H "X-Admin-Key: TU_KEY"
+cd backend
+pip install -r requirements.txt
+# Token desde /opt/apps/fly456bot/.env o variable de entorno
+python scripts/provision_nocodb.py
 ```
 
-## Disclaimer
+Copia los `NOCODB_*_TABLE_ID` generados a `.env`.
 
-Concept Demo — Not Live Movistar Data
+## Variables
+
+Ver `backend/.env.example`.
+
+## Desarrollo local
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --port 8020
+```
+
+## VPS
+
+- Ruta: `/opt/apps/movistar-parati`
+- Puerto: `8020`
+- systemd: `movistar-parati-api`
+- Polling alternativo: `movistar-parati-polling` (si no hay HTTPS webhook)
+
+## Demo en vivo
+
+1. Usuario crea alerta en Telegram
+2. Cambias `monthly_price` en NocoDB (o botón **Simular bajada** en `/movistar-demo/admin`)
+3. En ≤60s el poll detecta el cambio → Telegram notifica
+
+## Futuro producción
+
+Catálogo real vía API/feed/PIM Movistar — ver interfaz `NocoDBProductSource` en `app/services/product_service.py`.
+
+**Concept Demo — Not Live Movistar Data**

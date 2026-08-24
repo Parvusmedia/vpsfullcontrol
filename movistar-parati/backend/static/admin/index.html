@@ -3,32 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Movistar Para ti — Demo Control</title>
+  <title>Movistar Para Ti — Demo Control</title>
   <link rel="stylesheet" href="/static/admin/styles.css" />
 </head>
 <body>
   <header>
-    <h1>Movistar Para ti — Demo Control</h1>
-    <p class="demo">Concept Demo — Not Live Movistar Data</p>
+    <h1>Movistar Para Ti — Demo Control</h1>
+    <p class="demo">Concept Demo — Not Live Movistar Data · NocoDB = CMS</p>
   </header>
   <section class="config">
-    <label>Admin API Key <input id="adminKey" type="password" placeholder="X-Admin-Key" /></label>
+    <label>Admin API Key <input id="adminKey" type="password" /></label>
     <button id="saveKey">Guardar</button>
+    <button id="pollNow">Forzar detección cambios</button>
   </section>
-  <section id="dashboard" class="grid"></section>
-  <section class="controls">
-    <h2>Pixel 11</h2>
-    <p>Precio actual: <strong id="pixelPrice">—</strong></p>
-    <button class="cta" id="dropPixel">🔥 BAJAR A 8,50 €/MES</button>
-    <pre id="pixelResult"></pre>
-
-    <h2>Preventa iPhone</h2>
-    <button class="cta" id="openPreorder">OPEN IPHONE PREORDER</button>
-    <pre id="preorderResult"></pre>
-
-    <h2>Black Friday</h2>
-    <button class="cta" id="activateBf">ACTIVATE BLACK FRIDAY</button>
-    <pre id="bfResult"></pre>
+  <section id="stats" class="grid"></section>
+  <section>
+    <h2>Products</h2>
+    <div id="products"></div>
+  </section>
+  <section>
+    <h2>Active alerts</h2>
+    <pre id="alerts">—</pre>
   </section>
   <script src="/static/admin/app.js"></script>
 </body>
