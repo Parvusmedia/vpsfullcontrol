@@ -1,4 +1,4 @@
-from app.services.bot_handlers import apply_display_boost
+from app.services.bot_handlers import filter_by_segment
 from app.services.product_service import Product
 
 
@@ -37,13 +37,20 @@ def _product(brand: str, pid: str) -> Product:
     )
 
 
-def test_display_boost_apple_orders_apple_first():
-    products = [_product("Samsung", "s1"), _product("Apple", "a1"), _product("Google", "g1")]
-    boosted = apply_display_boost(products, "apple")
-    assert [p.brand for p in boosted] == ["Apple", "Samsung", "Google"]
+def test_filter_apple_only():
+    products = [_product("Samsung", "s1"), _product("Apple", "a1")]
+    filtered = filter_by_segment(products, "apple")
+    assert len(filtered) == 1
+    assert filtered[0].brand == "Apple"
 
 
-def test_display_boost_does_not_remove_brands():
+def test_filter_android_excludes_apple():
+    products = [_product("Apple", "a1"), _product("Samsung", "s1"), _product("Google", "g1")]
+    filtered = filter_by_segment(products, "android")
+    assert len(filtered) == 2
+    assert all(p.brand != "Apple" for p in filtered)
+
+
+def test_filter_all_keeps_everything():
     products = [_product("Apple", "a1"), _product("Samsung", "s1")]
-    boosted = apply_display_boost(products, "android")
-    assert len(boosted) == 2
+    assert len(filter_by_segment(products, "all")) == 2

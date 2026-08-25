@@ -97,65 +97,94 @@ def _segment_menu() -> dict:
     return {
         "inline_keyboard": [
             [
-                {"text": "🍎 Apple primero", "callback_data": "segment:apple"},
-                {"text": "🤖 Android primero", "callback_data": "segment:android"},
+                {"text": "🍎 Solo Apple", "callback_data": "segment:apple"},
+                {"text": "🤖 Solo Android", "callback_data": "segment:android"},
             ],
             [
-                {"text": "✨ Ver todas las marcas", "callback_data": "segment:all"},
-                {"text": "Omitir", "callback_data": "segment:skip"},
+                {"text": "✨ Todas las marcas", "callback_data": "segment:all"},
             ],
+            [_home_row()[0]],
         ]
     }
 
 
-def apply_display_boost(products: list[Product], boost: str | None) -> list[Product]:
-    if not boost or boost in {"all", "skip"}:
+ANDROID_BRANDS = {"samsung", "google", "xiaomi"}
+
+
+def filter_by_segment(products: list[Product], segment: str | None) -> list[Product]:
+    if not segment or segment == "all":
         return products
-    if boost == "apple":
-        preferred = [p for p in products if p.brand.lower() == "apple"]
-        others = [p for p in products if p.brand.lower() != "apple"]
-        return preferred + others
-    if boost == "android":
-        android_brands = {"samsung", "google", "xiaomi"}
-        preferred = [p for p in products if p.brand.lower() in android_brands]
-        others = [p for p in products if p.brand.lower() not in android_brands]
-        return preferred + others
+    if segment == "apple":
+        return [p for p in products if p.brand.lower() == "apple"]
+    if segment == "android":
+        return [p for p in products if p.brand.lower() in ANDROID_BRANDS]
     return products
 
 
-async def _ask_display_preference(chat_id: int) -> None:
+_SEGMENT_LABELS = {
+    "deals": "🔥 Mejores ofertas",
+    "phones": "📱 Móviles",
+    "new": "🆕 Novedades",
+    "forme": "💙 Para mí",
+}
+
+
+async def prompt_segment_choice(chat_id: int, action: str) -> None:
+    st = _state(chat_id)
+    st["pending_action"] = action
     await telegram_client.send_message(
         chat_id,
-        "¿Qué te interesa ver <b>primero</b>?\n\n"
-        "<i>No es un filtro: siempre puedes ver todas las marcas "
-        "(también si compras para otra persona).</i>",
+        f"Has elegido <b>{_SEGMENT_LABELS.get(action, action)}</b>.\n\n"
+        "¿Qué móviles quieres ver?",
         reply_markup=_segment_menu(),
     )
 
 
-def _brand_menu() -> dict:
-    return {
-        "inline_keyboard": [
-            [{"text": "🍎 Apple", "callback_data": "brand:Apple"}],
-            [{"text": "📱 Samsung", "callback_data": "brand:Samsung"}],
-            [{"text": "✨ Google", "callback_data": "brand:Google"}],
-            [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
+async def run_pending_action(chat_id: int, segment: str) -> None:
+    st = _state(chat_id)
+    action = st.pop("pending_action", None)
+    if not action:
+        return
+    st["segment_filter"] = segment
+    if action == "deals":
+        await show_deals(chat_id)
+    elif action == "new":
+        await show_new_products(chat_id)
+    elif action == "phones":
+        await show_phones_menu(chat_id)
+    elif action == "forme":
+        await start_forme_flow(chat_id)
+
+
+def _brand_menu(segment: str | None = None) -> dict:
+    rows: list[list[dict[str, str]]] = []
+    if segment == "apple":
+        rows.append([{"text": "🍎 Apple", "callback_data": "brand:Apple"}])
+    elif segment == "android":
+        rows.extend(
+            [
+                [{"text": "📱 Samsung", "callback_data": "brand:Samsung"}],
+                [{"text": "✨ Google", "callback_data": "brand:Google"}],
+                [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
+            ]
+        )
+    else:
+        rows.extend(
+            [
+                [{"text": "🍎 Apple", "callback_data": "brand:Apple"}],
+                [{"text": "📱 Samsung", "callback_data": "brand:Samsung"}],
+                [{"text": "✨ Google", "callback_data": "brand:Google"}],
+                [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
+            ]
+        )
+    rows.extend(
+        [
             [{"text": "🔥 Ofertas", "callback_data": "menu:deals"}],
             [{"text": "💸 Menos de 15 €/mes", "callback_data": "filter:monthly:15"}],
             _home_row(),
         ]
-    }
-    return {
-        "inline_keyboard": [
-            [{"text": "🍎 Apple", "callback_data": "brand:Apple"}],
-            [{"text": "📱 Samsung", "callback_data": "brand:Samsung"}],
-            [{"text": "✨ Google", "callback_data": "brand:Google"}],
-            [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
-            [{"text": "🔥 Ofertas", "callback_data": "menu:deals"}],
-            [{"text": "💸 Menos de 15 €/mes", "callback_data": "filter:monthly:15"}],
-            _home_row(),
-        ]
-    }
+    )
+    return {"inline_keyboard": rows}
 
 
 def product_keyboard(p: Product) -> dict:
@@ -214,30 +243,59 @@ async def show_main_menu(
             "Elige una opción con los botones de este mensaje."
         )
     await telegram_client.send_message(chat_id, text, reply_markup=_nav_inline_menu())
-    if first_time:
-        await _ask_display_preference(chat_id)
+
+
+async def _empty_segment_message(chat_id: int, action_label: str) -> None:
+    await telegram_client.send_message(
+        chat_id,
+        f"No hay resultados de <b>{action_label}</b> para esta selección.\n\n"
+        "Prueba con <b>✨ Todas las marcas</b> o vuelve al menú principal.",
+        reply_markup=_nav_inline_menu(),
+    )
 
 
 async def show_phones_menu(chat_id: int) -> None:
-    await telegram_client.send_message(chat_id, "📱 <b>Ver móviles</b>\n\nElige marca o filtro:", reply_markup=_brand_menu())
+    segment = _state(chat_id).get("segment_filter")
+    if segment == "apple":
+        products = filter_by_segment(await product_source.get_products_by_brand("Apple", 8), segment)
+        if not products:
+            await _empty_segment_message(chat_id, "móviles Apple")
+            return
+        await open_product_pager(chat_id, _state(chat_id), products[:5], "📱 Apple")
+        return
+    await telegram_client.send_message(
+        chat_id,
+        "📱 <b>Ver móviles</b>\n\nElige marca o filtro:",
+        reply_markup=_brand_menu(segment),
+    )
 
 
 async def show_deals(chat_id: int) -> None:
-    products = apply_display_boost(
-        await product_source.get_deals(8),
-        _state(chat_id).get("display_boost"),
-    )[:5]
+    segment = _state(chat_id).get("segment_filter")
+    products = filter_by_segment(await product_source.get_deals(12), segment)[:5]
+    if not products:
+        await _empty_segment_message(chat_id, "ofertas")
+        return
     await open_product_pager(chat_id, _state(chat_id), products, "🔥 Mejores ofertas", deal=True)
 
 
 async def show_new_products(chat_id: int) -> None:
-    products = await product_source.get_new_products(5)
+    segment = _state(chat_id).get("segment_filter")
+    products = filter_by_segment(await product_source.get_new_products(12), segment)[:5]
+    if not products:
+        await _empty_segment_message(chat_id, "novedades")
+        return
     await open_product_pager(chat_id, _state(chat_id), products, "🆕 Novedades")
 
 
 async def start_forme_flow(chat_id: int) -> None:
     st = _state(chat_id)
     st["flow"] = "forme"
+    segment = st.get("segment_filter")
+    if segment == "apple":
+        st["forme_brand_locked"] = "Apple"
+    elif segment == "android":
+        st["forme_brand_locked"] = "android"
     await telegram_client.send_message(
         chat_id,
         "¿Qué móvil buscas?",
@@ -344,10 +402,10 @@ def _is_casual_greeting(text: str) -> bool:
 
 async def _route_text_action(chat_id: int, user_id: int, text: str) -> bool:
     actions = {
-        BTN_OFERTAS: show_deals,
-        BTN_MOVILES: show_phones_menu,
-        BTN_NOVEDADES: show_new_products,
-        BTN_PARAMI: start_forme_flow,
+        BTN_OFERTAS: lambda cid: prompt_segment_choice(cid, "deals"),
+        BTN_MOVILES: lambda cid: prompt_segment_choice(cid, "phones"),
+        BTN_NOVEDADES: lambda cid: prompt_segment_choice(cid, "new"),
+        BTN_PARAMI: lambda cid: prompt_segment_choice(cid, "forme"),
         BTN_MENU: lambda cid: show_main_menu(cid, greeting=False, restore_keyboard=True),
     }
     action = actions.get(text.strip())
@@ -382,16 +440,16 @@ async def _handle_message(message: dict[str, Any]) -> None:
         await show_main_menu(chat_id, greeting=False, restore_keyboard=True)
         return
     if command == "/ofertas":
-        await show_deals(chat_id)
+        await prompt_segment_choice(chat_id, "deals")
         return
     if command == "/novedades":
-        await show_new_products(chat_id)
+        await prompt_segment_choice(chat_id, "new")
         return
     if command == "/moviles":
-        await show_phones_menu(chat_id)
+        await prompt_segment_choice(chat_id, "phones")
         return
     if command == "/parami":
-        await start_forme_flow(chat_id)
+        await prompt_segment_choice(chat_id, "forme")
         return
     if command == "/avisos":
         await show_user_alerts(chat_id, user_id)
@@ -436,21 +494,33 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
             source_message_id=callback.get("message", {}).get("message_id"),
         )
     elif data == "menu:deals":
-        await show_deals(chat_id)
+        await prompt_segment_choice(chat_id, "deals")
     elif data == "menu:new":
-        await show_new_products(chat_id)
+        await prompt_segment_choice(chat_id, "new")
     elif data == "menu:phones":
-        await show_phones_menu(chat_id)
+        await prompt_segment_choice(chat_id, "phones")
     elif data.startswith("brand:"):
         brand = data.split(":")[1]
-        products = await product_source.get_products_by_brand(brand, 5)
+        products = filter_by_segment(
+            await product_source.get_products_by_brand(brand, 8),
+            st.get("segment_filter"),
+        )[:5]
+        if not products:
+            await _empty_segment_message(chat_id, f"móviles {brand}")
+            return
         await open_product_pager(chat_id, st, products, f"📱 {brand}")
     elif data.startswith("filter:monthly:"):
         max_p = float(data.split(":")[2])
-        products = await product_source.get_products_under_monthly_price(max_p, 5)
+        products = filter_by_segment(
+            await product_source.get_products_under_monthly_price(max_p, 8),
+            st.get("segment_filter"),
+        )[:5]
+        if not products:
+            await _empty_segment_message(chat_id, f"móviles bajo {max_p:.0f} €/mes")
+            return
         await open_product_pager(chat_id, st, products, f"💸 Menos de {max_p:.0f} €/mes")
     elif data == "menu:forme":
-        await start_forme_flow(chat_id)
+        await prompt_segment_choice(chat_id, "forme")
     elif data.startswith("forme:pref:"):
         st["preference"] = data.split(":")[2]
         await telegram_client.send_message(
@@ -469,25 +539,52 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     elif data.startswith("forme:budget:"):
         val = float(data.split(":")[2])
         st["max_monthly"] = None if val >= 900 else val
+        locked = st.get("forme_brand_locked")
+        if locked == "Apple":
+            picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), "Apple")
+            picks = filter_by_segment(picks, "apple")
+            await open_product_pager(chat_id, st, picks, "💙 Para mí")
+            st.pop("flow", None)
+            st.pop("forme_brand_locked", None)
+            return
+        if locked == "android":
+            picks: list[Product] = []
+            for brand in ("Samsung", "Google", "Xiaomi"):
+                picks.extend(await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand))
+            picks = filter_by_segment(picks, "android")[:3]
+            await open_product_pager(chat_id, st, picks, "💙 Para mí")
+            st.pop("flow", None)
+            st.pop("forme_brand_locked", None)
+            return
+        brand_rows = [
+            [{"text": "Apple", "callback_data": "forme:brand:Apple"}],
+            [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
+            [{"text": "Google", "callback_data": "forme:brand:Google"}],
+            [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
+            [{"text": "Me da igual", "callback_data": "forme:brand:any"}],
+            _home_row(),
+        ]
+        if st.get("segment_filter") == "apple":
+            brand_rows = [[{"text": "Apple", "callback_data": "forme:brand:Apple"}], _home_row()]
+        elif st.get("segment_filter") == "android":
+            brand_rows = [
+                [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
+                [{"text": "Google", "callback_data": "forme:brand:Google"}],
+                [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
+                _home_row(),
+            ]
         await telegram_client.send_message(
             chat_id,
             "¿Alguna marca preferida?",
-            reply_markup={
-                "inline_keyboard": [
-                    [{"text": "Apple", "callback_data": "forme:brand:Apple"}],
-                    [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
-                    [{"text": "Google", "callback_data": "forme:brand:Google"}],
-                    [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
-                    [{"text": "Me da igual", "callback_data": "forme:brand:any"}],
-                    _home_row(),
-                ]
-            },
+            reply_markup={"inline_keyboard": brand_rows},
         )
     elif data.startswith("forme:brand:"):
         brand = data.split(":")[2]
         picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand)
-        await open_product_pager(chat_id, st, picks, "💙 Para mí")
+        picks = filter_by_segment(picks, st.get("segment_filter"))
+        await open_product_pager(chat_id, st, picks[:3], "💙 Para mí")
         st.pop("flow", None)
+        st.pop("forme_brand_locked", None)
     elif data.startswith("product:"):
         pid = data.split(":")[1]
         p = await product_source.get_product(pid)
@@ -528,14 +625,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await show_user_alerts(chat_id, user_id)
     elif data.startswith("segment:"):
         segment = data.split(":")[1]
-        st["display_boost"] = segment
-        labels = {
-            "apple": "🍎 Mostraremos Apple primero en las ofertas.",
-            "android": "🤖 Mostraremos Android primero en las ofertas.",
-            "all": "✨ Mostraremos todas las marcas por igual.",
-            "skip": "Perfecto, puedes explorar libremente.",
-        }
-        await telegram_client.send_message(chat_id, labels.get(segment, "Preferencia guardada para esta sesión."))
+        await run_pending_action(chat_id, segment)
     elif data == "alerts:edit":
         await show_alerts_edit_menu(chat_id, user_id)
     elif data.startswith("alerts:del:"):
