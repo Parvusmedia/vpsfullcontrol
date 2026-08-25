@@ -8,6 +8,7 @@ from app.services.admin_auth import PANEL_COOKIE, panel_session_token, require_a
 from app.services.change_detection import get_active_alerts, get_recent_events, log_event, poll_catalogue_changes
 from app.services.demo_actions import demo_actions_for_product
 from app.services.product_fields import panel_payload_to_fields
+from app.services.product_image import get_normalized_product_image
 from app.services.product_service import product_source
 from app.services.bot_handlers import handle_update
 
