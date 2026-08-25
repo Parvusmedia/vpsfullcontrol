@@ -11,17 +11,18 @@ logger = logging.getLogger("movistar-parati.pager")
 
 PagerState = dict[str, Any]
 
+PAGER_NAV_HINT = (
+    "Puedes ir navegando cada oferta haciendo clic en los botones "
+    "<b>▶️</b> para el siguiente producto o <b>◀️</b> para volver al anterior."
+)
+
 
 def pager_caption(product: Product, title: str, index: int, total: int, *, deal: bool = False) -> str:
-    return f"{title} · <b>{index + 1}/{total}</b>\n\n{product_card_text(product, deal=deal)}"
-
-
-def _index_row(index: int, total: int) -> list[dict[str, str]]:
-    row: list[dict[str, str]] = []
-    for i in range(total):
-        label = f"·{i + 1}·" if i == index else str(i + 1)
-        row.append({"text": label, "callback_data": f"pager:goto:{i}"})
-    return row
+    parts: list[str] = []
+    if total > 1:
+        parts.append(f"<i>{PAGER_NAV_HINT}</i>\n\n")
+    parts.append(f"{title} · <b>{index + 1}/{total}</b>\n\n{product_card_text(product, deal=deal)}")
+    return "".join(parts)
 
 
 def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
@@ -31,7 +32,6 @@ def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
             {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"},
             {"text": "▶️", "callback_data": "pager:next"},
         ],
-        _index_row(index, total),
     ]
     if product.product_url:
         rows.append([{"text": "👀 Ver oferta", "url": product.product_url}])
@@ -170,17 +170,6 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
         )
 
 
-async def jump_product_pager(chat_id: int, state: PagerState, index: int) -> None:
-    pager = state.get("pager")
-    if not pager:
-        return
-    total = len(pager.get("products") or pager.get("product_ids") or [])
-    if total <= 0:
-        return
-    pager["index"] = max(0, min(index, total - 1))
-    await render_product_pager(chat_id, state, edit=True)
-
-
 async def move_product_pager(chat_id: int, state: PagerState, delta: int) -> None:
     pager = state.get("pager")
     if not pager:
@@ -200,8 +189,5 @@ async def handle_pager_callback(chat_id: int, state: PagerState, data: str) -> b
         await move_product_pager(chat_id, state, 1)
         return True
     if data == "pager:noop":
-        return True
-    if data.startswith("pager:goto:"):
-        await jump_product_pager(chat_id, state, int(data.split(":")[2]))
         return True
     return False
