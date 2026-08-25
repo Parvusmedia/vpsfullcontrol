@@ -45,6 +45,11 @@ body {
   padding: .85rem 1.25rem; background: var(--surface);
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
+.config-compact {
+  align-items: center;
+  gap: 1rem;
+}
+.config-hint { color: var(--muted); font-size: .85rem; }
 label { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; color: var(--muted); }
 input, select {
   padding: .55rem .7rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);

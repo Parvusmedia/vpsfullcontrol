@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from app.config import get_settings
+from app.services.admin_auth import PANEL_COOKIE, panel_session_token, require_admin
 from app.services.change_detection import get_active_alerts, get_recent_events, log_event, poll_catalogue_changes
 from app.services.demo_actions import demo_actions_for_product
 from app.services.product_fields import panel_payload_to_fields
@@ -71,9 +72,8 @@ async def brands():
     return await product_source.get_brands()
 
 
-def _admin(x_admin_key: str = Header(..., alias="X-Admin-Key")):
-    if x_admin_key != get_settings().admin_api_key:
-        raise HTTPException(401, "Invalid admin key")
+def _admin(_: None = Depends(require_admin)):
+    return None
 
 
 @router.post("/api/movistar/admin/poll")

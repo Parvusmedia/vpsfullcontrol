@@ -22,12 +22,9 @@
     </div>
   </header>
 
-  <section class="config">
-    <label>Clave de administración
-      <input id="adminKey" type="password" placeholder="ADMIN_API_KEY" />
-    </label>
-    <button id="saveKey">Conectar</button>
-    <span id="connStatus" class="status-pill">Sin conectar</span>
+  <section class="config config-compact">
+    <span id="connStatus" class="status-pill">Conectando…</span>
+    <span class="config-hint">Sesión automática del panel · datos desde NocoDB</span>
   </section>
 
   <div id="toast" class="toast hidden"></div>
@@ -58,11 +55,7 @@
           </div>
         </div>
         <div id="catalogTable" class="catalog-table">
-          <div class="empty" id="catalogPlaceholder">
-            <strong>Catálogo no cargado</strong><br />
-            Introduce la <b>clave de administración</b> arriba y pulsa <b>Conectar</b>.<br />
-            <span class="muted">La clave es <code>ADMIN_API_KEY</code> del archivo <code>.env</code> del servidor.</span>
-          </div>
+          <div class="empty">Cargando catálogo desde NocoDB…</div>
         </div>
       </div>
 

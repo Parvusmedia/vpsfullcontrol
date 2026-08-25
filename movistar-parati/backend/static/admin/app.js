@@ -1,15 +1,14 @@
-const keyInput = document.getElementById("adminKey");
 const toastEl = document.getElementById("toast");
 let catalog = [];
 let dashboard = null;
 let refreshTimer = null;
-let readOnlyMode = false;
-
-const saved = localStorage.getItem("mp_admin_key");
-if (saved) keyInput.value = saved;
 
 function headers() {
-  return { "X-Admin-Key": keyInput.value, "Content-Type": "application/json" };
+  return { "Content-Type": "application/json" };
+}
+
+function fetchOpts(options = {}) {
+  return { credentials: "same-origin", ...options, headers: { ...headers(), ...(options.headers || {}) } };
 }
 
 function showToast(message, type = "ok") {
@@ -33,7 +32,7 @@ function esc(s) {
 }
 
 async function api(path, options = {}) {
-  const res = await fetch(path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+  const res = await fetch(path, fetchOpts(options));
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`${res.status}: ${text.slice(0, 200)}`);
@@ -41,34 +40,16 @@ async function api(path, options = {}) {
   return res.json();
 }
 
-function setConnected(ok, label) {
+function setConnected(ok) {
   const pill = document.getElementById("connStatus");
-  pill.textContent = label || (ok ? "Sincronizado con NocoDB" : "Sin conectar");
+  pill.textContent = ok ? "Sincronizado con NocoDB" : "Sin conexión";
   pill.classList.toggle("ok", ok);
-  if (ok && !readOnlyMode) {
+  if (ok) {
     clearInterval(refreshTimer);
     refreshTimer = setInterval(() => load({ quiet: true }), 30000);
   } else {
     clearInterval(refreshTimer);
   }
-}
-
-async function loadPreviewCatalog() {
-  readOnlyMode = true;
-  const res = await fetch("/api/movistar/products");
-  if (!res.ok) throw new Error(`No se pudo cargar vista previa (${res.status})`);
-  const products = await res.json();
-  catalog = products.map((p) => ({
-    ...p,
-    active: true,
-    record_id: null,
-    display_name: [p.name, p.capacity].filter(Boolean).join(" "),
-    image_api_url: `/api/movistar/products/${p.id}/image`,
-    demo_actions: [],
-    read_only: true,
-  }));
-  setConnected(false, `Vista previa · ${catalog.length} activos`);
-  return true;
 }
 
 function switchView(name) {
@@ -79,11 +60,6 @@ function switchView(name) {
 document.querySelectorAll(".nav-item").forEach((btn) => {
   btn.onclick = () => switchView(btn.dataset.view);
 });
-
-document.getElementById("saveKey").onclick = () => {
-  localStorage.setItem("mp_admin_key", keyInput.value);
-  load();
-};
 
 document.getElementById("refreshNow").onclick = () => load();
 document.getElementById("pollNow").onclick = async () => {
@@ -157,14 +133,11 @@ function productEditForm(p) {
 function renderCatalog() {
   const items = filteredCatalog();
   const box = document.getElementById("catalogTable");
-  const banner = readOnlyMode
-    ? `<div class="banner warn">Modo <b>vista previa</b> (solo productos activos). Introduce la clave y pulsa <b>Conectar</b> para ver los 18 registros de NocoDB y editarlos.</div>`
-    : "";
   if (!items.length) {
-    box.innerHTML = `${banner}<div class="empty">No hay productos que coincidan con el filtro.</div>`;
+    box.innerHTML = `<div class="empty">No hay productos que coincidan con el filtro.</div>`;
     return;
   }
-  box.innerHTML = banner + items.map((p) => {
+  box.innerHTML = items.map((p) => {
     const badges = [
       p.active ? `<span class="badge">Activo</span>` : `<span class="badge inactive">Inactivo</span>`,
       p.featured ? `<span class="badge featured">Destacado</span>` : "",
@@ -191,7 +164,7 @@ function renderCatalog() {
           <div class="product-meta">${p.price ? `${Number(p.price).toFixed(0)} € total` : ""}</div>
         </div>
         <div class="actions">${actions || `<span class="product-meta">—</span>`}</div>
-        ${p.read_only ? `<div class="product-edit"><div class="row-actions"><span class="product-meta">Conecta con la clave admin para editar</span></div></div>` : productEditForm(p)}
+        ${productEditForm(p)}
       </article>`;
   }).join("");
 
@@ -314,20 +287,6 @@ function renderDemoQuick() {
 
 async function load(opts = {}) {
   try {
-    readOnlyMode = false;
-    if (!keyInput.value) {
-      const preview = await loadPreviewCatalog();
-      renderBrands();
-      renderCatalog();
-      document.getElementById("stats").innerHTML = `
-        <div class="metric"><span>Modo</span><strong>Vista previa</strong></div>
-        <div class="metric"><span>Productos visibles</span><strong>${catalog.length}</strong></div>
-      `;
-      document.getElementById("lastRefresh").textContent = `Vista previa · ${new Date().toLocaleTimeString("es-ES")}`;
-      if (!opts.quiet && preview) showToast("Vista previa cargada. Conecta para editar y ver todo el catálogo.");
-      return;
-    }
-
     [dashboard, catalog] = await Promise.all([
       api("/api/movistar/admin/dashboard"),
       api("/api/movistar/admin/catalog"),
@@ -344,20 +303,10 @@ async function load(opts = {}) {
     document.getElementById("lastRefresh").textContent = `Sincronizado: ${new Date().toLocaleTimeString("es-ES")} · ${catalog.length} productos`;
     if (!opts.quiet) showToast(`Catálogo cargado · ${catalog.length} productos desde NocoDB`);
   } catch (e) {
-    if (keyInput.value) {
-      localStorage.removeItem("mp_admin_key");
-      showToast(`Clave incorrecta o error: ${e.message}. Prueba de nuevo.`, "err");
-    }
-    try {
-      await loadPreviewCatalog();
-      renderBrands();
-      renderCatalog();
-    } catch {
-      setConnected(false);
-      document.getElementById("catalogTable").innerHTML = `
-        <div class="empty"><strong>Error al cargar</strong><br>${esc(e.message)}</div>`;
-    }
-    if (!opts.quiet && !keyInput.value) showToast(`Error: ${e.message}`, "err");
+    setConnected(false);
+    document.getElementById("catalogTable").innerHTML = `
+      <div class="empty"><strong>No se pudo conectar</strong><br>${esc(e.message)}<br><br>Recarga la página (<code>/panel</code>).</div>`;
+    if (!opts.quiet) showToast(`Error: ${e.message}`, "err");
   }
 }
 

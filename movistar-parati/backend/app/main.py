@@ -5,11 +5,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.routes import movistar
+from app.services.admin_auth import PANEL_COOKIE, panel_session_token
 from app.services.bot_commands import register_bot_commands
 from app.services.change_detection import bootstrap_signatures, poll_catalogue_changes
 
@@ -49,10 +50,23 @@ def health():
     return {"status": "ok", "nocodb": bool(settings.nocodb_products_table_id)}
 
 
+def _panel_response() -> Response:
+    response = FileResponse(STATIC / "admin" / "index.html")
+    response.set_cookie(
+        key=PANEL_COOKIE,
+        value=panel_session_token(),
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 30,
+    )
+    return response
+
+
 @app.get("/panel")
 @app.get("/panel/")
 def admin_page():
-    return FileResponse(STATIC / "admin" / "index.html")
+    return _panel_response()
 
 
 @app.get("/movistar-demo/admin")
