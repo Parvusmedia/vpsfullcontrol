@@ -86,6 +86,76 @@ async def send_product(chat_id: int, product: Product, *, deal: bool = False) ->
         await telegram_client.send_message(chat_id, text, reply_markup=product_keyboard(product))
 
 
+async def show_deals(chat_id: int) -> None:
+    products = await product_source.get_deals(5)
+    await telegram_client.send_message(chat_id, "🔥 <b>Mejores ofertas</b>")
+    for p in products:
+        await send_product(chat_id, p, deal=True)
+
+
+async def show_new_products(chat_id: int) -> None:
+    products = await product_source.get_new_products(5)
+    await telegram_client.send_message(chat_id, "🆕 <b>Novedades</b>")
+    for p in products:
+        await send_product(chat_id, p)
+
+
+async def start_forme_flow(chat_id: int) -> None:
+    st = _state(chat_id)
+    st["flow"] = "forme"
+    await telegram_client.send_message(
+        chat_id,
+        "¿Qué móvil buscas?",
+        reply_markup={
+            "inline_keyboard": [
+                [{"text": "📸 Buena cámara", "callback_data": "forme:pref:camera"}],
+                [{"text": "🔋 Mucha batería", "callback_data": "forme:pref:battery"}],
+                [{"text": "💼 Trabajo", "callback_data": "forme:pref:work"}],
+                [{"text": "⭐ Gama alta", "callback_data": "forme:pref:premium"}],
+                [{"text": "💰 Calidad/precio", "callback_data": "forme:pref:value"}],
+            ]
+        },
+    )
+
+
+async def show_user_alerts(chat_id: int, user_id: int) -> None:
+    from app.services.change_detection import get_active_alerts
+
+    alerts = await get_active_alerts()
+    mine = [a for a in alerts if str(a.get("telegram_user_id")) == str(user_id)]
+    if not mine:
+        await telegram_client.send_message(chat_id, "No tienes avisos activos.")
+        return
+    lines = ["🔔 <b>Tus avisos</b>\n"]
+    for a in mine:
+        lines.append(f"• {a.get('product_name')} ({a.get('alert_type')})")
+    await telegram_client.send_message(chat_id, "\n".join(lines))
+
+
+async def show_help(chat_id: int) -> None:
+    help_text = (
+        "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
+        "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
+        "<b>Comandos</b>\n"
+        "/start — Menú principal\n"
+        "/ofertas — Mejores ofertas del catálogo\n"
+        "/novedades — Productos nuevos\n"
+        "/parami — Recomendaciones según tus preferencias\n"
+        "/avisos — Tus alertas de precio activas\n"
+        "/ayuda — Esta ayuda\n\n"
+        "En cualquier ficha puedes pulsar <b>Avísame</b> para recibir un aviso "
+        "cuando cambien precio o condiciones."
+    )
+    await telegram_client.send_message(chat_id, help_text, reply_markup=_main_menu())
+
+
+def _command_name(text: str) -> str | None:
+    if not text.startswith("/"):
+        return None
+    head = text.split()[0]
+    return head.split("@", 1)[0].lower()
+
+
 async def handle_update(update: dict[str, Any]) -> None:
     if "message" in update:
         await _handle_message(update["message"])
@@ -95,8 +165,11 @@ async def handle_update(update: dict[str, Any]) -> None:
 
 async def _handle_message(message: dict[str, Any]) -> None:
     chat_id = message["chat"]["id"]
+    user_id = message["from"]["id"]
     text = (message.get("text") or "").strip()
-    if text.startswith("/start"):
+    command = _command_name(text)
+
+    if command == "/start":
         welcome = (
             "👋 Hola\n\n"
             "Soy <b>Movistar Para Ti</b>.\n\n"
@@ -106,7 +179,27 @@ async def _handle_message(message: dict[str, Any]) -> None:
         )
         await telegram_client.send_message(chat_id, welcome, reply_markup=_main_menu())
         return
-    await telegram_client.send_message(chat_id, "Usa /start para comenzar.", reply_markup=_main_menu())
+    if command == "/ofertas":
+        await show_deals(chat_id)
+        return
+    if command == "/novedades":
+        await show_new_products(chat_id)
+        return
+    if command == "/parami":
+        await start_forme_flow(chat_id)
+        return
+    if command == "/avisos":
+        await show_user_alerts(chat_id, user_id)
+        return
+    if command in {"/ayuda", "/help"}:
+        await show_help(chat_id)
+        return
+
+    await telegram_client.send_message(
+        chat_id,
+        "No entendí ese mensaje. Usa /start o /ayuda.",
+        reply_markup=_main_menu(),
+    )
 
 
 async def _handle_callback(callback: dict[str, Any]) -> None:
@@ -117,15 +210,9 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     st = _state(chat_id)
 
     if data == "menu:deals":
-        products = await product_source.get_deals(5)
-        await telegram_client.send_message(chat_id, "🔥 <b>Mejores ofertas</b>")
-        for p in products:
-            await send_product(chat_id, p, deal=True)
+        await show_deals(chat_id)
     elif data == "menu:new":
-        products = await product_source.get_new_products(5)
-        await telegram_client.send_message(chat_id, "🆕 <b>Novedades</b>")
-        for p in products:
-            await send_product(chat_id, p)
+        await show_new_products(chat_id)
     elif data == "menu:phones":
         await telegram_client.send_message(chat_id, "Elige marca o filtro:", reply_markup=_brand_menu())
     elif data.startswith("brand:"):
@@ -139,20 +226,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         for p in products:
             await send_product(chat_id, p)
     elif data == "menu:forme":
-        st["flow"] = "forme"
-        await telegram_client.send_message(
-            chat_id,
-            "¿Qué móvil buscas?",
-            reply_markup={
-                "inline_keyboard": [
-                    [{"text": "📸 Buena cámara", "callback_data": "forme:pref:camera"}],
-                    [{"text": "🔋 Mucha batería", "callback_data": "forme:pref:battery"}],
-                    [{"text": "💼 Trabajo", "callback_data": "forme:pref:work"}],
-                    [{"text": "⭐ Gama alta", "callback_data": "forme:pref:premium"}],
-                    [{"text": "💰 Calidad/precio", "callback_data": "forme:pref:value"}],
-                ]
-            },
-        )
+        await start_forme_flow(chat_id)
     elif data.startswith("forme:pref:"):
         st["preference"] = data.split(":")[2]
         await telegram_client.send_message(
@@ -227,14 +301,4 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         )
         await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
     elif data == "menu:alerts":
-        from app.services.change_detection import get_active_alerts
-
-        alerts = await get_active_alerts()
-        mine = [a for a in alerts if str(a.get("telegram_user_id")) == str(user_id)]
-        if not mine:
-            await telegram_client.send_message(chat_id, "No tienes avisos activos.")
-            return
-        lines = ["🔔 <b>Tus avisos</b>\n"]
-        for a in mine:
-            lines.append(f"• {a.get('product_name')} ({a.get('alert_type')})")
-        await telegram_client.send_message(chat_id, "\n".join(lines))
+        await show_user_alerts(chat_id, user_id)
