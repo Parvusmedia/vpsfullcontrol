@@ -64,6 +64,9 @@ DEFAULT_FOLLOWUP_MIN_HOURS = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_HOURS"
 HARD_EXCLUDE = (
     "recruiter",
     "talent acquisition",
+    "talent & workforce",
+    "talent and workforce",
+    "workforce lead",
     "human resources",
     " hr ",
     "campus hire",
@@ -97,6 +100,64 @@ HARD_EXCLUDE = (
     "procurement",
     "sales director",
     "strategic sales",
+    "partner development",
+    "business development director",
+    "director de arte",
+    "art director",
+    "creative director",
+    "director creativo",
+    "director creativa",
+    "graphic design",
+    "visual design",
+    "brand design",
+    "ux design",
+    "ui design",
+    "product design",
+    "design & digital",
+    "design and digital",
+    "digital factory",
+    "diseño gráfico",
+    "diseño visual",
+    "ilustrador",
+    "ilustradora",
+    "fotograf",
+    "copywriter",
+    "content creator",
+    "social media manager",
+)
+
+SME_PRACTICE_MARKERS = (
+    "marketing",
+    "commerce",
+    "customer",
+    "crm",
+    "martech",
+    "adtech",
+    "marketing technology",
+    "digital transformation",
+    "transformación digital",
+    "automation",
+    "automatización",
+    "innovation",
+    "innovación",
+    "experience",
+    "experiencia",
+    "personalization",
+    "personalización",
+    "engagement",
+    "analytics",
+    "generative ai",
+    "agentic ai",
+    "intelligent automation",
+    "digital marketing",
+    "marketing transformation",
+    "digital channels",
+    "digital experience",
+    "customer experience",
+    "sales b2b",
+    "song",
+    "deloitte digital",
+    "accenture song",
 )
 
 POSITIVE_KEYWORDS = (
@@ -405,17 +466,19 @@ def detect_practice(blob: str) -> str:
         return "Marketing, Commerce & Product"
     if "customer" in b:
         return "Customer"
-    if "deloitte digital" in b or "accenture song" in b:
-        return "Digital"
     if "martech" in b or "marketing technology" in b:
         return "MarTech"
-    if "digital transformation" in b:
+    if "digital transformation" in b or "transformacion digital" in b:
         return "Digital Transformation"
-    if "innovation" in b:
+    if "innovation" in b or "innovacion" in b:
         return "Innovation"
     if "technology" in b and "transformation" in b:
         return "Technology & Transformation"
-    return "Digital"
+    if any(k in b for k in ("marketing", "commerce", "crm", "adtech", "automation", "automatizacion")):
+        return "Digital"
+    if "deloitte digital" in b or "accenture song" in b:
+        return "Digital"
+    return ""
 
 
 def detect_seniority(title: str) -> str:
@@ -424,11 +487,46 @@ def detect_seniority(title: str) -> str:
         return "Partner"
     if "managing director" in t:
         return "Managing Director"
+    if "practice lead" in t or re.search(r"\blead\b", t):
+        return "Director"
     if "director" in t:
         return "Director"
     if "senior manager" in t:
         return "Senior Manager"
     return "Other"
+
+
+def is_sme_lead(lead: dict[str, Any]) -> bool:
+    if lead.get("contact_type") == "sme_inmail":
+        return True
+    return str(lead.get("source_query") or "").startswith("sme_")
+
+
+def has_sme_practice_signal(blob: str) -> bool:
+    b = _norm(blob)
+    return any(marker in b for marker in SME_PRACTICE_MARKERS)
+
+
+def is_generic_senior_title(title: str) -> bool:
+    t = _norm(title)
+    if not t:
+        return True
+    generic = (
+        "partner",
+        "socio",
+        "socia",
+        "managing director",
+        "director general",
+        "senior managing director",
+        "principal",
+    )
+    if t in generic:
+        return True
+    if t in {"director", "directora"}:
+        return True
+    if re.fullmatch(r"(senior )?managing director", t):
+        return True
+    return False
 
 
 def score_lead(lead: dict[str, Any]) -> tuple[int, str, list[str]]:
@@ -442,6 +540,8 @@ def score_lead(lead: dict[str, Any]) -> tuple[int, str, list[str]]:
     seniority = detect_seniority(title)
     country = str(lead.get("country") or lead.get("_query_geo") or lead.get("location") or "")
     keywords = [k.strip() for k in POSITIVE_KEYWORDS if k in _norm(blob)]
+    sme = is_sme_lead(lead)
+    practice_signal = bool(practice) or has_sme_practice_signal(blob)
 
     score = 2.0
     if seniority == "Partner":
@@ -462,11 +562,25 @@ def score_lead(lead: dict[str, Any]) -> tuple[int, str, list[str]]:
     if practice == "Technology & Transformation" and seniority == "Partner" and "customer" not in _norm(blob):
         score = min(score, 3)
 
+    if sme:
+        if not practice_signal:
+            score = min(score, 2.5)
+        elif is_generic_senior_title(title) and not keywords:
+            score = min(score, 3)
+        if re.search(r"\b(design|diseño|arte|creative|creativ|visual|brand)\b", _norm(blob)):
+            score = 1
+
     final = max(1, min(5, int(round(score))))
+    practice_label = practice or "unclear practice"
     reason = (
-        f"{seniority} in {practice} at {lead.get('company_name') or lead.get('company') or 'target firm'} "
+        f"{seniority} in {practice_label} at {lead.get('company_name') or lead.get('company') or 'target firm'} "
         f"— relevant for customer/MarTech/automation workstreams in {country or lead.get('location') or 'region'}."
     )
+    if sme and not practice_signal:
+        reason = (
+            f"{seniority} at {lead.get('company_name') or lead.get('company') or 'target firm'} "
+            f"— no clear MarTech/customer/automation signal in title or headline."
+        )
     return final, reason, keywords[:5]
 
 
@@ -786,6 +900,13 @@ def find_by_dedupe(base: str, token: str, key: str) -> dict[str, Any] | None:
         rows = r.json().get("list") or []
         return rows[0] if rows else None
 
+
+RESCORE_MUTABLE_STATUSES = frozenset({
+    "new",
+    "reviewed",
+    "connection_ready",
+    "inmail_ready",
+})
 
 PROTECTED_STATUSES = frozenset({
     "connection_ready",
@@ -1440,7 +1561,8 @@ def cmd_outreach(args: argparse.Namespace) -> int:
     return cmd_contact(contact_args)
 
 
-def cmd_rescore(_: argparse.Namespace) -> int:
+def cmd_rescore(args: argparse.Namespace) -> int:
+    segment = getattr(args, "segment", "all") or "all"
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Accept": "application/json"}
     with httpx.Client(timeout=30) as client:
@@ -1452,6 +1574,11 @@ def cmd_rescore(_: argparse.Namespace) -> int:
         if str(row.get("source_query") or "").startswith("seed:"):
             print(f"skip seed id={row.get('Id')} {row.get('first_name')} {row.get('last_name')}")
             continue
+        if segment == "sme" and row.get("contact_type") != "sme_inmail":
+            continue
+        if segment == "hire" and row.get("contact_type") == "sme_inmail":
+            continue
+        prev_status = str(row.get("status") or "")
         lead = {
             "first_name": row.get("first_name"),
             "last_name": row.get("last_name"),
@@ -1461,6 +1588,8 @@ def cmd_rescore(_: argparse.Namespace) -> int:
             "country": row.get("country"),
             "linkedin_url": row.get("linkedin_url"),
             "source_query": row.get("source_query"),
+            "contact_type": row.get("contact_type"),
+            "company_tier": row.get("company_tier"),
         }
         if hard_exclude_reason(lead):
             row["status"] = "not_relevant"
@@ -1490,6 +1619,11 @@ def cmd_rescore(_: argparse.Namespace) -> int:
                 row["followup_message"] = ""
             else:
                 row["status"] = "not_relevant"
+                row["connection_message"] = ""
+                row["followup_message"] = ""
+        if prev_status in PROTECTED_STATUSES and prev_status not in RESCORE_MUTABLE_STATUSES:
+            if row["status"] != "not_relevant":
+                row["status"] = prev_status
         rid = row.get("Id")
         if rid is None:
             continue
@@ -1568,7 +1702,8 @@ def main() -> int:
     p_sync.add_argument("--segment", choices=("hire", "sme"), default="hire")
     p_sync.add_argument("--limit", type=int, default=0)
     sub.add_parser("list")
-    sub.add_parser("rescore")
+    p_rescore = sub.add_parser("rescore")
+    p_rescore.add_argument("--segment", choices=("all", "hire", "sme"), default="all")
     sub.add_parser("ready")
     sub.add_parser("ready-inmail")
     p_preview = sub.add_parser("preview-inmail")
