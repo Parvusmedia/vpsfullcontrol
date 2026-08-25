@@ -63,8 +63,17 @@ sudo systemctl restart movistar-parati-api movistar-parati-polling
 
 No commitear el token. `@Movistarparatibot` — modo **polling** activo hasta tener HTTPS (webhook).
 
+## Panel de operación (demo)
+
+- **Admin:** https://flights.pmediaplus.com/movistar-demo/admin (alias `/panel`)
+- **CMS NocoDB:** https://mpa.parvusmedia.com/dashboard/#/nc/pzyr6ncnc9dk4h0/mjzz3jl42nwvod7
+- Clave: variable `ADMIN_API_KEY` en `backend/.env` del VPS (no commitear)
+
+Cuando el DNS de `movistar-parati.pmediaplus.com` apunte al VPS, la URL canónica será:
+`https://movistar-parati.pmediaplus.com/movistar-demo/admin`
+
 1. Usuario crea alerta en Telegram
-2. Cambias `monthly_price` en NocoDB (o botón **Simular bajada** en `/movistar-demo/admin`)
+2. Cambias `monthly_price` en NocoDB (o botón contextual en el panel admin)
 3. En ≤60s el poll detecta el cambio → Telegram notifica
 
 ## Futuro producción
