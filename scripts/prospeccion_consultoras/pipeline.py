@@ -575,6 +575,8 @@ def hard_exclude_reason(lead: dict[str, Any]) -> str | None:
     if not blob.strip():
         return "empty_title"
     for marker in HARD_EXCLUDE:
+        if marker.strip() == "intern" and "international" in blob:
+            continue
         if marker in blob:
             return f"exclude:{marker.strip()}"
     if re.search(r"\bconsultant\b", blob) and not re.search(
