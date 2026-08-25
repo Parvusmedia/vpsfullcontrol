@@ -51,7 +51,17 @@ uvicorn app.main:app --reload --port 8020
 - systemd: `movistar-parati-api`
 - Polling alternativo: `movistar-parati-polling` (si no hay HTTPS webhook)
 
-## Demo en vivo
+## Telegram
+
+El token vive **solo** en el servidor:
+
+```bash
+ssh parvus-vps 'nano /opt/apps/movistar-parati/backend/.env'
+# TELEGRAM_BOT_TOKEN=...
+sudo systemctl restart movistar-parati-api movistar-parati-polling
+```
+
+No commitear el token. `@Movistarparatibot` — modo **polling** activo hasta tener HTTPS (webhook).
 
 1. Usuario crea alerta en Telegram
 2. Cambias `monthly_price` en NocoDB (o botón **Simular bajada** en `/movistar-demo/admin`)
