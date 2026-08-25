@@ -3,28 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Movistar Para Ti — Demo Control</title>
+  <title>Movistar Para Ti — Panel de operación</title>
   <link rel="stylesheet" href="/static/admin/styles.css" />
 </head>
 <body>
-  <header>
-    <h1>Movistar Para Ti — Demo Control</h1>
-    <p class="demo">Concept Demo — Not Live Movistar Data · NocoDB = CMS</p>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">M</div>
+      <div>
+        <h1>Movistar Para Ti</h1>
+        <p>Panel de operación · Concept Demo</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a id="nocodbLink" href="#" target="_blank" rel="noopener" class="ghost">Abrir NocoDB (CMS)</a>
+      <button id="pollNow" class="secondary">Forzar detección</button>
+    </div>
   </header>
+
   <section class="config">
-    <label>Admin API Key <input id="adminKey" type="password" /></label>
-    <button id="saveKey">Guardar</button>
-    <button id="pollNow">Forzar detección cambios</button>
+    <label>Clave de administración
+      <input id="adminKey" type="password" placeholder="ADMIN_API_KEY" />
+    </label>
+    <button id="saveKey">Conectar</button>
+    <span id="connStatus" class="status-pill">Sin conectar</span>
   </section>
-  <section id="stats" class="grid"></section>
-  <section>
-    <h2>Products</h2>
-    <div id="products"></div>
-  </section>
-  <section>
-    <h2>Active alerts</h2>
-    <pre id="alerts">—</pre>
-  </section>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <main class="layout">
+    <nav class="sidebar">
+      <button class="nav-item active" data-view="catalog">📦 Catálogo</button>
+      <button class="nav-item" data-view="alerts">🔔 Avisos</button>
+      <button class="nav-item" data-view="activity">📊 Actividad</button>
+      <button class="nav-item" data-view="demo">🎬 Guion demo</button>
+    </nav>
+
+    <section class="content">
+      <div id="stats" class="stats-grid"></div>
+
+      <div id="view-catalog" class="view active">
+        <div class="view-header">
+          <h2>Catálogo de productos</h2>
+          <p>Feed sincronizado desde NocoDB. Aquí se gestionará el catálogo cuando esté conectado al PIM/ERP de Movistar.</p>
+          <div class="filters">
+            <input id="searchInput" type="search" placeholder="Buscar por nombre, marca o ID…" />
+            <select id="brandFilter">
+              <option value="">Todas las marcas</option>
+            </select>
+            <label class="checkbox">
+              <input id="activeOnly" type="checkbox" checked /> Solo activos
+            </label>
+          </div>
+        </div>
+        <div id="catalogTable" class="catalog-table"></div>
+      </div>
+
+      <div id="view-alerts" class="view">
+        <div class="view-header">
+          <h2>Avisos activos</h2>
+          <p>Alertas de precio creadas por usuarios en Telegram.</p>
+        </div>
+        <div id="alertsTable" class="data-table-wrap"></div>
+      </div>
+
+      <div id="view-activity" class="view">
+        <div class="view-header">
+          <h2>Actividad reciente</h2>
+          <p>Eventos de cambio de catálogo y notificaciones.</p>
+        </div>
+        <div id="eventsTable" class="data-table-wrap"></div>
+      </div>
+
+      <div id="view-demo" class="view">
+        <div class="view-header">
+          <h2>Guion de demo (90 s)</h2>
+          <p>Secuencia recomendada para enseñar el valor al cliente.</p>
+        </div>
+        <ol class="demo-script">
+          <li><strong>Telegram</strong> — <code>/start</code> → Ofertas → segmento (Apple/Android/Todas)</li>
+          <li><strong>Producto</strong> — Navegar con ◀️ ▶️ y pulsar <strong>🔔 Avísame</strong></li>
+          <li><strong>Panel</strong> — En Catálogo, simular bajada del producto elegido</li>
+          <li><strong>Push</strong> — El usuario recibe la notificación en Telegram al instante</li>
+        </ol>
+        <div id="demoQuickActions" class="demo-quick"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Demo conceptual — datos de ejemplo, no ofertas reales de Movistar</span>
+    <span id="lastRefresh"></span>
+  </footer>
+
   <script src="/static/admin/app.js"></script>
 </body>
 </html>

@@ -51,5 +51,7 @@ def health():
 
 @app.get("/movistar-demo/admin")
 @app.get("/movistar-demo/admin/")
+@app.get("/panel")
+@app.get("/panel/")
 def admin_page():
     return FileResponse(STATIC / "admin" / "index.html")

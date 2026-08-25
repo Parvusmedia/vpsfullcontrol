@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from app.config import get_settings
-from app.services.change_detection import log_event, poll_catalogue_changes
+from app.services.change_detection import get_active_alerts, get_recent_events, log_event, poll_catalogue_changes
+from app.services.demo_actions import demo_actions_for_product
 from app.services.product_image import get_normalized_product_image
 from app.services.product_service import product_source
 from app.services.bot_handlers import handle_update
@@ -78,6 +79,56 @@ def _admin(x_admin_key: str = Header(..., alias="X-Admin-Key")):
 @router.post("/api/movistar/admin/poll")
 async def admin_poll(_: None = Depends(_admin)):
     return await poll_catalogue_changes()
+
+
+@router.get("/api/movistar/admin/dashboard")
+async def admin_dashboard(_: None = Depends(_admin)):
+    products = await product_source.get_products(active_only=False)
+    active = [p for p in products if p.active]
+    alerts = await get_active_alerts()
+    events = await get_recent_events(limit=10)
+    return {
+        "products_total": len(products),
+        "products_active": len(active),
+        "featured": len([p for p in active if p.featured]),
+        "new_products": len([p for p in active if p.is_new]),
+        "alerts_active": len(alerts),
+        "recent_events": events,
+        "nocodb_products_url": (
+            f"{get_settings().nocodb_base_url}/dashboard/#/nc/"
+            f"{get_settings().nocodb_base_id}/{get_settings().nocodb_products_table_id}"
+        ),
+        "nocodb_alerts_url": (
+            f"{get_settings().nocodb_base_url}/dashboard/#/nc/"
+            f"{get_settings().nocodb_base_id}/{get_settings().nocodb_alerts_table_id}"
+        ),
+    }
+
+
+@router.get("/api/movistar/admin/catalog")
+async def admin_catalog(_: None = Depends(_admin)):
+    products = await product_source.get_products(active_only=False)
+    items = []
+    for p in products:
+        data = p.to_dict()
+        data["record_id"] = p.record_id
+        data["active"] = p.active
+        data["display_name"] = p.display_name
+        data["image_api_url"] = f"/api/movistar/products/{p.id}/image"
+        data["demo_actions"] = demo_actions_for_product(p.id, p.monthly_price)
+        items.append(data)
+    items.sort(key=lambda x: (not x.get("active"), x.get("brand", ""), x.get("name", "")))
+    return items
+
+
+@router.get("/api/movistar/admin/alerts")
+async def admin_alerts(_: None = Depends(_admin)):
+    return await get_active_alerts()
+
+
+@router.get("/api/movistar/admin/events")
+async def admin_events(limit: int = Query(25, ge=1, le=100), _: None = Depends(_admin)):
+    return await get_recent_events(limit=limit)
 
 
 @router.post("/api/movistar/admin/simulate-drop/{product_id}")

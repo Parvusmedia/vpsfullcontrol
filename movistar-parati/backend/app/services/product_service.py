@@ -49,23 +49,25 @@ class Product:
 
     def card_text(self, *, deal: bool = False) -> str:
         lines = [f"📱 <b>{self.display_name}</b>\n"]
-        if self.monthly_price is not None:
+        if deal and self.previous_monthly_price and self.monthly_price and self.monthly_price < self.previous_monthly_price:
+            lines.append("🔥 <b>OFERTA PARA TI</b>\n")
+            lines.append(f"Antes: <s>{self.previous_monthly_price:.2f} €/mes</s>")
+            lines.append(f"Ahora: <b>{self.monthly_price:.2f} €/mes</b>")
+            if self.months:
+                lines.append(f"<i>{self.months} meses</i>")
+        elif self.monthly_price is not None:
             lines.append(f"💳 <b>{self.monthly_price:.2f} €/mes</b>")
             if self.months:
-                lines.append(f"{self.months} meses")
+                lines.append(f"<i>{self.months} meses</i>")
         if self.price is not None:
-            lines.append(f"\n💰 Precio: {self.price:.0f} €")
+            lines.append(f"\n💰 Precio total: {self.price:.0f} €")
         if self.saving:
-            lines.append(f"\n🔥 Ahorras {self.saving:.0f} €")
+            lines.append(f"🔥 Ahorras {self.saving:.0f} €")
+        if self.promotion:
+            lines.append(f"\n🏷️ {self.promotion}")
         if self.gift:
             lines.append(f"\n🎁 {self.gift}")
-        elif self.promotion:
-            lines.append(f"\n🎁 {self.promotion}")
-        if deal and self.previous_price and self.price and self.price < self.previous_price:
-            lines.insert(
-                1,
-                f"🔥 <b>OFERTA PARA TI</b>\n\nAntes: {self.previous_price:.0f} €\nAhora: {self.price:.0f} €\n",
-            )
+        lines.append("\n<i>Demo conceptual · precios ilustrativos</i>")
         return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:

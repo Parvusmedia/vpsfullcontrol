@@ -11,10 +11,7 @@ logger = logging.getLogger("movistar-parati.pager")
 
 PagerState = dict[str, Any]
 
-PAGER_NAV_HINT = (
-    "Puedes ir navegando cada oferta haciendo clic en los botones "
-    "<b>▶️</b> para el siguiente producto o <b>◀️</b> para volver al anterior."
-)
+PAGER_NAV_HINT = "Usa ◀️ ▶️ para ver más."
 
 
 def pager_caption(product: Product, title: str, index: int, total: int, *, deal: bool = False) -> str:

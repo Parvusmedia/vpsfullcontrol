@@ -217,3 +217,26 @@ async def bootstrap_signatures() -> None:
     products = await product_source.get_products(active_only=False)
     for p in products:
         _signatures[p.id] = commercial_signature(p)
+
+
+async def get_recent_events(limit: int = 25) -> list[dict]:
+    table_id = get_settings().nocodb_events_table_id
+    if not table_id:
+        return []
+    rows = await nocodb.list_records(table_id, limit=min(limit, 200))
+    events: list[dict] = []
+    for row in rows:
+        f = row if row.get("event_type") else row.get("fields", row)
+        events.append(
+            {
+                "_record_id": row.get("Id") or row.get("id"),
+                "product_id": f.get("product_id"),
+                "event_type": f.get("event_type"),
+                "old_value": f.get("old_value"),
+                "new_value": f.get("new_value"),
+                "metadata": f.get("metadata"),
+                "created_at": f.get("created_at") or row.get("CreatedAt"),
+            }
+        )
+    events.sort(key=lambda e: str(e.get("created_at") or ""), reverse=True)
+    return events[:limit]
