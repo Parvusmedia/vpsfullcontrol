@@ -1932,9 +1932,9 @@ def cmd_ready_inmail(_: argparse.Namespace) -> int:
     for row in rows:
         if row.get("contact_type") != "sme_inmail":
             continue
-        if int(row.get("score") or 0) < PROCESS_MIN_SCORE:
+        if str(row.get("status") or "") != "reviewed":
             continue
-        if row.get("status") in {"inmail_sent", "connection_sent", "accepted", "followup_sent"}:
+        if int(row.get("score") or 0) < PROCESS_MIN_SCORE:
             continue
         rid = row.get("Id")
         if rid is None:
