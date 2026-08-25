@@ -26,18 +26,18 @@ def pager_caption(product: Product, title: str, index: int, total: int, *, deal:
 
 
 def _pager_nav_row(index: int, total: int) -> list[dict[str, str]]:
-  counter = {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"}
-  if total <= 1:
-      return [counter]
-  if index <= 0:
-      return [counter, {"text": "▶️", "callback_data": "pager:next"}]
-  if index >= total - 1:
-      return [{"text": "◀️", "callback_data": "pager:prev"}, counter]
-  return [
-      {"text": "◀️", "callback_data": "pager:prev"},
-      counter,
-      {"text": "▶️", "callback_data": "pager:next"},
-  ]
+    counter = {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"}
+    if total <= 1:
+        return [counter]
+    if index <= 0:
+        return [counter, {"text": "▶️", "callback_data": "pager:next"}]
+    if index >= total - 1:
+        return [{"text": "◀️", "callback_data": "pager:prev"}, counter]
+    return [
+        {"text": "◀️", "callback_data": "pager:prev"},
+        counter,
+        {"text": "▶️", "callback_data": "pager:next"},
+    ]
 
 
 def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
