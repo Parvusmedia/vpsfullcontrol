@@ -565,6 +565,8 @@ def build_sme_queries() -> list[HarvestQuery]:
 
 
 def hard_exclude_reason(lead: dict[str, Any]) -> str | None:
+    if is_manual_lead(lead):
+        return None
     blob = _norm(" ".join([
         str(lead.get("job_title") or ""),
         str(lead.get("headline") or ""),
@@ -620,6 +622,10 @@ def detect_seniority(title: str) -> str:
     if "senior manager" in t:
         return "Senior Manager"
     return "Other"
+
+
+def is_manual_lead(lead: dict[str, Any]) -> bool:
+    return str(lead.get("source_query") or "").startswith("manual:")
 
 
 def is_sme_lead(lead: dict[str, Any]) -> bool:
@@ -1093,7 +1099,8 @@ async def harvest_search(query: HarvestQuery, *, max_items: int = 10) -> list[di
         params["search"] = query.search
     rows: list[dict[str, Any]] = []
     async with httpx.AsyncClient(timeout=60) as client:
-        for page in range(1, 3):
+        max_pages = max(2, min(4, (max_items + 24) // 25))
+        for page in range(1, max_pages + 1):
             params["page"] = page
             resp = await client.get(f"{base}/linkedin/lead-search", params=params, headers=headers)
             resp.raise_for_status()
@@ -1106,6 +1113,142 @@ async def harvest_search(query: HarvestQuery, *, max_items: int = 10) -> list[di
             if len(rows) >= max_items or not batch:
                 break
     return rows[:max_items]
+
+
+def _name_tokens(name: str) -> set[str]:
+    return {t for t in re.split(r"[^a-z0-9]+", _norm(name)) if len(t) > 1}
+
+
+def resolve_sn_profile(*, keywords: str, expect_name: str = "") -> dict[str, Any] | None:
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        return None
+    headers = {"X-API-KEY": api_key, "Accept": "application/json", "Content-Type": "application/json"}
+    body = {"api": "sales_navigator", "category": "people", "keywords": keywords}
+    expect = _name_tokens(expect_name)
+    best: tuple[int, dict[str, Any]] | None = None
+    with httpx.Client(timeout=45) as client:
+        resp = client.post(
+            f"{base_url}/linkedin/search",
+            params={"account_id": account_id},
+            headers=headers,
+            json=body,
+        )
+        if resp.status_code >= 400:
+            return None
+        for item in resp.json().get("items") or []:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            headline = str(item.get("headline") or "")
+            blob = _norm(f"{name} {headline}")
+            score = 0
+            name_tokens = _name_tokens(name)
+            if expect:
+                score += 4 * len(expect & name_tokens)
+            if "ntt" in blob or "everis" in blob:
+                score += 3
+            if "sap" in blob:
+                score += 2
+            if "director" in blob or "head" in blob or "partner" in blob or "socio" in blob:
+                score += 1
+            if score <= 0:
+                continue
+            candidate = {
+                "name": name,
+                "headline": headline,
+                "public_identifier": item.get("public_identifier"),
+                "profile_url": item.get("profile_url"),
+                "member_id": item.get("id"),
+            }
+            if best is None or score > best[0]:
+                best = (score, candidate)
+    return best[1] if best else None
+
+
+def prepare_manual_lead(raw: dict[str, Any], *, source_query: str) -> dict[str, Any]:
+    first = str(raw.get("first_name") or "").strip()
+    last = str(raw.get("last_name") or "").strip()
+    title = str(raw.get("job_title") or "").strip()
+    company = str(raw.get("company") or "NTT DATA Europe & Latam").strip()
+    country = str(raw.get("country") or "Spain").strip()
+    city = str(raw.get("city") or "").strip()
+    headline = str(raw.get("headline") or title).strip()
+    url = normalize_linkedin_url(raw.get("linkedin_url"))
+    if not url:
+        resolved = resolve_sn_profile(
+            keywords=str(raw.get("sn_keywords") or f"{first} {last} {company}"),
+            expect_name=f"{first} {last}",
+        )
+        if resolved:
+            pid = resolved.get("public_identifier")
+            if pid:
+                url = normalize_linkedin_url(f"https://www.linkedin.com/in/{pid}")
+            headline = headline or str(resolved.get("headline") or "")
+    lead: dict[str, Any] = {
+        "first_name": first,
+        "last_name": last,
+        "linkedin_url": url or "",
+        "company": company,
+        "company_tier": "ntt_data",
+        "country": country,
+        "city": city,
+        "job_title": title,
+        "headline": headline,
+        "location": city or country,
+        "source_query": source_query,
+        "dedupe_key": dedupe_key(url),
+        "contact_type": "sme_inmail",
+        "status": "reviewed",
+    }
+    lead["practice"] = detect_practice(f"{title} {headline}") or "Digital Transformation"
+    lead["seniority"] = detect_seniority(title)
+    lead["score"] = 4
+    if lead["seniority"] in {"Partner", "Managing Director"}:
+        lead["score"] = 5
+    lead["reason_for_fit"] = (
+        f"Importación manual SN — {lead['seniority']} SAP en {company} ({country}). "
+        f"Perfil solicitado para colaboración externa."
+    )
+    lead["relevant_keywords"] = [k for k in ("sap", "crm", "cx", "successfactors") if k in _norm(f"{title} {headline}")]
+    lead["connection_message"] = build_sme_inmail_message(lead)
+    lead["followup_message"] = ""
+    return lead
+
+
+def cmd_import_manual(args: argparse.Namespace) -> int:
+    path = Path(args.file)
+    if not path.is_absolute():
+        path = DATA_DIR / path.name if path.parent == Path(".") else path
+    if not path.exists():
+        print(f"no existe {path}")
+        return 1
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        print("el fichero debe ser un array JSON")
+        return 1
+    source_query = args.source_query or "manual:ntt_sap_sn_spain"
+    imported = 0
+    skipped = 0
+    for raw in rows:
+        if not isinstance(raw, dict):
+            continue
+        lead = prepare_manual_lead(raw, source_query=source_query)
+        if not lead.get("linkedin_url"):
+            print(f"SKIP sin URL: {lead.get('first_name')} {lead.get('last_name')}")
+            skipped += 1
+            continue
+        result = upsert_lead(lead)
+        imported += 1
+        print(
+            f"{result.get('action')} id={result.get('id')} "
+            f"{lead['first_name']} {lead['last_name']} score={lead['score']} "
+            f"url={lead['linkedin_url']}"
+        )
+    print(f"imported={imported} skipped={skipped}")
+    return 0 if imported else 1
 
 
 def prepare_seed(seed: dict[str, Any]) -> dict[str, Any]:
@@ -1848,6 +1991,19 @@ def main() -> int:
     p_sync = sub.add_parser("sync")
     p_sync.add_argument("--segment", choices=("hire", "sme"), default="hire")
     p_sync.add_argument("--limit", type=int, default=0)
+    p_import = sub.add_parser("import-manual")
+    p_import.add_argument(
+        "--file",
+        type=str,
+        default="manual_ntt_sap_spain.json",
+        help="JSON en data/ con perfiles importados manualmente desde Sales Navigator",
+    )
+    p_import.add_argument(
+        "--source-query",
+        type=str,
+        default="manual:ntt_sap_sn_spain",
+        help="Etiqueta source_query para trazabilidad en NocoDB",
+    )
     sub.add_parser("list")
     p_rescore = sub.add_parser("rescore")
     p_rescore.add_argument("--segment", choices=("all", "hire", "sme"), default="all")
@@ -1900,6 +2056,8 @@ def main() -> int:
         return asyncio.run(cmd_discover(args))
     if args.cmd == "sync":
         return cmd_sync(args)
+    if args.cmd == "import-manual":
+        return cmd_import_manual(args)
     if args.cmd == "list":
         return cmd_list(args)
     if args.cmd == "rescore":
