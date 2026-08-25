@@ -16,14 +16,19 @@ Usuario
 
 ## Setup NocoDB
 
+Base: `pzyr6ncnc9dk4h0` en `https://mpa.parvusmedia.com`
+
+| Tabla | ID |
+|-------|-----|
+| movistar_products | `mjzz3jl42nwvod7` |
+| movistar_alerts | `mfuk1c0i5m5tavf` |
+| movistar_events | `me58xa9thqhplv3` |
+
 ```bash
 cd backend
 pip install -r requirements.txt
-# Token desde /opt/apps/fly456bot/.env o variable de entorno
-python scripts/provision_nocodb.py
+python scripts/provision_nocodb.py   # solo si faltan tablas
 ```
-
-Copia los `NOCODB_*_TABLE_ID` generados a `.env`.
 
 ## Variables
 

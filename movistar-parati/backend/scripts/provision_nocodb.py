@@ -11,7 +11,7 @@ from pathlib import Path
 import httpx
 
 BASE_URL = os.environ.get("NOCODB_BASE_URL", "https://mpa.parvusmedia.com").rstrip("/")
-BASE_ID = os.environ.get("NOCODB_BASE_ID", "")
+BASE_ID = os.environ.get("NOCODB_BASE_ID", "pzyr6ncnc9dk4h0")
 TOKEN = os.environ.get("NOCODB_API_TOKEN", "")
 
 ROOT = Path(__file__).resolve().parents[1]
