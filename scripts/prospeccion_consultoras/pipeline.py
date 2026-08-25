@@ -1005,6 +1005,12 @@ PROTECTED_STATUSES = frozenset({
 })
 
 
+SYNC_SKIP_STATUSES = frozenset({
+    "not_relevant",
+    *PROTECTED_STATUSES,
+})
+
+
 def upsert_lead(lead: dict[str, Any]) -> dict[str, Any]:
     base, token = nocodb_creds()
     row = row_for_nocodb(lead)
@@ -1013,7 +1019,7 @@ def upsert_lead(lead: dict[str, Any]) -> dict[str, Any]:
     existing = find_by_dedupe(base, token, key)
     with httpx.Client(timeout=45) as client:
         if existing and existing.get("Id") is not None:
-            if str(existing.get("status") or "") in PROTECTED_STATUSES:
+            if str(existing.get("status") or "") in SYNC_SKIP_STATUSES:
                 return {
                     "action": "skip",
                     "id": existing["Id"],
