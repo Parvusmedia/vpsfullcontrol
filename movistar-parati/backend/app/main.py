@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.routes import movistar
+from app.services.bot_commands import register_bot_commands
 from app.services.change_detection import bootstrap_signatures, poll_catalogue_changes
 
 logger = logging.getLogger("movistar-parati")
@@ -28,6 +29,7 @@ async def _poll_loop() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await bootstrap_signatures()
+    await register_bot_commands()
     task = asyncio.create_task(_poll_loop())
     logger.info("Movistar Para Ti started (NocoDB CMS, poll=%ss)", settings.poll_interval_seconds)
     yield

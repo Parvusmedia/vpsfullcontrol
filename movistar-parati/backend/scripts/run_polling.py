@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Polling mode for local/demo when HTTPS webhook is not ready."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx
-from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.database import SessionLocal
+from app.services.bot_commands import register_bot_commands
 from app.services.bot_handlers import handle_update
 
 logging.basicConfig(level=logging.INFO)
@@ -21,20 +26,16 @@ async def main() -> None:
         raise SystemExit("TELEGRAM_BOT_TOKEN missing")
     base = f"https://api.telegram.org/bot{settings.telegram_bot_token}"
     offset = 0
-    miniapp_url = f"{settings.public_base_url.rstrip('/')}/app/"
     async with httpx.AsyncClient(timeout=60) as client:
         await client.post(f"{base}/deleteWebhook")
+        await register_bot_commands()
         logger.info("Polling started")
         while True:
             resp = await client.get(f"{base}/getUpdates", params={"timeout": 30, "offset": offset})
             data = resp.json()
             for update in data.get("result", []):
                 offset = update["update_id"] + 1
-                db: Session = SessionLocal()
-                try:
-                    await handle_update(db, update, miniapp_url)
-                finally:
-                    db.close()
+                await handle_update(update)
             await asyncio.sleep(0.2)
 
 

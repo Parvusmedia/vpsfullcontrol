@@ -17,6 +17,10 @@ def _state(chat_id: int) -> dict[str, Any]:
     return _user_state.setdefault(chat_id, {})
 
 
+def _home_row() -> list[dict[str, str]]:
+    return [{"text": "🏠 Menú principal", "callback_data": "menu:home"}]
+
+
 def _main_menu() -> dict:
     return {
         "inline_keyboard": [
@@ -38,6 +42,7 @@ def _brand_menu() -> dict:
             [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
             [{"text": "🔥 Ofertas", "callback_data": "menu:deals"}],
             [{"text": "💸 Menos de 15 €/mes", "callback_data": "filter:monthly:15"}],
+            _home_row(),
         ]
     }
 
@@ -66,6 +71,7 @@ def product_keyboard(p: Product) -> dict:
     if p.product_url:
         buttons.append([{"text": "👀 Ver oferta", "url": p.product_url}])
     buttons.append([{"text": "🔔 Avísame", "callback_data": f"alert:menu:{p.id}"}])
+    buttons.append(_home_row())
     return {"inline_keyboard": buttons}
 
 
@@ -84,6 +90,25 @@ async def send_product(chat_id: int, product: Product, *, deal: bool = False) ->
         )
     else:
         await telegram_client.send_message(chat_id, text, reply_markup=product_keyboard(product))
+
+
+async def show_main_menu(chat_id: int, *, greeting: bool = True) -> None:
+    _state(chat_id).pop("flow", None)
+    if greeting:
+        text = (
+            "👋 Hola\n\n"
+            "Soy <b>Movistar Para Ti</b>.\n\n"
+            "Te ayudo a descubrir móviles y ofertas que pueden interesarte "
+            "y puedo avisarte cuando cambien sus condiciones.\n\n"
+            "¿Qué quieres ver?"
+        )
+    else:
+        text = "🏠 <b>Menú principal</b>\n\nElige una opción o usa el botón ☰ junto al teclado."
+    await telegram_client.send_message(chat_id, text, reply_markup=_main_menu())
+
+
+async def show_phones_menu(chat_id: int) -> None:
+    await telegram_client.send_message(chat_id, "📱 <b>Ver móviles</b>\n\nElige marca o filtro:", reply_markup=_brand_menu())
 
 
 async def show_deals(chat_id: int) -> None:
@@ -113,6 +138,7 @@ async def start_forme_flow(chat_id: int) -> None:
                 [{"text": "💼 Trabajo", "callback_data": "forme:pref:work"}],
                 [{"text": "⭐ Gama alta", "callback_data": "forme:pref:premium"}],
                 [{"text": "💰 Calidad/precio", "callback_data": "forme:pref:value"}],
+                _home_row(),
             ]
         },
     )
@@ -136,9 +162,12 @@ async def show_help(chat_id: int) -> None:
     help_text = (
         "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
         "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
+        "<b>Navegación</b>\n"
+        "Pulsa el botón <b>☰</b> junto al teclado para ver todos los comandos.\n\n"
         "<b>Comandos</b>\n"
-        "/start — Menú principal\n"
+        "/menu — Volver al menú principal\n"
         "/ofertas — Mejores ofertas del catálogo\n"
+        "/moviles — Móviles por marca y filtros\n"
         "/novedades — Productos nuevos\n"
         "/parami — Recomendaciones según tus preferencias\n"
         "/avisos — Tus alertas de precio activas\n"
@@ -169,21 +198,17 @@ async def _handle_message(message: dict[str, Any]) -> None:
     text = (message.get("text") or "").strip()
     command = _command_name(text)
 
-    if command == "/start":
-        welcome = (
-            "👋 Hola\n\n"
-            "Soy <b>Movistar Para Ti</b>.\n\n"
-            "Te ayudo a descubrir móviles y ofertas que pueden interesarte "
-            "y puedo avisarte cuando cambien sus condiciones.\n\n"
-            "¿Qué quieres ver?"
-        )
-        await telegram_client.send_message(chat_id, welcome, reply_markup=_main_menu())
+    if command in {"/start", "/menu"}:
+        await show_main_menu(chat_id, greeting=command == "/start")
         return
     if command == "/ofertas":
         await show_deals(chat_id)
         return
     if command == "/novedades":
         await show_new_products(chat_id)
+        return
+    if command == "/moviles":
+        await show_phones_menu(chat_id)
         return
     if command == "/parami":
         await start_forme_flow(chat_id)
@@ -197,7 +222,7 @@ async def _handle_message(message: dict[str, Any]) -> None:
 
     await telegram_client.send_message(
         chat_id,
-        "No entendí ese mensaje. Usa /start o /ayuda.",
+        "No entendí ese mensaje. Usa /menu o /ayuda.",
         reply_markup=_main_menu(),
     )
 
@@ -209,12 +234,14 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     await telegram_client.answer_callback(callback["id"])
     st = _state(chat_id)
 
-    if data == "menu:deals":
+    if data == "menu:home":
+        await show_main_menu(chat_id, greeting=False)
+    elif data == "menu:deals":
         await show_deals(chat_id)
     elif data == "menu:new":
         await show_new_products(chat_id)
     elif data == "menu:phones":
-        await telegram_client.send_message(chat_id, "Elige marca o filtro:", reply_markup=_brand_menu())
+        await show_phones_menu(chat_id)
     elif data.startswith("brand:"):
         brand = data.split(":")[1]
         products = await product_source.get_products_by_brand(brand, 5)
@@ -238,6 +265,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
                     [{"text": "10–20 €", "callback_data": "forme:budget:20"}],
                     [{"text": "20–30 €", "callback_data": "forme:budget:30"}],
                     [{"text": "Me da igual", "callback_data": "forme:budget:999"}],
+                    _home_row(),
                 ]
             },
         )
@@ -254,6 +282,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
                     [{"text": "Google", "callback_data": "forme:brand:Google"}],
                     [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
                     [{"text": "Me da igual", "callback_data": "forme:brand:any"}],
+                    _home_row(),
                 ]
             },
         )

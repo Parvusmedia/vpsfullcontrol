@@ -53,5 +53,11 @@ class TelegramClient:
     async def get_webhook_info(self) -> dict[str, Any]:
         return await self.api("getWebhookInfo", {})
 
+    async def set_my_commands(self, commands: list[dict[str, str]]) -> dict[str, Any]:
+        return await self.api("setMyCommands", {"commands": commands})
+
+    async def set_chat_menu_button(self, menu_type: str = "commands") -> dict[str, Any]:
+        return await self.api("setChatMenuButton", {"menu_button": {"type": menu_type}})
+
 
 telegram_client = TelegramClient()
