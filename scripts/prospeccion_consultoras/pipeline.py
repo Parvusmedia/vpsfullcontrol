@@ -197,6 +197,7 @@ COMPANY_URLS = {
     "pwc": "https://www.linkedin.com/company/1048",
     "everis": "https://www.linkedin.com/company/8339",
     "ntt_data": "https://www.linkedin.com/company/19141006",
+    "kpmg": "https://www.linkedin.com/company/1079",
     "making_science": "https://www.linkedin.com/company/37596418",
     "idom": "https://www.linkedin.com/company/164711",
 }
@@ -208,6 +209,7 @@ FIRM_BRANDS = {
     "pwc": "PwC",
     "everis": "everis",
     "ntt_data": "NTT DATA",
+    "kpmg": "KPMG",
     "making_science": "Making Science",
     "idom": "IDOM",
 }
@@ -458,7 +460,42 @@ def build_sme_queries() -> list[HarvestQuery]:
             "Spain",
             COMPANY_URLS["ntt_data"],
             es_digital_leaders,
-            "marketing OR customer OR digital OR transformación",
+            "marketing OR customer OR digital OR transformación OR martech",
+        ),
+        HarvestQuery(
+            "sme_ntt_uk",
+            "United Kingdom",
+            COMPANY_URLS["ntt_data"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_ntt_us",
+            "United States",
+            COMPANY_URLS["ntt_data"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_kpmg_es",
+            "Spain",
+            COMPANY_URLS["kpmg"],
+            es_digital_leaders,
+            "marketing OR customer OR digital OR transformación OR martech",
+        ),
+        HarvestQuery(
+            "sme_kpmg_uk",
+            "United Kingdom",
+            COMPANY_URLS["kpmg"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_kpmg_us",
+            "United States",
+            COMPANY_URLS["kpmg"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
         ),
         HarvestQuery(
             "sme_making_science_es",
@@ -701,6 +738,8 @@ def firm_brand(lead: dict[str, Any]) -> str:
         return "PwC"
     if "making science" in blob:
         return "Making Science"
+    if "kpmg" in blob:
+        return "KPMG"
     if "everis" in blob or "ntt" in blob:
         return "everis" if "everis" in blob else "NTT DATA"
     return str(lead.get("company") or "la consultora")
@@ -874,6 +913,8 @@ def lead_from_harvest(item: dict[str, Any], query: HarvestQuery) -> dict[str, An
         tier = "making_science"
     elif "idom" in cl:
         tier = "idom"
+    elif "kpmg" in cl:
+        tier = "kpmg"
     elif "everis" in cl or "ntt" in cl:
         tier = "everis" if "everis" in cl else "ntt_data"
 

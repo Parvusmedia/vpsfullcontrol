@@ -29,7 +29,7 @@ cd /opt/apps/prospeccion-consultoras
 ./run.sh inmail --limit 3 --live  # envía InMail (Sales Navigator, pausa 30–90s)
 ```
 
-Firmas: Deloitte Digital, Accenture Song, PwC, everis/NTT DATA, Making Science, IDOM.
+Firmas: Deloitte Digital, Accenture Song, PwC, KPMG, everis/NTT DATA, Making Science, IDOM.
 ./run.sh poll-acceptances --live   # detecta aceptaciones → status accepted
 ./run.sh followup --live --limit 3 # mensaje tras aceptación (pausa antes de cada uno)
 ./run.sh outreach --live             # poll + followup + contact (cron diario)
