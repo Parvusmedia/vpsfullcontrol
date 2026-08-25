@@ -47,6 +47,17 @@ Por defecto el follow-up se envía en la misma pasada tras detectar la aceptaci�
 
 Cron VPS (L–V 10:40 Europe/Madrid): `scripts/unipile-drain.sh`
 
+## Sales Navigator — búsquedas guardadas
+
+Ver `data/sales_nav_searches.json`.
+
+**Europa — Martech — consultoras digitales** (2025-08-25)
+- Empresas: Deloitte Digital, IDOM, Making Science, Bain & Company, Accenture Song
+- Seniority: Partner, CXO, VP, Director
+- Región: Europe
+- Keywords: `martech`
+- [Abrir en Sales Navigator](https://www.linkedin.com/sales/search/people?query=(spellCorrectionEnabled%3Atrue%2CrecentSearchParam%3A(id%3A5838400562%2CdoLogHistory%3Atrue)%2Cfilters%3AList((type%3ACURRENT_COMPANY%2Cvalues%3AList((id%3Aurn%253Ali%253Aorganization%253A2449847%2Ctext%3ADeloitte%2520Digital%2CselectionType%3AINCLUDED%2Cparent%3A(id%3A0))%2C(id%3Aurn%253Ali%253Aorganization%253A12514%2Ctext%3AIDOM%2520Consulting%252C%2520Engineering%252C%2520Architecture%2CselectionType%3AINCLUDED%2Cparent%3A(id%3A0))%2C(id%3Aurn%253Ali%253Aorganization%253A18505126%2Ctext%3AMaking%2520Science%2CselectionType%3AINCLUDED%2Cparent%3A(id%3A0))%2C(id%3Aurn%253Ali%253Aorganization%253A2114%2Ctext%3ABain%2520%2526%2520Company%2CselectionType%3AINCLUDED%2Cparent%3A(id%3A0))%2C(id%3Aurn%253Ali%253Aorganization%253A85405652%2Ctext%3AAccenture%2520Song%2CselectionType%3AINCLUDED%2Cparent%3A(id%3A0))))%2C(type%3ASENIORITY_LEVEL%2Cvalues%3AList((id%3A320%2Ctext%3AOwner%2520%252F%2520Partner%2CselectionType%3AINCLUDED)%2C(id%3A310%2Ctext%3ACXO%2CselectionType%3AINCLUDED)%2C(id%3A300%2Ctext%3AVice%2520President%2CselectionType%3AINCLUDED)%2C(id%3A220%2Ctext%3ADirector%2CselectionType%3AINCLUDED)))%2C(type%3AREGION%2Cvalues%3AList((id%3A100506914%2Ctext%3AEurope%2CselectionType%3AINCLUDED))))%2Ckeywords%3Amartech)&sessionId=YwVaKWptS6SKLnyNbGN9uw%3D%3D)
+
 ## Reglas
 
 - Hard excludes: RRHH, audit, tax, cyber, data engineering, SAP, junior, sales director, manager genérico
