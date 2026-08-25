@@ -198,6 +198,7 @@ COMPANY_URLS = {
     "everis": "https://www.linkedin.com/company/8339",
     "ntt_data": "https://www.linkedin.com/company/19141006",
     "kpmg": "https://www.linkedin.com/company/1079",
+    "kpmg_spain": "https://www.linkedin.com/company/2525300",
     "making_science": "https://www.linkedin.com/company/37596418",
     "idom": "https://www.linkedin.com/company/164711",
 }
@@ -479,7 +480,7 @@ def build_sme_queries() -> list[HarvestQuery]:
         HarvestQuery(
             "sme_kpmg_es",
             "Spain",
-            COMPANY_URLS["kpmg"],
+            COMPANY_URLS["kpmg_spain"],
             es_digital_leaders,
             "marketing OR customer OR digital OR transformación OR martech",
         ),
