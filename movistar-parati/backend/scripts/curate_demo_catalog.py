@@ -9,29 +9,16 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.services.nocodb import nocodb
+from app.services.product_fields import sanitize_product_fields
 from app.services.product_service import parse_product
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = ROOT / "data" / "seed-products.json"
 HERO_IDS = {p["id"] for p in json.loads(SEED.read_text())}
 
-_INT_FIELDS = {
-    "price", "previous_price", "monthly_price", "previous_monthly_price",
-    "months", "original_price", "saving", "discount_percentage",
-    "camera_score", "battery_score", "business_score", "premium_score", "value_score",
-}
-
 
 def _sanitize_fields(fields: dict) -> dict:
-    clean: dict = {}
-    for key, value in fields.items():
-        if value is None:
-            continue
-        if key in _INT_FIELDS and isinstance(value, (int, float)):
-            clean[key] = int(round(value))
-        else:
-            clean[key] = value
-    return clean
+    return sanitize_product_fields({k: v for k, v in fields.items() if k != "id"})
 
 
 async def main() -> None:

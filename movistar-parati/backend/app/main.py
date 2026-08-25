@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
@@ -49,9 +49,13 @@ def health():
     return {"status": "ok", "nocodb": bool(settings.nocodb_products_table_id)}
 
 
-@app.get("/movistar-demo/admin")
-@app.get("/movistar-demo/admin/")
 @app.get("/panel")
 @app.get("/panel/")
 def admin_page():
     return FileResponse(STATIC / "admin" / "index.html")
+
+
+@app.get("/movistar-demo/admin")
+@app.get("/movistar-demo/admin/")
+def admin_legacy_redirect():
+    return RedirectResponse(url="/panel", status_code=301)

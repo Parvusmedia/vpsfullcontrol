@@ -2,6 +2,7 @@ const keyInput = document.getElementById("adminKey");
 const toastEl = document.getElementById("toast");
 let catalog = [];
 let dashboard = null;
+let refreshTimer = null;
 
 const saved = localStorage.getItem("mp_admin_key");
 if (saved) keyInput.value = saved;
@@ -19,7 +20,7 @@ function showToast(message, type = "ok") {
 
 function fmtMoney(v) {
   if (v == null || Number.isNaN(v)) return "—";
-  return `${Number(v).toFixed(2)} €/mes`;
+  return `${Number(v).toFixed(0)} €/mes`;
 }
 
 function esc(s) {
@@ -41,8 +42,14 @@ async function api(path, options = {}) {
 
 function setConnected(ok) {
   const pill = document.getElementById("connStatus");
-  pill.textContent = ok ? "Conectado" : "Sin conectar";
+  pill.textContent = ok ? "Sincronizado con NocoDB" : "Sin conectar";
   pill.classList.toggle("ok", ok);
+  if (ok) {
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => load({ quiet: true }), 30000);
+  } else {
+    clearInterval(refreshTimer);
+  }
 }
 
 function switchView(name) {
@@ -59,11 +66,12 @@ document.getElementById("saveKey").onclick = () => {
   load();
 };
 
+document.getElementById("refreshNow").onclick = () => load();
 document.getElementById("pollNow").onclick = async () => {
   try {
     const result = await api("/api/movistar/admin/poll", { method: "POST" });
     showToast(`Detección OK · ${result.changes} cambios · ${result.notifications} notificaciones`);
-    await load();
+    await load({ quiet: true });
   } catch (e) {
     showToast(e.message, "err");
   }
@@ -73,12 +81,15 @@ function renderStats() {
   if (!dashboard) return;
   document.getElementById("stats").innerHTML = `
     <div class="metric"><span>Productos activos</span><strong>${dashboard.products_active}</strong></div>
-    <div class="metric"><span>En catálogo total</span><strong>${dashboard.products_total}</strong></div>
+    <div class="metric"><span>En NocoDB total</span><strong>${dashboard.products_total}</strong></div>
     <div class="metric"><span>Ofertas destacadas</span><strong>${dashboard.featured}</strong></div>
     <div class="metric"><span>Novedades</span><strong>${dashboard.new_products}</strong></div>
     <div class="metric"><span>Avisos activos</span><strong>${dashboard.alerts_active}</strong></div>
   `;
   document.getElementById("nocodbLink").href = dashboard.nocodb_products_url;
+  if (dashboard.sync_note) {
+    document.getElementById("syncNote").textContent = dashboard.sync_note;
+  }
 }
 
 function filteredCatalog() {
@@ -89,9 +100,39 @@ function filteredCatalog() {
     if (activeOnly && !p.active) return false;
     if (brand && p.brand !== brand) return false;
     if (!q) return true;
-    const hay = `${p.id} ${p.brand} ${p.name} ${p.display_name}`.toLowerCase();
+    const hay = `${p.id} ${p.brand} ${p.name} ${p.display_name} ${p.record_id}`.toLowerCase();
     return hay.includes(q);
   });
+}
+
+function productEditForm(p) {
+  return `
+    <form class="product-edit" data-record="${esc(p.record_id)}">
+      <label>Cuota €/mes
+        <input type="number" name="monthly_price" value="${p.monthly_price ?? ""}" min="0" step="1" />
+      </label>
+      <label>Cuota anterior
+        <input type="number" name="previous_monthly_price" value="${p.previous_monthly_price ?? ""}" min="0" step="1" />
+      </label>
+      <label>Precio total €
+        <input type="number" name="price" value="${p.price ?? ""}" min="0" step="1" />
+      </label>
+      <label>Promoción
+        <input type="text" name="promotion" value="${esc(p.promotion || "")}" />
+      </label>
+      <label>Regalo
+        <input type="text" name="gift" value="${esc(p.gift || "")}" />
+      </label>
+      <div class="checks">
+        <label><input type="checkbox" name="active" ${p.active ? "checked" : ""} /> Activo</label>
+        <label><input type="checkbox" name="featured" ${p.featured ? "checked" : ""} /> Destacado</label>
+        <label><input type="checkbox" name="is_new" ${p.is_new ? "checked" : ""} /> Nuevo</label>
+      </div>
+      <div class="row-actions">
+        <button type="submit" class="action-btn">💾 Guardar en NocoDB</button>
+        <a href="${esc(p.nocodb_row_url || dashboard?.nocodb_products_url || "#")}" target="_blank" rel="noopener">Abrir tabla CMS ↗</a>
+      </div>
+    </form>`;
 }
 
 function renderCatalog() {
@@ -103,13 +144,14 @@ function renderCatalog() {
   }
   box.innerHTML = items.map((p) => {
     const badges = [
-      p.active ? "" : `<span class="badge inactive">Inactivo</span>`,
+      p.active ? `<span class="badge">Activo</span>` : `<span class="badge inactive">Inactivo</span>`,
       p.featured ? `<span class="badge featured">Destacado</span>` : "",
       p.is_new ? `<span class="badge new">Nuevo</span>` : "",
       `<span class="badge">${esc(p.brand)}</span>`,
+      `<span class="badge">#${esc(p.record_id)}</span>`,
     ].join("");
     const actions = (p.demo_actions || []).map((a) =>
-      `<button class="action-btn" data-id="${esc(p.id)}" data-price="${a.new_monthly}">${esc(a.label)}</button>`
+      `<button type="button" class="action-btn sim-btn" data-id="${esc(p.id)}" data-price="${a.new_monthly}">${esc(a.label)}</button>`
     ).join("");
     const prev = p.previous_monthly_price && p.previous_monthly_price > p.monthly_price
       ? `<div class="prev">${fmtMoney(p.previous_monthly_price)}</div>` : "";
@@ -118,7 +160,7 @@ function renderCatalog() {
         <img class="thumb" src="${esc(p.image_api_url)}" alt="${esc(p.display_name)}" loading="lazy" />
         <div class="product-main">
           <strong>${esc(p.display_name)}</strong>
-          <div class="product-meta">ID: <code>${esc(p.id)}</code> · ${esc(p.category || "smartphone")}</div>
+          <div class="product-meta">ID: <code>${esc(p.id)}</code> · slug: <code>${esc(p.slug || p.id)}</code></div>
           <div class="badges">${badges}</div>
         </div>
         <div class="price-block">
@@ -126,24 +168,51 @@ function renderCatalog() {
           ${prev}
           <div class="product-meta">${p.price ? `${Number(p.price).toFixed(0)} € total` : ""}</div>
         </div>
-        <div class="actions">${actions || `<span class="product-meta">Sin acciones demo</span>`}</div>
+        <div class="actions">${actions || `<span class="product-meta">—</span>`}</div>
+        ${productEditForm(p)}
       </article>`;
   }).join("");
 
-  box.querySelectorAll(".action-btn").forEach((btn) => {
+  box.querySelectorAll(".sim-btn").forEach((btn) => {
     btn.onclick = async () => {
       btn.disabled = true;
       try {
-        const id = btn.dataset.id;
-        const price = btn.dataset.price;
-        const result = await api(`/api/movistar/admin/simulate-drop/${id}?new_monthly=${price}`, { method: "POST" });
-        const poll = result.poll || {};
-        showToast(`✅ ${id} → ${price} €/mes · ${poll.notifications || 0} notificación(es)`);
-        await load();
+        const result = await api(`/api/movistar/admin/simulate-drop/${btn.dataset.id}?new_monthly=${btn.dataset.price}`, { method: "POST" });
+        showToast(`✅ Demo · ${result.poll?.notifications || 0} notificación(es)`);
+        await load({ quiet: true });
       } catch (e) {
         showToast(e.message, "err");
       } finally {
         btn.disabled = false;
+      }
+    };
+  });
+
+  box.querySelectorAll("form.product-edit").forEach((form) => {
+    form.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const recordId = form.dataset.record;
+      const fd = new FormData(form);
+      const body = {
+        monthly_price: fd.get("monthly_price"),
+        previous_monthly_price: fd.get("previous_monthly_price"),
+        price: fd.get("price"),
+        promotion: fd.get("promotion"),
+        gift: fd.get("gift"),
+        active: form.querySelector('[name="active"]').checked,
+        featured: form.querySelector('[name="featured"]').checked,
+        is_new: form.querySelector('[name="is_new"]').checked,
+      };
+      const submit = form.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        await api(`/api/movistar/admin/products/${recordId}`, { method: "PATCH", body: JSON.stringify(body) });
+        showToast("✅ Guardado en NocoDB");
+        await load({ quiet: true });
+      } catch (e) {
+        showToast(e.message, "err");
+      } finally {
+        submit.disabled = false;
       }
     };
   });
@@ -204,16 +273,16 @@ function renderDemoQuick() {
   box.innerHTML = picks.map((p) => {
     const action = (p.demo_actions || [])[0];
     if (!action) return "";
-    return `<button class="action-btn" data-id="${esc(p.id)}" data-price="${action.new_monthly}">
+    return `<button class="action-btn sim-btn" data-id="${esc(p.id)}" data-price="${action.new_monthly}">
       Demo: ${esc(p.display_name)} → ${action.new_monthly} €/mes
     </button>`;
   }).join("");
-  box.querySelectorAll(".action-btn").forEach((btn) => {
+  box.querySelectorAll(".sim-btn").forEach((btn) => {
     btn.onclick = async () => {
       try {
         const result = await api(`/api/movistar/admin/simulate-drop/${btn.dataset.id}?new_monthly=${btn.dataset.price}`, { method: "POST" });
         showToast(`Demo ejecutada · ${result.poll?.notifications || 0} notificación(es)`);
-        await load();
+        await load({ quiet: true });
       } catch (e) {
         showToast(e.message, "err");
       }
@@ -221,7 +290,7 @@ function renderDemoQuick() {
   });
 }
 
-async function load() {
+async function load(opts = {}) {
   if (!keyInput.value) {
     setConnected(false);
     return;
@@ -240,10 +309,11 @@ async function load() {
     renderAlerts(alerts);
     renderEvents(events);
     renderDemoQuick();
-    document.getElementById("lastRefresh").textContent = `Actualizado: ${new Date().toLocaleTimeString("es-ES")}`;
+    document.getElementById("lastRefresh").textContent = `Sincronizado: ${new Date().toLocaleTimeString("es-ES")} · ${catalog.length} productos`;
+    if (!opts.quiet) showToast(`Catálogo cargado · ${catalog.length} productos desde NocoDB`);
   } catch (e) {
     setConnected(false);
-    showToast(`Error de conexión: ${e.message}`, "err");
+    if (!opts.quiet) showToast(`Error de conexión: ${e.message}`, "err");
   }
 }
 

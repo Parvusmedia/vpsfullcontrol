@@ -17,6 +17,7 @@
     </div>
     <div class="topbar-actions">
       <a id="nocodbLink" href="#" target="_blank" rel="noopener" class="ghost">Abrir NocoDB (CMS)</a>
+      <button id="refreshNow" class="secondary">Sincronizar</button>
       <button id="pollNow" class="secondary">Forzar detección</button>
     </div>
   </header>
@@ -45,14 +46,14 @@
       <div id="view-catalog" class="view active">
         <div class="view-header">
           <h2>Catálogo de productos</h2>
-          <p>Feed sincronizado desde NocoDB. Aquí se gestionará el catálogo cuando esté conectado al PIM/ERP de Movistar.</p>
+          <p id="syncNote">Sincronizado en tiempo real con NocoDB (<code>movistar_products</code>). Edita aquí o en el CMS: los cambios se reflejan en ambos sentidos.</p>
           <div class="filters">
             <input id="searchInput" type="search" placeholder="Buscar por nombre, marca o ID…" />
             <select id="brandFilter">
               <option value="">Todas las marcas</option>
             </select>
             <label class="checkbox">
-              <input id="activeOnly" type="checkbox" checked /> Solo activos
+              <input id="activeOnly" type="checkbox" /> Solo activos
             </label>
           </div>
         </div>

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     nocodb_api_token: str = ""
     nocodb_base_id: str = ""
     nocodb_products_table_id: str = ""
+    nocodb_products_view_slug: str = "vwzlxuhc0956ijho/movistar_products-movistar_products"
     nocodb_alerts_table_id: str = ""
     nocodb_events_table_id: str = ""
 

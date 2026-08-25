@@ -1,0 +1,74 @@
+"""Helpers for reading/writing product fields in NocoDB."""
+
+from __future__ import annotations
+
+from typing import Any
+
+INT_FIELDS = {
+    "price",
+    "previous_price",
+    "monthly_price",
+    "previous_monthly_price",
+    "months",
+    "original_price",
+    "saving",
+    "discount_percentage",
+    "camera_score",
+    "battery_score",
+    "business_score",
+    "premium_score",
+    "value_score",
+}
+
+BOOL_FIELDS = {"active", "is_new", "featured"}
+
+TEXT_FIELDS = {
+    "id",
+    "slug",
+    "brand",
+    "name",
+    "model",
+    "capacity",
+    "color",
+    "category",
+    "promotion",
+    "gift",
+    "image_url",
+    "product_url",
+}
+
+PANEL_EDITABLE_FIELDS = {
+    "monthly_price",
+    "previous_monthly_price",
+    "price",
+    "active",
+    "featured",
+    "is_new",
+    "promotion",
+    "gift",
+}
+
+
+def sanitize_product_fields(fields: dict[str, Any]) -> dict[str, Any]:
+    clean: dict[str, Any] = {}
+    for key, value in fields.items():
+        if key not in INT_FIELDS | BOOL_FIELDS | TEXT_FIELDS:
+            continue
+        if value is None or value == "":
+            continue
+        if key in BOOL_FIELDS:
+            if isinstance(value, bool):
+                clean[key] = value
+            elif isinstance(value, str):
+                clean[key] = value.lower() in {"1", "true", "yes", "si", "sí", "on"}
+            else:
+                clean[key] = bool(value)
+        elif key in INT_FIELDS:
+            clean[key] = int(round(float(value)))
+        else:
+            clean[key] = str(value)
+    return clean
+
+
+def panel_payload_to_fields(payload: dict[str, Any]) -> dict[str, Any]:
+    return sanitize_product_fields({k: v for k, v in payload.items() if k in PANEL_EDITABLE_FIELDS})

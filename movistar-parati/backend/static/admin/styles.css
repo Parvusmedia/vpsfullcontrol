@@ -105,9 +105,36 @@ button.action-btn {
 .product-row {
   display: grid;
   grid-template-columns: 72px 1.2fr 1fr auto;
-  gap: 1rem; align-items: center;
+  gap: 1rem; align-items: start;
   background: var(--surface); border-radius: var(--radius);
   padding: .85rem 1rem; border: 1px solid rgba(255,255,255,.05);
+}
+.product-edit {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: .65rem;
+  margin-top: .5rem;
+  padding-top: .65rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.product-edit label { font-size: .78rem; }
+.product-edit input[type="text"],
+.product-edit input[type="number"] {
+  min-width: 0; width: 100%;
+}
+.product-edit .checks {
+  display: flex; gap: .75rem; flex-wrap: wrap; align-items: center;
+  grid-column: 1 / -1;
+}
+.product-edit .checks label {
+  flex-direction: row; align-items: center; color: var(--text);
+}
+.row-actions {
+  display: flex; gap: .35rem; flex-wrap: wrap; justify-content: flex-end;
+}
+.row-actions a {
+  color: var(--accent); font-size: .8rem; text-decoration: none;
 }
 .product-row.inactive { opacity: .55; }
 .thumb {

@@ -8,9 +8,9 @@ Busca `@Movistarparatibot` y envía `/start`.
 - O: **Black Friday** → Samsung → `< 10 €/mes`
 
 ## 3. Abrir Admin
-`https://movistarparati.pmediaplus.com/movistar-demo/admin` (o `/panel`) → introduce `ADMIN_API_KEY` del servidor.
+`https://movistarparati.pmediaplus.com/panel` → introduce `ADMIN_API_KEY` del servidor.
 
-Catálogo CMS (NocoDB): https://mpa.parvusmedia.com/dashboard/#/nc/pzyr6ncnc9dk4h0/mjzz3jl42nwvod7
+Catálogo CMS (NocoDB): https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
 
 ## 4. Cambiar precio
 En el catálogo del panel, botón contextual del producto (p. ej. Pixel 9 → **Bajar a 8 €/mes**).

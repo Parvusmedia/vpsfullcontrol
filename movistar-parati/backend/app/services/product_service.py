@@ -7,6 +7,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.services.nocodb import nocodb
+from app.services.product_fields import panel_payload_to_fields, sanitize_product_fields
 
 
 @dataclass
@@ -209,6 +210,12 @@ class NocoDBProductSource:
                 return p
         return None
 
+    async def get_product_by_record_id(self, record_id: str | int) -> Product | None:
+        for p in await self.get_products(active_only=False):
+            if str(p.record_id) == str(record_id):
+                return p
+        return None
+
     async def get_deals(self, limit: int = 5) -> list[Product]:
         products = await self.get_products()
         ranked = sorted(products, key=lambda p: p.deal_score or compute_deal_score(p), reverse=True)
@@ -235,18 +242,24 @@ class NocoDBProductSource:
         return brands
 
     async def update_monthly_price(self, product: Product, new_price: float) -> Product | None:
+        return await self.update_product(
+            product,
+            {
+                "previous_monthly_price": product.monthly_price,
+                "monthly_price": int(round(new_price)),
+            },
+        )
+
+    async def update_product(self, product: Product, fields: dict) -> Product | None:
         table_id = get_settings().nocodb_products_table_id
         if not product.record_id:
             return None
-        await nocodb.update_record(
-            table_id,
-            product.record_id,
-            {
-                "previous_monthly_price": product.monthly_price,
-                "monthly_price": new_price,
-            },
-        )
-        return await self.get_product(product.id)
+        payload = sanitize_product_fields(fields)
+        if not payload:
+            return product
+        await nocodb.update_record(table_id, product.record_id, payload)
+        updated = await self.get_product_by_record_id(product.record_id)
+        return updated or product
 
 
 product_source = NocoDBProductSource()

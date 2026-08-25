@@ -65,8 +65,8 @@ No commitear el token. `@Movistarparatibot` — modo **polling** activo hasta te
 
 ## Panel de operación (demo)
 
-- **Admin:** https://movistarparati.pmediaplus.com/movistar-demo/admin (alias `/panel`)
-- **CMS NocoDB:** https://mpa.parvusmedia.com/dashboard/#/nc/pzyr6ncnc9dk4h0/mjzz3jl42nwvod7
+- **Panel:** https://movistarparati.pmediaplus.com/panel
+- **CMS NocoDB:** https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
 - Clave: variable `ADMIN_API_KEY` en `backend/.env` del VPS (no commitear)
 
 DNS: registro `movistarparati.pmediaplus.com → 87.106.194.137` en Plesk (servidor DNS `82.223.3.205`).
