@@ -8,6 +8,7 @@ LIMIT="${CONSULTORAS_INMAIL_DAILY_LIMIT:-20}"
 WAIT="${CONSULTORAS_INMAIL_WAIT_SECONDS:-180}"
 
 mkdir -p "$LOG_DIR"
+export PYTHONUNBUFFERED=1
 set -a
 [[ -f /etc/linkedinreport/app.env ]] && . /etc/linkedinreport/app.env
 [[ -f "$ROOT/.env" ]] && . "$ROOT/.env"
