@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "NocoDB Base - demos": {
+      "url": "https://mpa.parvusmedia.com/mcp/nc3nt97ijtywga8u",
+      "headers": {
+        "xc-mcp-token": "NPHmQ83lsjJvYPtSSdWRm_JgPUoD_zUL"
+      }
+    }
+  }
+}
