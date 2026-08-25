@@ -610,7 +610,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         p = await product_source.get_product(pid)
         if not p:
             return
-        await create_alert(
+        created = await create_alert(
             {
                 "telegram_user_id": str(user_id),
                 "product_id": p.id,
@@ -620,7 +620,18 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
                 "active": True,
             }
         )
-        await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
+        if not created:
+            await telegram_client.send_message(
+                chat_id,
+                f"Ya tienes un aviso activo para <b>{p.display_name}</b>.\n\n"
+                "Gestiónalo desde <b>🔔 Mis avisos</b> → <b>✏️ Editar</b>.",
+                reply_markup=_nav_inline_menu(),
+            )
+            return
+        await telegram_client.send_message(
+            chat_id,
+            f"✅ Aviso activo para <b>{p.display_name}</b> — {alert_type_label(alert_type)}.",
+        )
     elif data == "menu:alerts":
         await show_user_alerts(chat_id, user_id)
     elif data.startswith("segment:"):

@@ -59,7 +59,17 @@ async def get_active_alerts() -> list[dict]:
     return alerts
 
 
-async def create_alert(fields: dict) -> dict:
+async def user_has_product_alert(user_id: int | str, product_id: str) -> bool:
+    alerts = await get_user_alerts(user_id)
+    product_id = str(product_id)
+    return any(str(a.get("product_id")) == product_id for a in alerts)
+
+
+async def create_alert(fields: dict) -> dict | None:
+    user_id = fields.get("telegram_user_id")
+    product_id = fields.get("product_id")
+    if user_id and product_id and await user_has_product_alert(user_id, str(product_id)):
+        return None
     table_id = get_settings().nocodb_alerts_table_id
     fields = {**fields, "active": True, "created_at": _now_iso()}
     return await nocodb.create_record(table_id, fields)

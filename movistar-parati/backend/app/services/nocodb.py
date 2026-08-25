@@ -54,7 +54,12 @@ class NocoDBClient:
         return await self.request("POST", f"/api/v2/tables/{table_id}/records", fields)
 
     async def update_record(self, table_id: str, record_id: str | int, fields: dict) -> dict:
-        return await self.request("PATCH", f"/api/v2/tables/{table_id}/records/{record_id}", fields)
+        # NocoDB v2: PATCH bulk endpoint; record Id goes in the body, not the URL path.
+        payload = {"Id": int(record_id) if str(record_id).isdigit() else record_id, **fields}
+        result = await self.request("PATCH", f"/api/v2/tables/{table_id}/records", payload)
+        if isinstance(result, list) and result:
+            return result[0]
+        return result if isinstance(result, dict) else {"Id": record_id}
 
 
 nocodb = NocoDBClient()
