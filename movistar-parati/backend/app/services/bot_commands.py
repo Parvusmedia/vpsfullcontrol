@@ -8,6 +8,7 @@ logger = logging.getLogger("movistar-parati.bot")
 
 # Menú nativo de Telegram (botón ☰ junto al campo de texto).
 BOT_COMMANDS: list[dict[str, str]] = [
+    {"command": "start", "description": "Empezar / bienvenida"},
     {"command": "menu", "description": "Menú principal"},
     {"command": "ofertas", "description": "Mejores ofertas"},
     {"command": "moviles", "description": "Ver móviles por marca"},

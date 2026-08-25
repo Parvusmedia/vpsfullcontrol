@@ -1,5 +1,5 @@
 from app.services.bot_commands import BOT_COMMANDS
-from app.services.bot_handlers import _command_name
+from app.services.bot_handlers import BTN_OFERTAS, _command_name, _is_casual_greeting
 
 
 def test_command_name_plain():
@@ -19,6 +19,16 @@ def test_command_name_non_command():
 
 
 def test_native_menu_has_menu_command_first():
-    assert BOT_COMMANDS[0]["command"] == "menu"
+    assert BOT_COMMANDS[0]["command"] == "start"
+    assert BOT_COMMANDS[1]["command"] == "menu"
     commands = {c["command"] for c in BOT_COMMANDS}
-    assert {"menu", "ofertas", "moviles", "novedades", "parami", "avisos", "ayuda"} <= commands
+    assert {"start", "menu", "ofertas", "moviles", "novedades", "parami", "avisos", "ayuda"} <= commands
+
+
+def test_casual_greeting_detected():
+    assert _is_casual_greeting("Hola")
+    assert _is_casual_greeting("buenas!")
+
+
+def test_reply_button_labels():
+    assert BTN_OFERTAS == "🔥 Ofertas"

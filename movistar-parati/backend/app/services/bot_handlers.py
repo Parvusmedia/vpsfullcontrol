@@ -13,6 +13,18 @@ logger = logging.getLogger("movistar-parati.bot")
 
 _user_state: dict[int, dict[str, Any]] = {}
 
+# Botones grandes del teclado inferior (siempre visibles).
+BTN_OFERTAS = "🔥 Ofertas"
+BTN_MOVILES = "📱 Móviles"
+BTN_NOVEDADES = "🆕 Novedades"
+BTN_PARAMI = "💙 Para mí"
+BTN_MENU = "🏠 Menú"
+
+_GREETINGS = {
+    "hola", "buenas", "buenos dias", "buenos días", "buenas tardes", "buenas noches",
+    "hey", "hi", "hello", "inicio", "empezar", "menu", "menú", "start",
+}
+
 
 def _state(chat_id: int) -> dict[str, Any]:
     return _user_state.setdefault(chat_id, {})
@@ -20,6 +32,18 @@ def _state(chat_id: int) -> dict[str, Any]:
 
 def _home_row() -> list[dict[str, str]]:
     return [{"text": "🏠 Menú principal", "callback_data": "menu:home"}]
+
+
+def _reply_keyboard() -> dict:
+    return {
+        "keyboard": [
+            [{"text": BTN_OFERTAS}, {"text": BTN_MOVILES}],
+            [{"text": BTN_NOVEDADES}, {"text": BTN_PARAMI}],
+            [{"text": BTN_MENU}],
+        ],
+        "resize_keyboard": True,
+        "is_persistent": True,
+    }
 
 
 def _main_menu() -> dict:
@@ -77,19 +101,30 @@ async def send_product(chat_id: int, product: Product, *, deal: bool = False) ->
     await telegram_client.send_message(chat_id, text, reply_markup=keyboard)
 
 
-async def show_main_menu(chat_id: int, *, greeting: bool = True) -> None:
+async def show_main_menu(chat_id: int, *, greeting: bool = True, first_time: bool = False) -> None:
     _state(chat_id).pop("flow", None)
-    if greeting:
+    _state(chat_id).pop("pager", None)
+    if first_time or greeting:
         text = (
-            "👋 Hola\n\n"
-            "Soy <b>Movistar Para Ti</b>.\n\n"
-            "Te ayudo a descubrir móviles y ofertas que pueden interesarte "
-            "y puedo avisarte cuando cambien sus condiciones.\n\n"
-            "¿Qué quieres ver?"
+            "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
+            "Te ayudo a ver móviles y ofertas, y te aviso si bajan de precio.\n\n"
+            "👉 <b>Solo tienes que pulsar un botón</b> — los de abajo del teclado "
+            "o los del mensaje.\n\n"
+            "<i>Concept Demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
         )
+        _state(chat_id)["onboarded"] = True
     else:
-        text = "🏠 <b>Menú principal</b>\n\nElige una opción o usa el botón ☰ junto al teclado."
-    await telegram_client.send_message(chat_id, text, reply_markup=_main_menu())
+        text = (
+            "🏠 <b>Menú principal</b>\n\n"
+            "Elige una opción con los botones de abajo o pulsa ☰ junto al teclado."
+        )
+    await telegram_client.send_message(chat_id, text, reply_markup=_reply_keyboard())
+    if first_time or greeting:
+        await telegram_client.send_message(
+            chat_id,
+            "También puedes elegir aquí:",
+            reply_markup=_main_menu(),
+        )
 
 
 async def show_phones_menu(chat_id: int) -> None:
@@ -134,14 +169,14 @@ async def show_user_alerts(chat_id: int, user_id: int) -> None:
         await telegram_client.send_message(
             chat_id,
             "No tienes avisos activos.\n\nCrea uno desde cualquier ficha con <b>🔔 Avísame</b>.",
-            reply_markup=_main_menu(),
+            reply_markup=_reply_keyboard(),
         )
         return
     lines = ["🔔 <b>Tus avisos</b>\n"]
     for a in mine:
         lines.append(f"• {a.get('product_name')} ({a.get('alert_type')})")
-    lines.append("\nUsa /menu para volver al inicio.")
-    await telegram_client.send_message(chat_id, "\n".join(lines), reply_markup=_main_menu())
+    lines.append("\nPulsa 🏠 Menú para volver al inicio.")
+    await telegram_client.send_message(chat_id, "\n".join(lines), reply_markup=_reply_keyboard())
 
 
 async def show_help(chat_id: int) -> None:
@@ -149,8 +184,9 @@ async def show_help(chat_id: int) -> None:
         "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
         "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
         "<b>Navegación</b>\n"
-        "Pulsa el botón <b>☰</b> junto al teclado para ver todos los comandos.\n\n"
+        "Pulsa el botón <b>☰</b> junto al teclado o los botones grandes de abajo.\n\n"
         "<b>Comandos</b>\n"
+        "/start — Empezar / bienvenida\n"
         "/menu — Volver al menú principal\n"
         "/ofertas — Mejores ofertas del catálogo\n"
         "/moviles — Móviles por marca y filtros\n"
@@ -161,7 +197,7 @@ async def show_help(chat_id: int) -> None:
         "En cualquier ficha puedes pulsar <b>Avísame</b> para recibir un aviso "
         "cuando cambien precio o condiciones."
     )
-    await telegram_client.send_message(chat_id, help_text, reply_markup=_main_menu())
+    await telegram_client.send_message(chat_id, help_text, reply_markup=_reply_keyboard())
 
 
 def _command_name(text: str) -> str | None:
@@ -169,6 +205,26 @@ def _command_name(text: str) -> str | None:
         return None
     head = text.split()[0]
     return head.split("@", 1)[0].lower()
+
+
+def _is_casual_greeting(text: str) -> bool:
+    normalized = text.strip().lower().rstrip("!.?")
+    return normalized in _GREETINGS
+
+
+async def _route_text_action(chat_id: int, user_id: int, text: str) -> bool:
+    actions = {
+        BTN_OFERTAS: show_deals,
+        BTN_MOVILES: show_phones_menu,
+        BTN_NOVEDADES: show_new_products,
+        BTN_PARAMI: start_forme_flow,
+        BTN_MENU: lambda cid: show_main_menu(cid, greeting=False),
+    }
+    action = actions.get(text.strip())
+    if action:
+        await action(chat_id)
+        return True
+    return False
 
 
 async def handle_update(update: dict[str, Any]) -> None:
@@ -186,9 +242,14 @@ async def _handle_message(message: dict[str, Any]) -> None:
     user_id = message["from"]["id"]
     text = (message.get("text") or "").strip()
     command = _command_name(text)
+    st = _state(chat_id)
 
-    if command in {"/start", "/menu"}:
-        await show_main_menu(chat_id, greeting=command == "/start")
+    if command == "/start":
+        first_time = not st.get("onboarded")
+        await show_main_menu(chat_id, greeting=True, first_time=first_time)
+        return
+    if command == "/menu":
+        await show_main_menu(chat_id, greeting=False)
         return
     if command == "/ofertas":
         await show_deals(chat_id)
@@ -209,10 +270,17 @@ async def _handle_message(message: dict[str, Any]) -> None:
         await show_help(chat_id)
         return
 
+    if await _route_text_action(chat_id, user_id, text):
+        return
+
+    if _is_casual_greeting(text) or not st.get("onboarded"):
+        await show_main_menu(chat_id, greeting=not st.get("onboarded"), first_time=not st.get("onboarded"))
+        return
+
     await telegram_client.send_message(
         chat_id,
-        "No entendí ese mensaje. Usa /menu o /ayuda.",
-        reply_markup=_main_menu(),
+        "No he entendido ese mensaje.\n\nPulsa <b>🏠 Menú</b> abajo o escribe /menu.",
+        reply_markup=_reply_keyboard(),
     )
 
 
