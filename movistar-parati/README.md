@@ -65,12 +65,17 @@ No commitear el token. `@Movistarparatibot` — modo **polling** activo hasta te
 
 ## Panel de operación (demo)
 
-- **Admin:** https://flights.pmediaplus.com/movistar-demo/admin (alias `/panel`)
+- **Admin:** https://movistarparati.pmediaplus.com/movistar-demo/admin (alias `/panel`)
 - **CMS NocoDB:** https://mpa.parvusmedia.com/dashboard/#/nc/pzyr6ncnc9dk4h0/mjzz3jl42nwvod7
 - Clave: variable `ADMIN_API_KEY` en `backend/.env` del VPS (no commitear)
 
-Cuando el DNS de `movistar-parati.pmediaplus.com` apunte al VPS, la URL canónica será:
-`https://movistar-parati.pmediaplus.com/movistar-demo/admin`
+Cuando el DNS de `movistarparati.pmediaplus.com` apunte al VPS (`87.106.194.137`), activar TLS:
+
+```bash
+sudo certbot certonly --webroot -w /var/www/html -d movistarparati.pmediaplus.com
+sudo cp /opt/apps/movistar-parati/deploy/nginx-movistarparati.conf /etc/nginx/sites-available/movistarparati
+sudo nginx -t && sudo systemctl reload nginx
+```
 
 1. Usuario crea alerta en Telegram
 2. Cambias `monthly_price` en NocoDB (o botón contextual en el panel admin)
