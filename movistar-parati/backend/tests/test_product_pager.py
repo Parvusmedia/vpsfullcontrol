@@ -37,6 +37,10 @@ def _sample_product(name: str, monthly: float) -> Product:
     )
 
 
+def _nav_callbacks(keyboard: dict) -> list[str]:
+    return [btn["callback_data"] for btn in keyboard["inline_keyboard"][0]]
+
+
 def test_pager_caption_includes_counter_and_hint():
     product = _sample_product("Galaxy S25", 12.5)
     text = pager_caption(product, "🔥 Mejores ofertas", 1, 5, deal=True)
@@ -47,12 +51,22 @@ def test_pager_caption_includes_counter_and_hint():
     assert product_card_text(product, deal=True) in text
 
 
-def test_pager_keyboard_has_navigation_only():
+def test_pager_keyboard_first_item_only_next():
     product = _sample_product("Pixel 11", 8.5)
-    kb = pager_keyboard(product, 1, 5)
-    rows = kb["inline_keyboard"]
-    assert rows[0][0]["callback_data"] == "pager:prev"
-    assert rows[0][1]["text"] == "2/5"
-    assert rows[0][2]["callback_data"] == "pager:next"
-    assert rows[1][0]["text"] == "👀 Ver oferta"
-    assert rows[-1][0]["callback_data"] == "menu:home"
+    kb = pager_keyboard(product, 0, 5)
+    callbacks = _nav_callbacks(kb)
+    assert callbacks == ["pager:noop", "pager:next"]
+
+
+def test_pager_keyboard_last_item_only_prev():
+    product = _sample_product("Pixel 11", 8.5)
+    kb = pager_keyboard(product, 4, 5)
+    callbacks = _nav_callbacks(kb)
+    assert callbacks == ["pager:prev", "pager:noop"]
+
+
+def test_pager_keyboard_middle_item_has_both():
+    product = _sample_product("Pixel 11", 8.5)
+    kb = pager_keyboard(product, 2, 5)
+    callbacks = _nav_callbacks(kb)
+    assert callbacks == ["pager:prev", "pager:noop", "pager:next"]

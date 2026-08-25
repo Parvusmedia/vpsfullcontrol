@@ -25,14 +25,23 @@ def pager_caption(product: Product, title: str, index: int, total: int, *, deal:
     return "".join(parts)
 
 
+def _pager_nav_row(index: int, total: int) -> list[dict[str, str]]:
+  counter = {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"}
+  if total <= 1:
+      return [counter]
+  if index <= 0:
+      return [counter, {"text": "▶️", "callback_data": "pager:next"}]
+  if index >= total - 1:
+      return [{"text": "◀️", "callback_data": "pager:prev"}, counter]
+  return [
+      {"text": "◀️", "callback_data": "pager:prev"},
+      counter,
+      {"text": "▶️", "callback_data": "pager:next"},
+  ]
+
+
 def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
-    rows: list[list[dict[str, str]]] = [
-        [
-            {"text": "◀️", "callback_data": "pager:prev"},
-            {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"},
-            {"text": "▶️", "callback_data": "pager:next"},
-        ],
-    ]
+    rows: list[list[dict[str, str]]] = [_pager_nav_row(index, total)]
     if product.product_url:
         rows.append([{"text": "👀 Ver oferta", "url": product.product_url}])
     rows.append([{"text": "🔔 Avísame", "callback_data": f"alert:menu:{product.id}"}])
@@ -177,7 +186,10 @@ async def move_product_pager(chat_id: int, state: PagerState, delta: int) -> Non
     total = len(pager.get("products") or pager.get("product_ids") or [])
     if total <= 1:
         return
-    pager["index"] = (int(pager["index"]) + delta) % total
+    new_index = int(pager["index"]) + delta
+    if new_index < 0 or new_index >= total:
+        return
+    pager["index"] = new_index
     await render_product_pager(chat_id, state, edit=True)
 
 
