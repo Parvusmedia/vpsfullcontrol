@@ -77,7 +77,74 @@ async def _clear_inline_keyboard(chat_id: int, message_id: int | None) -> None:
     )
 
 
+def _nav_inline_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "🔥 Ofertas", "callback_data": "menu:deals"},
+                {"text": "📱 Móviles", "callback_data": "menu:phones"},
+            ],
+            [
+                {"text": "🆕 Novedades", "callback_data": "menu:new"},
+                {"text": "💙 Para mí", "callback_data": "menu:forme"},
+            ],
+            [{"text": "🔔 Mis avisos", "callback_data": "menu:alerts"}],
+        ]
+    }
+
+
+def _segment_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "🍎 Apple primero", "callback_data": "segment:apple"},
+                {"text": "🤖 Android primero", "callback_data": "segment:android"},
+            ],
+            [
+                {"text": "✨ Ver todas las marcas", "callback_data": "segment:all"},
+                {"text": "Omitir", "callback_data": "segment:skip"},
+            ],
+        ]
+    }
+
+
+def apply_display_boost(products: list[Product], boost: str | None) -> list[Product]:
+    if not boost or boost in {"all", "skip"}:
+        return products
+    if boost == "apple":
+        preferred = [p for p in products if p.brand.lower() == "apple"]
+        others = [p for p in products if p.brand.lower() != "apple"]
+        return preferred + others
+    if boost == "android":
+        android_brands = {"samsung", "google", "xiaomi"}
+        preferred = [p for p in products if p.brand.lower() in android_brands]
+        others = [p for p in products if p.brand.lower() not in android_brands]
+        return preferred + others
+    return products
+
+
+async def _ask_display_preference(chat_id: int) -> None:
+    await telegram_client.send_message(
+        chat_id,
+        "¿Qué te interesa ver <b>primero</b>?\n\n"
+        "<i>No es un filtro: siempre puedes ver todas las marcas "
+        "(también si compras para otra persona).</i>",
+        reply_markup=_segment_menu(),
+    )
+
+
 def _brand_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "🍎 Apple", "callback_data": "brand:Apple"}],
+            [{"text": "📱 Samsung", "callback_data": "brand:Samsung"}],
+            [{"text": "✨ Google", "callback_data": "brand:Google"}],
+            [{"text": "📱 Xiaomi", "callback_data": "brand:Xiaomi"}],
+            [{"text": "🔥 Ofertas", "callback_data": "menu:deals"}],
+            [{"text": "💸 Menos de 15 €/mes", "callback_data": "filter:monthly:15"}],
+            _home_row(),
+        ]
+    }
     return {
         "inline_keyboard": [
             [{"text": "🍎 Apple", "callback_data": "brand:Apple"}],
@@ -135,18 +202,20 @@ async def show_main_menu(
             "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
             "Te ayudamos a encontrar móviles y ofertas que encajen contigo, "
             "y te avisamos si bajan de precio.\n\n"
-            "👉 Solo tienes que elegir un botón para navegar por las opciones. "
-            "También puedes usar el menú <b>☰</b> abajo a la izquierda del teclado.\n\n"
+            "👉 Elige una opción con los <b>botones de este mensaje</b>. "
+            "También puedes abrir el menú <b>☰</b> (abajo a la izquierda) "
+            "para ver los comandos.\n\n"
             "<i>Concept Demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
         )
         _state(chat_id)["onboarded"] = True
     else:
         text = (
             "🏠 <b>Menú principal</b>\n\n"
-            "Elige una opción con los botones de abajo o abre el menú "
-            "<b>☰</b> a la izquierda del teclado."
+            "Elige una opción con los botones de este mensaje."
         )
-    await telegram_client.send_message(chat_id, text, reply_markup=_reply_keyboard())
+    await telegram_client.send_message(chat_id, text, reply_markup=_nav_inline_menu())
+    if first_time:
+        await _ask_display_preference(chat_id)
 
 
 async def show_phones_menu(chat_id: int) -> None:
@@ -154,7 +223,10 @@ async def show_phones_menu(chat_id: int) -> None:
 
 
 async def show_deals(chat_id: int) -> None:
-    products = await product_source.get_deals(5)
+    products = apply_display_boost(
+        await product_source.get_deals(8),
+        _state(chat_id).get("display_boost"),
+    )[:5]
     await open_product_pager(chat_id, _state(chat_id), products, "🔥 Mejores ofertas", deal=True)
 
 
@@ -242,7 +314,7 @@ async def show_help(chat_id: int) -> None:
         "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
         "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
         "<b>Navegación</b>\n"
-        "Usa los botones de abajo del teclado o el menú <b>☰</b> a la izquierda.\n\n"
+        "Usa los botones del mensaje o el menú <b>☰</b> a la izquierda del teclado.\n\n"
         "<b>Comandos</b>\n"
         "/start — Empezar / bienvenida\n"
         "/menu — Volver al menú principal\n"
@@ -255,7 +327,7 @@ async def show_help(chat_id: int) -> None:
         "En cualquier ficha puedes pulsar <b>Avísame</b> para recibir un aviso "
         "cuando cambien precio o condiciones."
     )
-    await telegram_client.send_message(chat_id, help_text, reply_markup=_reply_keyboard())
+    await telegram_client.send_message(chat_id, help_text, reply_markup=_nav_inline_menu())
 
 
 def _command_name(text: str) -> str | None:
@@ -454,6 +526,16 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
     elif data == "menu:alerts":
         await show_user_alerts(chat_id, user_id)
+    elif data.startswith("segment:"):
+        segment = data.split(":")[1]
+        st["display_boost"] = segment
+        labels = {
+            "apple": "🍎 Mostraremos Apple primero en las ofertas.",
+            "android": "🤖 Mostraremos Android primero en las ofertas.",
+            "all": "✨ Mostraremos todas las marcas por igual.",
+            "skip": "Perfecto, puedes explorar libremente.",
+        }
+        await telegram_client.send_message(chat_id, labels.get(segment, "Preferencia guardada para esta sesión."))
     elif data == "alerts:edit":
         await show_alerts_edit_menu(chat_id, user_id)
     elif data.startswith("alerts:del:"):
