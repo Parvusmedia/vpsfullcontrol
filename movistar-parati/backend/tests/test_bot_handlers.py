@@ -1,5 +1,5 @@
 from app.services.bot_commands import BOT_COMMANDS
-from app.services.bot_handlers import BTN_OFERTAS, _command_name, _is_casual_greeting
+from app.services.bot_handlers import BTN_OFERTAS, _brand_menu, _command_name, _is_casual_greeting
 
 
 def test_command_name_plain():
@@ -32,3 +32,11 @@ def test_casual_greeting_detected():
 
 def test_reply_button_labels():
     assert BTN_OFERTAS == "🔥 Ofertas"
+
+
+def test_brand_menu_includes_todos_option():
+    keyboard = _brand_menu()
+    labels = [btn["text"] for row in keyboard["inline_keyboard"] for btn in row]
+    assert "📱 Todos" in labels
+    callbacks = [btn["callback_data"] for row in keyboard["inline_keyboard"] for btn in row]
+    assert "brand:all" in callbacks

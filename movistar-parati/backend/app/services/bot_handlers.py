@@ -157,7 +157,9 @@ async def run_pending_action(chat_id: int, segment: str) -> None:
 
 
 def _brand_menu(segment: str | None = None) -> dict:
-    rows: list[list[dict[str, str]]] = []
+    rows: list[list[dict[str, str]]] = [
+        [{"text": "📱 Todos", "callback_data": "brand:all"}],
+    ]
     if segment == "apple":
         rows.append([{"text": "🍎 Apple", "callback_data": "brand:Apple"}])
     elif segment == "android":
@@ -501,14 +503,20 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await prompt_segment_choice(chat_id, "phones")
     elif data.startswith("brand:"):
         brand = data.split(":")[1]
-        products = filter_by_segment(
-            await product_source.get_products_by_brand(brand, 8),
-            st.get("segment_filter"),
-        )[:5]
+        if brand == "all":
+            products = filter_by_segment(await product_source.get_products(), st.get("segment_filter"))[:5]
+            title = "📱 Todos los móviles"
+        else:
+            products = filter_by_segment(
+                await product_source.get_products_by_brand(brand, 8),
+                st.get("segment_filter"),
+            )[:5]
+            title = f"📱 {brand}"
         if not products:
-            await _empty_segment_message(chat_id, f"móviles {brand}")
+            label = "móviles" if brand == "all" else f"móviles {brand}"
+            await _empty_segment_message(chat_id, label)
             return
-        await open_product_pager(chat_id, st, products, f"📱 {brand}")
+        await open_product_pager(chat_id, st, products, title)
     elif data.startswith("filter:monthly:"):
         max_p = float(data.split(":")[2])
         products = filter_by_segment(
