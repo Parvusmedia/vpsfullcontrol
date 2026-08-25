@@ -44,7 +44,37 @@ def _reply_keyboard() -> dict:
         ],
         "resize_keyboard": True,
         "is_persistent": True,
+        "one_time_keyboard": False,
+        "input_field_placeholder": "Elige una opción…",
     }
+
+
+async def _restore_reply_keyboard(chat_id: int) -> None:
+    """Fuerza a que Telegram vuelva a mostrar el teclado inferior tras menús inline."""
+    result = await telegram_client.api(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": ".",
+            "reply_markup": {"remove_keyboard": True},
+        },
+    )
+    temp_id = result.get("result", {}).get("message_id")
+    if temp_id:
+        await telegram_client.api("deleteMessage", {"chat_id": chat_id, "message_id": temp_id})
+
+
+async def _clear_inline_keyboard(chat_id: int, message_id: int | None) -> None:
+    if not message_id:
+        return
+    await telegram_client.api(
+        "editMessageReplyMarkup",
+        {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "reply_markup": {"inline_keyboard": []},
+        },
+    )
 
 
 def _brand_menu() -> dict:
@@ -86,9 +116,20 @@ async def send_product(chat_id: int, product: Product, *, deal: bool = False) ->
     await telegram_client.send_message(chat_id, text, reply_markup=keyboard)
 
 
-async def show_main_menu(chat_id: int, *, greeting: bool = True, first_time: bool = False) -> None:
+async def show_main_menu(
+    chat_id: int,
+    *,
+    greeting: bool = True,
+    first_time: bool = False,
+    restore_keyboard: bool = False,
+    source_message_id: int | None = None,
+) -> None:
     _state(chat_id).pop("flow", None)
     _state(chat_id).pop("pager", None)
+    if source_message_id:
+        await _clear_inline_keyboard(chat_id, source_message_id)
+    if restore_keyboard:
+        await _restore_reply_keyboard(chat_id)
     if first_time or greeting:
         text = (
             "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
@@ -235,7 +276,7 @@ async def _route_text_action(chat_id: int, user_id: int, text: str) -> bool:
         BTN_MOVILES: show_phones_menu,
         BTN_NOVEDADES: show_new_products,
         BTN_PARAMI: start_forme_flow,
-        BTN_MENU: lambda cid: show_main_menu(cid, greeting=False),
+        BTN_MENU: lambda cid: show_main_menu(cid, greeting=False, restore_keyboard=True),
     }
     action = actions.get(text.strip())
     if action:
@@ -266,7 +307,7 @@ async def _handle_message(message: dict[str, Any]) -> None:
         await show_main_menu(chat_id, greeting=True, first_time=first_time)
         return
     if command == "/menu":
-        await show_main_menu(chat_id, greeting=False)
+        await show_main_menu(chat_id, greeting=False, restore_keyboard=True)
         return
     if command == "/ofertas":
         await show_deals(chat_id)
@@ -316,7 +357,12 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
 
     if data == "menu:home":
         _state(chat_id).pop("pager", None)
-        await show_main_menu(chat_id, greeting=False)
+        await show_main_menu(
+            chat_id,
+            greeting=False,
+            restore_keyboard=True,
+            source_message_id=callback.get("message", {}).get("message_id"),
+        )
     elif data == "menu:deals":
         await show_deals(chat_id)
     elif data == "menu:new":

@@ -50,7 +50,7 @@ class TelegramClient:
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
         if reply_markup:
-            payload["reply_markup"] = reply_markup
+            payload["reply_markup"] = json.dumps(reply_markup)
         return await self.api("sendMessage", payload)
 
     async def send_photo_bytes(
