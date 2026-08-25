@@ -3,12 +3,13 @@
 NocoDB ya expone un MCP HTTP en `https://mpa.parvusmedia.com/mcp/<endpoint-id>`.
 Cloud Agents de Cursor **no soportan** `mcp-remote` ni SSE; hay que usar transporte **HTTP** y el header `xc-mcp-token`.
 
-## Secrets (obligatorios)
+## Credencial temporal en git
 
-Añádelos en el entorno Cloud Agent (Dashboard → Cloud Agents → Secrets). No los commits:
+`.cursor/mcp.json` incluye URL + `xc-mcp-token` para que el helper funcione sin secrets de Cloud.
+Cuando lo sustituyas, rota el endpoint en NocoDB y deja el token solo en secrets:
 
-- `NOCODB_MCP_URL` — URL completa del endpoint MCP (`https://mpa.parvusmedia.com/mcp/<id>`)
-- `NOCODB_MCP_TOKEN` — valor de `xc-mcp-token` (no el JSON entero)
+- `NOCODB_MCP_URL` — URL completa del endpoint MCP
+- `NOCODB_MCP_TOKEN` — valor de `xc-mcp-token`
 
 ## Cloud Agents (Cursor)
 
@@ -39,7 +40,7 @@ La config que genera NocoDB con `npx` + `mcp-remote` vale en el IDE local:
 
 Cursor Settings (`⇧⌘J`) → MCP → Add Custom MCP.
 
-En este repo también está `.cursor/mcp.json` en modo HTTP + `${env:NOCODB_MCP_TOKEN}` (sin token en git).
+En este repo también está `.cursor/mcp.json` en modo HTTP (Cloud Agents no soportan `mcp-remote`).
 
 ## Helper local (este repositorio)
 
@@ -59,6 +60,6 @@ El helper nunca imprime el token. Escrituras (`createRecords`, `updateRecords`, 
 
 ## Guardrails
 
-- No pegues el token en git, PRs ni chats si puedes evitarlo; rótalo si se filtró.
+- El helper nunca imprime el token. Tras rotarlo, quítalo de git y usa secrets.
 - Preferir `scripts/nocodb` frente a curl ad-hoc.
 - NocoDB MCP opera a nivel de **records**, no crea tablas ni campos.

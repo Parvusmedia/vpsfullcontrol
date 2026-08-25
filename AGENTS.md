@@ -38,7 +38,7 @@ Run:
 scripts/nocodb status
 ```
 
-This confirms `NOCODB_MCP_URL` and `NOCODB_MCP_TOKEN` are set and the 11 record tools are reachable.
+This confirms the HTTP MCP endpoint is reachable (token from env or `.cursor/mcp.json`) and the 11 record tools respond.
 
 ### Standard commands
 

@@ -19,6 +19,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 
@@ -169,16 +170,43 @@ class NocoDBMcpClient:
         return True, label, tools
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _load_mcp_json() -> tuple[str | None, str | None]:
+    path = _repo_root() / ".cursor" / "mcp.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None, None
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    if not isinstance(servers, dict):
+        return None, None
+    for server in servers.values():
+        if not isinstance(server, dict):
+            continue
+        url = server.get("url")
+        headers = server.get("headers") if isinstance(server.get("headers"), dict) else {}
+        token = headers.get("xc-mcp-token")
+        if isinstance(url, str) and url.startswith("http") and isinstance(token, str) and token and "${" not in token:
+            return url, token
+    return None, None
+
+
 def _require_client() -> NocoDBMcpClient | None:
     url = os.getenv("NOCODB_MCP_URL")
     token = os.getenv("NOCODB_MCP_TOKEN")
+    file_url, file_token = _load_mcp_json()
+    url = url or file_url
+    token = token or file_token
     missing = [name for name, value in (("NOCODB_MCP_URL", url), ("NOCODB_MCP_TOKEN", token)) if not value]
     if missing:
         _print_json(
             {
-                "error": "Faltan secrets de NocoDB MCP.",
+                "error": "Faltan URL o token de NocoDB MCP.",
                 "missing": missing,
-                "hint": "Añade NOCODB_MCP_URL y NOCODB_MCP_TOKEN en Cursor Cloud secrets. No uses mcp-remote en Cloud Agents.",
+                "hint": "Usa .cursor/mcp.json o secrets NOCODB_MCP_URL / NOCODB_MCP_TOKEN.",
             }
         )
         return None
@@ -187,10 +215,12 @@ def _require_client() -> NocoDBMcpClient | None:
 
 def cmd_status(client: NocoDBMcpClient) -> int:
     ok, result, tools = client.probe()
+    token_source = "env" if os.getenv("NOCODB_MCP_TOKEN") else "mcp.json"
     _print_json(
         {
             "nocodb_mcp_url": client.url,
             "token": "set",
+            "token_source": token_source,
             "probe": {"ok": ok, "result": result},
             "tool_count": len(tools),
             "tools": tools,
