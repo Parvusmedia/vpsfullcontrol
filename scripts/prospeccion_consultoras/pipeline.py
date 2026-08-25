@@ -62,6 +62,7 @@ POLL_MAX_WAIT = int(os.environ.get("CONSULTORAS_POLL_MAX_WAIT", "90"))
 FOLLOWUP_MIN_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_WAIT", "30"))
 FOLLOWUP_MAX_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MAX_WAIT", "90"))
 DEFAULT_FOLLOWUP_MIN_HOURS = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_HOURS", "0"))
+PROCESS_MIN_SCORE = 4
 
 HARD_EXCLUDE = (
     "recruiter",
@@ -564,6 +565,20 @@ def build_sme_queries() -> list[HarvestQuery]:
     ]
 
 
+def processable_score(score: int | float | None) -> bool:
+    return int(score or 0) >= PROCESS_MIN_SCORE
+
+
+def should_process_lead(lead: dict[str, Any]) -> bool:
+    if str(lead.get("source_query") or "").startswith("seed:"):
+        return True
+    return processable_score(lead.get("score"))
+
+
+def status_for_score(score: int) -> str:
+    return "reviewed" if processable_score(score) else "not_relevant"
+
+
 def hard_exclude_reason(lead: dict[str, Any]) -> str | None:
     if is_manual_lead(lead):
         return None
@@ -962,11 +977,7 @@ def lead_from_harvest(item: dict[str, Any], query: HarvestQuery) -> dict[str, An
             cm, fm = build_messages(lead)
             lead["connection_message"] = cm
             lead["followup_message"] = fm
-        lead["status"] = "reviewed"
-    elif s == 3:
-        lead["status"] = "reviewed"
-    else:
-        lead["status"] = "not_relevant"
+    lead["status"] = status_for_score(s)
     return lead
 
 
@@ -1057,6 +1068,12 @@ SYNC_SKIP_STATUSES = frozenset({
 
 
 def upsert_lead(lead: dict[str, Any]) -> dict[str, Any]:
+    if not should_process_lead(lead):
+        return {
+            "action": "skip",
+            "dedupe_key": lead.get("dedupe_key") or dedupe_key(lead.get("linkedin_url")),
+            "reason": f"score_below_min:{lead.get('score')}",
+        }
     base, token = nocodb_creds()
     row = row_for_nocodb(lead)
     key = row.get("dedupe_key") or ""
@@ -1392,11 +1409,7 @@ def lead_from_sn_item(item: dict[str, Any], *, source_query: str) -> dict[str, A
     if score >= 4:
         lead["connection_message"] = build_sme_inmail_message(lead)
         lead["followup_message"] = ""
-        lead["status"] = "reviewed"
-    elif score == 3:
-        lead["status"] = "reviewed"
-    else:
-        lead["status"] = "not_relevant"
+    lead["status"] = status_for_score(score)
     return lead
 
 
@@ -1412,7 +1425,7 @@ def sme_import_reject_reason(lead: dict[str, Any]) -> str | None:
     blob = f"{lead.get('job_title') or ''} {lead.get('headline') or ''}"
     if not has_sme_practice_signal(blob):
         return "no_practice_signal"
-    if int(lead.get("score") or 0) < 4:
+    if int(lead.get("score") or 0) < PROCESS_MIN_SCORE:
         return f"score:{lead.get('score')}"
     return None
 
@@ -1561,7 +1574,7 @@ async def cmd_discover(args: argparse.Namespace) -> int:
     queries = build_sme_queries() if segment == "sme" else build_queries()
     if args.query:
         queries = [q for q in queries if q.label == args.query]
-    min_score = 4 if segment == "sme" else 3
+    min_score = PROCESS_MIN_SCORE
     leads: list[dict[str, Any]] = []
     seen: set[str] = set()
     for q in queries[: args.max_queries]:
@@ -1894,7 +1907,7 @@ def cmd_ready(_: argparse.Namespace) -> int:
         rows = r.json().get("list") or []
     n = 0
     for row in rows:
-        if int(row.get("score") or 0) < 4:
+        if int(row.get("score") or 0) < PROCESS_MIN_SCORE:
             continue
         if row.get("status") in {"connection_sent", "accepted", "followup_ready", "followup_sent"}:
             continue
@@ -1919,7 +1932,7 @@ def cmd_ready_inmail(_: argparse.Namespace) -> int:
     for row in rows:
         if row.get("contact_type") != "sme_inmail":
             continue
-        if int(row.get("score") or 0) < 4:
+        if int(row.get("score") or 0) < PROCESS_MIN_SCORE:
             continue
         if row.get("status") in {"inmail_sent", "connection_sent", "accepted", "followup_sent"}:
             continue
@@ -2179,11 +2192,7 @@ def cmd_rescore(args: argparse.Namespace) -> int:
                     cm, fm = build_messages({**lead, **row})
                     row["connection_message"] = cm
                     row["followup_message"] = fm
-                row["status"] = "reviewed"
-            elif s == 3:
-                row["status"] = "reviewed"
-                row["connection_message"] = ""
-                row["followup_message"] = ""
+                row["status"] = status_for_score(s)
             else:
                 row["status"] = "not_relevant"
                 row["connection_message"] = ""
