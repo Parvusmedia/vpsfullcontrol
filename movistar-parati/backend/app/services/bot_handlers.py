@@ -4,7 +4,8 @@ import logging
 from typing import Any
 
 from app.services.change_detection import create_alert
-from app.services.product_service import Product, product_source
+from app.services.product_pager import handle_pager_callback, open_product_pager
+from app.services.product_service import Product, product_card_text, product_source
 from app.services.recommend import recommend_products
 from app.services.telegram_client import telegram_client
 
@@ -45,25 +46,6 @@ def _brand_menu() -> dict:
             _home_row(),
         ]
     }
-
-
-def product_card_text(p: Product, *, deal: bool = False) -> str:
-    lines = [f"📱 <b>{p.display_name}</b>\n"]
-    if p.monthly_price is not None:
-        lines.append(f"💳 <b>{p.monthly_price:.2f} €/mes</b>")
-        if p.months:
-            lines.append(f"{p.months} meses")
-    if p.price is not None:
-        lines.append(f"\n💰 Precio: {p.price:.0f} €")
-    if p.saving:
-        lines.append(f"\n🔥 Ahorras {p.saving:.0f} €")
-    if p.gift:
-        lines.append(f"\n🎁 {p.gift}")
-    elif p.promotion:
-        lines.append(f"\n🎁 {p.promotion}")
-    if deal and p.previous_price and p.price and p.price < p.previous_price:
-        lines.insert(1, f"🔥 <b>OFERTA PARA TI</b>\n\nAntes: {p.previous_price:.0f} €\nAhora: {p.price:.0f} €\n")
-    return "\n".join(lines)
 
 
 def product_keyboard(p: Product) -> dict:
@@ -113,16 +95,12 @@ async def show_phones_menu(chat_id: int) -> None:
 
 async def show_deals(chat_id: int) -> None:
     products = await product_source.get_deals(5)
-    await telegram_client.send_message(chat_id, "🔥 <b>Mejores ofertas</b>")
-    for p in products:
-        await send_product(chat_id, p, deal=True)
+    await open_product_pager(chat_id, _state(chat_id), products, "🔥 Mejores ofertas", deal=True)
 
 
 async def show_new_products(chat_id: int) -> None:
     products = await product_source.get_new_products(5)
-    await telegram_client.send_message(chat_id, "🆕 <b>Novedades</b>")
-    for p in products:
-        await send_product(chat_id, p)
+    await open_product_pager(chat_id, _state(chat_id), products, "🆕 Novedades")
 
 
 async def start_forme_flow(chat_id: int) -> None:
@@ -235,6 +213,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     st = _state(chat_id)
 
     if data == "menu:home":
+        _state(chat_id).pop("pager", None)
         await show_main_menu(chat_id, greeting=False)
     elif data == "menu:deals":
         await show_deals(chat_id)
@@ -245,13 +224,11 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     elif data.startswith("brand:"):
         brand = data.split(":")[1]
         products = await product_source.get_products_by_brand(brand, 5)
-        for p in products:
-            await send_product(chat_id, p)
+        await open_product_pager(chat_id, st, products, f"📱 {brand}")
     elif data.startswith("filter:monthly:"):
         max_p = float(data.split(":")[2])
         products = await product_source.get_products_under_monthly_price(max_p, 5)
-        for p in products:
-            await send_product(chat_id, p)
+        await open_product_pager(chat_id, st, products, f"💸 Menos de {max_p:.0f} €/mes")
     elif data == "menu:forme":
         await start_forme_flow(chat_id)
     elif data.startswith("forme:pref:"):
@@ -289,9 +266,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     elif data.startswith("forme:brand:"):
         brand = data.split(":")[2]
         picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand)
-        await telegram_client.send_message(chat_id, "💙 <b>Estos son los que mejor encajan contigo</b>")
-        for p in picks:
-            await send_product(chat_id, p)
+        await open_product_pager(chat_id, st, picks, "💙 Para mí")
         st.pop("flow", None)
     elif data.startswith("product:"):
         pid = data.split(":")[1]
@@ -331,3 +306,5 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
     elif data == "menu:alerts":
         await show_user_alerts(chat_id, user_id)
+    elif await handle_pager_callback(chat_id, st, data):
+        return

@@ -47,6 +47,27 @@ class Product:
         parts = [self.name, self.capacity]
         return " ".join(p for p in parts if p).strip()
 
+    def card_text(self, *, deal: bool = False) -> str:
+        lines = [f"📱 <b>{self.display_name}</b>\n"]
+        if self.monthly_price is not None:
+            lines.append(f"💳 <b>{self.monthly_price:.2f} €/mes</b>")
+            if self.months:
+                lines.append(f"{self.months} meses")
+        if self.price is not None:
+            lines.append(f"\n💰 Precio: {self.price:.0f} €")
+        if self.saving:
+            lines.append(f"\n🔥 Ahorras {self.saving:.0f} €")
+        if self.gift:
+            lines.append(f"\n🎁 {self.gift}")
+        elif self.promotion:
+            lines.append(f"\n🎁 {self.promotion}")
+        if deal and self.previous_price and self.price and self.price < self.previous_price:
+            lines.insert(
+                1,
+                f"🔥 <b>OFERTA PARA TI</b>\n\nAntes: {self.previous_price:.0f} €\nAhora: {self.price:.0f} €\n",
+            )
+        return "\n".join(lines)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
@@ -227,3 +248,7 @@ class NocoDBProductSource:
 
 
 product_source = NocoDBProductSource()
+
+
+def product_card_text(p: Product, *, deal: bool = False) -> str:
+    return p.card_text(deal=deal)
