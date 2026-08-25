@@ -15,6 +15,21 @@ cd /opt/apps/prospeccion-consultoras
 ./run.sh ready               # marca score>=4 como connection_ready
 ./run.sh contact --limit 4   # dry-run invitaciones Unipile
 ./run.sh contact --limit 4 --live  # envía (pausa 30–90s antes de cada invite)
+
+## Segmento SME (colaboración externa vía Sales Navigator InMail)
+
+```bash
+./run.sh queries --segment sme
+./run.sh preview-inmail --first-name Flor --tier deloitte_digital --country Spain
+./run.sh discover --segment sme --max-queries 14 --max-per-query 6
+./run.sh sync --segment sme
+./run.sh list                # revisar en NocoDB (contact_type=sme_inmail)
+./run.sh ready-inmail        # marca inmail_ready tras revisión
+./run.sh inmail --limit 3    # dry-run InMail
+./run.sh inmail --limit 3 --live  # envía InMail (Sales Navigator, pausa 30–90s)
+```
+
+Firmas: Deloitte Digital, Accenture Song, PwC, everis/NTT DATA, Making Science, IDOM.
 ./run.sh poll-acceptances --live   # detecta aceptaciones → status accepted
 ./run.sh followup --live --limit 3 # mensaje tras aceptación (pausa antes de cada uno)
 ./run.sh outreach --live             # poll + followup + contact (cron diario)

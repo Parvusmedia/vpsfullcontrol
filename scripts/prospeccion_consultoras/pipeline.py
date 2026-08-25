@@ -131,8 +131,22 @@ COMPANY_URLS = {
     "deloitte": "https://www.linkedin.com/company/1038",
     "deloitte_digital": "https://www.linkedin.com/company/2449847",
     "accenture": "https://www.linkedin.com/company/1033",
+    "pwc": "https://www.linkedin.com/company/1048",
     "everis": "https://www.linkedin.com/company/8339",
     "ntt_data": "https://www.linkedin.com/company/19141006",
+    "making_science": "https://www.linkedin.com/company/37596418",
+    "idom": "https://www.linkedin.com/company/164711",
+}
+
+FIRM_BRANDS = {
+    "deloitte": "Deloitte Digital",
+    "deloitte_digital": "Deloitte Digital",
+    "accenture": "Accenture Song",
+    "pwc": "PwC",
+    "everis": "everis",
+    "ntt_data": "NTT DATA",
+    "making_science": "Making Science",
+    "idom": "IDOM",
 }
 
 SENIORITY_IDS = "200,210,220,300,310,320"
@@ -329,6 +343,40 @@ def build_queries() -> list[HarvestQuery]:
     ]
 
 
+def build_sme_queries() -> list[HarvestQuery]:
+    """Directores/socios para outreach SME vía Sales Navigator InMail."""
+    es_leaders = (
+        "Socio,Socia,Partner,Managing Director,Director,Directora,"
+        "Director General,Director de,Dirección"
+    )
+    en_leaders = (
+        "Partner,Managing Director,Director,Principal,"
+        "Senior Manager Marketing,Senior Manager Digital"
+    )
+    return [
+        HarvestQuery("sme_deloitte_digital_es", "Spain", COMPANY_URLS["deloitte_digital"], es_leaders),
+        HarvestQuery("sme_accenture_song_es", "Spain", COMPANY_URLS["accenture"], es_leaders, "Accenture Song"),
+        HarvestQuery("sme_pwc_es", "Spain", COMPANY_URLS["pwc"], es_leaders),
+        HarvestQuery("sme_everis_es", "Spain", COMPANY_URLS["everis"], es_leaders),
+        HarvestQuery("sme_ntt_es", "Spain", COMPANY_URLS["ntt_data"], es_leaders),
+        HarvestQuery("sme_making_science_es", "Spain", COMPANY_URLS["making_science"], es_leaders),
+        HarvestQuery(
+            "sme_idom_es",
+            "Spain",
+            COMPANY_URLS["idom"],
+            es_leaders,
+            "digital OR innovación OR transformación OR datos",
+        ),
+        HarvestQuery("sme_deloitte_digital_uae", "United Arab Emirates", COMPANY_URLS["deloitte_digital"], en_leaders),
+        HarvestQuery("sme_accenture_song_uae", "United Arab Emirates", COMPANY_URLS["accenture"], en_leaders, "Accenture Song"),
+        HarvestQuery("sme_pwc_uae", "United Arab Emirates", COMPANY_URLS["pwc"], en_leaders),
+        HarvestQuery("sme_deloitte_digital_uk", "United Kingdom", COMPANY_URLS["deloitte_digital"], en_leaders),
+        HarvestQuery("sme_accenture_song_uk", "United Kingdom", COMPANY_URLS["accenture"], en_leaders, "Accenture Song"),
+        HarvestQuery("sme_pwc_uk", "United Kingdom", COMPANY_URLS["pwc"], en_leaders),
+        HarvestQuery("sme_making_science_uk", "United Kingdom", COMPANY_URLS["making_science"], en_leaders),
+    ]
+
+
 def hard_exclude_reason(lead: dict[str, Any]) -> str | None:
     blob = _norm(" ".join([
         str(lead.get("job_title") or ""),
@@ -436,6 +484,68 @@ def relevant_area(lead: dict[str, Any]) -> str:
         "Technology & Transformation": "technology transformation",
     }
     return mapping.get(str(practice), "digital transformation & customer experience")
+
+
+def firm_brand(lead: dict[str, Any]) -> str:
+    tier = str(lead.get("company_tier") or "")
+    if tier in FIRM_BRANDS:
+        return FIRM_BRANDS[tier]
+    blob = _norm(" ".join([str(lead.get("company") or ""), str(lead.get("headline") or ""), str(lead.get("source_query") or "")]))
+    if "accenture" in blob and "song" in blob:
+        return "Accenture Song"
+    if "deloitte" in blob:
+        return "Deloitte Digital"
+    if "pwc" in blob or "pricewaterhouse" in blob:
+        return "PwC"
+    if "making science" in blob:
+        return "Making Science"
+    if "everis" in blob or "ntt" in blob:
+        return "everis" if "everis" in blob else "NTT DATA"
+    return str(lead.get("company") or "la consultora")
+
+
+def use_spanish_outreach(lead: dict[str, Any]) -> bool:
+    country = str(lead.get("country") or lead.get("location") or "")
+    if any(x in country for x in ("Spain", "España")):
+        return True
+    tier = str(lead.get("company_tier") or "")
+    return tier in {"everis", "ntt_data", "making_science", "idom"}
+
+
+def build_sme_inmail_message(lead: dict[str, Any]) -> str:
+    first = (lead.get("first_name") or "there").strip()
+    brand = firm_brand(lead)
+    if use_spanish_outreach(lead):
+        return (
+            f"Hola {first}, encantado.\n\n"
+            f"Te contacto porque no tengo muy claro quién lleva este tipo de colaboraciones dentro de {brand} "
+            f"y pensé que quizá podrías orientarme.\n\n"
+            f"Llevo más de 20 años trabajando entre negocio y tecnología y actualmente colaboro con empresas en "
+            f"proyectos de automatización, transformación digital y desarrollo de nuevas soluciones.\n\n"
+            f"No estoy buscando una posición fija en {brand}. Lo que me gustaría explorar es la posibilidad de "
+            f"colaborar como especialista externo en proyectos concretos, integrándome con vuestros equipos cuando "
+            f"mi experiencia o las soluciones que hemos desarrollado puedan aportar valor.\n\n"
+            f"Creo que este modelo puede encajar especialmente bien en proyectos donde haya que pasar rápidamente "
+            f"de una necesidad de negocio a una solución real y ejecutable.\n\n"
+            f"Si tiene sentido, encantado de contarte brevemente lo que hacemos y, sobre todo, saber con quién "
+            f"debería hablar dentro de {brand}.\n\n"
+            f"Gracias,\nEmiliano"
+        )
+    return (
+        f"Hi {first}, nice to meet you.\n\n"
+        f"I'm reaching out because I'm not entirely sure who handles this type of collaboration within {brand}, "
+        f"and I thought you might be able to point me in the right direction.\n\n"
+        f"I've spent over 20 years working between business and technology, and I currently collaborate with "
+        f"companies on automation, digital transformation and building new solutions.\n\n"
+        f"I'm not looking for a permanent role at {brand}. What I'd like to explore is collaborating as an external "
+        f"specialist on specific projects, joining your teams when my experience or the solutions we've developed "
+        f"can add value.\n\n"
+        f"I believe this model works especially well on projects that need to move quickly from a business need to "
+        f"a real, executable solution.\n\n"
+        f"If it makes sense, I'd be happy to tell you briefly what we do — and especially to learn who I should "
+        f"speak with inside {brand}.\n\n"
+        f"Thanks,\nEmiliano"
+    )
 
 
 def build_messages(lead: dict[str, Any]) -> tuple[str, str]:
@@ -562,11 +672,20 @@ def lead_from_harvest(item: dict[str, Any], query: HarvestQuery) -> dict[str, An
     tier = "other"
     cl = _norm(company)
     if "deloitte" in cl:
-        tier = "deloitte"
+        tier = "deloitte_digital" if "digital" in cl or "deloitte_digital" in query.label else "deloitte"
     elif "accenture" in cl:
         tier = "accenture"
+    elif "pwc" in cl or "pricewaterhouse" in cl:
+        tier = "pwc"
+    elif "making science" in cl:
+        tier = "making_science"
+    elif "idom" in cl:
+        tier = "idom"
     elif "everis" in cl or "ntt" in cl:
-        tier = "everis"
+        tier = "everis" if "everis" in cl else "ntt_data"
+
+    sme = query.label.startswith("sme_")
+    contact_type = "sme_inmail" if sme else "practice_leader"
 
     lead: dict[str, Any] = {
         "first_name": first,
@@ -581,7 +700,7 @@ def lead_from_harvest(item: dict[str, Any], query: HarvestQuery) -> dict[str, An
         "location": location,
         "source_query": query.label,
         "dedupe_key": dedupe_key(url),
-        "contact_type": "practice_leader",
+        "contact_type": contact_type,
         "status": "new",
     }
     s, reason, kws = score_lead(lead)
@@ -591,9 +710,13 @@ def lead_from_harvest(item: dict[str, Any], query: HarvestQuery) -> dict[str, An
     lead["practice"] = detect_practice(f"{title} {headline}")
     lead["seniority"] = detect_seniority(title)
     if s >= 4:
-        cm, fm = build_messages(lead)
-        lead["connection_message"] = cm
-        lead["followup_message"] = fm
+        if sme:
+            lead["connection_message"] = build_sme_inmail_message(lead)
+            lead["followup_message"] = ""
+        else:
+            cm, fm = build_messages(lead)
+            lead["connection_message"] = cm
+            lead["followup_message"] = fm
         lead["status"] = "reviewed"
     elif s == 3:
         lead["status"] = "reviewed"
@@ -664,6 +787,17 @@ def find_by_dedupe(base: str, token: str, key: str) -> dict[str, Any] | None:
         return rows[0] if rows else None
 
 
+PROTECTED_STATUSES = frozenset({
+    "connection_ready",
+    "connection_sent",
+    "accepted",
+    "followup_ready",
+    "followup_sent",
+    "inmail_ready",
+    "inmail_sent",
+})
+
+
 def upsert_lead(lead: dict[str, Any]) -> dict[str, Any]:
     base, token = nocodb_creds()
     row = row_for_nocodb(lead)
@@ -672,6 +806,13 @@ def upsert_lead(lead: dict[str, Any]) -> dict[str, Any]:
     existing = find_by_dedupe(base, token, key)
     with httpx.Client(timeout=45) as client:
         if existing and existing.get("Id") is not None:
+            if str(existing.get("status") or "") in PROTECTED_STATUSES:
+                return {
+                    "action": "skip",
+                    "id": existing["Id"],
+                    "dedupe_key": key,
+                    "reason": f"protected_status:{existing.get('status')}",
+                }
             rid = existing["Id"]
             r = client.patch(
                 f"{base}/api/v2/tables/{TABLE_ID}/records",
@@ -735,9 +876,11 @@ def prepare_seed(seed: dict[str, Any]) -> dict[str, Any]:
 
 
 async def cmd_discover(args: argparse.Namespace) -> int:
-    queries = build_queries()
+    segment = getattr(args, "segment", "hire") or "hire"
+    queries = build_sme_queries() if segment == "sme" else build_queries()
     if args.query:
         queries = [q for q in queries if q.label == args.query]
+    min_score = 4 if segment == "sme" else 3
     leads: list[dict[str, Any]] = []
     seen: set[str] = set()
     for q in queries[: args.max_queries]:
@@ -755,13 +898,13 @@ async def cmd_discover(args: argparse.Namespace) -> int:
                 continue
             if hard_exclude_reason(lead):
                 continue
-            if lead.get("score", 0) < 3:
+            if lead.get("score", 0) < min_score:
                 continue
             seen.add(key)
             leads.append(lead)
             accepted += 1
         print(f"  raw={len(raw)} accepted={accepted}")
-    out = DATA_DIR / "discovered_leads.json"
+    out = DATA_DIR / ("discovered_sme_leads.json" if segment == "sme" else "discovered_leads.json")
     out.write_text(json.dumps(leads, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(leads)} leads -> {out}")
     return 0
@@ -776,16 +919,17 @@ def cmd_seed(_: argparse.Namespace) -> int:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    path = DATA_DIR / "discovered_leads.json"
+    segment = getattr(args, "segment", "hire") or "hire"
+    path = DATA_DIR / ("discovered_sme_leads.json" if segment == "sme" else "discovered_leads.json")
     if not path.exists():
-        print("no discovered_leads.json")
+        print(f"no {path.name}")
         return 1
     leads = json.loads(path.read_text(encoding="utf-8"))
     n = 0
     for lead in leads[: args.limit or len(leads)]:
         upsert_lead(lead)
         n += 1
-    print(f"synced {n} leads")
+    print(f"synced {n} leads from {path.name}")
     return 0
 
 
@@ -992,6 +1136,72 @@ def send_unipile_message(
         return {"ok": True, "http_status": resp.status_code, "chat_id": body.get("chat_id") or body.get("id")}
 
 
+def send_unipile_inmail(
+    *,
+    linkedin_url: str,
+    text: str,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Sales Navigator InMail a perfiles no conectados (linkedin[inmail]=true)."""
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        return {"ok": False, "reason": "missing_unipile_config"}
+
+    url = normalize_linkedin_url(linkedin_url) or linkedin_url
+    public_id = unipile_public_id(url or "")
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "reason": "missing_message"}
+
+    if dry_run:
+        return {
+            "ok": True,
+            "dry_run": True,
+            "linkedin_url": url,
+            "public_id": public_id,
+            "text_preview": text[:160],
+            "chars": len(text),
+        }
+
+    headers = {"X-API-KEY": api_key, "Accept": "application/json"}
+    provider_id = None
+    with httpx.Client(timeout=45) as client:
+        if public_id:
+            lookup = client.get(
+                f"{base_url}/users/{public_id}",
+                params={"account_id": account_id},
+                headers=headers,
+            )
+            if lookup.status_code < 400 and lookup.content:
+                body = lookup.json()
+                provider_id = body.get("provider_id") or body.get("id")
+        if not provider_id:
+            return {"ok": False, "reason": "missing_provider_id"}
+
+        resp = client.post(
+            f"{base_url}/chats",
+            headers=headers,
+            data={
+                "account_id": account_id,
+                "text": text,
+                "attendees_ids": provider_id,
+                "linkedin[inmail]": "true",
+                "linkedin[api]": "sales_navigator",
+            },
+        )
+        if resp.status_code >= 400:
+            return {"ok": False, "http_status": resp.status_code, "error": (resp.text or "")[:500]}
+        body = resp.json() if resp.content else {}
+        return {
+            "ok": True,
+            "http_status": resp.status_code,
+            "chat_id": body.get("chat_id") or body.get("id"),
+            "provider_id": provider_id,
+        }
+
+
 def cmd_ready(_: argparse.Namespace) -> int:
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Accept": "application/json"}
@@ -1012,6 +1222,77 @@ def cmd_ready(_: argparse.Namespace) -> int:
         n += 1
         print(f"ready id={rid} {row.get('first_name')} {row.get('last_name')} score={row.get('score')}")
     print(f"marked connection_ready: {n}")
+    return 0
+
+
+def cmd_ready_inmail(_: argparse.Namespace) -> int:
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Accept": "application/json"}
+    with httpx.Client(timeout=30) as client:
+        r = client.get(f"{base}/api/v2/tables/{TABLE_ID}/records", headers=headers, params={"limit": 300})
+        r.raise_for_status()
+        rows = r.json().get("list") or []
+    n = 0
+    for row in rows:
+        if row.get("contact_type") != "sme_inmail":
+            continue
+        if int(row.get("score") or 0) < 4:
+            continue
+        if row.get("status") in {"inmail_sent", "connection_sent", "accepted", "followup_sent"}:
+            continue
+        rid = row.get("Id")
+        if rid is None:
+            continue
+        patch_row(int(rid), {"status": "inmail_ready"})
+        n += 1
+        print(f"inmail_ready id={rid} {row.get('first_name')} {row.get('last_name')} score={row.get('score')}")
+    print(f"marked inmail_ready: {n}")
+    return 0
+
+
+def list_inmail_ready(*, limit: int = 50) -> list[dict[str, Any]]:
+    return list_rows_by_status("inmail_ready", limit=limit)
+
+
+def cmd_inmail(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    rows = list_inmail_ready(limit=args.limit or 50)
+    if not rows:
+        print("No hay filas con status=inmail_ready")
+        return 0
+    total = min(len(rows), args.limit or len(rows))
+    print(f"inmail {'DRY-RUN' if dry_run else 'LIVE'} limit={total} rows={len(rows)}")
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(rows[: args.limit or len(rows)], 1):
+        random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label=f"before InMail {i}/{total}")
+        rid = row.get("Id")
+        text = row.get("connection_message") or build_sme_inmail_message(row)
+        url = row.get("linkedin_url") or ""
+        out = send_unipile_inmail(linkedin_url=url, text=text, dry_run=dry_run)
+        out["id"] = rid
+        out["name"] = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        results.append(out)
+        print(f"[{i}] {out['name']} -> {json.dumps({k: out[k] for k in out if k not in {'text_preview'}}, ensure_ascii=False)}")
+        if dry_run:
+            print(f"    message ({out.get('chars', len(text))} chars):\n{text[:400]}…")
+        elif out.get("ok") and rid is not None:
+            patch_row(int(rid), {"status": "inmail_sent", "connection_sent_at": iso_utc()})
+    path = DATA_DIR / "inmail_results.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"wrote {path}")
+    return 0
+
+
+def cmd_preview_inmail(args: argparse.Namespace) -> int:
+    sample = {
+        "first_name": args.first_name or "Flor",
+        "company_tier": args.tier or "deloitte_digital",
+        "company": args.company or "Deloitte Digital",
+        "country": args.country or "Spain",
+    }
+    msg = build_sme_inmail_message(sample)
+    print(msg)
+    print(f"\n--- {len(msg)} chars ---")
     return 0
 
 
@@ -1195,9 +1476,13 @@ def cmd_rescore(_: argparse.Namespace) -> int:
             row["practice"] = detect_practice(f"{lead.get('job_title','')} {lead.get('headline','')}")
             row["seniority"] = detect_seniority(str(lead.get("job_title") or ""))
             if s >= 4:
-                cm, fm = build_messages({**lead, **row})
-                row["connection_message"] = cm
-                row["followup_message"] = fm
+                if row.get("contact_type") == "sme_inmail":
+                    row["connection_message"] = build_sme_inmail_message({**lead, **row})
+                    row["followup_message"] = ""
+                else:
+                    cm, fm = build_messages({**lead, **row})
+                    row["connection_message"] = cm
+                    row["followup_message"] = fm
                 row["status"] = "reviewed"
             elif s == 3:
                 row["status"] = "reviewed"
@@ -1242,13 +1527,14 @@ def cmd_list(_: argparse.Namespace) -> int:
         r.raise_for_status()
         rows = r.json().get("list") or []
     rows.sort(key=lambda x: int(x.get("score") or 0), reverse=True)
-    print(f"{'score':>5}  {'name':<28} {'company':<12} {'country':<18} status")
-    print("-" * 90)
+    print(f"{'score':>5}  {'name':<28} {'company':<12} {'country':<18} {'type':<10} status")
+    print("-" * 100)
     for row in rows:
         name = f"{row.get('first_name') or ''} {row.get('last_name') or ''}".strip() or (row.get("title") or "")[:28]
+        ctype = (row.get("contact_type") or "")[:10]
         print(
             f"{int(row.get('score') or 0):>5}  {name:<28} {(row.get('company') or '')[:12]:<12} "
-            f"{(row.get('country') or '')[:18]:<18} {row.get('status') or ''}"
+            f"{(row.get('country') or '')[:18]:<18} {ctype:<10} {row.get('status') or ''}"
         )
     export = DATA_DIR / "consultoras_review_table.json"
     export.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -1256,9 +1542,12 @@ def cmd_list(_: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_queries(_: argparse.Namespace) -> int:
-    for i, q in enumerate(build_queries(), 1):
-        print(f"{i:02d}. {q.label} | {q.location} | companies={q.current_companies}")
+def cmd_queries(args: argparse.Namespace) -> int:
+    segment = getattr(args, "segment", "hire") or "hire"
+    queries = build_sme_queries() if segment == "sme" else build_queries()
+    for i, q in enumerate(queries, 1):
+        search = f" | search={q.search}" if q.search else ""
+        print(f"{i:02d}. {q.label} | {q.location} | companies={q.current_companies}{search}")
     return 0
 
 
@@ -1267,20 +1556,32 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("provision-columns")
-    sub.add_parser("queries")
+    p_queries = sub.add_parser("queries")
+    p_queries.add_argument("--segment", choices=("hire", "sme"), default="hire")
     sub.add_parser("seed")
     p_disc = sub.add_parser("discover")
+    p_disc.add_argument("--segment", choices=("hire", "sme"), default="hire")
     p_disc.add_argument("--max-queries", type=int, default=4)
     p_disc.add_argument("--max-per-query", type=int, default=8)
     p_disc.add_argument("--query", type=str, default="")
     p_sync = sub.add_parser("sync")
+    p_sync.add_argument("--segment", choices=("hire", "sme"), default="hire")
     p_sync.add_argument("--limit", type=int, default=0)
     sub.add_parser("list")
     sub.add_parser("rescore")
     sub.add_parser("ready")
+    sub.add_parser("ready-inmail")
+    p_preview = sub.add_parser("preview-inmail")
+    p_preview.add_argument("--first-name", type=str, default="Flor")
+    p_preview.add_argument("--tier", type=str, default="deloitte_digital")
+    p_preview.add_argument("--company", type=str, default="Deloitte Digital")
+    p_preview.add_argument("--country", type=str, default="Spain")
     p_contact = sub.add_parser("contact")
     p_contact.add_argument("--limit", type=int, default=4)
     p_contact.add_argument("--live", action="store_true")
+    p_inmail = sub.add_parser("inmail")
+    p_inmail.add_argument("--limit", type=int, default=3)
+    p_inmail.add_argument("--live", action="store_true")
     p_poll = sub.add_parser("poll-acceptances")
     p_poll.add_argument("--limit", type=int, default=100)
     p_poll.add_argument("--live", action="store_true")
@@ -1317,8 +1618,14 @@ def main() -> int:
         return cmd_rescore(args)
     if args.cmd == "ready":
         return cmd_ready(args)
+    if args.cmd == "ready-inmail":
+        return cmd_ready_inmail(args)
+    if args.cmd == "preview-inmail":
+        return cmd_preview_inmail(args)
     if args.cmd == "contact":
         return cmd_contact(args)
+    if args.cmd == "inmail":
+        return cmd_inmail(args)
     if args.cmd == "poll-acceptances":
         return cmd_poll_acceptances(args)
     if args.cmd == "followup":
