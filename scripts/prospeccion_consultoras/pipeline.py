@@ -1127,7 +1127,9 @@ def resolve_sn_profile(*, keywords: str, expect_name: str = "") -> dict[str, Any
         return None
     headers = {"X-API-KEY": api_key, "Accept": "application/json", "Content-Type": "application/json"}
     body = {"api": "sales_navigator", "category": "people", "keywords": keywords}
-    expect = _name_tokens(expect_name)
+    expect_parts = [t for t in re.split(r"\s+", expect_name.strip()) if t]
+    expect_first = _norm(expect_parts[0]) if expect_parts else ""
+    expect_last_parts = [_norm(p) for p in expect_parts[1:]] if len(expect_parts) > 1 else []
     best: tuple[int, dict[str, Any]] | None = None
     with httpx.Client(timeout=45) as client:
         resp = client.post(
@@ -1144,22 +1146,38 @@ def resolve_sn_profile(*, keywords: str, expect_name: str = "") -> dict[str, Any
             name = str(item.get("name") or "").strip()
             headline = str(item.get("headline") or "")
             blob = _norm(f"{name} {headline}")
-            score = 0
             name_tokens = _name_tokens(name)
-            if expect:
-                score += 4 * len(expect & name_tokens)
+            if expect_first and expect_first not in name_tokens and expect_first not in _norm(name):
+                continue
+            if expect_last_parts and not all(p in name_tokens or p in _norm(name) for p in expect_last_parts):
+                continue
+            score = 0
+            if expect_first and expect_first in name_tokens:
+                score += 4
+            score += 2 * sum(1 for p in expect_last_parts if p in name_tokens)
             if "ntt" in blob or "everis" in blob:
-                score += 3
+                score += 4
             if "sap" in blob:
                 score += 2
             if "director" in blob or "head" in blob or "partner" in blob or "socio" in blob:
                 score += 1
-            if score <= 0:
+            if score < 8:
                 continue
+            pid = item.get("public_identifier")
+            if pid:
+                lookup = client.get(
+                    f"{base_url}/users/{pid}",
+                    params={"account_id": account_id},
+                    headers={"X-API-KEY": api_key, "Accept": "application/json"},
+                )
+                if lookup.status_code < 400 and lookup.content:
+                    occ = _norm(str(lookup.json().get("headline") or lookup.json().get("occupation") or headline))
+                    if "ntt" not in occ and "everis" not in occ:
+                        continue
             candidate = {
                 "name": name,
                 "headline": headline,
-                "public_identifier": item.get("public_identifier"),
+                "public_identifier": pid,
                 "profile_url": item.get("profile_url"),
                 "member_id": item.get("id"),
             }
@@ -1221,7 +1239,7 @@ def prepare_manual_lead(raw: dict[str, Any], *, source_query: str) -> dict[str, 
 def cmd_import_manual(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_absolute():
-        path = DATA_DIR / path.name if path.parent == Path(".") else path
+        path = DATA_DIR / path
     if not path.exists():
         print(f"no existe {path}")
         return 1
