@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 
@@ -28,6 +29,17 @@ class TelegramClient:
                 logger.error("Telegram API %s failed: %s", method, data)
             return data
 
+    async def api_multipart(self, method: str, data: dict[str, str], files: dict[str, Any]) -> dict[str, Any]:
+        if not self.configured:
+            logger.warning("Telegram token not configured; skipping %s", method)
+            return {"ok": False, "description": "token_missing"}
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(f"{self.base}/{method}", data=data, files=files)
+            payload = resp.json()
+            if not payload.get("ok"):
+                logger.error("Telegram API %s failed: %s", method, payload)
+            return payload
+
     async def send_message(
         self,
         chat_id: int,
@@ -40,6 +52,53 @@ class TelegramClient:
         if reply_markup:
             payload["reply_markup"] = reply_markup
         return await self.api("sendMessage", payload)
+
+    async def send_photo_bytes(
+        self,
+        chat_id: int,
+        photo_bytes: bytes,
+        *,
+        caption: str,
+        reply_markup: dict[str, Any] | None = None,
+        parse_mode: str = "HTML",
+    ) -> dict[str, Any]:
+        data: dict[str, str] = {
+            "chat_id": str(chat_id),
+            "caption": caption,
+            "parse_mode": parse_mode,
+        }
+        if reply_markup:
+            data["reply_markup"] = json.dumps(reply_markup)
+        files = {"photo": ("product.jpg", photo_bytes, "image/jpeg")}
+        return await self.api_multipart("sendPhoto", data, files)
+
+    async def edit_message_media_bytes(
+        self,
+        chat_id: int,
+        message_id: int,
+        photo_bytes: bytes,
+        *,
+        caption: str,
+        reply_markup: dict[str, Any] | None = None,
+        parse_mode: str = "HTML",
+    ) -> dict[str, Any]:
+        media = json.dumps(
+            {
+                "type": "photo",
+                "media": "attach://photo",
+                "caption": caption,
+                "parse_mode": parse_mode,
+            }
+        )
+        data: dict[str, str] = {
+            "chat_id": str(chat_id),
+            "message_id": str(message_id),
+            "media": media,
+        }
+        if reply_markup:
+            data["reply_markup"] = json.dumps(reply_markup)
+        files = {"photo": ("product.jpg", photo_bytes, "image/jpeg")}
+        return await self.api_multipart("editMessageMedia", data, files)
 
     async def answer_callback(self, callback_query_id: str, text: str = "") -> dict[str, Any]:
         return await self.api("answerCallbackQuery", {"callback_query_id": callback_query_id, "text": text})

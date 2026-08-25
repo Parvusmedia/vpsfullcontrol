@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from app.services.change_detection import create_alert
+from app.services.product_image import get_normalized_product_image
 from app.services.product_pager import handle_pager_callback, open_product_pager
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.recommend import recommend_products
@@ -84,20 +85,16 @@ def product_keyboard(p: Product) -> dict:
 async def send_product(chat_id: int, product: Product, *, deal: bool = False) -> None:
     text = product_card_text(product, deal=deal)
     keyboard = product_keyboard(product)
-    if product.image_url:
-        result = await telegram_client.api(
-            "sendPhoto",
-            {
-                "chat_id": chat_id,
-                "photo": product.image_url,
-                "caption": text,
-                "parse_mode": "HTML",
-                "reply_markup": keyboard,
-            },
-        )
-        if result.get("ok"):
-            return
-        logger.warning("sendPhoto failed for %s, falling back to text", product.id)
+    photo_bytes = await get_normalized_product_image(product)
+    result = await telegram_client.send_photo_bytes(
+        chat_id,
+        photo_bytes,
+        caption=text,
+        reply_markup=keyboard,
+    )
+    if result.get("ok"):
+        return
+    logger.warning("sendPhoto bytes failed for %s, falling back to text", product.id)
     await telegram_client.send_message(chat_id, text, reply_markup=keyboard)
 
 

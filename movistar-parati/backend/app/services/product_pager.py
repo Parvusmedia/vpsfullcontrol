@@ -3,14 +3,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from app.services.product_image import get_normalized_product_image
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.telegram_client import telegram_client
 
 logger = logging.getLogger("movistar-parati.pager")
 
 PagerState = dict[str, Any]
-
-FALLBACK_IMAGE = "https://picsum.photos/seed/movistar-parati/600/400"
 
 
 def pager_caption(product: Product, title: str, index: int, total: int, *, deal: bool = False) -> str:
@@ -41,14 +40,6 @@ def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
     return {"inline_keyboard": rows}
 
 
-def _pager_products(state: PagerState) -> list[Product]:
-    pager = state.get("pager") or {}
-    cached = pager.get("products")
-    if cached:
-        return cached
-    return []
-
-
 async def _resolve_products(state: PagerState) -> list[Product]:
     pager = state.get("pager")
     if not pager:
@@ -66,31 +57,23 @@ async def _resolve_products(state: PagerState) -> list[Product]:
     return products
 
 
-def _photo_url(product: Product) -> str:
-    return product.image_url or FALLBACK_IMAGE
-
-
 async def _send_pager_message(
     chat_id: int,
     product: Product,
     caption: str,
     keyboard: dict[str, Any],
 ) -> dict[str, Any]:
-    photo = _photo_url(product)
-    result = await telegram_client.api(
-        "sendPhoto",
-        {
-            "chat_id": chat_id,
-            "photo": photo,
-            "caption": caption,
-            "parse_mode": "HTML",
-            "reply_markup": keyboard,
-        },
+    photo_bytes = await get_normalized_product_image(product)
+    result = await telegram_client.send_photo_bytes(
+        chat_id,
+        photo_bytes,
+        caption=caption,
+        reply_markup=keyboard,
     )
     if result.get("ok"):
         return result
 
-    logger.warning("sendPhoto failed for %s, falling back to text", product.id)
+    logger.warning("sendPhoto bytes failed for %s, falling back to text", product.id)
     return await telegram_client.send_message(chat_id, caption, reply_markup=keyboard)
 
 
@@ -101,25 +84,18 @@ async def _edit_pager_message(
     caption: str,
     keyboard: dict[str, Any],
 ) -> dict[str, Any]:
-    photo = _photo_url(product)
-    result = await telegram_client.api(
-        "editMessageMedia",
-        {
-            "chat_id": chat_id,
-            "message_id": message_id,
-            "media": {
-                "type": "photo",
-                "media": photo,
-                "caption": caption,
-                "parse_mode": "HTML",
-            },
-            "reply_markup": keyboard,
-        },
+    photo_bytes = await get_normalized_product_image(product)
+    result = await telegram_client.edit_message_media_bytes(
+        chat_id,
+        message_id,
+        photo_bytes,
+        caption=caption,
+        reply_markup=keyboard,
     )
     if result.get("ok"):
         return result
 
-    logger.warning("editMessageMedia failed for %s, falling back to editMessageText", product.id)
+    logger.warning("editMessageMedia bytes failed for %s, falling back to editMessageText", product.id)
     return await telegram_client.api(
         "editMessageText",
         {
@@ -151,7 +127,6 @@ async def open_product_pager(
         "title": title,
         "deal": deal,
         "message_id": None,
-        "has_photo": True,
     }
     await render_product_pager(chat_id, state)
 

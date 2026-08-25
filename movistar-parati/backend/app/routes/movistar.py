@@ -1,9 +1,11 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import Response
 
 from app.config import get_settings
 from app.services.change_detection import log_event, poll_catalogue_changes
+from app.services.product_image import get_normalized_product_image
 from app.services.product_service import product_source
 from app.services.bot_handlers import handle_update
 
@@ -38,6 +40,19 @@ async def get_product(product_id: str):
     if not p:
         raise HTTPException(404, "Not found")
     return p.to_dict()
+
+
+@router.get("/api/movistar/products/{product_id}/image")
+async def get_product_image(product_id: str):
+    product = await product_source.get_product(product_id)
+    if not product:
+        raise HTTPException(404, "Not found")
+    image_bytes = await get_normalized_product_image(product)
+    return Response(
+        content=image_bytes,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/api/movistar/deals")
