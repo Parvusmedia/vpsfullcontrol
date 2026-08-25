@@ -55,6 +55,8 @@ NOCODB_COLUMNS: list[tuple[str, str]] = [
 
 INVITE_MIN_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MIN_WAIT", "30"))
 INVITE_MAX_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MAX_WAIT", "90"))
+INMAIL_WAIT_SECONDS = int(os.environ.get("CONSULTORAS_INMAIL_WAIT_SECONDS", "0"))
+INMAIL_DAILY_LIMIT = int(os.environ.get("CONSULTORAS_INMAIL_DAILY_LIMIT", "20"))
 POLL_MIN_WAIT = int(os.environ.get("CONSULTORAS_POLL_MIN_WAIT", "30"))
 POLL_MAX_WAIT = int(os.environ.get("CONSULTORAS_POLL_MAX_WAIT", "90"))
 FOLLOWUP_MIN_WAIT = int(os.environ.get("CONSULTORAS_FOLLOWUP_MIN_WAIT", "30"))
@@ -1480,10 +1482,15 @@ def cmd_inmail(args: argparse.Namespace) -> int:
         print("No hay filas con status=inmail_ready")
         return 0
     total = min(len(rows), args.limit or len(rows))
-    print(f"inmail {'DRY-RUN' if dry_run else 'LIVE'} limit={total} rows={len(rows)}")
+    wait_s = int(getattr(args, "wait_seconds", 0) or 0) or INMAIL_WAIT_SECONDS or 0
+    wait_label = f"{wait_s}s fixed" if wait_s else f"{INVITE_MIN_WAIT}-{INVITE_MAX_WAIT}s random"
+    print(f"inmail {'DRY-RUN' if dry_run else 'LIVE'} limit={total} rows={len(rows)} wait={wait_label}")
     results: list[dict[str, Any]] = []
     for i, row in enumerate(rows[: args.limit or len(rows)], 1):
-        random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label=f"before InMail {i}/{total}")
+        if wait_s > 0:
+            random_wait(wait_s, wait_s, label=f"before InMail {i}/{total}")
+        else:
+            random_wait(INVITE_MIN_WAIT, INVITE_MAX_WAIT, label=f"before InMail {i}/{total}")
         rid = row.get("Id")
         text = row.get("connection_message") or build_sme_inmail_message(row)
         url = row.get("linkedin_url") or ""
@@ -1815,6 +1822,12 @@ def main() -> int:
     p_inmail = sub.add_parser("inmail")
     p_inmail.add_argument("--limit", type=int, default=3)
     p_inmail.add_argument("--live", action="store_true")
+    p_inmail.add_argument(
+        "--wait-seconds",
+        type=int,
+        default=0,
+        help="Pausa fija entre InMails (p. ej. 180 = 3 min). Si no se indica, usa CONSULTORAS_INMAIL_WAIT_SECONDS o 30-90s.",
+    )
     p_poll = sub.add_parser("poll-acceptances")
     p_poll.add_argument("--limit", type=int, default=100)
     p_poll.add_argument("--live", action="store_true")
