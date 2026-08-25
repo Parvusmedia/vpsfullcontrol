@@ -1,29 +1,51 @@
-# DEMO — Movistar Para ti (5 minutos)
+# DEMO — Movistar Para Ti (5 minutos)
 
 ## 1. Abrir Telegram
 Busca `@Movistarparatibot` y envía `/start`.
 
-## 2. Crear alerta
-- Toca **Ver ofertas** → Pixel 11 → **Avísame si baja**
-- O: **Black Friday** → Samsung → `< 10 €/mes`
+## 2. Explorar catálogo
+- **Móviles** → **Todas las marcas** → se abre el listado completo (pager con `1/5`, `2/5`…)
+- O elige marca / filtro de precio: **< 10 €/mes**, **10–20 €/mes**, **< 15 €/mes**
 
-## 3. Abrir Admin
-`https://movistarparati.pmediaplus.com/panel` → introduce `ADMIN_API_KEY` del servidor.
+## 3. Crear alerta
+- Navega con ◀️ ▶️ hasta un producto (p. ej. Pixel 9)
+- Pulsa **🔔 Avísame** → elige tipo de aviso (bajada de cuota, precio, etc.)
 
-Catálogo CMS (NocoDB): https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
+## 4. Abrir panel
+`https://movistarparati.pmediaplus.com/panel`
 
-## 4. Cambiar precio
+La sesión se crea **automáticamente** al abrir la URL (cookie HttpOnly). No hace falta pegar ninguna clave.
+
+**CMS NocoDB:** https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
+
+En Catálogo, activa **Solo con avisos** para ver qué productos tienen usuarios esperando notificación.
+
+## 5. Simular bajada de precio
 En el catálogo del panel, botón contextual del producto (p. ej. Pixel 9 → **Bajar a 8 €/mes**).
 
-## 5. Mostrar matching
-El panel muestra `matched`, `sent`, `queued`.
+O edita la cuota manualmente y **Guardar en NocoDB**.
 
 ## 6. Recibir push
-El usuario recibe Telegram en segundos.
+El usuario recibe Telegram en segundos (poll cada ~60 s, o **Forzar detección** en el panel).
 
-## 7. Dashboard demanda
-Métricas en panel + datos seed de escala.
+## 7. Actividad y métricas
+- **Avisos** — alertas activas por usuario
+- **Actividad** — eventos de cambio de catálogo
+- Métricas en la cabecera del panel (activos, destacados, novedades…)
 
-## 8. Preventa / Black Friday
-- **OPEN IPHONE PREORDER**
-- **ACTIVATE BLACK FRIDAY**
+## Telegram: polling vs webhook
+
+| Modo | Cuándo | Cómo |
+|------|--------|------|
+| **Polling** | Demo / desarrollo | `systemctl start movistar-parati-polling` |
+| **Webhook** | Producción (HTTPS) | Ver `backend/scripts/setup_telegram_webhook.py` |
+
+Con HTTPS en `movistarparati.pmediaplus.com` ya puedes migrar a webhook:
+
+```bash
+ssh parvus-vps
+sudo systemctl stop movistar-parati-polling
+cd /opt/apps/movistar-parati/backend && . .venv/bin/activate
+python scripts/setup_telegram_webhook.py
+sudo systemctl restart movistar-parati-api
+```

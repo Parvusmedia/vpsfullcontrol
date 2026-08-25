@@ -65,15 +65,24 @@ No commitear el token. `@Movistarparatibot` — modo **polling** activo hasta te
 
 ## Panel de operación (demo)
 
-- **Panel:** https://movistarparati.pmediaplus.com/panel
+- **Panel:** https://movistarparati.pmediaplus.com/panel (sesión automática por cookie al abrir la URL)
 - **CMS NocoDB:** https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
-- Clave: variable `ADMIN_API_KEY` en `backend/.env` del VPS (no commitear)
+- La clave `ADMIN_API_KEY` en `backend/.env` protege las APIs admin; el panel la usa vía cookie HttpOnly (no hace falta pegarla manualmente)
 
 DNS: registro `movistarparati.pmediaplus.com → 87.106.194.137` en Plesk (servidor DNS `82.223.3.205`).
 
 1. Usuario crea alerta en Telegram
 2. Cambias `monthly_price` en NocoDB (o botón contextual en el panel admin)
 3. En ≤60s el poll detecta el cambio → Telegram notifica
+
+### Telegram: polling vs webhook
+
+| Modo | Uso | Comando |
+|------|-----|---------|
+| Polling | Demo / desarrollo | `sudo systemctl start movistar-parati-polling` |
+| Webhook | Producción (HTTPS) | `python scripts/setup_telegram_webhook.py` (parar polling antes) |
+
+Endpoint webhook: `POST /api/telegram/webhook` (header `X-Telegram-Bot-Api-Secret-Token`).
 
 ## Futuro producción
 

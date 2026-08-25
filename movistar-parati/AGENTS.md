@@ -24,8 +24,11 @@ cd backend && python scripts/provision_nocodb.py
 # Deploy VPS
 ./scripts/deploy.sh
 
-# Polling Telegram (sin webhook HTTPS)
+# Polling Telegram (demo; parar antes de activar webhook)
 sudo systemctl start movistar-parati-polling
+
+# Webhook Telegram (producción con HTTPS)
+cd backend && python scripts/setup_telegram_webhook.py
 ```
 
 ## Reglas

@@ -40,3 +40,11 @@ def test_brand_menu_includes_todos_option():
     assert "📱 Todos" in labels
     callbacks = [btn["callback_data"] for row in keyboard["inline_keyboard"] for btn in row]
     assert "brand:all" in callbacks
+
+
+def test_brand_menu_includes_price_filters():
+    keyboard = _brand_menu()
+    callbacks = [btn["callback_data"] for row in keyboard["inline_keyboard"] for btn in row]
+    assert "filter:monthly:10" in callbacks
+    assert "filter:monthly:15" in callbacks
+    assert "filter:monthly_range:10:20" in callbacks

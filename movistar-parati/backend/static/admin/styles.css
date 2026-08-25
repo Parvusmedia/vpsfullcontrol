@@ -142,9 +142,37 @@ button.action-btn {
   color: var(--accent); font-size: .8rem; text-decoration: none;
 }
 .product-row.inactive { opacity: .55; }
+.product-row.has-alerts {
+  border-color: rgba(255, 176, 32, .45);
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+.thumb-wrap {
+  position: relative;
+  width: 72px;
+  height: 54px;
+  flex-shrink: 0;
+}
+.thumb-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #12344f, #0b2739);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: .05em;
+}
 .thumb {
+  position: relative;
   width: 72px; height: 54px; object-fit: cover; border-radius: 8px;
-  background: #081a28;
+  background: transparent;
+}
+.thumb.broken { opacity: 0; }
+.badge.alerts {
+  color: #081a28;
+  background: var(--warn);
 }
 .product-main strong { display: block; margin-bottom: .2rem; }
 .product-meta { color: var(--muted); font-size: .85rem; }

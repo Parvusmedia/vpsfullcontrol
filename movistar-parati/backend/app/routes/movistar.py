@@ -8,7 +8,7 @@ from app.services.admin_auth import PANEL_COOKIE, panel_session_token, require_a
 from app.services.change_detection import get_active_alerts, get_recent_events, log_event, poll_catalogue_changes
 from app.services.demo_actions import demo_actions_for_product
 from app.services.product_fields import panel_payload_to_fields
-from app.services.product_image import get_normalized_product_image
+from app.services.product_image import get_normalized_product_image, invalidate_image_cache
 from app.services.product_service import product_source
 from app.services.bot_handlers import handle_update
 
@@ -152,6 +152,7 @@ async def admin_update_product(record_id: int, body: dict[str, Any], _: None = D
     updated = await product_source.update_product(product, fields)
     if not updated:
         raise HTTPException(500, "Could not update product")
+    invalidate_image_cache(updated.id)
     await poll_catalogue_changes()
     data = updated.to_dict()
     data["record_id"] = updated.record_id
@@ -166,6 +167,7 @@ async def simulate_drop(product_id: str, new_monthly: float = Query(...), _: Non
     if not p:
         raise HTTPException(404)
     updated = await product_source.update_monthly_price(p, new_monthly)
+    invalidate_image_cache(product_id)
     result = await poll_catalogue_changes()
     await log_event("MANUAL_TELEGRAM_SEND", product_id=product_id, new_value=str(new_monthly))
     return {"product": updated.to_dict() if updated else None, "poll": result}

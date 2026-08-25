@@ -69,5 +69,9 @@ async def get_normalized_product_image(product: Product) -> bytes:
     return normalized
 
 
+def invalidate_image_cache(product_id: str) -> None:
+    _cache.pop(product_id, None)
+
+
 def clear_image_cache() -> None:
     _cache.clear()

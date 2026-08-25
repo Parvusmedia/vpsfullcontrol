@@ -1,6 +1,7 @@
 const toastEl = document.getElementById("toast");
 let catalog = [];
 let dashboard = null;
+let activeAlerts = [];
 let refreshTimer = null;
 
 function headers() {
@@ -87,12 +88,33 @@ function renderStats() {
   }
 }
 
+function productAlertCounts() {
+  const counts = {};
+  for (const a of activeAlerts) {
+    const pid = a.product_id;
+    if (!pid) continue;
+    counts[pid] = (counts[pid] || 0) + 1;
+  }
+  return counts;
+}
+
+function thumbHtml(p) {
+  const initials = esc((p.brand || "?").slice(0, 2).toUpperCase());
+  return `<div class="thumb-wrap">
+    <div class="thumb-fallback" aria-hidden="true">${initials}</div>
+    <img class="thumb" src="${esc(p.image_api_url)}" alt="${esc(p.display_name)}" loading="lazy" onerror="this.classList.add('broken')" />
+  </div>`;
+}
+
 function filteredCatalog() {
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
   const brand = document.getElementById("brandFilter").value;
   const activeOnly = document.getElementById("activeOnly").checked;
+  const alertsOnly = document.getElementById("alertsOnly").checked;
+  const alertCounts = productAlertCounts();
   return catalog.filter((p) => {
     if (activeOnly && !p.active) return false;
+    if (alertsOnly && !alertCounts[p.id]) return false;
     if (brand && p.brand !== brand) return false;
     if (!q) return true;
     const hay = `${p.id} ${p.brand} ${p.name} ${p.display_name} ${p.record_id}`.toLowerCase();
@@ -132,16 +154,19 @@ function productEditForm(p) {
 
 function renderCatalog() {
   const items = filteredCatalog();
+  const alertCounts = productAlertCounts();
   const box = document.getElementById("catalogTable");
   if (!items.length) {
     box.innerHTML = `<div class="empty">No hay productos que coincidan con el filtro.</div>`;
     return;
   }
   box.innerHTML = items.map((p) => {
+    const alertCount = alertCounts[p.id] || 0;
     const badges = [
       p.active ? `<span class="badge">Activo</span>` : `<span class="badge inactive">Inactivo</span>`,
       p.featured ? `<span class="badge featured">Destacado</span>` : "",
       p.is_new ? `<span class="badge new">Nuevo</span>` : "",
+      alertCount ? `<span class="badge alerts">🔔 ${alertCount} aviso${alertCount > 1 ? "s" : ""}</span>` : "",
       `<span class="badge">${esc(p.brand)}</span>`,
       `<span class="badge">#${esc(p.record_id)}</span>`,
     ].join("");
@@ -151,8 +176,8 @@ function renderCatalog() {
     const prev = p.previous_monthly_price && p.previous_monthly_price > p.monthly_price
       ? `<div class="prev">${fmtMoney(p.previous_monthly_price)}</div>` : "";
     return `
-      <article class="product-row ${p.active ? "" : "inactive"}" data-id="${esc(p.id)}">
-        <img class="thumb" src="${esc(p.image_api_url)}" alt="${esc(p.display_name)}" loading="lazy" />
+      <article class="product-row ${p.active ? "" : "inactive"}${alertCount ? " has-alerts" : ""}" data-id="${esc(p.id)}">
+        ${thumbHtml(p)}
         <div class="product-main">
           <strong>${esc(p.display_name)}</strong>
           <div class="product-meta">ID: <code>${esc(p.id)}</code> · slug: <code>${esc(p.slug || p.id)}</code></div>
@@ -292,6 +317,7 @@ async function load(opts = {}) {
       api("/api/movistar/admin/catalog"),
     ]);
     const alerts = await api("/api/movistar/admin/alerts");
+    activeAlerts = alerts;
     const events = await api("/api/movistar/admin/events?limit=30");
     setConnected(true);
     renderStats();
@@ -310,7 +336,7 @@ async function load(opts = {}) {
   }
 }
 
-["searchInput", "brandFilter", "activeOnly"].forEach((id) => {
+["searchInput", "brandFilter", "activeOnly", "alertsOnly"].forEach((id) => {
   document.getElementById(id).addEventListener("input", renderCatalog);
   document.getElementById(id).addEventListener("change", renderCatalog);
 });

@@ -182,6 +182,8 @@ def _brand_menu(segment: str | None = None) -> dict:
     rows.extend(
         [
             [{"text": "🔥 Ofertas", "callback_data": "menu:deals"}],
+            [{"text": "💸 Menos de 10 €/mes", "callback_data": "filter:monthly:10"}],
+            [{"text": "💸 10–20 €/mes", "callback_data": "filter:monthly_range:10:20"}],
             [{"text": "💸 Menos de 15 €/mes", "callback_data": "filter:monthly:15"}],
             _home_row(),
         ]
@@ -264,6 +266,13 @@ async def show_phones_menu(chat_id: int) -> None:
             await _empty_segment_message(chat_id, "móviles Apple")
             return
         await open_product_pager(chat_id, _state(chat_id), products[:5], "📱 Apple")
+        return
+    if segment == "all":
+        products = filter_by_segment(await product_source.get_products(), segment)[:5]
+        if not products:
+            await _empty_segment_message(chat_id, "móviles")
+            return
+        await open_product_pager(chat_id, _state(chat_id), products, "📱 Todos los móviles")
         return
     await telegram_client.send_message(
         chat_id,
@@ -527,6 +536,21 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
             await _empty_segment_message(chat_id, f"móviles bajo {max_p:.0f} €/mes")
             return
         await open_product_pager(chat_id, st, products, f"💸 Menos de {max_p:.0f} €/mes")
+    elif data.startswith("filter:monthly_range:"):
+        parts = data.split(":")
+        lo_p, hi_p = float(parts[2]), float(parts[3])
+        products = filter_by_segment(
+            [
+                p
+                for p in await product_source.get_products()
+                if p.monthly_price is not None and lo_p <= p.monthly_price <= hi_p
+            ],
+            st.get("segment_filter"),
+        )[:5]
+        if not products:
+            await _empty_segment_message(chat_id, f"móviles entre {lo_p:.0f} y {hi_p:.0f} €/mes")
+            return
+        await open_product_pager(chat_id, st, products, f"💸 {lo_p:.0f}–{hi_p:.0f} €/mes")
     elif data == "menu:forme":
         await prompt_segment_choice(chat_id, "forme")
     elif data.startswith("forme:pref:"):

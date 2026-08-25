@@ -2,7 +2,7 @@ import io
 
 from PIL import Image
 
-from app.services.product_image import IMAGE_HEIGHT, IMAGE_WIDTH, normalize_image_bytes
+from app.services.product_image import IMAGE_HEIGHT, IMAGE_WIDTH, invalidate_image_cache, normalize_image_bytes
 
 
 def _make_image(size: tuple[int, int], color: str) -> bytes:
@@ -31,3 +31,11 @@ def test_normalize_square_to_fixed_size():
     normalized = normalize_image_bytes(raw)
     img = Image.open(io.BytesIO(normalized))
     assert img.size == (IMAGE_WIDTH, IMAGE_HEIGHT)
+
+
+def test_invalidate_image_cache_removes_product(monkeypatch):
+    from app.services import product_image
+
+    product_image._cache["iphone-16-128"] = b"jpeg-bytes"
+    invalidate_image_cache("iphone-16-128")
+    assert "iphone-16-128" not in product_image._cache
