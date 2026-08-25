@@ -615,6 +615,8 @@ def detect_seniority(title: str) -> str:
         return "Partner"
     if "managing director" in t:
         return "Managing Director"
+    if "executive manager" in t or "executive director" in t:
+        return "Director"
     if "practice lead" in t or re.search(r"\blead\b", t):
         return "Director"
     if "director" in t:
@@ -1267,6 +1269,261 @@ def cmd_import_manual(args: argparse.Namespace) -> int:
         )
     print(f"imported={imported} skipped={skipped}")
     return 0 if imported else 1
+
+
+def parse_saved_search_id(value: str) -> str:
+    text = (value or "").strip()
+    m = re.search(r"savedSearchId=(\d+)", text, re.I)
+    if m:
+        return m.group(1)
+    if text.isdigit():
+        return text
+    raise ValueError(f"no savedSearchId in: {value[:120]}")
+
+
+def split_person_name(full_name: str) -> tuple[str, str]:
+    parts = (full_name or "").strip().split(None, 1)
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], parts[1]
+
+
+def infer_country_from_location(location: str) -> str:
+    loc = _norm(location)
+    if not loc:
+        return ""
+    hints = (
+        ("united kingdom", "United Kingdom"),
+        ("greater london", "United Kingdom"),
+        ("london", "United Kingdom"),
+        ("united states", "United States"),
+        ("san francisco", "United States"),
+        ("new york", "United States"),
+        ("spain", "Spain"),
+        ("españa", "Spain"),
+        ("madrid", "Spain"),
+        ("barcelona", "Spain"),
+        ("germany", "Germany"),
+        ("france", "France"),
+        ("italy", "Italy"),
+        ("portugal", "Portugal"),
+        ("ireland", "Ireland"),
+        ("netherlands", "Netherlands"),
+        ("belgium", "Belgium"),
+        ("switzerland", "Switzerland"),
+        ("poland", "Poland"),
+        ("mexico", "Mexico"),
+        ("brazil", "Brazil"),
+        ("india", "India"),
+        ("uae", "United Arab Emirates"),
+        ("dubai", "United Arab Emirates"),
+    )
+    for needle, country in hints:
+        if needle in loc:
+            return country
+    return location.strip()
+
+
+def fetch_sn_saved_search(saved_search_id: str, *, limit: int = 0) -> list[dict[str, Any]]:
+    base_url = os.environ.get("UNIPILE_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("UNIPILE_API_KEY", "")
+    account_id = os.environ.get("UNIPILE_ACCOUNT_ID", "")
+    if not (base_url and api_key and account_id):
+        raise RuntimeError("missing_unipile_config")
+    headers = {"X-API-KEY": api_key, "Accept": "application/json", "Content-Type": "application/json"}
+    body = {"api": "sales_navigator", "category": "people", "saved_search_id": str(saved_search_id)}
+    rows: list[dict[str, Any]] = []
+    cursor: str | None = None
+    with httpx.Client(timeout=60) as client:
+        while True:
+            params: dict[str, Any] = {"account_id": account_id}
+            if cursor:
+                params["cursor"] = cursor
+            resp = client.post(f"{base_url}/linkedin/search", params=params, headers=headers, json=body)
+            resp.raise_for_status()
+            data = resp.json()
+            batch = [x for x in (data.get("items") or []) if isinstance(x, dict)]
+            rows.extend(batch)
+            cursor = data.get("cursor")
+            if limit and len(rows) >= limit:
+                return rows[:limit]
+            if not batch or not cursor:
+                break
+    return rows
+
+
+def lead_from_sn_item(item: dict[str, Any], *, source_query: str) -> dict[str, Any]:
+    full_name = str(item.get("name") or "").strip()
+    first, last = split_person_name(full_name)
+    headline = str(item.get("headline") or "").strip()
+    location = str(item.get("location") or "").strip()
+    pid = str(item.get("public_identifier") or "").strip()
+    url = normalize_linkedin_url(item.get("linkedin_url") or (f"https://www.linkedin.com/in/{pid}" if pid else ""))
+    company = "NTT DATA Europe & Latam"
+    tier = "ntt_data"
+    if "tangity" in _norm(headline):
+        company = "NTT DATA / Tangity"
+    lead: dict[str, Any] = {
+        "first_name": first,
+        "last_name": last,
+        "linkedin_url": url or "",
+        "company": company,
+        "company_tier": tier,
+        "country": infer_country_from_location(location),
+        "city": location,
+        "job_title": headline,
+        "headline": headline,
+        "location": location,
+        "source_query": source_query,
+        "dedupe_key": dedupe_key(url),
+        "contact_type": "sme_inmail",
+        "status": "new",
+    }
+    score, reason, kws = score_lead(lead)
+    lead["score"] = score
+    lead["reason_for_fit"] = reason
+    lead["relevant_keywords"] = kws
+    lead["practice"] = detect_practice(headline)
+    lead["seniority"] = detect_seniority(headline)
+    if score >= 4:
+        lead["connection_message"] = build_sme_inmail_message(lead)
+        lead["followup_message"] = ""
+        lead["status"] = "reviewed"
+    elif score == 3:
+        lead["status"] = "reviewed"
+    else:
+        lead["status"] = "not_relevant"
+    return lead
+
+
+def sme_import_reject_reason(lead: dict[str, Any]) -> str | None:
+    ex = hard_exclude_reason(lead)
+    if ex:
+        return ex
+    if not lead.get("linkedin_url"):
+        return "missing_url"
+    seniority = lead.get("seniority") or detect_seniority(str(lead.get("job_title") or ""))
+    if seniority not in SME_SENIORITY_OK:
+        return f"seniority:{seniority}"
+    blob = f"{lead.get('job_title') or ''} {lead.get('headline') or ''}"
+    if not has_sme_practice_signal(blob):
+        return "no_practice_signal"
+    if int(lead.get("score") or 0) < 4:
+        return f"score:{lead.get('score')}"
+    return None
+
+
+def cmd_import_sn(args: argparse.Namespace) -> int:
+    source_query = args.source_query or ""
+    if args.file:
+        path = Path(args.file)
+        if not path.is_absolute():
+            path = DATA_DIR / path
+        if not path.exists():
+            print(f"no existe {path}")
+            return 1
+        raw_items = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw_items, list):
+            print("el fichero debe ser un array JSON")
+            return 1
+        saved_search_id = parse_saved_search_id(args.saved_search) if args.saved_search else "file"
+    else:
+        saved_search_id = parse_saved_search_id(args.saved_search or "")
+        raw_items = fetch_sn_saved_search(saved_search_id, limit=args.limit or 0)
+        export_path = DATA_DIR / f"sn_saved_{saved_search_id}.json"
+        export_path.write_text(
+            json.dumps(
+                [
+                    {
+                        "name": it.get("name"),
+                        "headline": it.get("headline"),
+                        "public_identifier": it.get("public_identifier"),
+                        "linkedin_url": (
+                            f"https://www.linkedin.com/in/{it.get('public_identifier')}"
+                            if it.get("public_identifier")
+                            else None
+                        ),
+                        "location": it.get("location"),
+                        "member_id": it.get("id"),
+                    }
+                    for it in raw_items
+                ],
+                indent=2,
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        print(f"fetched {len(raw_items)} -> {export_path}")
+    if not source_query:
+        source_query = f"sn:{saved_search_id}"
+
+    accepted: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        lead = lead_from_sn_item(item, source_query=source_query)
+        reason = sme_import_reject_reason(lead)
+        row = {
+            "name": f"{lead.get('first_name')} {lead.get('last_name')}".strip(),
+            "headline": lead.get("headline"),
+            "score": lead.get("score"),
+            "seniority": lead.get("seniority"),
+            "linkedin_url": lead.get("linkedin_url"),
+            "reason": reason,
+        }
+        if reason:
+            rejected.append(row)
+            if args.verbose:
+                print(f"REJECT {row['name']} | {reason} | {row['headline'][:80]}")
+        else:
+            accepted.append(lead)
+            if args.verbose:
+                print(f"ACCEPT {row['name']} | score={row['score']} | {row['headline'][:80]}")
+
+    filter_report = DATA_DIR / f"sn_filter_{saved_search_id}.json"
+    filter_report.write_text(
+        json.dumps({"accepted": len(accepted), "rejected": len(rejected), "rejected_rows": rejected}, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    print(f"filter: raw={len(raw_items)} accepted={len(accepted)} rejected={len(rejected)} -> {filter_report}")
+
+    if args.dry_run:
+        preview = DATA_DIR / f"sn_accepted_{saved_search_id}.json"
+        preview.write_text(
+            json.dumps(
+                [
+                    {
+                        "name": f"{l.get('first_name')} {l.get('last_name')}".strip(),
+                        "score": l.get("score"),
+                        "seniority": l.get("seniority"),
+                        "practice": l.get("practice"),
+                        "country": l.get("country"),
+                        "linkedin_url": l.get("linkedin_url"),
+                        "headline": l.get("headline"),
+                    }
+                    for l in accepted
+                ],
+                indent=2,
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        print(f"dry-run preview -> {preview}")
+        return 0
+
+    imported = 0
+    for lead in accepted:
+        result = upsert_lead(lead)
+        imported += 1
+        print(
+            f"{result.get('action')} id={result.get('id')} "
+            f"{lead.get('first_name')} {lead.get('last_name')} score={lead.get('score')}"
+        )
+    print(f"imported={imported}")
+    return 0
 
 
 def prepare_seed(seed: dict[str, Any]) -> dict[str, Any]:
@@ -2022,6 +2279,23 @@ def main() -> int:
         default="manual:ntt_sap_sn_spain",
         help="Etiqueta source_query para trazabilidad en NocoDB",
     )
+    p_sn = sub.add_parser("import-sn")
+    p_sn.add_argument(
+        "--saved-search",
+        type=str,
+        default="",
+        help="savedSearchId o URL completa de Sales Navigator",
+    )
+    p_sn.add_argument(
+        "--file",
+        type=str,
+        default="",
+        help="JSON exportado previamente (p. ej. sn_saved_2007338250.json); omite fetch Unipile",
+    )
+    p_sn.add_argument("--limit", type=int, default=0, help="Máximo perfiles a traer de Unipile")
+    p_sn.add_argument("--source-query", type=str, default="", help="Etiqueta source_query (default sn:<id>)")
+    p_sn.add_argument("--dry-run", action="store_true", help="Filtrar y exportar sin escribir en NocoDB")
+    p_sn.add_argument("--verbose", action="store_true", help="Imprimir cada accept/reject")
     sub.add_parser("list")
     p_rescore = sub.add_parser("rescore")
     p_rescore.add_argument("--segment", choices=("all", "hire", "sme"), default="all")
@@ -2076,6 +2350,8 @@ def main() -> int:
         return cmd_sync(args)
     if args.cmd == "import-manual":
         return cmd_import_manual(args)
+    if args.cmd == "import-sn":
+        return cmd_import_sn(args)
     if args.cmd == "list":
         return cmd_list(args)
     if args.cmd == "rescore":
