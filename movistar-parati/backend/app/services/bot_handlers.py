@@ -47,18 +47,6 @@ def _reply_keyboard() -> dict:
     }
 
 
-def _main_menu() -> dict:
-    return {
-        "inline_keyboard": [
-            [{"text": "🔥 Mejores ofertas", "callback_data": "menu:deals"}],
-            [{"text": "📱 Ver móviles", "callback_data": "menu:phones"}],
-            [{"text": "🆕 Novedades", "callback_data": "menu:new"}],
-            [{"text": "💙 Para mí", "callback_data": "menu:forme"}],
-            [{"text": "🔔 Mis avisos", "callback_data": "menu:alerts"}],
-        ]
-    }
-
-
 def _brand_menu() -> dict:
     return {
         "inline_keyboard": [
@@ -104,24 +92,20 @@ async def show_main_menu(chat_id: int, *, greeting: bool = True, first_time: boo
     if first_time or greeting:
         text = (
             "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
-            "Te ayudo a ver móviles y ofertas, y te aviso si bajan de precio.\n\n"
-            "👉 <b>Solo tienes que pulsar un botón</b> — los de abajo del teclado "
-            "o los del mensaje.\n\n"
+            "Te ayudamos a encontrar móviles y ofertas que encajen contigo, "
+            "y te avisamos si bajan de precio.\n\n"
+            "👉 Solo tienes que elegir un botón para navegar por las opciones. "
+            "También puedes usar el menú <b>☰</b> abajo a la izquierda del teclado.\n\n"
             "<i>Concept Demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
         )
         _state(chat_id)["onboarded"] = True
     else:
         text = (
             "🏠 <b>Menú principal</b>\n\n"
-            "Elige una opción con los botones de abajo o pulsa ☰ junto al teclado."
+            "Elige una opción con los botones de abajo o abre el menú "
+            "<b>☰</b> a la izquierda del teclado."
         )
     await telegram_client.send_message(chat_id, text, reply_markup=_reply_keyboard())
-    if first_time or greeting:
-        await telegram_client.send_message(
-            chat_id,
-            "También puedes elegir aquí:",
-            reply_markup=_main_menu(),
-        )
 
 
 async def show_phones_menu(chat_id: int) -> None:
@@ -217,7 +201,7 @@ async def show_help(chat_id: int) -> None:
         "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
         "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
         "<b>Navegación</b>\n"
-        "Pulsa el botón <b>☰</b> junto al teclado o los botones grandes de abajo.\n\n"
+        "Usa los botones de abajo del teclado o el menú <b>☰</b> a la izquierda.\n\n"
         "<b>Comandos</b>\n"
         "/start — Empezar / bienvenida\n"
         "/menu — Volver al menú principal\n"
