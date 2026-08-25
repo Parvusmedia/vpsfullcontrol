@@ -706,10 +706,7 @@ def firm_brand(lead: dict[str, Any]) -> str:
 
 def use_spanish_outreach(lead: dict[str, Any]) -> bool:
     country = str(lead.get("country") or lead.get("location") or "")
-    if any(x in country for x in ("Spain", "España")):
-        return True
-    tier = str(lead.get("company_tier") or "")
-    return tier in {"everis", "ntt_data", "making_science", "idom"}
+    return any(x in country for x in ("Spain", "España"))
 
 
 def build_sme_inmail_message(lead: dict[str, Any]) -> str:
