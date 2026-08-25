@@ -7,28 +7,28 @@ from typing import Any
 # new_monthly: simula bajada de cuota mensual
 DEMO_PRODUCT_ACTIONS: dict[str, list[dict[str, Any]]] = {
     "pixel-11-256": [
-        {"id": "drop-850", "label": "🔥 Bajar a 8,50 €/mes", "new_monthly": 8.50},
+        {"id": "drop-850", "label": "🔥 Bajar a 8 €/mes", "new_monthly": 8},
     ],
     "galaxy-s25": [
-        {"id": "drop-1199", "label": "📉 Bajar a 11,99 €/mes", "new_monthly": 11.99},
+        {"id": "drop-1199", "label": "📉 Bajar a 12 €/mes", "new_monthly": 12},
     ],
     "iphone-16-128": [
-        {"id": "drop-1199", "label": "📉 Bajar a 11,99 €/mes", "new_monthly": 11.99},
+        {"id": "drop-1199", "label": "📉 Bajar a 12 €/mes", "new_monthly": 12},
     ],
     "galaxy-z-flip": [
-        {"id": "drop-1899", "label": "📉 Bajar a 18,99 €/mes", "new_monthly": 18.99},
+        {"id": "drop-1899", "label": "📉 Bajar a 19 €/mes", "new_monthly": 19},
     ],
     "pixel-9a": [
-        {"id": "drop-699", "label": "📉 Bajar a 6,99 €/mes", "new_monthly": 6.99},
+        {"id": "drop-699", "label": "📉 Bajar a 7 €/mes", "new_monthly": 7},
     ],
     "xiaomi-15": [
-        {"id": "drop-999", "label": "📉 Bajar a 9,99 €/mes", "new_monthly": 9.99},
+        {"id": "drop-999", "label": "📉 Bajar a 10 €/mes", "new_monthly": 10},
     ],
     "redmi-note-14": [
-        {"id": "drop-549", "label": "📉 Bajar a 5,49 €/mes", "new_monthly": 5.49},
+        {"id": "drop-549", "label": "📉 Bajar a 5 €/mes", "new_monthly": 5},
     ],
     "iphone-16-pro": [
-        {"id": "drop-2499", "label": "📉 Bajar a 24,99 €/mes", "new_monthly": 24.99},
+        {"id": "drop-2499", "label": "📉 Bajar a 25 €/mes", "new_monthly": 25},
     ],
 }
 

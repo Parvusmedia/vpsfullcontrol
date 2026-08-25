@@ -15,6 +15,24 @@ ROOT = Path(__file__).resolve().parents[1]
 SEED = ROOT / "data" / "seed-products.json"
 HERO_IDS = {p["id"] for p in json.loads(SEED.read_text())}
 
+_INT_FIELDS = {
+    "price", "previous_price", "monthly_price", "previous_monthly_price",
+    "months", "original_price", "saving", "discount_percentage",
+    "camera_score", "battery_score", "business_score", "premium_score", "value_score",
+}
+
+
+def _sanitize_fields(fields: dict) -> dict:
+    clean: dict = {}
+    for key, value in fields.items():
+        if value is None:
+            continue
+        if key in _INT_FIELDS and isinstance(value, (int, float)):
+            clean[key] = int(round(value))
+        else:
+            clean[key] = value
+    return clean
+
 
 async def main() -> None:
     settings = get_settings()
@@ -32,7 +50,7 @@ async def main() -> None:
         if not record_id:
             continue
         if product.id in HERO_IDS:
-            fields = {k: v for k, v in seed_by_id[product.id].items() if k != "id"}
+            fields = _sanitize_fields({k: v for k, v in seed_by_id[product.id].items() if k != "id"})
             fields["active"] = True
             await nocodb.update_record(table_id, record_id, fields)
             updated += 1
