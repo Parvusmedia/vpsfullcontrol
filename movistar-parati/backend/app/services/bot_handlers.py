@@ -59,19 +59,22 @@ def product_keyboard(p: Product) -> dict:
 
 async def send_product(chat_id: int, product: Product, *, deal: bool = False) -> None:
     text = product_card_text(product, deal=deal)
+    keyboard = product_keyboard(product)
     if product.image_url:
-        await telegram_client.api(
+        result = await telegram_client.api(
             "sendPhoto",
             {
                 "chat_id": chat_id,
                 "photo": product.image_url,
                 "caption": text,
                 "parse_mode": "HTML",
-                "reply_markup": product_keyboard(product),
+                "reply_markup": keyboard,
             },
         )
-    else:
-        await telegram_client.send_message(chat_id, text, reply_markup=product_keyboard(product))
+        if result.get("ok"):
+            return
+        logger.warning("sendPhoto failed for %s, falling back to text", product.id)
+    await telegram_client.send_message(chat_id, text, reply_markup=keyboard)
 
 
 async def show_main_menu(chat_id: int, *, greeting: bool = True) -> None:
@@ -128,12 +131,17 @@ async def show_user_alerts(chat_id: int, user_id: int) -> None:
     alerts = await get_active_alerts()
     mine = [a for a in alerts if str(a.get("telegram_user_id")) == str(user_id)]
     if not mine:
-        await telegram_client.send_message(chat_id, "No tienes avisos activos.")
+        await telegram_client.send_message(
+            chat_id,
+            "No tienes avisos activos.\n\nCrea uno desde cualquier ficha con <b>🔔 Avísame</b>.",
+            reply_markup=_main_menu(),
+        )
         return
     lines = ["🔔 <b>Tus avisos</b>\n"]
     for a in mine:
         lines.append(f"• {a.get('product_name')} ({a.get('alert_type')})")
-    await telegram_client.send_message(chat_id, "\n".join(lines))
+    lines.append("\nUsa /menu para volver al inicio.")
+    await telegram_client.send_message(chat_id, "\n".join(lines), reply_markup=_main_menu())
 
 
 async def show_help(chat_id: int) -> None:
@@ -164,10 +172,13 @@ def _command_name(text: str) -> str | None:
 
 
 async def handle_update(update: dict[str, Any]) -> None:
-    if "message" in update:
-        await _handle_message(update["message"])
-    elif "callback_query" in update:
-        await _handle_callback(update["callback_query"])
+    try:
+        if "message" in update:
+            await _handle_message(update["message"])
+        elif "callback_query" in update:
+            await _handle_callback(update["callback_query"])
+    except Exception:
+        logger.exception("Failed to handle Telegram update")
 
 
 async def _handle_message(message: dict[str, Any]) -> None:
@@ -209,8 +220,14 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     chat_id = callback["message"]["chat"]["id"]
     user_id = callback["from"]["id"]
     data = callback.get("data", "")
-    await telegram_client.answer_callback(callback["id"])
     st = _state(chat_id)
+
+    if data.startswith("pager:"):
+        await telegram_client.answer_callback(callback["id"])
+        await handle_pager_callback(chat_id, st, data)
+        return
+
+    await telegram_client.answer_callback(callback["id"])
 
     if data == "menu:home":
         _state(chat_id).pop("pager", None)
@@ -306,5 +323,3 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
     elif data == "menu:alerts":
         await show_user_alerts(chat_id, user_id)
-    elif await handle_pager_callback(chat_id, st, data):
-        return

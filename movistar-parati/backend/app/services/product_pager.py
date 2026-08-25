@@ -1,15 +1,28 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.telegram_client import telegram_client
 
+logger = logging.getLogger("movistar-parati.pager")
+
 PagerState = dict[str, Any]
+
+FALLBACK_IMAGE = "https://picsum.photos/seed/movistar-parati/600/400"
 
 
 def pager_caption(product: Product, title: str, index: int, total: int, *, deal: bool = False) -> str:
     return f"{title} · <b>{index + 1}/{total}</b>\n\n{product_card_text(product, deal=deal)}"
+
+
+def _index_row(index: int, total: int) -> list[dict[str, str]]:
+    row: list[dict[str, str]] = []
+    for i in range(total):
+        label = f"·{i + 1}·" if i == index else str(i + 1)
+        row.append({"text": label, "callback_data": f"pager:goto:{i}"})
+    return row
 
 
 def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
@@ -18,7 +31,8 @@ def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
             {"text": "◀️", "callback_data": "pager:prev"},
             {"text": f"{index + 1}/{total}", "callback_data": "pager:noop"},
             {"text": "▶️", "callback_data": "pager:next"},
-        ]
+        ],
+        _index_row(index, total),
     ]
     if product.product_url:
         rows.append([{"text": "👀 Ver oferta", "url": product.product_url}])
@@ -27,13 +41,95 @@ def pager_keyboard(product: Product, index: int, total: int) -> dict[str, Any]:
     return {"inline_keyboard": rows}
 
 
-async def _load_products(product_ids: list[str]) -> list[Product]:
-    products: list[Product] = []
-    for pid in product_ids:
-        product = await product_source.get_product(pid)
-        if product:
-            products.append(product)
+def _pager_products(state: PagerState) -> list[Product]:
+    pager = state.get("pager") or {}
+    cached = pager.get("products")
+    if cached:
+        return cached
+    return []
+
+
+async def _resolve_products(state: PagerState) -> list[Product]:
+    pager = state.get("pager")
+    if not pager:
+        return []
+
+    cached = pager.get("products")
+    if cached:
+        return cached
+
+    product_ids: list[str] = pager.get("product_ids", [])
+    all_products = await product_source.get_products()
+    by_id = {p.id: p for p in all_products}
+    products = [by_id[pid] for pid in product_ids if pid in by_id]
+    pager["products"] = products
     return products
+
+
+def _photo_url(product: Product) -> str:
+    return product.image_url or FALLBACK_IMAGE
+
+
+async def _send_pager_message(
+    chat_id: int,
+    product: Product,
+    caption: str,
+    keyboard: dict[str, Any],
+) -> dict[str, Any]:
+    photo = _photo_url(product)
+    result = await telegram_client.api(
+        "sendPhoto",
+        {
+            "chat_id": chat_id,
+            "photo": photo,
+            "caption": caption,
+            "parse_mode": "HTML",
+            "reply_markup": keyboard,
+        },
+    )
+    if result.get("ok"):
+        return result
+
+    logger.warning("sendPhoto failed for %s, falling back to text", product.id)
+    return await telegram_client.send_message(chat_id, caption, reply_markup=keyboard)
+
+
+async def _edit_pager_message(
+    chat_id: int,
+    message_id: int,
+    product: Product,
+    caption: str,
+    keyboard: dict[str, Any],
+) -> dict[str, Any]:
+    photo = _photo_url(product)
+    result = await telegram_client.api(
+        "editMessageMedia",
+        {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "media": {
+                "type": "photo",
+                "media": photo,
+                "caption": caption,
+                "parse_mode": "HTML",
+            },
+            "reply_markup": keyboard,
+        },
+    )
+    if result.get("ok"):
+        return result
+
+    logger.warning("editMessageMedia failed for %s, falling back to editMessageText", product.id)
+    return await telegram_client.api(
+        "editMessageText",
+        {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": caption,
+            "parse_mode": "HTML",
+            "reply_markup": keyboard,
+        },
+    )
 
 
 async def open_product_pager(
@@ -50,10 +146,12 @@ async def open_product_pager(
 
     state["pager"] = {
         "product_ids": [p.id for p in products],
+        "products": products,
         "index": 0,
         "title": title,
         "deal": deal,
         "message_id": None,
+        "has_photo": True,
     }
     await render_product_pager(chat_id, state)
 
@@ -63,8 +161,7 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
     if not pager:
         return
 
-    product_ids: list[str] = pager["product_ids"]
-    products = await _load_products(product_ids)
+    products = await _resolve_products(state)
     if not products:
         await telegram_client.send_message(chat_id, "No hay productos disponibles.")
         state.pop("pager", None)
@@ -81,60 +178,39 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
     message_id = pager.get("message_id")
 
     if message_id and edit:
-        if product.image_url:
-            result = await telegram_client.api(
-                "editMessageMedia",
-                {
-                    "chat_id": chat_id,
-                    "message_id": message_id,
-                    "media": {
-                        "type": "photo",
-                        "media": product.image_url,
-                        "caption": caption,
-                        "parse_mode": "HTML",
-                    },
-                    "reply_markup": keyboard,
-                },
-            )
-        else:
-            result = await telegram_client.api(
-                "editMessageText",
-                {
-                    "chat_id": chat_id,
-                    "message_id": message_id,
-                    "text": caption,
-                    "parse_mode": "HTML",
-                    "reply_markup": keyboard,
-                },
-            )
+        result = await _edit_pager_message(chat_id, message_id, product, caption, keyboard)
         if not result.get("ok"):
             pager["message_id"] = None
             await render_product_pager(chat_id, state, edit=False)
         return
 
-    if product.image_url:
-        result = await telegram_client.api(
-            "sendPhoto",
-            {
-                "chat_id": chat_id,
-                "photo": product.image_url,
-                "caption": caption,
-                "parse_mode": "HTML",
-                "reply_markup": keyboard,
-            },
-        )
-    else:
-        result = await telegram_client.send_message(chat_id, caption, reply_markup=keyboard)
-
+    result = await _send_pager_message(chat_id, product, caption, keyboard)
     if result.get("ok"):
         pager["message_id"] = result["result"]["message_id"]
+    else:
+        logger.error("Failed to render pager for chat %s product %s: %s", chat_id, product.id, result)
+        await telegram_client.send_message(
+            chat_id,
+            "No he podido mostrar la ficha del producto. Prueba de nuevo con /ofertas.",
+        )
+
+
+async def jump_product_pager(chat_id: int, state: PagerState, index: int) -> None:
+    pager = state.get("pager")
+    if not pager:
+        return
+    total = len(pager.get("products") or pager.get("product_ids") or [])
+    if total <= 0:
+        return
+    pager["index"] = max(0, min(index, total - 1))
+    await render_product_pager(chat_id, state, edit=True)
 
 
 async def move_product_pager(chat_id: int, state: PagerState, delta: int) -> None:
     pager = state.get("pager")
     if not pager:
         return
-    total = len(pager["product_ids"])
+    total = len(pager.get("products") or pager.get("product_ids") or [])
     if total <= 1:
         return
     pager["index"] = (int(pager["index"]) + delta) % total
@@ -149,5 +225,8 @@ async def handle_pager_callback(chat_id: int, state: PagerState, data: str) -> b
         await move_product_pager(chat_id, state, 1)
         return True
     if data == "pager:noop":
+        return True
+    if data.startswith("pager:goto:"):
+        await jump_product_pager(chat_id, state, int(data.split(":")[2]))
         return True
     return False

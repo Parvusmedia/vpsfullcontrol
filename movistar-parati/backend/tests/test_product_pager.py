@@ -45,11 +45,15 @@ def test_pager_caption_includes_counter():
     assert product_card_text(product, deal=True) in text
 
 
-def test_pager_keyboard_has_navigation():
+def test_pager_keyboard_has_navigation_and_index():
     product = _sample_product("Pixel 11", 8.5)
-    kb = pager_keyboard(product, 0, 5)
+    kb = pager_keyboard(product, 1, 5)
     rows = kb["inline_keyboard"]
     assert rows[0][0]["callback_data"] == "pager:prev"
-    assert rows[0][1]["text"] == "1/5"
+    assert rows[0][1]["text"] == "2/5"
     assert rows[0][2]["callback_data"] == "pager:next"
+    index_row = rows[1]
+    assert len(index_row) == 5
+    assert index_row[1]["text"] == "·2·"
+    assert index_row[1]["callback_data"] == "pager:goto:1"
     assert rows[-1][0]["callback_data"] == "menu:home"
