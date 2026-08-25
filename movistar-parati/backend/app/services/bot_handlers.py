@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.services.change_detection import create_alert
+from app.services.change_detection import create_alert, alert_type_label, deactivate_alert, get_user_alerts
 from app.services.product_image import get_normalized_product_image
 from app.services.product_pager import handle_pager_callback, open_product_pager
 from app.services.product_service import Product, product_card_text, product_source
@@ -158,10 +158,7 @@ async def start_forme_flow(chat_id: int) -> None:
 
 
 async def show_user_alerts(chat_id: int, user_id: int) -> None:
-    from app.services.change_detection import get_active_alerts
-
-    alerts = await get_active_alerts()
-    mine = [a for a in alerts if str(a.get("telegram_user_id")) == str(user_id)]
+    mine = await get_user_alerts(user_id)
     if not mine:
         await telegram_client.send_message(
             chat_id,
@@ -170,10 +167,49 @@ async def show_user_alerts(chat_id: int, user_id: int) -> None:
         )
         return
     lines = ["🔔 <b>Tus avisos</b>\n"]
-    for a in mine:
-        lines.append(f"• {a.get('product_name')} ({a.get('alert_type')})")
-    lines.append("\nPulsa 🏠 Menú para volver al inicio.")
-    await telegram_client.send_message(chat_id, "\n".join(lines), reply_markup=_reply_keyboard())
+    for alert in mine:
+        lines.append(f"• {alert.get('product_name')} — {alert_type_label(alert.get('alert_type'))}")
+    lines.append("\nPulsa <b>✏️ Editar</b> para eliminar alguno.")
+    await telegram_client.send_message(
+        chat_id,
+        "\n".join(lines),
+        reply_markup={
+            "inline_keyboard": [
+                [{"text": "✏️ Editar", "callback_data": "alerts:edit"}],
+                [{"text": "🏠 Menú principal", "callback_data": "menu:home"}],
+            ]
+        },
+    )
+
+
+async def show_alerts_edit_menu(chat_id: int, user_id: int) -> None:
+    mine = await get_user_alerts(user_id)
+    if not mine:
+        await telegram_client.send_message(
+            chat_id,
+            "Ya no tienes avisos activos.",
+            reply_markup=_reply_keyboard(),
+        )
+        return
+
+    rows: list[list[dict[str, str]]] = []
+    for alert in mine:
+        record_id = alert.get("_record_id")
+        if not record_id:
+            continue
+        name = str(alert.get("product_name") or "Producto")
+        label = alert_type_label(alert.get("alert_type"))
+        button_text = f"❌ {name}"[:60]
+        rows.append([{"text": button_text, "callback_data": f"alerts:del:{record_id}"}])
+
+    rows.append([{"text": "« Volver a la lista", "callback_data": "menu:alerts"}])
+    rows.append([{"text": "🏠 Menú principal", "callback_data": "menu:home"}])
+
+    await telegram_client.send_message(
+        chat_id,
+        "✏️ <b>Editar avisos</b>\n\nPulsa el aviso que quieres <b>eliminar</b>:",
+        reply_markup={"inline_keyboard": rows},
+    )
 
 
 async def show_help(chat_id: int) -> None:
@@ -388,3 +424,21 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         await telegram_client.send_message(chat_id, f"✅ Te avisaremos sobre <b>{p.display_name}</b>.")
     elif data == "menu:alerts":
         await show_user_alerts(chat_id, user_id)
+    elif data == "alerts:edit":
+        await show_alerts_edit_menu(chat_id, user_id)
+    elif data.startswith("alerts:del:"):
+        record_id = data.split(":", 2)[2]
+        removed = await deactivate_alert(record_id, user_id)
+        if removed:
+            remaining = await get_user_alerts(user_id)
+            if remaining:
+                await telegram_client.send_message(chat_id, "✅ Aviso eliminado.")
+                await show_alerts_edit_menu(chat_id, user_id)
+            else:
+                await telegram_client.send_message(
+                    chat_id,
+                    "✅ Aviso eliminado.\n\nYa no tienes avisos activos.",
+                    reply_markup=_reply_keyboard(),
+                )
+        else:
+            await telegram_client.send_message(chat_id, "No se pudo eliminar ese aviso.")

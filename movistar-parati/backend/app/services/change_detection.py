@@ -70,6 +70,36 @@ async def update_alert(record_id: str | int, fields: dict) -> dict:
     return await nocodb.update_record(table_id, record_id, fields)
 
 
+ALERT_TYPE_LABELS = {
+    "price_drop": "Si baja de precio",
+    "monthly_price_drop": "Si baja la cuota",
+    "better_deal": "Mejor oferta",
+}
+
+
+def alert_type_label(alert_type: str | None) -> str:
+    return ALERT_TYPE_LABELS.get(alert_type or "", alert_type or "Alerta")
+
+
+async def get_user_alerts(user_id: int | str) -> list[dict]:
+    alerts = await get_active_alerts()
+    return [a for a in alerts if str(a.get("telegram_user_id")) == str(user_id)]
+
+
+async def deactivate_alert(record_id: str | int, user_id: int | str) -> bool:
+    alerts = await get_user_alerts(user_id)
+    owned = next((a for a in alerts if str(a.get("_record_id")) == str(record_id)), None)
+    if not owned:
+        return False
+    await update_alert(record_id, {"active": False})
+    await log_event(
+        "ALERT_DEACTIVATED",
+        product_id=str(owned.get("product_id") or ""),
+        metadata={"telegram_user_id": str(user_id), "alert_type": owned.get("alert_type")},
+    )
+    return True
+
+
 def _format_price_drop_message(product: Product, old_monthly: float, new_monthly: float) -> str:
     gift = f"\n\n🎁 {product.gift}" if product.gift else ""
     promo = f"\n🔥 {product.promotion}" if product.promotion else ""
