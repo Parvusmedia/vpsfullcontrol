@@ -405,36 +405,122 @@ def build_queries() -> list[HarvestQuery]:
 
 
 def build_sme_queries() -> list[HarvestQuery]:
-    """Directores/socios para outreach SME vía Sales Navigator InMail."""
-    es_leaders = (
-        "Socio,Socia,Partner,Managing Director,Director,Directora,"
-        "Director General,Director de,Dirección"
+    """Directores/socios digitales para outreach SME vía Sales Navigator InMail."""
+    es_digital_leaders = (
+        "Socio Marketing,Socia Marketing,Socio Digital,Socia Digital,"
+        "Partner Marketing,Partner Digital,Partner Customer,Partner Innovation,"
+        "Director Marketing,Directora Marketing,Director Digital,Directora Digital,"
+        "Director Customer Experience,Director CRM,Director MarTech,Director Innovación,"
+        "Director Transformación Digital,Director Marketing Digital,"
+        "Managing Director Marketing,Managing Director Digital"
     )
-    en_leaders = (
-        "Partner,Managing Director,Director,Principal,"
-        "Senior Manager Marketing,Senior Manager Digital"
+    en_digital_leaders = (
+        "Partner Marketing,Partner Customer,Partner Digital,Partner Digital Transformation,"
+        "Partner MarTech,Partner Innovation,Managing Director Marketing,Managing Director Digital,"
+        "Managing Director Customer,Director Marketing Commerce,Director Customer Experience,"
+        "Director Digital Transformation,Director MarTech,Director Marketing Technology,"
+        "Director Innovation,Director Digital,Director CRM,Director Marketing,"
+        "Practice Lead Marketing,Practice Lead Customer"
     )
     return [
-        HarvestQuery("sme_deloitte_digital_es", "Spain", COMPANY_URLS["deloitte_digital"], es_leaders),
-        HarvestQuery("sme_accenture_song_es", "Spain", COMPANY_URLS["accenture"], es_leaders, "Accenture Song"),
-        HarvestQuery("sme_pwc_es", "Spain", COMPANY_URLS["pwc"], es_leaders),
-        HarvestQuery("sme_everis_es", "Spain", COMPANY_URLS["everis"], es_leaders),
-        HarvestQuery("sme_ntt_es", "Spain", COMPANY_URLS["ntt_data"], es_leaders),
-        HarvestQuery("sme_making_science_es", "Spain", COMPANY_URLS["making_science"], es_leaders),
+        HarvestQuery(
+            "sme_deloitte_digital_es",
+            "Spain",
+            COMPANY_URLS["deloitte_digital"],
+            es_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM OR transformación",
+        ),
+        HarvestQuery(
+            "sme_accenture_song_es",
+            "Spain",
+            COMPANY_URLS["accenture"],
+            es_digital_leaders,
+            "Accenture Song marketing OR customer OR digital OR martech",
+        ),
+        HarvestQuery(
+            "sme_pwc_es",
+            "Spain",
+            COMPANY_URLS["pwc"],
+            es_digital_leaders,
+            "digital OR marketing OR customer OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_everis_es",
+            "Spain",
+            COMPANY_URLS["everis"],
+            es_digital_leaders,
+            "marketing OR customer OR digital OR transformación",
+        ),
+        HarvestQuery(
+            "sme_ntt_es",
+            "Spain",
+            COMPANY_URLS["ntt_data"],
+            es_digital_leaders,
+            "marketing OR customer OR digital OR transformación",
+        ),
+        HarvestQuery(
+            "sme_making_science_es",
+            "Spain",
+            COMPANY_URLS["making_science"],
+            es_digital_leaders,
+            "marketing OR martech OR digital OR performance",
+        ),
         HarvestQuery(
             "sme_idom_es",
             "Spain",
             COMPANY_URLS["idom"],
-            es_leaders,
-            "digital OR innovación OR transformación OR datos",
+            es_digital_leaders,
+            "digital OR innovación OR transformación OR datos OR marketing",
         ),
-        HarvestQuery("sme_deloitte_digital_uae", "United Arab Emirates", COMPANY_URLS["deloitte_digital"], en_leaders),
-        HarvestQuery("sme_accenture_song_uae", "United Arab Emirates", COMPANY_URLS["accenture"], en_leaders, "Accenture Song"),
-        HarvestQuery("sme_pwc_uae", "United Arab Emirates", COMPANY_URLS["pwc"], en_leaders),
-        HarvestQuery("sme_deloitte_digital_uk", "United Kingdom", COMPANY_URLS["deloitte_digital"], en_leaders),
-        HarvestQuery("sme_accenture_song_uk", "United Kingdom", COMPANY_URLS["accenture"], en_leaders, "Accenture Song"),
-        HarvestQuery("sme_pwc_uk", "United Kingdom", COMPANY_URLS["pwc"], en_leaders),
-        HarvestQuery("sme_making_science_uk", "United Kingdom", COMPANY_URLS["making_science"], en_leaders),
+        HarvestQuery(
+            "sme_deloitte_digital_uae",
+            "United Arab Emirates",
+            COMPANY_URLS["deloitte_digital"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_accenture_song_uae",
+            "United Arab Emirates",
+            COMPANY_URLS["accenture"],
+            en_digital_leaders,
+            "Accenture Song marketing OR customer OR digital",
+        ),
+        HarvestQuery(
+            "sme_pwc_uae",
+            "United Arab Emirates",
+            COMPANY_URLS["pwc"],
+            en_digital_leaders,
+            "digital OR marketing OR customer OR martech",
+        ),
+        HarvestQuery(
+            "sme_deloitte_digital_uk",
+            "United Kingdom",
+            COMPANY_URLS["deloitte_digital"],
+            en_digital_leaders,
+            "marketing OR customer OR digital OR martech OR CRM",
+        ),
+        HarvestQuery(
+            "sme_accenture_song_uk",
+            "United Kingdom",
+            COMPANY_URLS["accenture"],
+            en_digital_leaders,
+            "Accenture Song marketing OR customer OR digital",
+        ),
+        HarvestQuery(
+            "sme_pwc_uk",
+            "United Kingdom",
+            COMPANY_URLS["pwc"],
+            en_digital_leaders,
+            "digital OR marketing OR customer OR martech",
+        ),
+        HarvestQuery(
+            "sme_making_science_uk",
+            "United Kingdom",
+            COMPANY_URLS["making_science"],
+            en_digital_leaders,
+            "marketing OR martech OR digital OR performance",
+        ),
     ]
 
 
@@ -996,6 +1082,19 @@ def prepare_seed(seed: dict[str, Any]) -> dict[str, Any]:
     return lead
 
 
+SME_SENIORITY_OK = frozenset({"Partner", "Director", "Managing Director"})
+
+
+def sme_discover_ok(lead: dict[str, Any]) -> bool:
+    title = str(lead.get("job_title") or lead.get("title") or "")
+    headline = str(lead.get("headline") or "")
+    blob = f"{title} {headline}"
+    seniority = lead.get("seniority") or detect_seniority(title)
+    if seniority not in SME_SENIORITY_OK:
+        return False
+    return has_sme_practice_signal(blob)
+
+
 async def cmd_discover(args: argparse.Namespace) -> int:
     segment = getattr(args, "segment", "hire") or "hire"
     queries = build_sme_queries() if segment == "sme" else build_queries()
@@ -1020,6 +1119,8 @@ async def cmd_discover(args: argparse.Namespace) -> int:
             if hard_exclude_reason(lead):
                 continue
             if lead.get("score", 0) < min_score:
+                continue
+            if segment == "sme" and not sme_discover_ok(lead):
                 continue
             seen.add(key)
             leads.append(lead)
