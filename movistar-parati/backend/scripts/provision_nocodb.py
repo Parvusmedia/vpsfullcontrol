@@ -111,6 +111,18 @@ TABLES = {
 }
 
 
+def ensure_table_columns(table_id: str, columns: list[dict]) -> None:
+    """Add missing columns to an existing NocoDB table."""
+    existing = req("GET", f"/api/v2/meta/tables/{table_id}/columns").get("list", [])
+    names = {c.get("column_name") or c.get("title") for c in existing}
+    for col in columns:
+        name = col["column_name"]
+        if name in names:
+            continue
+        req("POST", f"/api/v2/meta/tables/{table_id}/columns", col)
+        print(f"added column: {name}")
+
+
 def main() -> None:
     global BASE_ID
     BASE_ID = BASE_ID or _base_id_from_env()
@@ -121,6 +133,7 @@ def main() -> None:
         if definition["title"] in existing:
             ids[key] = existing[definition["title"]]
             print(f"exists: {definition['title']} -> {ids[key]}")
+            ensure_table_columns(ids[key], definition["columns"])
         else:
             created = req("POST", f"/api/v2/meta/bases/{BASE_ID}/tables", definition)
             ids[key] = created["id"]
