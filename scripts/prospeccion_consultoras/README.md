@@ -29,6 +29,23 @@ cd /opt/apps/prospeccion-consultoras
 ./run.sh inmail --limit 3 --live  # envía InMail (Sales Navigator, pausa 30–90s)
 ```
 
+### Email (Icypeas + Smartlead)
+
+```bash
+./run.sh create-smartlead-campaigns   # crea campañas ES + EN (PAUSED)
+./run.sh provision-columns            # columnas email/smartlead en NocoDB
+./run.sh enrich-email --limit 10        # dry-run Icypeas (score>=4, sme_inmail)
+./run.sh enrich-email --limit 10 --live
+./run.sh smartlead-enroll --limit 10    # dry-run enroll (requiere email)
+./run.sh smartlead-enroll --limit 10 --live  # requiere CONSULTORAS_SMARTLEAD_ENABLED=true
+```
+
+Campañas Smartlead (PAUSED hasta activar):
+- **ES** — países hispanohablantes, mismo copy que InMail + reminder 7 días
+- **EN** — resto de geos, mismo copy que InMail + reminder 7 días
+
+Env: `SMARTLEAD_CONSULTORAS_ES_CAMPAIGN_ID`, `SMARTLEAD_CONSULTORAS_EN_CAMPAIGN_ID`
+
 Firmas: Deloitte Digital, Accenture Song, PwC, KPMG, everis/NTT DATA, Making Science, IDOM.
 ./run.sh poll-acceptances --live   # detecta aceptaciones → status accepted
 ./run.sh followup --live --limit 3 # mensaje tras aceptación (pausa antes de cada uno)

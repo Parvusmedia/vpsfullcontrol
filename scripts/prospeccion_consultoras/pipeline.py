@@ -10,6 +10,7 @@ import os
 import random
 import re
 import sqlite3
+import sys
 import time
 import unicodedata
 from dataclasses import dataclass
@@ -19,6 +20,9 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
+
+from icypeas import domain_for_lead, icypeas_email_search
+from smartlead import campaign_id_for_locale, enroll_lead, smartlead_enabled
 
 ROOT = Path(__file__).resolve().parent
 TABLE_ID = os.environ.get("NOCODB_CONSULTORAS_TABLE_ID", "mj23ak5ilm76662")
@@ -51,6 +55,12 @@ NOCODB_COLUMNS: list[tuple[str, str]] = [
     ("connection_sent_at", "DateTime"),
     ("accepted_at", "DateTime"),
     ("followup_sent_at", "DateTime"),
+    ("email", "Email"),
+    ("email_source", "SingleLineText"),
+    ("icypeas_status", "SingleLineText"),
+    ("smartlead_status", "SingleLineText"),
+    ("smartlead_campaign_id", "SingleLineText"),
+    ("smartlead_enrolled_at", "DateTime"),
 ]
 
 INVITE_MIN_WAIT = int(os.environ.get("CONSULTORAS_INVITE_MIN_WAIT", "30"))
@@ -771,9 +781,40 @@ def firm_brand(lead: dict[str, Any]) -> str:
     return str(lead.get("company") or "la consultora")
 
 
+SPANISH_SPEAKING_MARKERS = (
+    "Spain",
+    "España",
+    "Mexico",
+    "Argentina",
+    "Colombia",
+    "Chile",
+    "Peru",
+    "Perú",
+    "Venezuela",
+    "Ecuador",
+    "Guatemala",
+    "Bolivia",
+    "Dominican Republic",
+    "Honduras",
+    "Paraguay",
+    "El Salvador",
+    "Nicaragua",
+    "Costa Rica",
+    "Panama",
+    "Panamá",
+    "Uruguay",
+    "Puerto Rico",
+    "Cuba",
+)
+
+
 def use_spanish_outreach(lead: dict[str, Any]) -> bool:
     country = str(lead.get("country") or lead.get("location") or "")
-    return any(x in country for x in ("Spain", "España"))
+    return any(marker in country for marker in SPANISH_SPEAKING_MARKERS)
+
+
+def outreach_locale(lead: dict[str, Any]) -> str:
+    return "es" if use_spanish_outreach(lead) else "en"
 
 
 def build_sme_inmail_message(lead: dict[str, Any]) -> str:
@@ -1009,6 +1050,12 @@ def row_for_nocodb(lead: dict[str, Any]) -> dict[str, Any]:
         "headline": lead.get("headline") or "",
         "location": lead.get("location") or "",
         "dedupe_key": lead.get("dedupe_key") or "",
+        "email": lead.get("email") or "",
+        "email_source": lead.get("email_source") or "",
+        "icypeas_status": lead.get("icypeas_status") or "",
+        "smartlead_status": lead.get("smartlead_status") or "",
+        "smartlead_campaign_id": lead.get("smartlead_campaign_id") or "",
+        "smartlead_enrolled_at": lead.get("smartlead_enrolled_at") or "",
     }
 
 
@@ -2225,6 +2272,146 @@ def cmd_rescore(args: argparse.Namespace) -> int:
     return 0
 
 
+def fetch_all_rows(*, limit: int = 500) -> list[dict[str, Any]]:
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Accept": "application/json"}
+    with httpx.Client(timeout=30) as client:
+        r = client.get(f"{base}/api/v2/tables/{TABLE_ID}/records", headers=headers, params={"limit": limit})
+        r.raise_for_status()
+        return r.json().get("list") or []
+
+
+def icypeas_api_key() -> str:
+    return (os.environ.get("ICYPEAS_API_KEY") or "").strip()
+
+
+async def enrich_row_email(row: dict[str, Any], *, dry_run: bool) -> dict[str, Any]:
+    email = str(row.get("email") or "").strip()
+    if email:
+        return {"action": "skip", "reason": "has_email", "email": email}
+    first = str(row.get("first_name") or "").strip()
+    last = str(row.get("last_name") or "").strip()
+    domain = domain_for_lead(row)
+    if not domain:
+        return {"action": "skip", "reason": "missing_domain"}
+    if dry_run:
+        return {
+            "action": "dry_run",
+            "domain": domain,
+            "first_name": first,
+            "last_name": last,
+        }
+    result = await icypeas_email_search(
+        api_key=icypeas_api_key(),
+        first_name=first,
+        last_name=last,
+        domain_or_company=domain,
+    )
+    found = str(result.get("email") or "").strip()
+    patch: dict[str, Any] = {
+        "icypeas_status": result.get("status") or "unknown",
+    }
+    if found:
+        patch["email"] = found
+        patch["email_source"] = "icypeas"
+    rid = row.get("Id")
+    if rid is not None:
+        patch_row(int(rid), patch)
+    return {
+        "action": "enriched" if found else "miss",
+        "email": found or None,
+        "icypeas_status": patch["icypeas_status"],
+        "domain": domain,
+    }
+
+
+async def cmd_enrich_email(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    rows = fetch_all_rows(limit=args.limit_rows or 500)
+    candidates = [
+        row
+        for row in rows
+        if int(row.get("score") or 0) >= PROCESS_MIN_SCORE
+        and row.get("contact_type") == "sme_inmail"
+        and not str(row.get("email") or "").strip()
+    ]
+    limit = args.limit or len(candidates)
+    print(f"enrich-email {'DRY-RUN' if dry_run else 'LIVE'} candidates={len(candidates)} limit={limit}")
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(candidates[:limit], 1):
+        if not dry_run and args.wait_seconds > 0 and i > 1:
+            time.sleep(args.wait_seconds)
+        out = await enrich_row_email(row, dry_run=dry_run)
+        out["id"] = row.get("Id")
+        out["name"] = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        results.append(out)
+        print(f"[{i}] id={out['id']} {out['name']} -> {json.dumps(out, ensure_ascii=False)}")
+    path = DATA_DIR / "icypeas_results.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    found = sum(1 for r in results if r.get("email") or r.get("action") == "enriched")
+    print(f"done found={found}/{len(results)} -> {path}")
+    return 0
+
+
+def cmd_smartlead_enroll(args: argparse.Namespace) -> int:
+    dry_run = not args.live
+    rows = fetch_all_rows(limit=args.limit_rows or 500)
+    candidates = [
+        row
+        for row in rows
+        if int(row.get("score") or 0) >= PROCESS_MIN_SCORE
+        and row.get("contact_type") == "sme_inmail"
+        and str(row.get("email") or "").strip()
+        and str(row.get("smartlead_status") or "") not in {"enrolled", "smartlead_enrolled"}
+    ]
+    limit = args.limit or len(candidates)
+    print(
+        f"smartlead-enroll {'DRY-RUN' if dry_run else 'LIVE'} "
+        f"enabled={smartlead_enabled()} candidates={len(candidates)} limit={limit}"
+    )
+    results: list[dict[str, Any]] = []
+    for i, row in enumerate(candidates[:limit], 1):
+        locale = outreach_locale(row)
+        camp = campaign_id_for_locale(locale)
+        brand = firm_brand(row)
+        out = enroll_lead(
+            email=str(row.get("email") or ""),
+            first_name=str(row.get("first_name") or ""),
+            last_name=str(row.get("last_name") or ""),
+            company_name=brand,
+            linkedin_url=str(row.get("linkedin_url") or ""),
+            job_title=str(row.get("job_title") or ""),
+            campaign_id=camp,
+            dry_run=dry_run,
+        )
+        out["id"] = row.get("Id")
+        out["name"] = f"{row.get('first_name')} {row.get('last_name')}".strip()
+        out["locale"] = locale
+        out["campaign_id"] = camp or None
+        results.append(out)
+        print(f"[{i}] id={out['id']} {out['name']} ({locale}) -> {json.dumps({k: out[k] for k in out if k != 'response'}, ensure_ascii=False)}")
+        if not dry_run and out.get("ok") and row.get("Id") is not None:
+            patch_row(
+                int(row["Id"]),
+                {
+                    "smartlead_status": "enrolled",
+                    "smartlead_campaign_id": camp,
+                    "smartlead_enrolled_at": iso_utc(),
+                },
+            )
+    path = DATA_DIR / "smartlead_enroll_results.json"
+    path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"wrote {path}")
+    return 0
+
+
+def cmd_create_smartlead_campaigns(_: argparse.Namespace) -> int:
+    import subprocess
+
+    script = ROOT / "create_smartlead_campaigns.py"
+    return subprocess.call([sys.executable, str(script), "--locale", "all"])
+
+
 def cmd_list(_: argparse.Namespace) -> int:
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Accept": "application/json"}
@@ -2347,6 +2534,16 @@ def main() -> int:
     p_outreach.add_argument("--followup-limit", type=int, default=3)
     p_outreach.add_argument("--limit", type=int, default=100)
     p_outreach.add_argument("--min-hours-after-accept", type=int, default=DEFAULT_FOLLOWUP_MIN_HOURS)
+    sub.add_parser("create-smartlead-campaigns")
+    p_enrich = sub.add_parser("enrich-email")
+    p_enrich.add_argument("--limit", type=int, default=0, help="Máximo filas a enriquecer")
+    p_enrich.add_argument("--limit-rows", type=int, default=500, help="Máximo filas a leer de NocoDB")
+    p_enrich.add_argument("--wait-seconds", type=int, default=3, help="Pausa entre llamadas Icypeas")
+    p_enrich.add_argument("--live", action="store_true")
+    p_sl = sub.add_parser("smartlead-enroll")
+    p_sl.add_argument("--limit", type=int, default=0)
+    p_sl.add_argument("--limit-rows", type=int, default=500)
+    p_sl.add_argument("--live", action="store_true")
     args = parser.parse_args()
     if args.cmd == "provision-columns":
         provision_columns()
@@ -2383,6 +2580,12 @@ def main() -> int:
         return cmd_followup(args)
     if args.cmd == "outreach":
         return cmd_outreach(args)
+    if args.cmd == "create-smartlead-campaigns":
+        return cmd_create_smartlead_campaigns(args)
+    if args.cmd == "enrich-email":
+        return asyncio.run(cmd_enrich_email(args))
+    if args.cmd == "smartlead-enroll":
+        return cmd_smartlead_enroll(args)
     return 1
 
 
