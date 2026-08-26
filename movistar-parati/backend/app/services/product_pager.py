@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from app.services.product_image import get_normalized_product_image
+from app.services.product_pitch import product_pitch
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.telegram_client import telegram_client
 
@@ -14,11 +15,22 @@ PagerState = dict[str, Any]
 PAGER_NAV_HINT = "Usa ◀️ ▶️ para ver más."
 
 
-def pager_caption(product: Product, title: str, index: int, total: int, *, deal: bool = False) -> str:
+def pager_caption(
+    product: Product,
+    title: str,
+    index: int,
+    total: int,
+    *,
+    deal: bool = False,
+    pitch: str | None = None,
+) -> str:
     parts: list[str] = []
     if total > 1:
         parts.append(f"<i>{PAGER_NAV_HINT}</i>\n\n")
-    parts.append(f"{title} · <b>{index + 1}/{total}</b>\n\n{product_card_text(product, deal=deal)}")
+    parts.append(f"{title} · <b>{index + 1}/{total}</b>\n\n")
+    if pitch:
+        parts.append(f"💬 {pitch}\n\n")
+    parts.append(product_card_text(product, deal=deal))
     return "".join(parts)
 
 
@@ -121,6 +133,7 @@ async def open_product_pager(
     title: str,
     *,
     deal: bool = False,
+    forme_context: dict[str, Any] | None = None,
 ) -> None:
     if not products:
         await telegram_client.send_message(chat_id, f"{title}\n\nNo hay productos disponibles.")
@@ -132,6 +145,7 @@ async def open_product_pager(
         "index": 0,
         "title": title,
         "deal": deal,
+        "forme_context": forme_context,
         "message_id": None,
     }
     await render_product_pager(chat_id, state)
@@ -154,7 +168,16 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
     product = products[index]
     title = str(pager["title"])
     deal = bool(pager.get("deal"))
-    caption = pager_caption(product, title, index, total, deal=deal)
+    forme_ctx = pager.get("forme_context") or {}
+    pitch = None
+    if forme_ctx.get("preference"):
+        pitch = product_pitch(
+            product,
+            forme_ctx["preference"],
+            rank=index + 1,
+            max_monthly=forme_ctx.get("max_monthly"),
+        )
+    caption = pager_caption(product, title, index, total, deal=deal, pitch=pitch)
     keyboard = pager_keyboard(product, index, total)
     message_id = pager.get("message_id")
 

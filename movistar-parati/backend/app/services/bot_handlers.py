@@ -6,6 +6,7 @@ from typing import Any
 from app.services.change_detection import create_alert, alert_type_label, deactivate_alert, get_user_alerts
 from app.services.product_image import get_normalized_product_image
 from app.services.product_pager import handle_pager_callback, open_product_pager
+from app.services.product_pitch import forme_results_intro, preference_ask_message
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.recommend import recommend_products
 from app.services.telegram_client import telegram_client
@@ -307,7 +308,9 @@ async def start_forme_flow(chat_id: int) -> None:
         st["forme_brand_locked"] = "android"
     await telegram_client.send_message(
         chat_id,
-        "¿Qué móvil buscas?",
+        "💙 <b>Para mí</b>\n\n"
+        "Cuéntame qué buscas y te recomiendo móviles con una explicación de "
+        "<b>por qué encajan contigo</b>, no solo una lista.",
         reply_markup={
             "inline_keyboard": [
                 [{"text": "📸 Buena cámara", "callback_data": "forme:pref:camera"}],
@@ -319,6 +322,42 @@ async def start_forme_flow(chat_id: int) -> None:
             ]
         },
     )
+
+
+async def _show_forme_results(
+    chat_id: int,
+    st: dict[str, Any],
+    picks: list[Product],
+    *,
+    brand: str | None = None,
+) -> None:
+    preference = st.get("preference", "value")
+    max_monthly = st.get("max_monthly")
+    if not picks:
+        await telegram_client.send_message(
+            chat_id,
+            "No he encontrado móviles que encajen con esos criterios.\n\n"
+            "Prueba con otro presupuesto o elige <b>Me da igual</b> en la marca.",
+            reply_markup=_nav_inline_menu(),
+        )
+        return
+    await telegram_client.send_message(
+        chat_id,
+        forme_results_intro(preference, max_monthly=max_monthly, brand=brand, count=len(picks)),
+    )
+    await open_product_pager(
+        chat_id,
+        st,
+        picks,
+        "💙 Para mí",
+        forme_context={
+            "preference": preference,
+            "max_monthly": max_monthly,
+            "brand": brand,
+        },
+    )
+    st.pop("flow", None)
+    st.pop("forme_brand_locked", None)
 
 
 async def show_user_alerts(chat_id: int, user_id: int) -> None:
@@ -553,7 +592,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         st["preference"] = data.split(":")[2]
         await telegram_client.send_message(
             chat_id,
-            "¿Cuánto quieres pagar al mes?",
+            preference_ask_message(st["preference"]),
             reply_markup={
                 "inline_keyboard": [
                     [{"text": "< 10 €", "callback_data": "forme:budget:10"}],
@@ -571,18 +610,14 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         if locked == "Apple":
             picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), "Apple")
             picks = filter_by_segment(picks, "apple")
-            await open_product_pager(chat_id, st, picks, "💙 Para mí")
-            st.pop("flow", None)
-            st.pop("forme_brand_locked", None)
+            await _show_forme_results(chat_id, st, picks, brand="Apple")
             return
         if locked == "android":
             picks: list[Product] = []
             for brand in ("Samsung", "Google", "Xiaomi"):
                 picks.extend(await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand))
             picks = filter_by_segment(picks, "android")[:3]
-            await open_product_pager(chat_id, st, picks, "💙 Para mí")
-            st.pop("flow", None)
-            st.pop("forme_brand_locked", None)
+            await _show_forme_results(chat_id, st, picks, brand="Android")
             return
         brand_rows = [
             [{"text": "Apple", "callback_data": "forme:brand:Apple"}],
@@ -609,10 +644,8 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
     elif data.startswith("forme:brand:"):
         brand = data.split(":")[2]
         picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand)
-        picks = filter_by_segment(picks, st.get("segment_filter"))
-        await open_product_pager(chat_id, st, picks[:3], "💙 Para mí")
-        st.pop("flow", None)
-        st.pop("forme_brand_locked", None)
+        picks = filter_by_segment(picks, st.get("segment_filter"))[:3]
+        await _show_forme_results(chat_id, st, picks, brand=None if brand == "any" else brand)
     elif data.startswith("product:"):
         pid = data.split(":")[1]
         p = await product_source.get_product(pid)

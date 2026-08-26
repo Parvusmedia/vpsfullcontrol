@@ -51,6 +51,14 @@ def test_pager_caption_includes_counter_and_hint():
     assert product_card_text(product, deal=True) in text
 
 
+def test_pager_caption_includes_pitch():
+    product = _sample_product("Pixel 11", 8.5)
+    pitch = "Te lo propongo porque tiene buena cámara."
+    text = pager_caption(product, "💙 Para mí", 0, 3, pitch=pitch)
+    assert "💬" in text
+    assert pitch in text
+
+
 def test_pager_keyboard_first_item_only_next():
     product = _sample_product("Pixel 11", 8.5)
     kb = pager_keyboard(product, 0, 5)
