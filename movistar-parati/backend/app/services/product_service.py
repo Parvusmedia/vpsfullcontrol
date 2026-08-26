@@ -42,6 +42,15 @@ class Product:
     business_score: int
     premium_score: int
     value_score: int
+    battery_mah: int | None = None
+    fast_charge_w: int | None = None
+    camera_main_mp: int | None = None
+    processor: str | None = None
+    spec_battery: str | None = None
+    spec_camera: str | None = None
+    spec_work: str | None = None
+    spec_premium: str | None = None
+    spec_value: str | None = None
 
     @property
     def display_name(self) -> str:
@@ -160,6 +169,15 @@ def parse_product(row: dict) -> Product:
         business_score=_int(f.get("business_score")),
         premium_score=_int(f.get("premium_score")),
         value_score=_int(f.get("value_score")),
+        battery_mah=_int(f.get("battery_mah"), 0) or None,
+        fast_charge_w=_int(f.get("fast_charge_w"), 0) or None,
+        camera_main_mp=_int(f.get("camera_main_mp"), 0) or None,
+        processor=f.get("processor") or None,
+        spec_battery=f.get("spec_battery") or None,
+        spec_camera=f.get("spec_camera") or None,
+        spec_work=f.get("spec_work") or None,
+        spec_premium=f.get("spec_premium") or None,
+        spec_value=f.get("spec_value") or None,
     )
 
 

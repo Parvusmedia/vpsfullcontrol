@@ -85,6 +85,10 @@ TABLES = {
             col_bool("is_new"), col_bool("featured"), col_num("deal_score"),
             col_num("camera_score"), col_num("battery_score"), col_num("business_score"),
             col_num("premium_score"), col_num("value_score"),
+            col_num("battery_mah"), col_num("fast_charge_w"), col_num("camera_main_mp"),
+            col_text("processor"),
+            col_long("spec_battery"), col_long("spec_camera"), col_long("spec_work"),
+            col_long("spec_premium"), col_long("spec_value"),
         ],
     },
     "movistar_alerts": {

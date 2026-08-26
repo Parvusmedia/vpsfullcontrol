@@ -18,6 +18,9 @@ INT_FIELDS = {
     "business_score",
     "premium_score",
     "value_score",
+    "battery_mah",
+    "fast_charge_w",
+    "camera_main_mp",
 }
 
 BOOL_FIELDS = {"active", "is_new", "featured"}
@@ -35,6 +38,12 @@ TEXT_FIELDS = {
     "gift",
     "image_url",
     "product_url",
+    "processor",
+    "spec_battery",
+    "spec_camera",
+    "spec_work",
+    "spec_premium",
+    "spec_value",
 }
 
 PANEL_EDITABLE_FIELDS = {

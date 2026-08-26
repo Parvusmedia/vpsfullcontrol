@@ -176,6 +176,7 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
             forme_ctx["preference"],
             rank=index + 1,
             max_monthly=forme_ctx.get("max_monthly"),
+            catalog=products,
         )
     caption = pager_caption(product, title, index, total, deal=deal, pitch=pitch)
     keyboard = pager_keyboard(product, index, total)
