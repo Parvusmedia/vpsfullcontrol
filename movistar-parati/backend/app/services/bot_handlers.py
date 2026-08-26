@@ -20,7 +20,7 @@ logger = logging.getLogger("movistar-parati.bot")
 
 _user_state: dict[int, dict[str, Any]] = {}
 
-# Botones grandes del teclado inferior (siempre visibles).
+# Etiquetas de botones legacy (si el usuario aún tiene el teclado inferior antiguo).
 BTN_OFERTAS = "🔥 Ofertas"
 BTN_MOVILES = "📱 Móviles"
 BTN_NOVEDADES = "🆕 Novedades"
@@ -51,48 +51,6 @@ def _home_row() -> list[dict[str, str]]:
     return [{"text": "🏠 Menú principal", "callback_data": "menu:home"}]
 
 
-def _reply_keyboard() -> dict:
-    return {
-        "keyboard": [
-            [{"text": BTN_OFERTAS}, {"text": BTN_MOVILES}],
-            [{"text": BTN_NOVEDADES}, {"text": BTN_PARAMI}],
-            [{"text": BTN_MENU}],
-        ],
-        "resize_keyboard": True,
-        "is_persistent": True,
-        "one_time_keyboard": False,
-        "input_field_placeholder": "Elige una opción…",
-    }
-
-
-async def _restore_reply_keyboard(chat_id: int) -> None:
-    """Fuerza a que Telegram vuelva a mostrar el teclado inferior tras menús inline."""
-    result = await telegram_client.api(
-        "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": ".",
-            "reply_markup": {"remove_keyboard": True},
-        },
-    )
-    temp_id = result.get("result", {}).get("message_id")
-    if temp_id:
-        await telegram_client.api("deleteMessage", {"chat_id": chat_id, "message_id": temp_id})
-
-
-async def _clear_inline_keyboard(chat_id: int, message_id: int | None) -> None:
-    if not message_id:
-        return
-    await telegram_client.api(
-        "editMessageReplyMarkup",
-        {
-            "chat_id": chat_id,
-            "message_id": message_id,
-            "reply_markup": {"inline_keyboard": []},
-        },
-    )
-
-
 def _nav_inline_menu() -> dict:
     return {
         "inline_keyboard": [
@@ -107,6 +65,19 @@ def _nav_inline_menu() -> dict:
             [{"text": "🔔 Mis avisos", "callback_data": "menu:alerts"}],
         ]
     }
+
+
+async def _clear_inline_keyboard(chat_id: int, message_id: int | None) -> None:
+    if not message_id:
+        return
+    await telegram_client.api(
+        "editMessageReplyMarkup",
+        {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "reply_markup": {"inline_keyboard": []},
+        },
+    )
 
 
 def _segment_menu() -> dict:
@@ -236,15 +207,13 @@ async def show_main_menu(
     chat_id: int,
     *,
     first_time: bool = False,
-    restore_keyboard: bool = False,
     source_message_id: int | None = None,
 ) -> None:
     _state(chat_id).pop("flow", None)
     _state(chat_id).pop("pager", None)
     if source_message_id:
         await _clear_inline_keyboard(chat_id, source_message_id)
-    if restore_keyboard:
-        await _restore_reply_keyboard(chat_id)
+    await telegram_client.hide_reply_keyboard(chat_id)
     if first_time:
         text = WELCOME_TEXT
         _state(chat_id)["onboarded"] = True
@@ -482,7 +451,7 @@ async def show_user_alerts(chat_id: int, user_id: int) -> None:
         await telegram_client.send_message(
             chat_id,
             "No tienes avisos activos.\n\nCrea uno desde cualquier ficha con <b>🔔 Avísame</b>.",
-            reply_markup=_reply_keyboard(),
+            reply_markup=_nav_inline_menu(),
         )
         return
     lines = ["🔔 <b>Tus avisos</b>\n"]
@@ -507,7 +476,7 @@ async def show_alerts_edit_menu(chat_id: int, user_id: int) -> None:
         await telegram_client.send_message(
             chat_id,
             "Ya no tienes avisos activos.",
-            reply_markup=_reply_keyboard(),
+            reply_markup=_nav_inline_menu(),
         )
         return
 
@@ -536,7 +505,7 @@ async def show_help(chat_id: int) -> None:
         "ℹ️ <b>Ayuda — Movistar Para Ti</b>\n\n"
         "Concept Demo — datos de ejemplo, no ofertas reales de Movistar.\n\n"
         "<b>Navegación</b>\n"
-        "Usa los botones del mensaje o el menú <b>☰</b> a la izquierda del teclado.\n\n"
+        "Usa los botones <b>inline</b> bajo cada mensaje o los comandos /menu, /ofertas…\n\n"
         "<b>Comandos</b>\n"
         "/start — Empezar / bienvenida\n"
         "/menu — Volver al menú principal\n"
@@ -570,7 +539,7 @@ async def _route_text_action(chat_id: int, user_id: int, text: str) -> bool:
         BTN_MOVILES: lambda cid: prompt_segment_choice(cid, "phones"),
         BTN_NOVEDADES: lambda cid: prompt_segment_choice(cid, "new"),
         BTN_PARAMI: lambda cid: prompt_segment_choice(cid, "forme"),
-        BTN_MENU: lambda cid: show_main_menu(cid, restore_keyboard=True),
+        BTN_MENU: lambda cid: show_main_menu(cid),
     }
     action = actions.get(text.strip())
     if action:
@@ -600,7 +569,7 @@ async def _handle_message(message: dict[str, Any]) -> None:
         await show_main_menu(chat_id, first_time=not st.get("onboarded"))
         return
     if command == "/menu":
-        await show_main_menu(chat_id, restore_keyboard=True)
+        await show_main_menu(chat_id)
         return
     if command == "/ofertas":
         await prompt_segment_choice(chat_id, "deals")
@@ -630,8 +599,8 @@ async def _handle_message(message: dict[str, Any]) -> None:
 
     await telegram_client.send_message(
         chat_id,
-        "No he entendido ese mensaje.\n\nPulsa <b>🏠 Menú</b> abajo o escribe /menu.",
-        reply_markup=_reply_keyboard(),
+        "No he entendido ese mensaje.\n\nUsa los botones del menú o escribe /menu.",
+        reply_markup=_nav_inline_menu(),
     )
 
 
@@ -652,7 +621,6 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         _state(chat_id).pop("pager", None)
         await show_main_menu(
             chat_id,
-            restore_keyboard=True,
             source_message_id=callback.get("message", {}).get("message_id"),
         )
     elif data == "menu:deals":
@@ -823,7 +791,7 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
                 await telegram_client.send_message(
                     chat_id,
                     "✅ Aviso eliminado.\n\nYa no tienes avisos activos.",
-                    reply_markup=_reply_keyboard(),
+                    reply_markup=_nav_inline_menu(),
                 )
         else:
             await telegram_client.send_message(chat_id, "No se pudo eliminar ese aviso.")

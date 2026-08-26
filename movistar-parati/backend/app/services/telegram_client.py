@@ -40,6 +40,20 @@ class TelegramClient:
                 logger.error("Telegram API %s failed: %s", method, payload)
             return payload
 
+    async def hide_reply_keyboard(self, chat_id: int) -> None:
+        """Quita el teclado inferior persistente para no superponerlo con botones inline."""
+        result = await self.api(
+            "sendMessage",
+            {
+                "chat_id": chat_id,
+                "text": ".",
+                "reply_markup": json.dumps({"remove_keyboard": True}),
+            },
+        )
+        temp_id = result.get("result", {}).get("message_id")
+        if temp_id:
+            await self.api("deleteMessage", {"chat_id": chat_id, "message_id": temp_id})
+
     async def send_message(
         self,
         chat_id: int,

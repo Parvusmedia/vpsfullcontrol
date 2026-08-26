@@ -140,6 +140,8 @@ async def open_product_pager(
         await telegram_client.send_message(chat_id, f"{title}\n\nNo hay productos disponibles.")
         return
 
+    await telegram_client.hide_reply_keyboard(chat_id)
+
     state["pager"] = {
         "product_ids": [p.id for p in products],
         "products": products,
