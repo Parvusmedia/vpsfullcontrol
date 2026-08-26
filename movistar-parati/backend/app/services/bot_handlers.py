@@ -6,7 +6,12 @@ from typing import Any
 from app.services.change_detection import create_alert, alert_type_label, deactivate_alert, get_user_alerts
 from app.services.product_image import get_normalized_product_image
 from app.services.product_pager import handle_pager_callback, open_product_pager
-from app.services.product_pitch import forme_results_intro, preference_ask_message
+from app.services.product_pitch import (
+    forme_client_question,
+    forme_price_question,
+    forme_results_intro,
+    preference_ask_message,
+)
 from app.services.product_service import Product, product_card_text, product_source
 from app.services.recommend import recommend_products
 from app.services.telegram_client import telegram_client
@@ -332,18 +337,25 @@ async def _show_forme_results(
     brand: str | None = None,
 ) -> None:
     preference = st.get("preference", "value")
-    max_monthly = st.get("max_monthly")
     if not picks:
         await telegram_client.send_message(
             chat_id,
             "No he encontrado móviles que encajen con esos criterios.\n\n"
-            "Prueba con otro presupuesto o elige <b>Me da igual</b> en la marca.",
+            "Prueba con otro rango de precio o elige <b>Me da igual</b> en la marca.",
             reply_markup=_nav_inline_menu(),
         )
         return
+    is_client = st.get("is_client", True)
     await telegram_client.send_message(
         chat_id,
-        forme_results_intro(preference, max_monthly=max_monthly, brand=brand, count=len(picks)),
+        forme_results_intro(
+            preference,
+            price_min=st.get("price_min"),
+            price_max=st.get("price_max"),
+            is_client=is_client,
+            brand=brand,
+            count=len(picks),
+        ),
     )
     await open_product_pager(
         chat_id,
@@ -352,12 +364,116 @@ async def _show_forme_results(
         "💙 Para mí",
         forme_context={
             "preference": preference,
-            "max_monthly": max_monthly,
+            "price_min": st.get("price_min"),
+            "price_max": st.get("price_max"),
+            "is_client": is_client,
             "brand": brand,
         },
     )
     st.pop("flow", None)
     st.pop("forme_brand_locked", None)
+    st.pop("price_min", None)
+    st.pop("price_max", None)
+    st.pop("is_client", None)
+
+
+def _forme_price_keyboard() -> dict[str, Any]:
+    return {
+        "inline_keyboard": [
+            [{"text": "Hasta 400 €", "callback_data": "forme:price:0:400"}],
+            [{"text": "400–700 €", "callback_data": "forme:price:400:700"}],
+            [{"text": "700–1.000 €", "callback_data": "forme:price:700:1000"}],
+            [{"text": "Más de 1.000 €", "callback_data": "forme:price:1000:99999"}],
+            [{"text": "Me da igual", "callback_data": "forme:price:any"}],
+            _home_row(),
+        ]
+    }
+
+
+def _forme_client_keyboard() -> dict[str, Any]:
+    return {
+        "inline_keyboard": [
+            [{"text": "✅ Sí, soy cliente", "callback_data": "forme:client:yes"}],
+            [{"text": "No, sin ser cliente", "callback_data": "forme:client:no"}],
+            _home_row(),
+        ]
+    }
+
+
+def _forme_brand_keyboard(st: dict[str, Any]) -> dict[str, Any]:
+    brand_rows = [
+        [{"text": "Apple", "callback_data": "forme:brand:Apple"}],
+        [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
+        [{"text": "Google", "callback_data": "forme:brand:Google"}],
+        [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
+        [{"text": "Me da igual", "callback_data": "forme:brand:any"}],
+        _home_row(),
+    ]
+    if st.get("segment_filter") == "apple":
+        brand_rows = [[{"text": "Apple", "callback_data": "forme:brand:Apple"}], _home_row()]
+    elif st.get("segment_filter") == "android":
+        brand_rows = [
+            [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
+            [{"text": "Google", "callback_data": "forme:brand:Google"}],
+            [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
+            _home_row(),
+        ]
+    return {"inline_keyboard": brand_rows}
+
+
+async def _forme_recommend_for_brand(
+    chat_id: int,
+    st: dict[str, Any],
+    brand: str | None,
+) -> None:
+    preference = st.get("preference", "value")
+    price_min = st.get("price_min")
+    price_max = st.get("price_max")
+    is_client = st.get("is_client", True)
+    locked = st.get("forme_brand_locked")
+
+    if locked == "Apple":
+        picks = await recommend_products(
+            preference,
+            "Apple",
+            price_min=price_min,
+            price_max=price_max,
+            is_client=is_client,
+        )
+        picks = filter_by_segment(picks, "apple")
+        await _show_forme_results(chat_id, st, picks, brand="Apple")
+        return
+
+    if locked == "android":
+        picks: list[Product] = []
+        for android_brand in ("Samsung", "Google", "Xiaomi"):
+            picks.extend(
+                await recommend_products(
+                    preference,
+                    android_brand,
+                    price_min=price_min,
+                    price_max=price_max,
+                    is_client=is_client,
+                )
+            )
+        picks = filter_by_segment(picks, "android")[:3]
+        await _show_forme_results(chat_id, st, picks, brand="Android")
+        return
+
+    picks = await recommend_products(
+        preference,
+        brand,
+        price_min=price_min,
+        price_max=price_max,
+        is_client=is_client,
+    )
+    picks = filter_by_segment(picks, st.get("segment_filter"))[:3]
+    await _show_forme_results(
+        chat_id,
+        st,
+        picks,
+        brand=None if brand in {None, "any"} else brand,
+    )
 
 
 async def show_user_alerts(chat_id: int, user_id: int) -> None:
@@ -592,60 +708,45 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         st["preference"] = data.split(":")[2]
         await telegram_client.send_message(
             chat_id,
-            preference_ask_message(st["preference"]),
-            reply_markup={
-                "inline_keyboard": [
-                    [{"text": "< 10 €", "callback_data": "forme:budget:10"}],
-                    [{"text": "10–20 €", "callback_data": "forme:budget:20"}],
-                    [{"text": "20–30 €", "callback_data": "forme:budget:30"}],
-                    [{"text": "Me da igual", "callback_data": "forme:budget:999"}],
-                    _home_row(),
-                ]
-            },
+            forme_price_question(st["preference"]),
+            reply_markup=_forme_price_keyboard(),
         )
-    elif data.startswith("forme:budget:"):
-        val = float(data.split(":")[2])
-        st["max_monthly"] = None if val >= 900 else val
+    elif data.startswith("forme:price:"):
+        parts = data.split(":")
+        if parts[2] == "any":
+            st["price_min"] = None
+            st["price_max"] = None
+        else:
+            st["price_min"] = float(parts[2])
+            st["price_max"] = float(parts[3])
+        await telegram_client.send_message(
+            chat_id,
+            forme_client_question(),
+            reply_markup=_forme_client_keyboard(),
+        )
+    elif data.startswith("forme:client:"):
+        st["is_client"] = data.split(":")[2] == "yes"
         locked = st.get("forme_brand_locked")
-        if locked == "Apple":
-            picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), "Apple")
-            picks = filter_by_segment(picks, "apple")
-            await _show_forme_results(chat_id, st, picks, brand="Apple")
+        if locked in {"Apple", "android"}:
+            await _forme_recommend_for_brand(chat_id, st, None)
             return
-        if locked == "android":
-            picks: list[Product] = []
-            for brand in ("Samsung", "Google", "Xiaomi"):
-                picks.extend(await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand))
-            picks = filter_by_segment(picks, "android")[:3]
-            await _show_forme_results(chat_id, st, picks, brand="Android")
-            return
-        brand_rows = [
-            [{"text": "Apple", "callback_data": "forme:brand:Apple"}],
-            [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
-            [{"text": "Google", "callback_data": "forme:brand:Google"}],
-            [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
-            [{"text": "Me da igual", "callback_data": "forme:brand:any"}],
-            _home_row(),
-        ]
-        if st.get("segment_filter") == "apple":
-            brand_rows = [[{"text": "Apple", "callback_data": "forme:brand:Apple"}], _home_row()]
-        elif st.get("segment_filter") == "android":
-            brand_rows = [
-                [{"text": "Samsung", "callback_data": "forme:brand:Samsung"}],
-                [{"text": "Google", "callback_data": "forme:brand:Google"}],
-                [{"text": "Xiaomi", "callback_data": "forme:brand:Xiaomi"}],
-                _home_row(),
-            ]
         await telegram_client.send_message(
             chat_id,
             "¿Alguna marca preferida?",
-            reply_markup={"inline_keyboard": brand_rows},
+            reply_markup=_forme_brand_keyboard(st),
+        )
+    elif data.startswith("forme:budget:"):
+        # compat legado: tratar cuota mensual como sin filtro de terminal
+        st["price_min"] = None
+        st["price_max"] = None
+        await telegram_client.send_message(
+            chat_id,
+            forme_client_question(),
+            reply_markup=_forme_client_keyboard(),
         )
     elif data.startswith("forme:brand:"):
         brand = data.split(":")[2]
-        picks = await recommend_products(st.get("preference", "value"), st.get("max_monthly"), brand)
-        picks = filter_by_segment(picks, st.get("segment_filter"))[:3]
-        await _show_forme_results(chat_id, st, picks, brand=None if brand == "any" else brand)
+        await _forme_recommend_for_brand(chat_id, st, None if brand == "any" else brand)
     elif data.startswith("product:"):
         pid = data.split(":")[1]
         p = await product_source.get_product(pid)

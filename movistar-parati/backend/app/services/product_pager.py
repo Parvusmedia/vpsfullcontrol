@@ -23,6 +23,7 @@ def pager_caption(
     *,
     deal: bool = False,
     pitch: str | None = None,
+    is_client: bool = True,
 ) -> str:
     parts: list[str] = []
     if total > 1:
@@ -30,7 +31,7 @@ def pager_caption(
     parts.append(f"{title} · <b>{index + 1}/{total}</b>\n\n")
     if pitch:
         parts.append(f"💬 {pitch}\n\n")
-    parts.append(product_card_text(product, deal=deal))
+    parts.append(product_card_text(product, deal=deal, is_client=is_client))
     return "".join(parts)
 
 
@@ -169,6 +170,7 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
     title = str(pager["title"])
     deal = bool(pager.get("deal"))
     forme_ctx = pager.get("forme_context") or {}
+    is_client = forme_ctx.get("is_client", True)
     pitch = None
     if forme_ctx.get("preference"):
         pitch = product_pitch(
@@ -176,9 +178,14 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
             forme_ctx["preference"],
             rank=index + 1,
             max_monthly=forme_ctx.get("max_monthly"),
+            price_min=forme_ctx.get("price_min"),
+            price_max=forme_ctx.get("price_max"),
+            is_client=is_client,
             catalog=products,
         )
-    caption = pager_caption(product, title, index, total, deal=deal, pitch=pitch)
+    caption = pager_caption(
+        product, title, index, total, deal=deal, pitch=pitch, is_client=is_client
+    )
     keyboard = pager_keyboard(product, index, total)
     message_id = pager.get("message_id")
 

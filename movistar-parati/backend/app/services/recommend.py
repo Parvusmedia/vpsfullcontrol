@@ -11,10 +11,30 @@ PREFERENCE_MAP = {
 }
 
 
+def _in_price_range(
+    product: Product,
+    *,
+    price_min: float | None,
+    price_max: float | None,
+    is_client: bool,
+) -> bool:
+    terminal = product.terminal_price(is_client=is_client)
+    if terminal is None:
+        return price_min is None and price_max is None
+    if price_min is not None and terminal < price_min:
+        return False
+    if price_max is not None and terminal > price_max:
+        return False
+    return True
+
+
 async def recommend_products(
     preference: str,
-    max_monthly: float | None,
     brand: str | None,
+    *,
+    price_min: float | None = None,
+    price_max: float | None = None,
+    is_client: bool = True,
     limit: int = 3,
 ) -> list[Product]:
     products = await product_source.get_products()
@@ -23,19 +43,21 @@ async def recommend_products(
     def pref_score(p: Product) -> float:
         base = float(getattr(p, score_field, 0) or 0)
         deal = p.deal_score or 0
-        monthly_penalty = 0
-        if max_monthly and p.monthly_price and p.monthly_price > max_monthly:
-            monthly_penalty = -10
         brand_bonus = 3 if brand and p.brand.lower() == brand.lower() else 0
-        return base * 10 + deal + monthly_penalty + brand_bonus
+        return base * 10 + deal + brand_bonus
 
     filtered = products
     if brand and brand.lower() not in {"any", "me da igual", "cualquiera"}:
         filtered = [p for p in products if p.brand.lower() == brand.lower()] or products
-    if max_monthly:
-        affordable = [p for p in filtered if p.monthly_price is not None and p.monthly_price <= max_monthly]
-        if affordable:
-            filtered = affordable
+
+    if price_min is not None or price_max is not None:
+        in_range = [
+            p
+            for p in filtered
+            if _in_price_range(p, price_min=price_min, price_max=price_max, is_client=is_client)
+        ]
+        if in_range:
+            filtered = in_range
 
     ranked = sorted(filtered, key=pref_score, reverse=True)
     return ranked[:limit]
