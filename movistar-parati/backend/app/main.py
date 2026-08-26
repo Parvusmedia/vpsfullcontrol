@@ -24,7 +24,7 @@ async def _poll_loop() -> None:
             await poll_catalogue_changes()
         except Exception:
             logger.exception("Poll failed")
-        await asyncio.sleep(settings.poll_interval_seconds)
+        await asyncio.sleep(settings.effective_poll_interval_seconds)
 
 
 @asynccontextmanager
@@ -32,7 +32,10 @@ async def lifespan(app: FastAPI):
     await bootstrap_signatures()
     await register_bot_commands()
     task = asyncio.create_task(_poll_loop())
-    logger.info("Movistar Para Ti started (NocoDB CMS, poll=%ss)", settings.poll_interval_seconds)
+    logger.info(
+        "Movistar Para Ti started (NocoDB CMS, poll=%ss)",
+        settings.effective_poll_interval_seconds,
+    )
     yield
     task.cancel()
 

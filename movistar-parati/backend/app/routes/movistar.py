@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.services.admin_auth import PANEL_COOKIE, panel_session_token, require_admin
 from app.services.change_detection import get_active_alerts, get_recent_events, log_event, poll_catalogue_changes
 from app.services.demo_actions import demo_actions_for_product
+from app.services.demo_scenarios import activate_black_friday, open_iphone_preorder
 from app.services.product_fields import panel_payload_to_fields
 from app.services.product_image import get_normalized_product_image, invalidate_image_cache
 from app.services.product_service import product_source
@@ -171,6 +172,16 @@ async def simulate_drop(product_id: str, new_monthly: float = Query(...), _: Non
     result = await poll_catalogue_changes()
     await log_event("MANUAL_TELEGRAM_SEND", product_id=product_id, new_value=str(new_monthly))
     return {"product": updated.to_dict() if updated else None, "poll": result}
+
+
+@router.post("/api/movistar/admin/demo/black-friday")
+async def admin_demo_black_friday(_: None = Depends(_admin)):
+    return await activate_black_friday()
+
+
+@router.post("/api/movistar/admin/demo/iphone-preorder")
+async def admin_demo_iphone_preorder(_: None = Depends(_admin)):
+    return await open_iphone_preorder()
 
 
 @router.post("/api/telegram/webhook")

@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     admin_api_key: str = "demo-admin-change-me"
     poll_interval_seconds: int = 60
 
+    @property
+    def effective_poll_interval_seconds(self) -> int:
+        """En demo, acelera el poll para cambios editados en NocoDB a mano."""
+        if self.demo_mode:
+            return min(self.poll_interval_seconds, 15)
+        return self.poll_interval_seconds
+
 
 @lru_cache
 def get_settings() -> Settings:

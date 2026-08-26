@@ -122,6 +122,15 @@ class TelegramClient:
             },
         )
 
+    async def set_my_name(self, name: str) -> dict[str, Any]:
+        return await self.api("setMyName", {"name": name})
+
+    async def set_my_description(self, description: str) -> dict[str, Any]:
+        return await self.api("setMyDescription", {"description": description})
+
+    async def set_my_short_description(self, short_description: str) -> dict[str, Any]:
+        return await self.api("setMyShortDescription", {"short_description": short_description})
+
     async def set_chat_menu_button(self, menu_type: str = "commands") -> dict[str, Any]:
         return await self.api(
             "setChatMenuButton",

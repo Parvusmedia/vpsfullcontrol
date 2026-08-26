@@ -1,51 +1,53 @@
-# DEMO — Movistar Para Ti (5 minutos)
+# DEMO — Movistar Para Ti (90 segundos)
 
-## 1. Abrir Telegram
-Busca `@Movistarparatibot` y envía `/start`.
+## Guion en vivo
 
-## 2. Explorar catálogo
-- **Móviles** → **Todas las marcas** → se abre el listado completo (pager con `1/5`, `2/5`…)
-- O elige marca / filtro de precio: **< 10 €/mes**, **10–20 €/mes**, **< 15 €/mes**
+### 1. Telegram — explorar (20 s)
+Busca `@Movistarparatibot` → `/start`
 
-## 3. Crear alerta
-- Navega con ◀️ ▶️ hasta un producto (p. ej. Pixel 9)
-- Pulsa **🔔 Avísame** → elige tipo de aviso (bajada de cuota, precio, etc.)
+- **Móviles** → **Todas las marcas** → navega con ◀️ ▶️ (`1/5`, `2/5`…)
+- Producto recomendado: **Pixel 11** o **iPhone 16**
 
-## 4. Abrir panel
-`https://movistarparati.pmediaplus.com/panel`
+### 2. Telegram — crear aviso (15 s)
+- Pulsa **🔔 Avísame** → **Si baja la cuota mensual**
 
-La sesión se crea **automáticamente** al abrir la URL (cookie HttpOnly). No hace falta pegar ninguna clave.
+### 3. Panel — operador (20 s)
+`https://movistarparati.pmediaplus.com/panel` (sesión automática)
 
-**CMS NocoDB:** https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
+- Pestaña **Catálogo** → activa **Solo con avisos**
+- O pestaña **🎬 Guion demo** → botones rápidos
 
-En Catálogo, activa **Solo con avisos** para ver qué productos tienen usuarios esperando notificación.
+### 4. Simular bajada (15 s)
+En el producto con aviso → **Bajar a 8 €/mes** (Pixel 11) o el botón contextual
 
-## 5. Simular bajada de precio
-En el catálogo del panel, botón contextual del producto (p. ej. Pixel 9 → **Bajar a 8 €/mes**).
+El push llega **al instante** (no hace falta esperar al poll).
 
-O edita la cuota manualmente y **Guardar en NocoDB**.
+### 5. Escenarios extra (opcional, 20 s)
+En **🎬 Guion demo**:
+- **ACTIVATE BLACK FRIDAY** — destaca 3 productos + bajada de cuota
+- **OPEN IPHONE PREORDER** — iPhone 16 Pro en preventa
 
-## 6. Recibir push
-El usuario recibe Telegram en segundos (poll cada ~60 s, o **Forzar detección** en el panel).
+### 6. Cierre (10 s)
+- **Actividad** — eventos en tiempo real
+- **CMS NocoDB:** https://mpa.parvusmedia.com/nc/pzyr6ncnc9dk4h0/vwzlxuhc0956ijho/movistar_products-movistar_products
 
-## 7. Actividad y métricas
-- **Avisos** — alertas activas por usuario
-- **Actividad** — eventos de cambio de catálogo
-- Métricas en la cabecera del panel (activos, destacados, novedades…)
+---
 
-## Telegram: polling vs webhook
-
-| Modo | Cuándo | Cómo |
-|------|--------|------|
-| **Polling** | Demo / desarrollo | `systemctl start movistar-parati-polling` |
-| **Webhook** | Producción (HTTPS) | Ver `backend/scripts/setup_telegram_webhook.py` |
-
-Con HTTPS en `movistarparati.pmediaplus.com` ya puedes migrar a webhook:
+## Setup técnico (antes de presentar)
 
 ```bash
-ssh parvus-vps
+# Perfil del bot (nombre + descripción)
+cd backend && python scripts/setup_telegram_profile.py
+
+# Webhook (respuesta más rápida que polling)
 sudo systemctl stop movistar-parati-polling
-cd /opt/apps/movistar-parati/backend && . .venv/bin/activate
 python scripts/setup_telegram_webhook.py
 sudo systemctl restart movistar-parati-api
 ```
+
+Con `DEMO_MODE=true`, el poll de catálogo corre cada **15 s** (cambios manuales en NocoDB).
+
+| Modo | Cuándo |
+|------|--------|
+| **Webhook** | Presentación / producción |
+| **Polling** | Desarrollo local sin HTTPS |

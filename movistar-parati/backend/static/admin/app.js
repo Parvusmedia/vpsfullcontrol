@@ -290,11 +290,11 @@ function renderDemoQuick() {
   const heroes = ["pixel-11-256", "galaxy-s25", "iphone-16-128"];
   const box = document.getElementById("demoQuickActions");
   const picks = catalog.filter((p) => heroes.includes(p.id));
-  box.innerHTML = picks.map((p) => {
+  box.innerHTML = `<p class="product-meta">Bajadas rápidas por producto:</p>` + picks.map((p) => {
     const action = (p.demo_actions || [])[0];
     if (!action) return "";
     return `<button class="action-btn sim-btn" data-id="${esc(p.id)}" data-price="${action.new_monthly}">
-      Demo: ${esc(p.display_name)} → ${action.new_monthly} €/mes
+      ${esc(p.display_name)} → ${action.new_monthly} €/mes
     </button>`;
   }).join("");
   box.querySelectorAll(".sim-btn").forEach((btn) => {
@@ -309,6 +309,23 @@ function renderDemoQuick() {
     };
   });
 }
+
+async function runDemoScenario(path, label) {
+  try {
+    const result = await api(path, { method: "POST" });
+    const count = (result.products || []).length;
+    const notes = result.poll?.notifications || 0;
+    showToast(`✅ ${label} · ${count} producto(s) · ${notes} notificación(es)`);
+    await load({ quiet: true });
+  } catch (e) {
+    showToast(e.message, "err");
+  }
+}
+
+document.getElementById("demoBlackFriday").onclick = () =>
+  runDemoScenario("/api/movistar/admin/demo/black-friday", "Black Friday");
+document.getElementById("demoPreorder").onclick = () =>
+  runDemoScenario("/api/movistar/admin/demo/iphone-preorder", "Preventa iPhone");
 
 async function load(opts = {}) {
   try {

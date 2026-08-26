@@ -113,12 +113,15 @@ async def deactivate_alert(record_id: str | int, user_id: int | str) -> bool:
 def _format_price_drop_message(product: Product, old_monthly: float, new_monthly: float) -> str:
     gift = f"\n\n🎁 {product.gift}" if product.gift else ""
     promo = f"\n🔥 {product.promotion}" if product.promotion else ""
+    saving = old_monthly - new_monthly
+    saving_line = f"\n\n💰 Ahorras <b>{saving:.2f} €/mes</b> — ¡aprovecha antes de que suba!" if saving > 0 else ""
     return (
-        f"📉 <b>¡Ha bajado!</b>\n\n"
-        f"El <b>{product.display_name}</b> que estabas siguiendo acaba de mejorar su precio.\n\n"
-        f"Antes:\n{old_monthly:.2f} €/mes\n\n"
-        f"Ahora:\n<b>{new_monthly:.2f} €/mes</b>"
-        f"{promo}{gift}"
+        f"🔔 <b>¡Tu aviso se ha activado!</b>\n\n"
+        f"El <b>{product.display_name}</b> que sigues acaba de bajar de cuota.\n\n"
+        f"Antes: <s>{old_monthly:.2f} €/mes</s>\n"
+        f"Ahora: <b>{new_monthly:.2f} €/mes</b>"
+        f"{saving_line}{promo}{gift}\n\n"
+        f"👉 Pulsa abajo para ver la oferta."
     )
 
 
