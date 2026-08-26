@@ -113,8 +113,9 @@ TABLES = {
 
 def ensure_table_columns(table_id: str, columns: list[dict]) -> None:
     """Add missing columns to an existing NocoDB table."""
-    existing = req("GET", f"/api/v2/meta/tables/{table_id}/columns").get("list", [])
-    names = {c.get("column_name") or c.get("title") for c in existing}
+    meta = req("GET", f"/api/v2/meta/tables/{table_id}")
+    existing_cols = meta.get("columns", [])
+    names = {c.get("column_name") or c.get("title") for c in existing_cols}
     for col in columns:
         name = col["column_name"]
         if name in names:
