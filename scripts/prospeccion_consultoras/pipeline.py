@@ -1059,6 +1059,46 @@ def row_for_nocodb(lead: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def ensure_email_columns_in_view() -> None:
+    """Añade columnas email/smartlead a la primera vista grid de la tabla si faltan."""
+    base, token = nocodb_creds()
+    headers = {"xc-token": token, "Content-Type": "application/json"}
+    show_cols = ("email", "email_source", "icypeas_status", "smartlead_status", "smartlead_campaign_id")
+    with httpx.Client(timeout=30) as client:
+        meta = client.get(f"{base}/api/v2/meta/tables/{TABLE_ID}", headers=headers).json()
+        col_ids = {
+            str(c.get("title") or c.get("column_name") or ""): c.get("id")
+            for c in meta.get("columns") or []
+        }
+        views = client.get(f"{base}/api/v2/meta/tables/{TABLE_ID}/views", headers=headers).json()
+        view_list = views.get("list") or views if isinstance(views, list) else []
+        if not view_list:
+            print("view SKIP no views found")
+            return
+        view = view_list[0]
+        view_id = view.get("id")
+        if not view_id:
+            return
+        existing = client.get(f"{base}/api/v2/meta/views/{view_id}/columns", headers=headers).json()
+        existing_ids = {c.get("fk_column_id") for c in (existing.get("list") or [])}
+        orders = [int(c.get("order") or 0) for c in (existing.get("list") or [])]
+        order = max(orders) if orders else 0
+        for name in show_cols:
+            fk = col_ids.get(name)
+            if not fk or fk in existing_ids:
+                continue
+            order += 1
+            r = client.post(
+                f"{base}/api/v2/meta/views/{view_id}/columns",
+                headers=headers,
+                json={"fk_column_id": fk, "show": True, "order": order},
+            )
+            if r.status_code == 200:
+                print(f"view column OK {name} (view={view.get('title')})")
+            else:
+                print(f"view column FAIL {name}: {r.status_code} {r.text[:120]}")
+
+
 def provision_columns() -> None:
     base, token = nocodb_creds()
     headers = {"xc-token": token, "Content-Type": "application/json"}
@@ -1072,6 +1112,7 @@ def provision_columns() -> None:
                 print(f"column SKIP {name}")
             else:
                 print(f"column FAIL {name}: {r.status_code} {r.text[:120]}")
+    ensure_email_columns_in_view()
 
 
 def find_by_dedupe(base: str, token: str, key: str) -> dict[str, Any] | None:
@@ -2424,14 +2465,18 @@ def cmd_list(_: argparse.Namespace) -> int:
         r.raise_for_status()
         rows = r.json().get("list") or []
     rows.sort(key=lambda x: int(x.get("score") or 0), reverse=True)
-    print(f"{'score':>5}  {'name':<28} {'company':<12} {'country':<18} {'type':<10} status")
-    print("-" * 100)
+    print(
+        f"{'score':>5}  {'name':<24} {'email':<28} {'company':<10} "
+        f"{'country':<14} {'type':<10} status"
+    )
+    print("-" * 120)
     for row in rows:
-        name = f"{row.get('first_name') or ''} {row.get('last_name') or ''}".strip() or (row.get("title") or "")[:28]
+        name = f"{row.get('first_name') or ''} {row.get('last_name') or ''}".strip() or (row.get("title") or "")[:24]
         ctype = (row.get("contact_type") or "")[:10]
+        email = (row.get("email") or "").strip() or "—"
         print(
-            f"{int(row.get('score') or 0):>5}  {name:<28} {(row.get('company') or '')[:12]:<12} "
-            f"{(row.get('country') or '')[:18]:<18} {ctype:<10} {row.get('status') or ''}"
+            f"{int(row.get('score') or 0):>5}  {name:<24} {email[:28]:<28} {(row.get('company') or '')[:10]:<10} "
+            f"{(row.get('country') or '')[:14]:<14} {ctype:<10} {row.get('status') or ''}"
         )
     export = DATA_DIR / "consultoras_review_table.json"
     export.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
