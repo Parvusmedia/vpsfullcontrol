@@ -50,10 +50,12 @@ def test_brand_menu_includes_price_filters():
     assert "filter:monthly_range:10:20" in callbacks
 
 
-def test_welcome_text_mentions_cuota_and_demo_disclaimer():
-    assert "cuota" in WELCOME_TEXT.lower()
+def test_welcome_text_mentions_precio_and_demo_disclaimer():
+    assert "precio" in WELCOME_TEXT.lower()
     assert "concept demo" in WELCOME_TEXT.lower()
     assert "☰" not in WELCOME_TEXT
+    assert "Movistar Para Ti" in WELCOME_TEXT
+    assert WELCOME_TEXT.index("¡Hola!") < WELCOME_TEXT.index("Bienvenido")
 
 
 def test_menu_text_is_short():
