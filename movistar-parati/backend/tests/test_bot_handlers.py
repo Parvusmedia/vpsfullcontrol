@@ -1,5 +1,5 @@
 from app.services.bot_commands import BOT_COMMANDS
-from app.services.bot_handlers import BTN_OFERTAS, _brand_menu, _command_name, _is_casual_greeting
+from app.services.bot_handlers import BTN_OFERTAS, MENU_TEXT, WELCOME_TEXT, _brand_menu, _command_name, _is_casual_greeting
 
 
 def test_command_name_plain():
@@ -48,3 +48,14 @@ def test_brand_menu_includes_price_filters():
     assert "filter:monthly:10" in callbacks
     assert "filter:monthly:15" in callbacks
     assert "filter:monthly_range:10:20" in callbacks
+
+
+def test_welcome_text_mentions_cuota_and_demo_disclaimer():
+    assert "cuota" in WELCOME_TEXT.lower()
+    assert "concept demo" in WELCOME_TEXT.lower()
+    assert "☰" not in WELCOME_TEXT
+
+
+def test_menu_text_is_short():
+    assert len(MENU_TEXT) < len(WELCOME_TEXT)
+    assert "Menú principal" in MENU_TEXT

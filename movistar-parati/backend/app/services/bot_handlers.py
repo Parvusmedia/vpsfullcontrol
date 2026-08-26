@@ -21,6 +21,16 @@ BTN_NOVEDADES = "🆕 Novedades"
 BTN_PARAMI = "💙 Para mí"
 BTN_MENU = "🏠 Menú"
 
+WELCOME_TEXT = (
+    "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
+    "Encuentra móviles y ofertas a tu medida y crea avisos "
+    "para que te avisemos si baja la cuota.\n\n"
+    "👇 Elige una opción:\n\n"
+    "<i>Concept demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
+)
+
+MENU_TEXT = "🏠 <b>Menú principal</b>\n\n👇 Elige una opción:"
+
 _GREETINGS = {
     "hola", "buenas", "buenos dias", "buenos días", "buenas tardes", "buenas noches",
     "hey", "hi", "hello", "inicio", "empezar", "menu", "menú", "start",
@@ -219,7 +229,6 @@ async def send_product(chat_id: int, product: Product, *, deal: bool = False) ->
 async def show_main_menu(
     chat_id: int,
     *,
-    greeting: bool = True,
     first_time: bool = False,
     restore_keyboard: bool = False,
     source_message_id: int | None = None,
@@ -230,22 +239,11 @@ async def show_main_menu(
         await _clear_inline_keyboard(chat_id, source_message_id)
     if restore_keyboard:
         await _restore_reply_keyboard(chat_id)
-    if first_time or greeting:
-        text = (
-            "👋 <b>¡Hola! Bienvenido a Movistar Para Ti</b>\n\n"
-            "Te ayudamos a encontrar móviles y ofertas que encajen contigo, "
-            "y te avisamos si bajan de precio.\n\n"
-            "👉 Elige una opción con los <b>botones de este mensaje</b>. "
-            "También puedes abrir el menú <b>☰</b> (abajo a la izquierda) "
-            "para ver los comandos.\n\n"
-            "<i>Concept Demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
-        )
+    if first_time:
+        text = WELCOME_TEXT
         _state(chat_id)["onboarded"] = True
     else:
-        text = (
-            "🏠 <b>Menú principal</b>\n\n"
-            "Elige una opción con los botones de este mensaje."
-        )
+        text = MENU_TEXT
     await telegram_client.send_message(chat_id, text, reply_markup=_nav_inline_menu())
 
 
@@ -417,7 +415,7 @@ async def _route_text_action(chat_id: int, user_id: int, text: str) -> bool:
         BTN_MOVILES: lambda cid: prompt_segment_choice(cid, "phones"),
         BTN_NOVEDADES: lambda cid: prompt_segment_choice(cid, "new"),
         BTN_PARAMI: lambda cid: prompt_segment_choice(cid, "forme"),
-        BTN_MENU: lambda cid: show_main_menu(cid, greeting=False, restore_keyboard=True),
+        BTN_MENU: lambda cid: show_main_menu(cid, restore_keyboard=True),
     }
     action = actions.get(text.strip())
     if action:
@@ -444,11 +442,10 @@ async def _handle_message(message: dict[str, Any]) -> None:
     st = _state(chat_id)
 
     if command == "/start":
-        first_time = not st.get("onboarded")
-        await show_main_menu(chat_id, greeting=True, first_time=first_time)
+        await show_main_menu(chat_id, first_time=not st.get("onboarded"))
         return
     if command == "/menu":
-        await show_main_menu(chat_id, greeting=False, restore_keyboard=True)
+        await show_main_menu(chat_id, restore_keyboard=True)
         return
     if command == "/ofertas":
         await prompt_segment_choice(chat_id, "deals")
@@ -473,7 +470,7 @@ async def _handle_message(message: dict[str, Any]) -> None:
         return
 
     if _is_casual_greeting(text) or not st.get("onboarded"):
-        await show_main_menu(chat_id, greeting=not st.get("onboarded"), first_time=not st.get("onboarded"))
+        await show_main_menu(chat_id, first_time=not st.get("onboarded"))
         return
 
     await telegram_client.send_message(
@@ -500,7 +497,6 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
         _state(chat_id).pop("pager", None)
         await show_main_menu(
             chat_id,
-            greeting=False,
             restore_keyboard=True,
             source_message_id=callback.get("message", {}).get("message_id"),
         )
