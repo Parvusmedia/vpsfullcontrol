@@ -12,15 +12,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("movistar-parati.images")
 
+# Formato recomendado para fichas de producto en Telegram (sendPhoto).
+# 2:1 ocupa menos altura en el chat que 4:3 y encaja bien en móvil.
+# Límites Telegram: ratio ≤ 20:1, width+height ≤ 10000, ≤ 10 MB.
 IMAGE_WIDTH = 800
-IMAGE_HEIGHT = 600
+IMAGE_HEIGHT = 400
 JPEG_QUALITY = 85
 
 _cache: dict[str, bytes] = {}
 
 
 def normalize_image_bytes(raw: bytes) -> bytes:
-    """Center-crop to 4:3 and resize to a fixed size for stable Telegram layouts."""
+    """Center-crop to 2:1 and resize for compact Telegram product cards."""
     img = Image.open(io.BytesIO(raw)).convert("RGB")
     width, height = img.size
     target_ratio = IMAGE_WIDTH / IMAGE_HEIGHT

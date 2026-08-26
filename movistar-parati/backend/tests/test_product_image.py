@@ -33,6 +33,14 @@ def test_normalize_square_to_fixed_size():
     assert img.size == (IMAGE_WIDTH, IMAGE_HEIGHT)
 
 
+def test_normalize_portrait_marketing_asset():
+    """Assets del ZIP son 768x1024; deben salir 800x400 para Telegram."""
+    raw = _make_image((768, 1024), "navy")
+    normalized = normalize_image_bytes(raw)
+    img = Image.open(io.BytesIO(normalized))
+    assert img.size == (800, 400)
+
+
 def test_invalidate_image_cache_removes_product(monkeypatch):
     from app.services import product_image
 
