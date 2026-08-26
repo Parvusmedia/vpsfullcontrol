@@ -25,6 +25,11 @@ _cache: dict[str, bytes] = {}
 def normalize_image_bytes(raw: bytes) -> bytes:
     """Center-crop to 2:1 and resize for compact Telegram product cards."""
     img = Image.open(io.BytesIO(raw)).convert("RGB")
+    if img.size == (IMAGE_WIDTH, IMAGE_HEIGHT):
+        out = io.BytesIO()
+        img.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
+        return out.getvalue()
+
     width, height = img.size
     target_ratio = IMAGE_WIDTH / IMAGE_HEIGHT
     current_ratio = width / height

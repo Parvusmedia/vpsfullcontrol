@@ -41,6 +41,13 @@ def test_normalize_portrait_marketing_asset():
     assert img.size == (800, 400)
 
 
+def test_normalize_skips_recrop_when_already_target_size():
+    raw = _make_image((800, 400), "navy")
+    normalized = normalize_image_bytes(raw)
+    img = Image.open(io.BytesIO(normalized))
+    assert img.size == (800, 400)
+
+
 def test_invalidate_image_cache_removes_product(monkeypatch):
     from app.services import product_image
 
