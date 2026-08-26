@@ -73,7 +73,7 @@ DNS: registro `movistarparati.pmediaplus.com → 87.106.194.137` en Plesk (servi
 
 1. Usuario crea alerta en Telegram
 2. Cambias `monthly_price` en NocoDB (o botón contextual en el panel admin)
-3. En ≤60s el poll detecta el cambio → Telegram notifica
+3. En ≤15s (demo) o ≤60s (prod) el poll detecta el cambio → Telegram notifica
 
 ### Telegram: polling vs webhook
 
@@ -83,6 +83,10 @@ DNS: registro `movistarparati.pmediaplus.com → 87.106.194.137` en Plesk (servi
 | Webhook | Producción (HTTPS) | `python scripts/setup_telegram_webhook.py` (parar polling antes) |
 
 Endpoint webhook: `POST /api/telegram/webhook` (header `X-Telegram-Bot-Api-Secret-Token`).
+
+Perfil del bot: `python scripts/setup_telegram_profile.py`
+
+Con `DEMO_MODE=true`, el poll efectivo es de **15 s**.
 
 ## Futuro producción
 

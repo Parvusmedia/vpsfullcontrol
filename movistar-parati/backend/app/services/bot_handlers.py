@@ -7,8 +7,8 @@ from app.services.change_detection import create_alert, alert_type_label, deacti
 from app.services.product_image import get_normalized_product_image
 from app.services.product_pager import handle_pager_callback, open_product_pager
 from app.services.product_pitch import (
-    forme_client_question,
     forme_price_question,
+    forme_purchase_mode_question,
     forme_results_intro,
     preference_ask_message,
 )
@@ -345,14 +345,14 @@ async def _show_forme_results(
             reply_markup=_nav_inline_menu(),
         )
         return
-    is_client = st.get("is_client", True)
+    purchase_mode = st.get("purchase_mode", "cuotas")
     await telegram_client.send_message(
         chat_id,
         forme_results_intro(
             preference,
             price_min=st.get("price_min"),
             price_max=st.get("price_max"),
-            is_client=is_client,
+            purchase_mode=purchase_mode,
             brand=brand,
             count=len(picks),
         ),
@@ -366,7 +366,7 @@ async def _show_forme_results(
             "preference": preference,
             "price_min": st.get("price_min"),
             "price_max": st.get("price_max"),
-            "is_client": is_client,
+            "purchase_mode": purchase_mode,
             "brand": brand,
         },
     )
@@ -374,7 +374,7 @@ async def _show_forme_results(
     st.pop("forme_brand_locked", None)
     st.pop("price_min", None)
     st.pop("price_max", None)
-    st.pop("is_client", None)
+    st.pop("purchase_mode", None)
 
 
 def _forme_price_keyboard() -> dict[str, Any]:
@@ -390,11 +390,11 @@ def _forme_price_keyboard() -> dict[str, Any]:
     }
 
 
-def _forme_client_keyboard() -> dict[str, Any]:
+def _forme_purchase_mode_keyboard() -> dict[str, Any]:
     return {
         "inline_keyboard": [
-            [{"text": "✅ Sí, soy cliente", "callback_data": "forme:client:yes"}],
-            [{"text": "No, sin ser cliente", "callback_data": "forme:client:no"}],
+            [{"text": "💳 En cuotas (cliente Movistar)", "callback_data": "forme:mode:cuotas"}],
+            [{"text": "🛒 Compra libre", "callback_data": "forme:mode:libre"}],
             _home_row(),
         ]
     }
@@ -429,7 +429,7 @@ async def _forme_recommend_for_brand(
     preference = st.get("preference", "value")
     price_min = st.get("price_min")
     price_max = st.get("price_max")
-    is_client = st.get("is_client", True)
+    purchase_mode = st.get("purchase_mode", "cuotas")
     locked = st.get("forme_brand_locked")
 
     if locked == "Apple":
@@ -438,7 +438,7 @@ async def _forme_recommend_for_brand(
             "Apple",
             price_min=price_min,
             price_max=price_max,
-            is_client=is_client,
+            purchase_mode=purchase_mode,
         )
         picks = filter_by_segment(picks, "apple")
         await _show_forme_results(chat_id, st, picks, brand="Apple")
@@ -453,7 +453,7 @@ async def _forme_recommend_for_brand(
                     android_brand,
                     price_min=price_min,
                     price_max=price_max,
-                    is_client=is_client,
+                    purchase_mode=purchase_mode,
                 )
             )
         picks = filter_by_segment(picks, "android")[:3]
@@ -465,7 +465,7 @@ async def _forme_recommend_for_brand(
         brand,
         price_min=price_min,
         price_max=price_max,
-        is_client=is_client,
+        purchase_mode=purchase_mode,
     )
     picks = filter_by_segment(picks, st.get("segment_filter"))[:3]
     await _show_forme_results(
@@ -721,11 +721,22 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
             st["price_max"] = float(parts[3])
         await telegram_client.send_message(
             chat_id,
-            forme_client_question(),
-            reply_markup=_forme_client_keyboard(),
+            forme_purchase_mode_question(),
+            reply_markup=_forme_purchase_mode_keyboard(),
+        )
+    elif data.startswith("forme:mode:"):
+        st["purchase_mode"] = data.split(":")[2]
+        locked = st.get("forme_brand_locked")
+        if locked in {"Apple", "android"}:
+            await _forme_recommend_for_brand(chat_id, st, None)
+            return
+        await telegram_client.send_message(
+            chat_id,
+            "¿Alguna marca preferida?",
+            reply_markup=_forme_brand_keyboard(st),
         )
     elif data.startswith("forme:client:"):
-        st["is_client"] = data.split(":")[2] == "yes"
+        st["purchase_mode"] = "cuotas" if data.split(":")[2] == "yes" else "libre"
         locked = st.get("forme_brand_locked")
         if locked in {"Apple", "android"}:
             await _forme_recommend_for_brand(chat_id, st, None)
@@ -736,13 +747,12 @@ async def _handle_callback(callback: dict[str, Any]) -> None:
             reply_markup=_forme_brand_keyboard(st),
         )
     elif data.startswith("forme:budget:"):
-        # compat legado: tratar cuota mensual como sin filtro de terminal
         st["price_min"] = None
         st["price_max"] = None
         await telegram_client.send_message(
             chat_id,
-            forme_client_question(),
-            reply_markup=_forme_client_keyboard(),
+            forme_purchase_mode_question(),
+            reply_markup=_forme_purchase_mode_keyboard(),
         )
     elif data.startswith("forme:brand:"):
         brand = data.split(":")[2]

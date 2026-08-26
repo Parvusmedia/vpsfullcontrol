@@ -11,6 +11,8 @@ INT_FIELDS = {
     "previous_monthly_price",
     "months",
     "original_price",
+    "price_libre",
+    "price_financed_total",
     "saving",
     "discount_percentage",
     "camera_score",

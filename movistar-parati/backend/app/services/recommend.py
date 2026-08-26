@@ -16,9 +16,9 @@ def _in_price_range(
     *,
     price_min: float | None,
     price_max: float | None,
-    is_client: bool,
+    purchase_mode: str = "cuotas",
 ) -> bool:
-    terminal = product.terminal_price(is_client=is_client)
+    terminal = product.terminal_price(purchase_mode=purchase_mode)
     if terminal is None:
         return price_min is None and price_max is None
     if price_min is not None and terminal < price_min:
@@ -34,7 +34,7 @@ async def recommend_products(
     *,
     price_min: float | None = None,
     price_max: float | None = None,
-    is_client: bool = True,
+    purchase_mode: str = "cuotas",
     limit: int = 3,
 ) -> list[Product]:
     products = await product_source.get_products()
@@ -54,7 +54,12 @@ async def recommend_products(
         in_range = [
             p
             for p in filtered
-            if _in_price_range(p, price_min=price_min, price_max=price_max, is_client=is_client)
+            if _in_price_range(
+                p,
+                price_min=price_min,
+                price_max=price_max,
+                purchase_mode=purchase_mode,
+            )
         ]
         if in_range:
             filtered = in_range

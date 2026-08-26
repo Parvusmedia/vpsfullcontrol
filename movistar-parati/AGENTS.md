@@ -33,6 +33,9 @@ cd backend && python scripts/sync_product_images.py
 # Sincronizar specs técnicas (mAh, MP, procesador) → NocoDB
 cd backend && python scripts/sync_product_specs.py
 
+# Sincronizar precios libre / financiado → NocoDB
+cd backend && python scripts/sync_product_prices.py
+
 # Perfil del bot (nombre + descripción en Telegram)
 cd backend && python scripts/setup_telegram_profile.py
 

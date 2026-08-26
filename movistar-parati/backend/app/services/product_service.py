@@ -51,54 +51,64 @@ class Product:
     spec_work: str | None = None
     spec_premium: str | None = None
     spec_value: str | None = None
+    price_libre: float | None = None
+    price_financed_total: float | None = None
 
     @property
     def display_name(self) -> str:
         parts = [self.name, self.capacity]
         return " ".join(p for p in parts if p).strip()
 
-    def terminal_price(self, *, is_client: bool = True) -> float | None:
-        if is_client:
-            return self.price
-        return self.original_price or self.previous_price or self.price
+    def price_libre_value(self) -> float | None:
+        return self.price_libre or self.original_price or self.previous_price or self.price
 
-    def client_terminal_price(self) -> float | None:
-        return self.price
+    def price_financed_total_value(self) -> float | None:
+        return self.price_financed_total or self.price
 
-    def card_text(self, *, deal: bool = False, is_client: bool = True) -> str:
+    def terminal_price(self, *, purchase_mode: str = "cuotas") -> float | None:
+        if purchase_mode == "libre":
+            return self.price_libre_value()
+        return self.price_financed_total_value()
+
+    def card_text(self, *, deal: bool = False, purchase_mode: str = "cuotas") -> str:
         lines = [f"📱 <b>{self.display_name}</b>\n"]
-        terminal = self.terminal_price(is_client=is_client)
+        libre = self.price_libre_value()
+        financed = self.price_financed_total_value()
+        months = self.months or 48
 
-        if is_client:
+        if purchase_mode == "cuotas":
             if deal and self.previous_monthly_price and self.monthly_price and self.monthly_price < self.previous_monthly_price:
                 lines.append("🔥 <b>OFERTA PARA TI</b>\n")
                 lines.append(f"Antes: <s>{self.previous_monthly_price:.2f} €/mes</s>")
                 lines.append(f"Ahora: <b>{self.monthly_price:.2f} €/mes</b>")
-                if self.months:
-                    lines.append(f"<i>{self.months} meses</i>")
             elif self.monthly_price is not None:
-                lines.append(f"💳 <b>{self.monthly_price:.2f} €/mes</b>")
-                if self.months:
-                    lines.append(f"<i>{self.months} meses</i>")
-            if terminal is not None:
-                lines.append(f"\n💰 Precio terminal: <b>{terminal:.0f} €</b>")
+                lines.append(
+                    f"💳 En <b>{months} cuotas</b> de <b>{self.monthly_price:.2f} €/mes</b> "
+                    f"<i>(cliente Movistar)</i>"
+                )
+            if financed is not None:
+                lines.append(f"\n💰 Total financiado: <b>{financed:.0f} €</b>")
+            if libre is not None and financed is not None and libre > financed:
+                lines.append(f"Libre <b>{libre:.0f} €</b>")
             if self.saving:
                 lines.append(f"🔥 Ahorras {self.saving:.0f} €")
         else:
-            if terminal is not None:
-                lines.append(f"💰 Precio terminal: <b>{terminal:.0f} €</b>")
-            client_price = self.client_terminal_price()
-            if client_price is not None and terminal is not None and client_price < terminal:
-                benefit = f"Como cliente Movistar: <b>{client_price:.0f} €</b>"
-                if self.monthly_price is not None and self.months:
-                    benefit += f" o desde <b>{self.monthly_price:.0f} €/mes</b> ({self.months} meses)"
-                lines.append(f"\n💙 {benefit}")
-            elif self.monthly_price is not None and self.months:
+            if libre is not None:
+                lines.append(f"💰 Compra libre: <b>{libre:.0f} €</b>")
+            if financed is not None and libre is not None and financed < libre:
+                saving = libre - financed
+                cuota = f"{self.monthly_price:.0f} €/mes" if self.monthly_price is not None else "cuotas"
                 lines.append(
-                    f"\n<i>La financiación en cuotas suele estar disponible para clientes Movistar.</i>"
+                    f"\n💙 Con financiación Movistar: <b>{financed:.0f} €</b> "
+                    f"en {months} cuotas de {cuota} (ahorro {saving:.0f} €)"
+                )
+            elif self.monthly_price is not None:
+                lines.append(
+                    f"\n<i>También disponible en cuotas para clientes Movistar "
+                    f"(desde {self.monthly_price:.0f} €/mes).</i>"
                 )
 
-        if self.promotion and is_client:
+        if self.promotion and purchase_mode == "cuotas":
             lines.append(f"\n🏷️ {self.promotion}")
         if self.gift:
             lines.append(f"\n🎁 {self.gift}")
@@ -120,6 +130,8 @@ class Product:
             "previous_monthly_price": self.previous_monthly_price,
             "months": self.months,
             "original_price": self.original_price,
+            "price_libre": self.price_libre_value(),
+            "price_financed_total": self.price_financed_total_value(),
             "saving": self.saving,
             "discount_percentage": self.discount_percentage,
             "promotion": self.promotion,
@@ -180,6 +192,8 @@ def parse_product(row: dict) -> Product:
         previous_monthly_price=_num(f.get("previous_monthly_price")),
         months=_int(f.get("months"), 48) or None,
         original_price=_num(f.get("original_price")),
+        price_libre=_num(f.get("price_libre")),
+        price_financed_total=_num(f.get("price_financed_total")),
         saving=_num(f.get("saving")),
         discount_percentage=_num(f.get("discount_percentage")),
         promotion=f.get("promotion") or None,
@@ -228,6 +242,8 @@ def commercial_signature(p: Product) -> str:
         "price": p.price,
         "monthly_price": p.monthly_price,
         "original_price": p.original_price,
+        "price_libre": p.price_libre_value(),
+        "price_financed_total": p.price_financed_total_value(),
         "discount_percentage": p.discount_percentage,
         "promotion": p.promotion,
         "gift": p.gift,
@@ -308,5 +324,5 @@ class NocoDBProductSource:
 product_source = NocoDBProductSource()
 
 
-def product_card_text(p: Product, *, deal: bool = False, is_client: bool = True) -> str:
-    return p.card_text(deal=deal, is_client=is_client)
+def product_card_text(p: Product, *, deal: bool = False, purchase_mode: str = "cuotas") -> str:
+    return p.card_text(deal=deal, purchase_mode=purchase_mode)
