@@ -27,8 +27,8 @@ cd backend && python scripts/provision_nocodb.py
 # Polling Telegram (demo; parar antes de activar webhook)
 sudo systemctl start movistar-parati-polling
 
-# Perfil del bot (nombre + descripción en Telegram)
-cd backend && python scripts/setup_telegram_profile.py
+# Sincronizar imágenes de producto → NocoDB
+cd backend && python scripts/sync_product_images.py
 
 # Webhook Telegram (producción con HTTPS)
 cd backend && python scripts/setup_telegram_webhook.py
