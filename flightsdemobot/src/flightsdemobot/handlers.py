@@ -338,7 +338,6 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             chat_id,
             state.lang,
             with_banner=True,
-            intro=t("new_search_prompt", state.lang),
         )
         return
 
@@ -616,7 +615,6 @@ async def _begin_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         chat_id,
         state.lang,
         with_banner=True,
-        intro=t("new_search_prompt", state.lang),
     )
 
 
@@ -641,15 +639,12 @@ async def _prompt_origin(
     lang: Lang,
     *,
     with_banner: bool = False,
-    intro: str | None = None,
 ) -> None:
     store = _store(context)
     state = store.get(chat_id)
     state.step = "pick_origin"
     store.save(chat_id, state)
-    text = t("pick_origin", lang)
-    if intro:
-        text = f"{intro}\n\n{text}"
+    text = t("pick_origin_start", lang) if with_banner else t("pick_origin", lang)
     markup = hub_keyboard(lang)
     if with_banner:
         await send_initial_menu(context.bot, chat_id, text, markup)
