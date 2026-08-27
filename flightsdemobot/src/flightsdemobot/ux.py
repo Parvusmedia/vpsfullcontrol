@@ -83,6 +83,27 @@ HUB_IMAGES: dict[str, str] = {
 }
 
 
+async def send_initial_menu(
+    bot: Bot,
+    chat_id: int,
+    text: str,
+    reply_markup: InlineKeyboardMarkup | None = None,
+) -> Message:
+    """Hero banner on the first hub picker of a search (/start, /search, Search again)."""
+    if MENU_BANNER_PATH.is_file() and len(text) <= 1024:
+        try:
+            with MENU_BANNER_PATH.open("rb") as banner:
+                return await bot.send_photo(
+                    chat_id,
+                    banner,
+                    caption=text,
+                    reply_markup=reply_markup,
+                )
+        except Exception as exc:
+            logger.debug("initial menu banner failed: %s", exc)
+    return await bot.send_message(chat_id, text, reply_markup=reply_markup)
+
+
 async def send_menu_message(
     bot: Bot,
     chat_id: int,

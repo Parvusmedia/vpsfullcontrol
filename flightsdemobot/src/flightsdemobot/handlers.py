@@ -47,6 +47,7 @@ from flightsdemobot.ux import (
     ack_return_oneway,
     clear_flow_messages,
     maybe_send_hub_photo,
+    send_initial_menu,
     send_menu_message,
     send_welcome_banner,
     SearchProgress,
@@ -332,9 +333,13 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         state.step = "pick_origin"
         store.save(chat_id, state)
         await query.edit_message_reply_markup(reply_markup=None)
-        await send_menu_message(context.bot, chat_id, t("new_search_prompt", state.lang), reply_markup=hide_keyboard(),
+        await _prompt_origin(
+            context,
+            chat_id,
+            state.lang,
+            with_banner=True,
+            intro=t("new_search_prompt", state.lang),
         )
-        await _prompt_origin(context, chat_id, state.lang)
         return
 
     if data.startswith("passengers:"):
@@ -602,11 +607,17 @@ async def _begin_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     state.step = "pick_origin"
     store.save(chat_id, state)
     await clear_flow_messages(context.bot, chat_id, context)
-    await update.effective_message.reply_text(
-        t("new_search_prompt", state.lang),
-        reply_markup=hide_keyboard(),
+    try:
+        await context.bot.send_message(chat_id, "\u2060", reply_markup=hide_keyboard())
+    except Exception:
+        pass
+    await _prompt_origin(
+        context,
+        chat_id,
+        state.lang,
+        with_banner=True,
+        intro=t("new_search_prompt", state.lang),
     )
-    await _prompt_origin(context, chat_id, state.lang)
 
 
 async def _prompt_passengers(context: ContextTypes.DEFAULT_TYPE, chat_id: int, lang: Lang) -> None:
@@ -624,13 +635,26 @@ async def _prompt_passengers(context: ContextTypes.DEFAULT_TYPE, chat_id: int, l
     track_flow_message(context, msg)
 
 
-async def _prompt_origin(context: ContextTypes.DEFAULT_TYPE, chat_id: int, lang: Lang) -> None:
+async def _prompt_origin(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    lang: Lang,
+    *,
+    with_banner: bool = False,
+    intro: str | None = None,
+) -> None:
     store = _store(context)
     state = store.get(chat_id)
     state.step = "pick_origin"
     store.save(chat_id, state)
-    await send_menu_message(context.bot, chat_id, t("pick_origin", lang), reply_markup=hub_keyboard(lang),
-    )
+    text = t("pick_origin", lang)
+    if intro:
+        text = f"{intro}\n\n{text}"
+    markup = hub_keyboard(lang)
+    if with_banner:
+        await send_initial_menu(context.bot, chat_id, text, markup)
+    else:
+        await send_menu_message(context.bot, chat_id, text, reply_markup=markup)
 
 
 async def _run_search(
