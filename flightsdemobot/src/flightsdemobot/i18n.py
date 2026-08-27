@@ -170,12 +170,12 @@ STRINGS: dict[str, dict[Lang, str]] = {
     },
     "one_way": {"en": "One way", "ar": "ذهاب فقط"},
     "searching": {
-        "en": "Checking Saudia fares for you… ⏳",
-        "ar": "أبحث عن أسعار السعودية لك… ⏳",
+        "en": "Flights Search & Alerts Demo — preparing sample results… ⏳",
+        "ar": "عرض بحث وتنبيهات الرحلات — أجهّز نتائج تجريبية… ⏳",
     },
     "search_progress_1": {
-        "en": "Checking Saudia fares for you… ⏳",
-        "ar": "أبحث عن أسعار السعودية لك… ⏳",
+        "en": "Flights Search & Alerts Demo — preparing sample results… ⏳",
+        "ar": "عرض بحث وتنبيهات الرحلات — أجهّز نتائج تجريبية… ⏳",
     },
     "search_progress_2": {
         "en": "Still working — querying Saudia and our fare feed…",
@@ -196,6 +196,18 @@ STRINGS: dict[str, dict[Lang, str]] = {
     "search_results_title": {
         "en": "Here’s what I found ✈️",
         "ar": "هذا ما وجدته ✈️",
+    },
+    "result_demo_header": {
+        "en": "🧪 DEMO — sample fares below (not live Saudia prices).",
+        "ar": "🧪 عرض تجريبي — أسعار نموذجية أدناه (ليست أسعار السعودية المباشرة).",
+    },
+    "result_demo_badge": {
+        "en": "🧪 DEMO sample fare",
+        "ar": "🧪 سعر تجريبي نموذجي",
+    },
+    "result_demo_notice": {
+        "en": "Simulated for this Parvus demo — confirm real availability on saudia.com.",
+        "ar": "محاكاة لهذا العرض التجريبي — أكد التوفر الفعلي على saudia.com.",
     },
     "result_exact_badge": {
         "en": "✓ Fare for your dates",
@@ -261,6 +273,10 @@ STRINGS: dict[str, dict[Lang, str]] = {
         "en": "Book on Saudia · {sar} SAR",
         "ar": "احجز على السعودية · {sar} ريال",
     },
+    "book_button_demo": {
+        "en": "Open Saudia (demo sample) · {sar} SAR",
+        "ar": "افتح السعودية (عينة تجريبية) · {sar} ريال",
+    },
     "book_tip": {
         "en": "Tap the green button below to open Saudia with your search pre-filled.",
         "ar": "اضغط الزر الأخضر أدناه لفتح موقع السعودية مع بحثك جاهزاً.",
@@ -300,12 +316,18 @@ STRINGS: dict[str, dict[Lang, str]] = {
     "outbound": {"en": "Outbound", "ar": "ذهاب"},
     "return": {"en": "Return", "ar": "إياب"},
     "disclaimer": {
-        "en": "Demo by Parvus Media. Fares subject to availability at saudia.com. Not an official Saudia bot.",
-        "ar": "عرض من Parvus Media. الأسعار خاضعة للتوفر على saudia.com. ليس بوتاً رسمياً للسعودية.",
+        "en": (
+            "Parvus Media demo — prices shown are samples or indicative, not a live quote. "
+            "Not an official Saudia bot. Confirm on saudia.com."
+        ),
+        "ar": (
+            "عرض Parvus Media — الأسعار المعروضة عينات أو تقريبية وليست عرضاً مباشراً. "
+            "ليس بوتاً رسمياً للسعودية. أكد على saudia.com."
+        ),
     },
     "disclaimer_short": {
-        "en": "Indicative demo fares — confirm on saudia.com.",
-        "ar": "أسعار تجريبية — أكد على saudia.com.",
+        "en": "Demo sample fares — not live data. Confirm on saudia.com.",
+        "ar": "أسعار عينات تجريبية — ليست بيانات مباشرة. أكد على saudia.com.",
     },
     "cancelled": {"en": "Cancelled.", "ar": "تم الإلغاء."},
     "quote_failed": {

@@ -55,6 +55,10 @@ class QuoteService:
             else None
         )
         self._network_cache: dict | None = None
+        self._scrape_blocked = False
+        self._ctx_adults = 1
+        self._ctx_cabin = "economy"
+        self._ctx_max_price = 5000
 
     async def search(
         self,
@@ -63,12 +67,21 @@ class QuoteService:
         departure: date,
         return_date: date | None,
         max_price_sar: int,
+        *,
+        adults: int = 1,
+        cabin: str = "economy",
+        demo_only: bool = False,
     ) -> tuple[list[FareQuote], list[FareQuote]]:
         """Return (exact_matches_under_budget, flex_matches_under_budget)."""
+        self._ctx_adults = max(1, int(adults))
+        self._ctx_cabin = cabin or "economy"
+        self._ctx_max_price = max_price_sar
         origin = origin.upper()
         destination = destination.upper()
-        exact_quote = await self._quote_one(origin, destination, departure, return_date)
-        flex_candidates: list[FareQuote] = []
+
+        jobs: list[tuple[str, str, date, date | None]] = [
+            (origin, destination, departure, return_date),
+        ]
         stay = None
         if return_date is not None:
             stay = (return_date - departure).days
@@ -77,10 +90,13 @@ class QuoteService:
             if offset == 0:
                 continue
             dep = departure + timedelta(days=offset)
-            ret = None
-            if stay is not None:
-                ret = dep + timedelta(days=stay)
-            quote = await self._quote_one(origin, destination, dep, ret)
+            ret = dep + timedelta(days=stay) if stay is not None else None
+            jobs.append((origin, destination, dep, ret))
+
+        results = await self.quote_batch(jobs, demo_only=demo_only)
+        exact_quote = results[0]
+        flex_candidates: list[FareQuote] = []
+        for quote in results[1:]:
             if quote:
                 quote.is_exact = False
                 flex_candidates.append(quote)
@@ -116,9 +132,13 @@ class QuoteService:
         destination: str,
         departure: date,
         return_date: date | None,
-    ) -> FareQuote | None:
-        if self._settings.mock_quotes:
-            return self._mock_quote(origin, destination, departure, return_date)
+        *,
+        demo_only: bool = False,
+    ) -> FareQuote:
+        if demo_only or self._settings.mock_quotes:
+            return self._demo_quote(origin, destination, departure, return_date)
+
+        book = self._book_url(origin, destination, departure, return_date)
 
         if self._amadeus:
             price = await self._amadeus.quote_sar(origin, destination, departure, return_date)
@@ -130,7 +150,7 @@ class QuoteService:
                     return_date=return_date,
                     price_sar=price,
                     currency="SAR",
-                    book_url=booking_url(origin, destination, departure, return_date),
+                    book_url=book,
                     source="amadeus",
                 )
 
@@ -143,23 +163,76 @@ class QuoteService:
                 return_date=return_date,
                 price_sar=scraped,
                 currency="SAR",
-                book_url=booking_url(origin, destination, departure, return_date),
+                book_url=book,
                 source="saudia_scrape",
             )
 
-        feed_price = await self._feed_month_floor(origin, destination, departure)
-        if feed_price is not None:
+        feed_result = await self._feed_month_floor(origin, destination, departure)
+        if feed_result is not None:
+            price, month_exact = feed_result
             return FareQuote(
                 origin=origin,
                 destination=destination,
                 departure=departure,
                 return_date=return_date,
-                price_sar=feed_price,
+                price_sar=price,
                 currency="SAR",
-                book_url=booking_url(origin, destination, departure, return_date),
+                book_url=book,
                 source="network_month_floor",
+                is_exact=month_exact,
             )
-        return None
+        return self._demo_quote(origin, destination, departure, return_date)
+
+    def _book_url(
+        self,
+        origin: str,
+        destination: str,
+        departure: date,
+        return_date: date | None,
+    ) -> str:
+        return booking_url(
+            origin,
+            destination,
+            departure,
+            return_date,
+            adults=self._ctx_adults,
+            cabin=self._ctx_cabin,
+        )
+
+    def _demo_quote(
+        self,
+        origin: str,
+        destination: str,
+        departure: date,
+        return_date: date | None,
+    ) -> FareQuote:
+        """Simulated fare when live Saudia data is unavailable (Parvus demo)."""
+        seed = abs(
+            hash(
+                (
+                    origin,
+                    destination,
+                    departure.isoformat(),
+                    return_date.isoformat() if return_date else "",
+                )
+            )
+        )
+        price = 199 + (seed % 280)
+        if return_date:
+            price += 40 + (seed % 35)
+        if price > self._ctx_max_price:
+            price = max(149, int(self._ctx_max_price * 0.82))
+        return FareQuote(
+            origin=origin,
+            destination=destination,
+            departure=departure,
+            return_date=return_date,
+            price_sar=price,
+            currency="SAR",
+            book_url=self._book_url(origin, destination, departure, return_date),
+            source="demo",
+            is_exact=False,
+        )
 
     def _mock_quote(
         self,
@@ -168,19 +241,9 @@ class QuoteService:
         departure: date,
         return_date: date | None,
     ) -> FareQuote:
-        base = 300 + abs(hash((origin, destination, departure.isoformat())) % 400)
-        if return_date:
-            base += 80
-        return FareQuote(
-            origin=origin,
-            destination=destination,
-            departure=departure,
-            return_date=return_date,
-            price_sar=base,
-            currency="SAR",
-            book_url=booking_url(origin, destination, departure, return_date),
-            source="mock",
-        )
+        quote = self._demo_quote(origin, destination, departure, return_date)
+        quote.source = "mock"
+        return quote
 
     async def _scrape_saudia(
         self,
@@ -189,10 +252,13 @@ class QuoteService:
         departure: date,
         return_date: date | None,
     ) -> int | None:
-        url = booking_url(origin, destination, departure, return_date)
+        if self._scrape_blocked:
+            return None
+        url = self._book_url(origin, destination, departure, return_date)
+        timeout = min(self._settings.quote_timeout, 4.0)
         try:
             async with httpx.AsyncClient(
-                timeout=self._settings.quote_timeout,
+                timeout=timeout,
                 follow_redirects=True,
                 headers={"User-Agent": USER_AGENT, "Accept-Language": "en"},
             ) as client:
@@ -201,6 +267,7 @@ class QuoteService:
                     return None
                 text = resp.text[:500000]
                 if "Pardon Our Interruption" in text or "reese" in text.lower():
+                    self._scrape_blocked = True
                     return None
                 for pattern in PRICE_PATTERNS:
                     match = pattern.search(text)
@@ -217,20 +284,44 @@ class QuoteService:
         origin: str,
         destination: str,
         departure: date,
-    ) -> int | None:
-        """Use published month minimum from flights feed when live scrape is blocked."""
+    ) -> tuple[int, bool] | None:
+        """Published month minimum from flights feed when live scrape is blocked."""
         try:
             feed = await self._load_network()
             month = departure.strftime("%Y-%m")
-            for fare in feed.get("fares", []):
-                if (
-                    fare.get("origin") == origin
-                    and fare.get("destination") == destination
-                    and fare.get("month") == month
-                ):
+            route_fares = [
+                f
+                for f in feed.get("fares", [])
+                if f.get("origin") == origin and f.get("destination") == destination
+            ]
+            if not route_fares:
+                return None
+
+            for fare in route_fares:
+                if fare.get("month") == month:
                     price = fare.get("price")
                     if isinstance(price, (int, float)):
-                        return int(round(price))
+                        return int(round(price)), True
+
+            def month_index(value: str) -> int:
+                y, m = map(int, value.split("-"))
+                return y * 12 + m
+
+            target = month_index(month)
+            nearest: dict | None = None
+            nearest_dist: int | None = None
+            for fare in route_fares:
+                fare_month = fare.get("month")
+                price = fare.get("price")
+                if not fare_month or not isinstance(price, (int, float)):
+                    continue
+                dist = abs(month_index(fare_month) - target)
+                if nearest_dist is None or dist < nearest_dist:
+                    nearest_dist = dist
+                    nearest = fare
+
+            if nearest is not None and nearest_dist is not None and nearest_dist <= 3:
+                return int(round(nearest["price"])), False
         except Exception as exc:
             logger.warning("network feed lookup failed: %s", exc)
         return None
@@ -244,14 +335,19 @@ class QuoteService:
             self._network_cache = resp.json()
             return self._network_cache
 
-    async def quote_batch(self, jobs: list[tuple[str, str, date, date | None]]) -> list[FareQuote | None]:
+    async def quote_batch(
+        self,
+        jobs: list[tuple[str, str, date, date | None]],
+        *,
+        demo_only: bool = False,
+    ) -> list[FareQuote | None]:
         sem = asyncio.Semaphore(self._settings.quote_max_concurrent)
         results: list[FareQuote | None] = [None] * len(jobs)
 
         async def run(idx: int, job: tuple[str, str, date, date | None]) -> None:
             async with sem:
                 o, d, dep, ret = job
-                results[idx] = await self._quote_one(o, d, dep, ret)
+                results[idx] = await self._quote_one(o, d, dep, ret, demo_only=demo_only)
 
         await asyncio.gather(*(run(i, job) for i, job in enumerate(jobs)))
         return results

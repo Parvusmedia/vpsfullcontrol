@@ -695,35 +695,50 @@ async def _run_search(
     progress = SearchProgress(context.bot, chat_id, lang, status)
     await progress.start()
     quotes_svc = _quotes(context)
-    try:
-        exact, flex = await asyncio.wait_for(
-            quotes_svc.search(
-                draft.origin,
-                draft.destination,
-                draft.departure,
-                ret,
-                draft.max_price_sar,
-                adults=draft.adults,
-                cabin=draft.cabin,
-            ),
-            timeout=45.0,
+
+    async def _do_search(demo_only: bool = False) -> tuple[list[FareQuote], list[FareQuote]]:
+        return await quotes_svc.search(
+            draft.origin,
+            draft.destination,
+            draft.departure,
+            ret,
+            draft.max_price_sar,
+            adults=draft.adults,
+            cabin=draft.cabin,
+            demo_only=demo_only,
         )
+
+    exact: list[FareQuote] = []
+    flex: list[FareQuote] = []
+    try:
+        exact, flex = await asyncio.wait_for(_do_search(), timeout=45.0)
     except asyncio.TimeoutError:
         logger.warning("search timed out for %s-%s", draft.origin, draft.destination)
-        await progress.stop()
-        await edit_message_to_text(status, t("search_timeout", lang))
-        return
+        try:
+            exact, flex = await _do_search(demo_only=True)
+        except Exception:
+            await progress.stop()
+            await edit_message_to_text(status, t("search_timeout", lang))
+            return
     except Exception:
         logger.exception("search failed")
-        await progress.stop()
-        await edit_message_to_text(status, t("quote_failed", lang))
-        return
-    await progress.stop()
-    await asyncio.sleep(0.05)
+        try:
+            exact, flex = await _do_search(demo_only=True)
+        except Exception:
+            await progress.stop()
+            await edit_message_to_text(status, t("quote_failed", lang))
+            return
 
     if not exact and not flex:
-        await edit_message_to_text(status, t("quote_failed", lang))
-        return
+        try:
+            exact, flex = await _do_search(demo_only=True)
+        except Exception:
+            await progress.stop()
+            await edit_message_to_text(status, t("quote_failed", lang))
+            return
+
+    await progress.stop()
+    await asyncio.sleep(0.05)
 
     await clear_flow_messages(context.bot, chat_id, context)
     try:
