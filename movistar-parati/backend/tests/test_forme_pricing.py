@@ -82,6 +82,29 @@ def test_forme_purchase_mode_question():
     assert "compra libre" in text.lower()
     assert "cuotas" in text.lower()
     assert "clientes movistar" in text.lower()
+    assert "pack" not in text.lower()
+    assert "suele salir más barato" not in text.lower()
+
+
+def test_forme_results_intro_alternatives():
+    intro = forme_results_intro(
+        "battery",
+        price_min=400,
+        price_max=700,
+        purchase_mode="cuotas",
+        brand="Samsung",
+        count=2,
+        match_type="alternatives",
+    )
+    assert "No tengo modelos exactamente dentro de ese rango" in intro
+    assert "más cercanas" in intro
+    assert "entre" not in intro.lower() or "exactamente" in intro
+
+
+def test_card_text_decimal_monthly():
+    product = _product(monthly_price=8.5, price_financed_total=408, price=408, months=48)
+    text = product.card_text(purchase_mode="cuotas")
+    assert "8,50 €/mes" in text
 
 
 def test_forme_results_intro_with_price_and_mode():

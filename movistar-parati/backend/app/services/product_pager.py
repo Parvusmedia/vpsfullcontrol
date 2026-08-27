@@ -183,6 +183,7 @@ async def render_product_pager(chat_id: int, state: PagerState, *, edit: bool = 
             price_min=forme_ctx.get("price_min"),
             price_max=forme_ctx.get("price_max"),
             purchase_mode=purchase_mode,
+            match_type=forme_ctx.get("match_type", "exact"),
             catalog=products,
         )
     caption = pager_caption(

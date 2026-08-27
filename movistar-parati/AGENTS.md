@@ -18,10 +18,14 @@
 ## Comandos
 
 ```bash
-# Provision tablas NocoDB
+# Provision tablas NocoDB (esquema; idempotente)
 cd backend && python scripts/provision_nocodb.py
 
-# Deploy VPS
+# Migración de precios canónicos (solo rellena vacíos; usar --dry-run antes)
+cd backend && python scripts/migrate_products.py --dry-run
+cd backend && python scripts/migrate_products.py
+
+# Deploy VPS (incluye comprobación de esquema, no migra datos)
 ./scripts/deploy.sh
 
 # Polling Telegram (demo; parar antes de activar webhook)
@@ -33,7 +37,7 @@ cd backend && python scripts/sync_product_images.py
 # Sincronizar specs técnicas (mAh, MP, procesador) → NocoDB
 cd backend && python scripts/sync_product_specs.py
 
-# Sincronizar precios libre / financiado → NocoDB
+# Sincronizar precios libre / financiado → NocoDB (legacy; usar migrate_products.py)
 cd backend && python scripts/sync_product_prices.py
 
 # Perfil del bot (nombre + descripción en Telegram)

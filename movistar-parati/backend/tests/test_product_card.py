@@ -41,8 +41,8 @@ def _product(**kwargs) -> Product:
 def test_card_text_deal_shows_monthly_before_after():
     text = _product().card_text(deal=True)
     assert "OFERTA PARA TI" in text
-    assert "18.00 €/mes" in text
-    assert "14.00 €/mes" in text
+    assert "18 €/mes" in text
+    assert "14 €/mes" in text
     assert "🏷️ Oferta lanzamiento" in text
 
 

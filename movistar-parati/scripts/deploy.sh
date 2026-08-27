@@ -18,6 +18,7 @@ cd /opt/apps/movistar-parati/backend
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -q -r requirements.txt
+python scripts/migrate_products.py --schema-only || echo "WARN: schema check skipped (NocoDB unavailable)"
 sudo cp /opt/apps/movistar-parati/deploy/movistar-parati-api.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable movistar-parati-api

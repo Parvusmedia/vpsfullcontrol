@@ -1,0 +1,98 @@
+[
+  {
+    "id": "iphone-16-128",
+    "name": "iPhone 16 128 GB",
+    "price": 671.0,
+    "original_price": 851.0,
+    "previous_price": 851.0,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 14.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "iphone-16-pro",
+    "name": "iPhone 16 Pro 256 GB",
+    "price": 1099.0,
+    "original_price": 1199.0,
+    "previous_price": null,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 28.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "galaxy-s25",
+    "name": "Samsung Galaxy S25 256 GB",
+    "price": 799.0,
+    "original_price": 999.0,
+    "previous_price": 999.0,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 14.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "galaxy-z-flip",
+    "name": "Samsung Galaxy Z Flip6 256 GB",
+    "price": 999.0,
+    "original_price": 1099.0,
+    "previous_price": null,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 22.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "pixel-11-256",
+    "name": "Google Pixel 9 256 GB",
+    "price": 599.0,
+    "original_price": 749.0,
+    "previous_price": 749.0,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 12.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "pixel-9a",
+    "name": "Google Pixel 9a 128 GB",
+    "price": 399.0,
+    "original_price": 449.0,
+    "previous_price": null,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 9.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "xiaomi-15",
+    "name": "Xiaomi 15 512 GB",
+    "price": 699.0,
+    "original_price": 799.0,
+    "previous_price": null,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 12.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  },
+  {
+    "id": "redmi-note-14",
+    "name": "Xiaomi Redmi Note 14 256 GB",
+    "price": 279.0,
+    "original_price": 329.0,
+    "previous_price": null,
+    "price_libre": null,
+    "price_financed_total": null,
+    "monthly_price": 7.0,
+    "months": 48,
+    "note": "libre_from_original_price,financed_from_price"
+  }
+]

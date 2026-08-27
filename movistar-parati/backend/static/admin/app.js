@@ -19,9 +19,15 @@ function showToast(message, type = "ok") {
   showToast._t = setTimeout(() => toastEl.classList.add("hidden"), 5000);
 }
 
-function fmtMoney(v) {
+function fmtMoney(v, { perMonth = true } = {}) {
   if (v == null || Number.isNaN(v)) return "—";
-  return `${Number(v).toFixed(0)} €/mes`;
+  const n = Number(v);
+  const text = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ",");
+  return perMonth ? `${text} €/mes` : `${text} €`;
+}
+
+function fmtTotal(v) {
+  return fmtMoney(v, { perMonth: false });
 }
 
 function esc(s) {
@@ -123,16 +129,24 @@ function filteredCatalog() {
 }
 
 function productEditForm(p) {
+  const libre = p.price_libre ?? p.original_price ?? "";
+  const financed = p.price_financed_total ?? p.price ?? "";
   return `
     <form class="product-edit" data-record="${esc(p.record_id)}">
+      <label>Precio libre (al contado) €
+        <input type="number" name="price_libre" value="${libre}" min="0" step="1" />
+      </label>
+      <label>Total cliente Movistar €
+        <input type="number" name="price_financed_total" value="${financed}" min="0" step="1" />
+      </label>
       <label>Cuota €/mes
-        <input type="number" name="monthly_price" value="${p.monthly_price ?? ""}" min="0" step="1" />
+        <input type="number" name="monthly_price" value="${p.monthly_price ?? ""}" min="0" step="0.01" />
       </label>
-      <label>Cuota anterior
-        <input type="number" name="previous_monthly_price" value="${p.previous_monthly_price ?? ""}" min="0" step="1" />
+      <label>Cuota anterior €/mes
+        <input type="number" name="previous_monthly_price" value="${p.previous_monthly_price ?? ""}" min="0" step="0.01" />
       </label>
-      <label>Precio total €
-        <input type="number" name="price" value="${p.price ?? ""}" min="0" step="1" />
+      <label>Plazo (meses)
+        <input type="number" name="months" value="${p.months ?? 48}" min="1" step="1" />
       </label>
       <label>Promoción
         <input type="text" name="promotion" value="${esc(p.promotion || "")}" />
@@ -175,6 +189,8 @@ function renderCatalog() {
     ).join("");
     const prev = p.previous_monthly_price && p.previous_monthly_price > p.monthly_price
       ? `<div class="prev">${fmtMoney(p.previous_monthly_price)}</div>` : "";
+    const libre = p.price_libre ?? p.original_price;
+    const financed = p.price_financed_total ?? p.price;
     return `
       <article class="product-row ${p.active ? "" : "inactive"}${alertCount ? " has-alerts" : ""}" data-id="${esc(p.id)}">
         ${thumbHtml(p)}
@@ -186,7 +202,7 @@ function renderCatalog() {
         <div class="price-block">
           <div class="current">${fmtMoney(p.monthly_price)}</div>
           ${prev}
-          <div class="product-meta">${p.price ? `${Number(p.price).toFixed(0)} € total` : ""}</div>
+          <div class="product-meta">${financed ? `${fmtTotal(financed)} total · ${fmtTotal(libre)} libre` : ""}</div>
         </div>
         <div class="actions">${actions || `<span class="product-meta">—</span>`}</div>
         ${productEditForm(p)}
@@ -214,9 +230,11 @@ function renderCatalog() {
       const recordId = form.dataset.record;
       const fd = new FormData(form);
       const body = {
+        price_libre: fd.get("price_libre"),
+        price_financed_total: fd.get("price_financed_total"),
         monthly_price: fd.get("monthly_price"),
         previous_monthly_price: fd.get("previous_monthly_price"),
-        price: fd.get("price"),
+        months: fd.get("months"),
         promotion: fd.get("promotion"),
         gift: fd.get("gift"),
         active: form.querySelector('[name="active"]').checked,

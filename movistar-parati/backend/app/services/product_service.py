@@ -7,6 +7,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.services.nocodb import nocodb
+from app.services.price_formatting import format_eur, format_installment_summary, round_monthly
 from app.services.product_fields import panel_payload_to_fields, sanitize_product_fields
 
 
@@ -79,33 +80,35 @@ class Product:
         if purchase_mode == "cuotas":
             if deal and self.previous_monthly_price and self.monthly_price and self.monthly_price < self.previous_monthly_price:
                 lines.append("🔥 <b>OFERTA PARA TI</b>\n")
-                lines.append(f"Antes: <s>{self.previous_monthly_price:.2f} €/mes</s>")
-                lines.append(f"Ahora: <b>{self.monthly_price:.2f} €/mes</b>")
-            elif self.monthly_price is not None:
-                lines.append(
-                    f"💳 En <b>{months} cuotas</b> de <b>{self.monthly_price:.2f} €/mes</b> "
-                    f"<i>(cliente Movistar)</i>"
+                lines.append(f"Antes: <s>{format_eur(self.previous_monthly_price, per_month=True)}</s>")
+                lines.append(f"Ahora: <b>{format_eur(self.monthly_price, per_month=True)}</b>")
+            elif self.monthly_price is not None or financed is not None:
+                summary = format_installment_summary(
+                    self.monthly_price,
+                    months,
+                    financed,
+                    include_total=financed is not None,
                 )
-            if financed is not None:
-                lines.append(f"\n💰 Total financiado: <b>{financed:.0f} €</b>")
+                if summary:
+                    lines.append(f"💳 {summary}")
             if libre is not None and financed is not None and libre > financed:
-                lines.append(f"Libre <b>{libre:.0f} €</b>")
+                lines.append(f"Libre <b>{format_eur(libre)}</b>")
             if self.saving:
-                lines.append(f"🔥 Ahorras {self.saving:.0f} €")
+                lines.append(f"🔥 Ahorras {format_eur(self.saving)}")
         else:
             if libre is not None:
-                lines.append(f"💰 Compra libre: <b>{libre:.0f} €</b>")
+                lines.append(f"💰 Compra libre: <b>{format_eur(libre)}</b>")
             if financed is not None and libre is not None and financed < libre:
                 saving = libre - financed
-                cuota = f"{self.monthly_price:.0f} €/mes" if self.monthly_price is not None else "cuotas"
+                cuota = format_eur(self.monthly_price, per_month=True) if self.monthly_price is not None else "cuotas"
                 lines.append(
-                    f"\n💙 Con financiación Movistar: <b>{financed:.0f} €</b> "
-                    f"en {months} cuotas de {cuota} (ahorro {saving:.0f} €)"
+                    f"\n💙 Con cuotas Movistar: <b>{format_eur(financed)}</b> "
+                    f"en {months} cuotas de {cuota} (ahorro {format_eur(saving)})"
                 )
             elif self.monthly_price is not None:
                 lines.append(
-                    f"\n<i>También disponible en cuotas para clientes Movistar "
-                    f"(desde {self.monthly_price:.0f} €/mes).</i>"
+                    f"\n<i>También en cuotas para clientes Movistar "
+                    f"({format_eur(self.monthly_price, per_month=True)}).</i>"
                 )
 
         if self.promotion and purchase_mode == "cuotas":
@@ -301,11 +304,14 @@ class NocoDBProductSource:
         return brands
 
     async def update_monthly_price(self, product: Product, new_price: float) -> Product | None:
+        rounded = round_monthly(new_price)
+        if rounded is None:
+            return product
         return await self.update_product(
             product,
             {
                 "previous_monthly_price": product.monthly_price,
-                "monthly_price": int(round(new_price)),
+                "monthly_price": rounded,
             },
         )
 

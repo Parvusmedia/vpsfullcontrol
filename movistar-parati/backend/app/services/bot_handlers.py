@@ -305,6 +305,7 @@ async def _show_forme_results(
     picks: list[Product],
     *,
     brand: str | None = None,
+    match_type: str = "exact",
 ) -> None:
     preference = st.get("preference", "value")
     if not picks:
@@ -325,6 +326,7 @@ async def _show_forme_results(
             purchase_mode=purchase_mode,
             brand=brand,
             count=len(picks),
+            match_type=match_type,
         ),
     )
     await open_product_pager(
@@ -338,6 +340,7 @@ async def _show_forme_results(
             "price_max": st.get("price_max"),
             "purchase_mode": purchase_mode,
             "brand": brand,
+            "match_type": match_type,
         },
     )
     st.pop("flow", None)
@@ -403,46 +406,49 @@ async def _forme_recommend_for_brand(
     locked = st.get("forme_brand_locked")
 
     if locked == "Apple":
-        picks = await recommend_products(
+        result = await recommend_products(
             preference,
             "Apple",
             price_min=price_min,
             price_max=price_max,
             purchase_mode=purchase_mode,
         )
-        picks = filter_by_segment(picks, "apple")
-        await _show_forme_results(chat_id, st, picks, brand="Apple")
+        picks = filter_by_segment(result.products, "apple")
+        await _show_forme_results(chat_id, st, picks, brand="Apple", match_type=result.match_type)
         return
 
     if locked == "android":
         picks: list[Product] = []
+        match_type = "exact"
         for android_brand in ("Samsung", "Google", "Xiaomi"):
-            picks.extend(
-                await recommend_products(
-                    preference,
-                    android_brand,
-                    price_min=price_min,
-                    price_max=price_max,
-                    purchase_mode=purchase_mode,
-                )
+            brand_result = await recommend_products(
+                preference,
+                android_brand,
+                price_min=price_min,
+                price_max=price_max,
+                purchase_mode=purchase_mode,
             )
+            if brand_result.match_type == "alternatives":
+                match_type = "alternatives"
+            picks.extend(brand_result.products)
         picks = filter_by_segment(picks, "android")[:3]
-        await _show_forme_results(chat_id, st, picks, brand="Android")
+        await _show_forme_results(chat_id, st, picks, brand="Android", match_type=match_type)
         return
 
-    picks = await recommend_products(
+    result = await recommend_products(
         preference,
         brand,
         price_min=price_min,
         price_max=price_max,
         purchase_mode=purchase_mode,
     )
-    picks = filter_by_segment(picks, st.get("segment_filter"))[:3]
+    picks = filter_by_segment(result.products, st.get("segment_filter"))[:3]
     await _show_forme_results(
         chat_id,
         st,
         picks,
         brand=None if brand in {None, "any"} else brand,
+        match_type=result.match_type,
     )
 
 

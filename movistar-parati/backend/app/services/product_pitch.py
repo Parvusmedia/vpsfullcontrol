@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.services.price_formatting import format_eur, format_installment_compact, format_installment_summary
 from app.services.product_service import Product
 
 PREFERENCE_META: dict[str, dict] = {
@@ -143,8 +144,8 @@ def forme_price_question(preference: str) -> str:
     return (
         f"{meta['ask']}\n\n"
         "¿Cuánto quieres gastar en el <b>terminal</b>?\n"
-        "<i>En Movistar puedes comprarlo <b>libre</b> (al contado) o "
-        "<b>en cuotas</b> si eres cliente con pack.</i>"
+        "<i>Puedes comprarlo <b>libre</b> y pagarlo al contado o, "
+        "si eres cliente Movistar, hacerlo en cuotas.</i>"
     )
 
 
@@ -152,8 +153,8 @@ def forme_purchase_mode_question() -> str:
     return (
         "¿Cómo prefieres comprarlo?\n\n"
         "• <b>Compra libre</b>: pagas el terminal al contado (precio «Libre»).\n"
-        "• <b>En cuotas</b>: financiación para clientes Movistar, "
-        "suele salir más barato y en plazos mensuales."
+        "• <b>En cuotas</b>: puedes pagarlo mensualmente y acceder al precio "
+        "para clientes Movistar."
     )
 
 
@@ -172,21 +173,35 @@ def forme_results_intro(
     purchase_mode: str | None = None,
     brand: str | None = None,
     count: int = 3,
+    match_type: str = "exact",
 ) -> str:
     meta = PREFERENCE_META.get(preference, PREFERENCE_META["value"])
     emoji = meta["emoji"]
     label = meta["label"]
     n = max(count, 1)
-    if price_min is not None or price_max is not None or purchase_mode:
-        budget = _price_range_phrase(price_min, price_max)
-        mode = _purchase_mode_phrase(purchase_mode)
-        profile = " ".join(part for part in (budget, mode) if part)
+    if match_type == "alternatives":
+        opener = (
+            f"{emoji} <b>Para ti — {label}</b>\n\n"
+            "No tengo modelos exactamente dentro de ese rango. "
+            "Estas son las opciones más cercanas"
+        )
+        if brand and brand.lower() not in {"any", "me da igual", "cualquiera", "android"}:
+            opener += f" de marca <b>{brand}</b>"
+        opener += ".\n\n"
     else:
-        profile = _budget_phrase(max_monthly)
+        if price_min is not None or price_max is not None or purchase_mode:
+            budget = _price_range_phrase(price_min, price_max)
+            mode = _purchase_mode_phrase(purchase_mode)
+            profile = " ".join(part for part in (budget, mode) if part)
+        else:
+            profile = _budget_phrase(max_monthly)
+        opener = (
+            f"{emoji} <b>Para ti — {label}</b>\n\n"
+            f"He buscado {n} móvil{'es' if n != 1 else ''} {_brand_phrase(brand)} "
+            f"{profile}.\n\n"
+        )
     return (
-        f"{emoji} <b>Para ti — {label}</b>\n\n"
-        f"He buscado {n} móvil{'es' if n != 1 else ''} {_brand_phrase(brand)} "
-        f"{profile}.\n\n"
+        f"{opener}"
         f"En cada ficha te explico <b>por qué encaja</b> con lo que pediste. "
         f"Navega con ◀️ ▶️."
     )
@@ -292,11 +307,13 @@ def _technical_value_line(product: Product, _catalog: list[Product] | None) -> s
         return product.spec_value.strip()
     if product.monthly_price and product.price_financed_total_value():
         months = product.months or 48
-        total = product.price_financed_total_value()
-        return (
-            f"En <b>{months} cuotas</b> de <b>{product.monthly_price:.2f} €/mes</b> "
-            f"({total:.0f} € en total, cliente Movistar)."
+        summary = format_installment_summary(
+            product.monthly_price,
+            months,
+            product.price_financed_total_value(),
         )
+        if summary:
+            return summary[0].upper() + summary[1:] + "."
     return None
 
 
@@ -325,6 +342,7 @@ def product_pitch(
     price_min: float | None = None,
     price_max: float | None = None,
     purchase_mode: str | None = None,
+    match_type: str = "exact",
     catalog: list[Product] | None = None,
 ) -> str:
     meta = PREFERENCE_META.get(preference, PREFERENCE_META["value"])
@@ -358,25 +376,33 @@ def product_pitch(
     libre = product.price_libre_value()
     financed = product.price_financed_total_value()
     if purchase_mode == "libre" and libre is not None and financed is not None and financed < libre:
-        lines.append(f"Compra libre <b>{libre:.0f} €</b>.")
+        lines.append(f"Compra libre <b>{format_eur(libre)}</b>.")
         if product.monthly_price and product.months:
-            lines.append(
-                f"Con financiación Movistar podría quedarte en <b>{financed:.0f} €</b> "
-                f"({product.monthly_price:.0f} €/mes en {product.months} meses)."
-            )
+            compact = format_installment_compact(product.monthly_price, product.months, financed)
+            lines.append(f"Con cuotas Movistar: <b>{format_eur(financed)}</b> ({compact}).")
     elif purchase_mode == "cuotas" and financed is not None:
         if product.monthly_price and product.months:
-            lines.append(
-                f"En cuotas: <b>{product.monthly_price:.0f} €/mes</b> × {product.months} "
-                f"(total <b>{financed:.0f} €</b>)."
-            )
+            compact = format_installment_compact(product.monthly_price, product.months, financed)
+            lines.append(f"En cuotas: <b>{compact}</b>.")
         if libre is not None and libre > financed:
-            lines.append(f"Libre <b>{libre:.0f} €</b> si prefieres compra al contado.")
+            lines.append(f"Libre <b>{format_eur(libre)}</b> si prefieres compra al contado.")
     elif max_monthly and product.monthly_price and product.monthly_price <= max_monthly:
-        lines.append(f"Y entra en tu presupuesto de {max_monthly:.0f} €/mes.")
-    elif (price_min is not None or price_max is not None) and purchase_mode:
+        lines.append(f"Y entra en tu presupuesto de {format_eur(max_monthly, per_month=True)}.")
+    elif match_type == "exact" and (price_min is not None or price_max is not None) and purchase_mode:
         terminal = product.terminal_price(purchase_mode=purchase_mode)
-        if terminal is not None and price_max is not None and terminal <= price_max:
-            lines.append(f"Y queda en <b>{terminal:.0f} €</b> dentro de tu rango.")
+        if terminal is not None and _in_terminal_range(terminal, price_min, price_max):
+            lines.append(f"Y queda en <b>{format_eur(terminal)}</b> dentro de tu rango.")
 
     return " ".join(lines)
+
+
+def _in_terminal_range(
+    terminal: float,
+    price_min: float | None,
+    price_max: float | None,
+) -> bool:
+    if price_min is not None and terminal < price_min:
+        return False
+    if price_max is not None and terminal > price_max:
+        return False
+    return True

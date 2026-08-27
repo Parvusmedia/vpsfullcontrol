@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.services.change_detection import log_event, poll_catalogue_changes
+from app.services.price_formatting import round_monthly
 from app.services.product_service import Product, product_source
 
 BLACK_FRIDAY_PRODUCTS = ("galaxy-s25", "pixel-11-256", "redmi-note-14")
@@ -28,9 +29,9 @@ async def activate_black_friday() -> dict[str, Any]:
             "promotion": BLACK_FRIDAY_PROMO,
         }
         if product.monthly_price and product.monthly_price > 3:
-            target = max(int(round(product.monthly_price * 0.85)), 1)
-            if target < product.monthly_price:
-                fields["previous_monthly_price"] = int(product.monthly_price)
+            target = round_monthly(max(product.monthly_price * 0.85, 1.0))
+            if target is not None and target < product.monthly_price:
+                fields["previous_monthly_price"] = product.monthly_price
                 fields["monthly_price"] = target
         updated = await _apply_product_updates(product, fields)
         if updated:
