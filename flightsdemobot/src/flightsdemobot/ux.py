@@ -89,18 +89,7 @@ async def send_menu_message(
     text: str,
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardRemove | None = None,
 ) -> Message:
-    """Send a picker/menu with the Saudia banner image above the caption and buttons."""
-    if MENU_BANNER_PATH.is_file() and len(text) <= 1024:
-        try:
-            with MENU_BANNER_PATH.open("rb") as banner:
-                return await bot.send_photo(
-                    chat_id,
-                    banner,
-                    caption=text,
-                    reply_markup=reply_markup,
-                )
-        except Exception as exc:
-            logger.debug("menu banner send failed: %s", exc)
+    """Send a picker/menu (text + inline buttons). Banner is only on the welcome message."""
     return await bot.send_message(chat_id, text, reply_markup=reply_markup)
 
 
@@ -109,14 +98,20 @@ async def edit_menu_message(
     text: str,
     reply_markup: InlineKeyboardMarkup | None = None,
 ) -> None:
-    """Edit an inline menu message, whether it was sent as photo+caption or plain text."""
+    """Edit an inline menu message. Legacy photo menus are replaced with plain text."""
     message = query.message
     if message and message.photo:
         try:
-            await query.edit_message_caption(caption=text, reply_markup=reply_markup)
-            return
+            await message.delete()
         except Exception:
             pass
+        await send_menu_message(
+            message.get_bot(),
+            message.chat_id,
+            text,
+            reply_markup=reply_markup,
+        )
+        return
     try:
         await query.edit_message_text(text, reply_markup=reply_markup)
     except Exception:
@@ -154,7 +149,20 @@ async def edit_chat_message_to_text(
 
 
 async def send_welcome_banner(bot: Bot, chat_id: int, lang: Lang, text: str) -> None:
-    await send_menu_message(bot, chat_id, text, reply_markup=hide_keyboard())
+    """Initial hero banner — shown once after unlock / language pick, not on every step."""
+    if MENU_BANNER_PATH.is_file() and len(text) <= 1024:
+        try:
+            with MENU_BANNER_PATH.open("rb") as banner:
+                await bot.send_photo(
+                    chat_id,
+                    banner,
+                    caption=text,
+                    reply_markup=hide_keyboard(),
+                )
+                return
+        except Exception as exc:
+            logger.debug("welcome banner send failed: %s", exc)
+    await bot.send_message(chat_id, text, reply_markup=hide_keyboard())
 
 
 async def maybe_send_hub_photo(bot: Bot, chat_id: int, code: str) -> None:
@@ -231,8 +239,7 @@ async def show_menu_summary(
     lang: Lang,
 ) -> None:
     state = store.get(chat_id)
-    await send_menu_message(
-        context.bot,
+    await context.bot.send_message(
         chat_id,
         format_status_summary(state, lang),
         reply_markup=hide_keyboard(),
