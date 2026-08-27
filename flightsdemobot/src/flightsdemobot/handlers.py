@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
 from datetime import date, timedelta
 
 from telegram import BotCommand, Message, Update
@@ -687,6 +688,7 @@ async def _run_search(
     else:
         status = await context.bot.send_message(chat_id, t("searching", lang))
 
+    loading_started = time.monotonic()
     progress = SearchProgress(context.bot, chat_id, lang, status)
     await progress.start()
     quotes_svc = _quotes(context)
@@ -736,7 +738,10 @@ async def _run_search(
             return
 
     await progress.stop()
-    await asyncio.sleep(0.05)
+    min_loading_sec = 1.5
+    loading_elapsed = time.monotonic() - loading_started
+    if loading_elapsed < min_loading_sec:
+        await asyncio.sleep(min_loading_sec - loading_elapsed)
 
     await clear_flow_messages(context.bot, chat_id, context)
     try:

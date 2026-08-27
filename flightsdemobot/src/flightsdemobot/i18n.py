@@ -170,12 +170,12 @@ STRINGS: dict[str, dict[Lang, str]] = {
     },
     "one_way": {"en": "One way", "ar": "ذهاب فقط"},
     "searching": {
-        "en": "Flights Search & Alerts Demo — preparing sample results… ⏳",
-        "ar": "عرض بحث وتنبيهات الرحلات — أجهّز نتائج تجريبية… ⏳",
+        "en": "🔍 Searching results… please wait ⏳",
+        "ar": "🔍 جاري البحث عن النتائج… انتظر قليلاً ⏳",
     },
     "search_progress_1": {
-        "en": "Flights Search & Alerts Demo — preparing sample results… ⏳",
-        "ar": "عرض بحث وتنبيهات الرحلات — أجهّز نتائج تجريبية… ⏳",
+        "en": "🔍 Searching Saudia fares for your trip… ⏳",
+        "ar": "🔍 أبحث عن أسعار السعودية لرحلتك… ⏳",
     },
     "search_progress_2": {
         "en": "Still working — querying Saudia and our fare feed…",

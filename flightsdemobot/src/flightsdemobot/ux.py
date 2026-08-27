@@ -370,6 +370,13 @@ async def ack_cabin(
 class SearchProgress:
     """Animate the status message and typing indicator while fares load."""
 
+    _PROGRESS_KEYS = (
+        "search_progress_1",
+        "search_progress_2",
+        "search_progress_3",
+        "search_progress_4",
+    )
+
     def __init__(self, bot: Bot, chat_id: int, lang: Lang, status: Message) -> None:
         self._bot = bot
         self._chat_id = chat_id
@@ -379,6 +386,10 @@ class SearchProgress:
         self._task: asyncio.Task | None = None
 
     async def start(self) -> None:
+        try:
+            await self._bot.send_chat_action(self._chat_id, ChatAction.TYPING)
+        except Exception:
+            pass
         self._task = asyncio.create_task(self._loop())
 
     async def stop(self) -> None:
@@ -391,9 +402,16 @@ class SearchProgress:
                 pass
 
     async def _loop(self) -> None:
+        step = 0
         while not self._stop:
+            key = self._PROGRESS_KEYS[step % len(self._PROGRESS_KEYS)]
             try:
+                await edit_message_to_text(self._status, t(key, self._lang))
                 await self._bot.send_chat_action(self._chat_id, ChatAction.TYPING)
             except Exception:
                 pass
-            await asyncio.sleep(4.0)
+            step += 1
+            for _ in range(5):
+                if self._stop:
+                    return
+                await asyncio.sleep(0.5)
