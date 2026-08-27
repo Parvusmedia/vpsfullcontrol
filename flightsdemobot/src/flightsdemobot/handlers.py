@@ -361,13 +361,7 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         state.draft.cabin = cabin
         state.step = "idle"
         store.save(chat_id, state)
-        await edit_menu_message(query, t("searching", state.lang))
-        await _run_search(
-            context,
-            chat_id,
-            state.lang,
-            status=query.message,
-        )
+        await _run_search(context, chat_id, state.lang)
         return
 
 
@@ -587,10 +581,6 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    if state.draft.max_price_sar and state.draft.origin and state.draft.destination and state.draft.departure:
-        await _run_search(context, chat_id, lang, reply_message=update.effective_message)
-
-
 async def _begin_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.effective_chat or not update.effective_message:
         return
@@ -660,6 +650,9 @@ async def _run_search(
     status: Message | None = None,
     reply_message: Message | None = None,
 ) -> None:
+    if context.user_data.get("search_in_progress"):
+        return
+    context.user_data["search_in_progress"] = True
     store = _store(context)
     state = store.get(chat_id)
     draft = state.draft
@@ -672,6 +665,7 @@ async def _run_search(
         await send_menu_message(
             context.bot, chat_id, t("pick_origin", lang), reply_markup=hub_keyboard(lang)
         )
+        context.user_data["search_in_progress"] = False
         return
 
     ret = None if draft.one_way else draft.return_date
@@ -680,6 +674,7 @@ async def _run_search(
             await reply_message.reply_text(t("pick_return", lang))
         else:
             await context.bot.send_message(chat_id, t("pick_return", lang))
+        context.user_data["search_in_progress"] = False
         return
 
     if status is not None:
@@ -719,6 +714,7 @@ async def _run_search(
         except Exception:
             await progress.stop()
             await edit_message_to_text(status, t("search_timeout", lang))
+            context.user_data["search_in_progress"] = False
             return
     except Exception:
         logger.exception("search failed")
@@ -727,6 +723,7 @@ async def _run_search(
         except Exception:
             await progress.stop()
             await edit_message_to_text(status, t("quote_failed", lang))
+            context.user_data["search_in_progress"] = False
             return
 
     if not exact and not flex:
@@ -735,6 +732,7 @@ async def _run_search(
         except Exception:
             await progress.stop()
             await edit_message_to_text(status, t("quote_failed", lang))
+            context.user_data["search_in_progress"] = False
             return
 
     await progress.stop()
@@ -765,6 +763,7 @@ async def _run_search(
         len(exact),
         len(flex),
     )
+    context.user_data["search_in_progress"] = False
 
 
 def build_handlers(application: Application) -> None:

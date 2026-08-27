@@ -154,10 +154,15 @@ def build_results_caption(
     parts.append("")
     parts.append(t("book_tip", lang))
     parts.append("")
-    parts.append(
-        t("disclaimer_short", lang) if disclaimer_seen else t("disclaimer", lang)
-    )
+    parts.append(t("disclaimer_short", lang))
     return "\n".join(parts)
+
+
+def _trim_caption_for_photo(caption: str, max_len: int = 1024) -> str:
+    if len(caption) <= max_len:
+        return caption
+    note = "\n\n…"
+    return caption[: max_len - len(note)].rstrip() + note
 
 
 def build_results_markup(lang: Lang, quotes: list[FareQuote]) -> InlineKeyboardMarkup:
@@ -193,22 +198,20 @@ async def send_search_results(
     all_quotes.extend(flex)
     caption = build_results_caption(lang, exact, flex, disclaimer_seen=disclaimer_seen)
     markup = build_results_markup(lang, all_quotes)
+    photo_caption = _trim_caption_for_photo(caption)
 
-    sent = False
-    if SAUDIA_LOGO_PATH.is_file() and len(caption) <= 1024:
+    if SAUDIA_LOGO_PATH.is_file():
         try:
             with SAUDIA_LOGO_PATH.open("rb") as logo:
                 await bot.send_photo(
                     chat_id,
                     logo,
-                    caption=caption,
+                    caption=photo_caption,
                     reply_markup=markup,
                 )
-            sent = True
         except Exception:
-            sent = False
-
-    if not sent:
+            await bot.send_message(chat_id, caption, reply_markup=markup)
+    else:
         await bot.send_message(chat_id, caption, reply_markup=markup)
     try:
         rm = await bot.send_message(chat_id, "\u2060", reply_markup=hide_keyboard())
