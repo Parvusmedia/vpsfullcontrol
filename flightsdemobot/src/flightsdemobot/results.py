@@ -41,14 +41,21 @@ def _fare_badge(lang: Lang, quote: FareQuote) -> str:
     return t("result_indicative_badge", lang)
 
 
-def format_quote_fare(lang: Lang, quote: FareQuote) -> str:
+def format_quote_fare(
+    lang: Lang,
+    quote: FareQuote,
+    *,
+    demo_header_shown: bool = False,
+) -> str:
     origin = _city(quote.origin, lang)
     dest = _city(quote.destination, lang)
     sar = f"{quote.price_sar:,}"
     usd = f"{_usd_estimate(quote.price_sar):,}"
     badge = _fare_badge(lang, quote)
+    if demo_header_shown and _is_demo_quote(quote):
+        badge = ""
     if quote.return_date:
-        return t(
+        text = t(
             "result_fare_round",
             lang,
             badge=badge,
@@ -59,16 +66,18 @@ def format_quote_fare(lang: Lang, quote: FareQuote) -> str:
             sar=sar,
             usd=usd,
         )
-    return t(
-        "result_fare_oneway",
-        lang,
-        badge=badge,
-        origin=origin,
-        destination=dest,
-        dep=_fmt_date(quote.departure),
-        sar=sar,
-        usd=usd,
-    )
+    else:
+        text = t(
+            "result_fare_oneway",
+            lang,
+            badge=badge,
+            origin=origin,
+            destination=dest,
+            dep=_fmt_date(quote.departure),
+            sar=sar,
+            usd=usd,
+        )
+    return text.lstrip("\n") if not badge else text
 
 
 def _flex_offset_label(lang: Lang, days: int) -> str:
@@ -116,14 +125,17 @@ def build_results_caption(
 ) -> str:
     parts: list[str] = []
     all_quotes = list(exact) + list(flex)
-    if any(_is_demo_quote(q) for q in all_quotes):
+    demo_header_shown = any(_is_demo_quote(q) for q in all_quotes)
+    if demo_header_shown:
         parts.append(t("result_demo_header", lang))
         parts.append("")
 
     ref_quote: FareQuote | None = None
     if exact:
         ref_quote = exact[0]
-        parts.append(format_quote_fare(lang, exact[0]))
+        parts.append(
+            format_quote_fare(lang, exact[0], demo_header_shown=demo_header_shown)
+        )
         if _is_demo_quote(exact[0]):
             parts.append("")
             parts.append(t("result_demo_notice", lang))
@@ -134,7 +146,7 @@ def build_results_caption(
         ref_quote = flex[0]
         parts.append(t("no_under_budget", lang))
         parts.append("")
-        parts.append(format_quote_fare(lang, flex[0]))
+        parts.append(format_quote_fare(lang, flex[0], demo_header_shown=demo_header_shown))
         if _is_demo_quote(flex[0]):
             parts.append("")
             parts.append(t("result_demo_notice", lang))
