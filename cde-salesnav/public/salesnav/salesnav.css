@@ -252,14 +252,10 @@
 .sn-field-row span {
   font-family: ui-monospace, monospace;
   font-size: 0.68rem;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--ink-soft);
-}
-
-.sn-field-row span:first-child {
-  font-weight: 700;
   color: var(--ink);
 }
 
