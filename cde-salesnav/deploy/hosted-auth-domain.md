@@ -2,25 +2,40 @@
 
 Opción 2: subdominio propio para el wizard de Unipile Hosted Auth (sin iframe).
 
-## 1. DNS (registrar / Cloudflare / Plesk)
+## 1. DNS (registrar / Piensa Solutions)
 
-Crear un registro **CNAME**:
+El dominio usa nameservers públicos **Piensa Solutions** (`ns97.piensasolutions.com`, `ns98.piensasolutions.com`).  
+El CNAME también está en **Plesk** del VPS (`82.223.3.205`) para cuando el dominio use DNS local.
+
+Crear un registro **CNAME** en el panel DNS de Piensa (Área de Cliente → dominio → DNS):
 
 | Campo   | Valor                    |
 |---------|--------------------------|
-| Name    | `connect`                |
+| Host    | `connect`                |
 | Type    | `CNAME`                  |
 | Target  | `account.unipile.com`    |
-| TTL     | Auto o 300s              |
 
 Verificar propagación:
 
 ```bash
-dig +short connect.companydataenrichment.com CNAME
+dig +short connect.companydataenrichment.com CNAME @ns97.piensasolutions.com
 # debe devolver: account.unipile.com.
 ```
 
-**Importante:** no apuntar el subdominio al VPS de Parvus. Unipile sirve el wizard y el certificado SSL en su infra.
+**Plesk (ya aplicado en el VPS):**
+
+```bash
+ssh nextconvers-vps "plesk bin dns --info companydataenrichment.com | grep connect"
+# connect.companydataenrichment.com. CNAME account.unipile.com.
+```
+
+Consulta directa al DNS del VPS (funciona aunque Piensa aún no propague):
+
+```bash
+dig +short connect.companydataenrichment.com CNAME @82.223.3.205
+```
+
+**Importante:** no apuntar `connect` al VPS. Unipile sirve el wizard y el certificado SSL.
 
 ## 2. Validación en Unipile
 
