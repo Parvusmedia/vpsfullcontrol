@@ -425,8 +425,30 @@
     grid-template-columns: 1fr;
   }
 
+  .top {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+
   .site-nav {
-    display: none;
+    order: 3;
+    flex: 1 1 100%;
+    margin: 0;
+    display: inline-flex;
+    gap: 0.35rem;
+  }
+
+  .site-nav a {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.45rem;
   }
 }
 

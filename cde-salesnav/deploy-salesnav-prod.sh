@@ -88,6 +88,55 @@ path.write_text(text)
 print('index.html updated')
 PY"
 
+echo "==> Patch mobile site-nav in production styles.css"
+ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
+from pathlib import Path
+path = Path('$DOCROOT/styles.css')
+text = path.read_text()
+text = text.replace('@media (max-width:900px){.site-nav{display:none}}', '')
+text = text.replace('  .site-nav { display: none; }\n', '')
+mobile = '''
+@media (max-width: 900px) {
+  .top { flex-wrap: wrap; gap: 0.65rem; }
+  .brand { flex: 1 1 auto; min-width: 0; font-size: 0.9rem; }
+  .site-nav {
+    order: 3;
+    flex: 1 1 100%;
+    margin: 0;
+    display: inline-flex;
+    gap: 0.35rem;
+  }
+  .site-nav a {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.45rem;
+  }
+}
+'''
+marker = '/* site-nav-mobile */'
+if marker not in text:
+    text = text.rstrip() + '\\n\\n' + marker + mobile
+    path.write_text(text)
+    print('styles.css mobile nav patched')
+else:
+    print('styles.css mobile nav ok')
+PY"
+
+echo "==> Bump styles.css version on production index pages"
+ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
+from pathlib import Path
+for rel in ('index.html', 'salesnav/index.html', 'privacy.html'):
+    path = Path('$DOCROOT') / rel
+    if not path.exists():
+        continue
+    t = path.read_text()
+    t2 = t.replace('styles.css?v=24', 'styles.css?v=25')
+    if t2 != t:
+        path.write_text(t2)
+        print('bumped', rel)
+PY"
+
 echo "==> Append nav CSS on production if missing"
 ssh "$REMOTE" "ssh $PROD \"grep -q '.site-nav' $DOCROOT/styles.css 2>/dev/null || cat >> $DOCROOT/styles.css <<'CSS'
 
@@ -96,7 +145,6 @@ ssh "$REMOTE" "ssh $PROD \"grep -q '.site-nav' $DOCROOT/styles.css 2>/dev/null |
 .site-nav a:hover{color:var(--ink);border-color:var(--line);background:rgba(255,255,255,.5)}
 .site-nav a.is-active{color:var(--teal-deep);border-color:var(--teal);background:rgba(31,111,106,.1)}
 .top-actions{display:flex;align-items:center;gap:.75rem}
-@media (max-width:900px){.site-nav{display:none}}
 CSS\""
 
 echo "==> Update sitemap + app.js i18n on production"
