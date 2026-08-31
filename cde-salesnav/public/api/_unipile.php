@@ -100,6 +100,31 @@ function cde_salesnav_normalize_hosted_auth_domain(string $value): string
     return strtolower($value);
 }
 
+/** True when the white-label host is publicly resolvable (CNAME or A). */
+function cde_salesnav_hosted_auth_domain_resolves(string $domain): bool
+{
+    $domain = cde_salesnav_normalize_hosted_auth_domain($domain);
+    if ($domain === '') {
+        return false;
+    }
+
+    $records = @dns_get_record($domain, DNS_CNAME | DNS_A);
+    return is_array($records) && $records !== [];
+}
+
+/**
+ * Apply white-label rewrite only when DNS for the custom domain is live.
+ * Falls back to account.unipile.com until Piensa (or registrar) publishes the CNAME.
+ */
+function cde_salesnav_apply_hosted_auth_domain(string $url, string $domain): string
+{
+    $domain = cde_salesnav_normalize_hosted_auth_domain($domain);
+    if ($domain === '' || !cde_salesnav_hosted_auth_domain_resolves($domain)) {
+        return $url;
+    }
+    return cde_salesnav_rewrite_hosted_auth_url($url, $domain);
+}
+
 /**
  * Replace Unipile hosted-auth host with our white-label subdomain.
  * @see https://developer.unipile.com/docs/hosted-auth#custom-domain-url-white-label
@@ -358,7 +383,7 @@ function cde_salesnav_create_hosted_link(string $type = 'create', ?string $recon
         ]);
     }
 
-    $url = cde_salesnav_rewrite_hosted_auth_url($url, $config['hosted_auth_domain'] ?? '');
+    $url = cde_salesnav_apply_hosted_auth_domain($url, $config['hosted_auth_domain'] ?? '');
 
     return ['url' => $url, 'user_id' => $userId];
 }

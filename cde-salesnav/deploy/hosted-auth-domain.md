@@ -5,7 +5,7 @@ Opción 2: subdominio propio para el wizard de Unipile Hosted Auth (sin iframe).
 ## 1. DNS (registrar / Piensa Solutions)
 
 El dominio usa nameservers públicos **Piensa Solutions** (`ns97.piensasolutions.com`, `ns98.piensasolutions.com`).  
-El CNAME también está en **Plesk** del VPS (`82.223.3.205`) para cuando el dominio use DNS local.
+El CNAME también está en **Plesk** del VPS (`82.223.3.205`). Hasta que Piensa publique el registro, el backend **no reescribe** la URL de Unipile (sigue usando `account.unipile.com`).
 
 Crear un registro **CNAME** en el panel DNS de Piensa (Área de Cliente → dominio → DNS):
 
