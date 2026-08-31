@@ -193,13 +193,96 @@
   color: var(--ink-soft);
 }
 
+.sn-output {
+  max-height: 22rem;
+  overflow: auto;
+}
+
+.sn-fields-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.55rem;
+}
+
+.sn-legend-item {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid transparent;
+}
+
+.sn-legend-basic {
+  background: var(--sn-tier-basic-bg, rgba(10, 102, 194, 0.12));
+  color: var(--sn-tier-basic-fg, #004182);
+  border-color: rgba(10, 102, 194, 0.22);
+}
+
+.sn-legend-enriched {
+  background: var(--sn-tier-enriched-bg, rgba(31, 111, 106, 0.14));
+  color: var(--sn-tier-enriched-fg, #14343a);
+  border-color: rgba(31, 111, 106, 0.28);
+}
+
+.sn-legend-mail {
+  background: var(--sn-tier-mail-bg, rgba(196, 92, 38, 0.14));
+  color: var(--sn-tier-mail-fg, #8a3d12);
+  border-color: rgba(196, 92, 38, 0.28);
+}
+
 .sn-fields {
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.sn-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.28rem 0.45rem;
+  border-radius: 2px;
+  margin-bottom: 0.2rem;
+}
+
+.sn-field-row span {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--ink-soft);
+}
+
+.sn-field-row span:first-child {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sn-field-row.tier-basic {
+  background: var(--sn-tier-basic-bg, rgba(10, 102, 194, 0.1));
+}
+
+.sn-field-row.tier-enriched {
+  background: var(--sn-tier-enriched-bg, rgba(31, 111, 106, 0.12));
+}
+
+.sn-field-row.tier-mail {
+  background: var(--sn-tier-mail-bg, rgba(196, 92, 38, 0.12));
+}
+
+body.product-salesnav {
+  --sn-tier-basic-bg: rgba(10, 102, 194, 0.11);
+  --sn-tier-basic-fg: #004182;
+  --sn-tier-enriched-bg: rgba(20, 52, 58, 0.09);
+  --sn-tier-enriched-fg: #14343a;
+  --sn-tier-mail-bg: rgba(196, 92, 38, 0.13);
+  --sn-tier-mail-fg: #8a3d12;
 }
 
 .tier-grid {

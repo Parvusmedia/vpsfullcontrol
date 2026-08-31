@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=24" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=2" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=4" />
 </head>
 <body>
   <div class="atmosphere" aria-hidden="true"></div>
@@ -165,10 +165,24 @@
           </div>
           <div class="sn-output">
             <span class="enrich-kicker">CSV · 345 leads</span>
+            <div class="sn-fields-legend" aria-hidden="true">
+              <span class="sn-legend-item sn-legend-basic">Basic</span>
+              <span class="sn-legend-item sn-legend-enriched">Enriched</span>
+              <span class="sn-legend-item sn-legend-mail">Mail</span>
+            </div>
             <ul class="sn-fields">
-              <li><strong>full_name</strong> · job_title</li>
-              <li><strong>company_name</strong> · location</li>
-              <li><strong>linkedin_url</strong> · sales_nav_id</li>
+              <li class="sn-field-row tier-basic"><span>first_name</span><span>last_name</span></li>
+              <li class="sn-field-row tier-basic"><span>full_name</span><span>job_title</span></li>
+              <li class="sn-field-row tier-basic"><span>company_name</span><span>location</span></li>
+              <li class="sn-field-row tier-basic"><span>linkedin_url</span><span>sales_nav_id</span></li>
+              <li class="sn-field-row tier-basic"><span>open_profile</span><span>connection_degree</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_linkedin_url</span><span>company_domain</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_industry</span><span>company_size</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_hq</span><span>seniority</span></li>
+              <li class="sn-field-row tier-enriched"><span>tenure_years</span><span>profile_summary</span></li>
+              <li class="sn-field-row tier-enriched"><span>skills</span><span>languages</span></li>
+              <li class="sn-field-row tier-mail"><span>work_email</span><span>email_status</span></li>
+              <li class="sn-field-row tier-mail"><span>email_confidence</span><span>email_source</span></li>
             </ul>
           </div>
         </div>
