@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=24" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=1" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=2" />
 </head>
 <body>
   <div class="atmosphere" aria-hidden="true"></div>
@@ -47,9 +47,25 @@
           Turn saved SN lists and people searches into a clean CSV — name, job title, company, location and LinkedIn profile URL — ready for CRM or outreach.
         </p>
         <p class="coverage salesnav-note" data-i18n="hero.note">
-          Requires a LinkedIn account with Sales Navigator access. Demo exports up to <strong>25 leads</strong> free; raise the limit for full lists.
+          Connect your LinkedIn account with Sales Navigator, then paste a list or search URL. Demo exports up to <strong>25 leads</strong> free.
         </p>
 
+        <section class="connect-panel" id="connect-panel" aria-live="polite">
+          <div class="connect-head">
+            <h2 data-i18n="connect.title">LinkedIn connection</h2>
+            <span class="connect-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
+          </div>
+          <p class="connect-copy" id="connect-copy" data-i18n="connect.body">
+            Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.
+          </p>
+          <div class="connect-actions">
+            <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
+            <button type="button" class="ghost-btn" id="disconnect-btn" hidden data-i18n="connect.disconnect">Disconnect</button>
+            <button type="button" class="ghost-btn" id="reconnect-btn" hidden data-i18n="connect.reconnect">Reconnect</button>
+          </div>
+        </section>
+
+        <div class="export-gate" id="export-gate" hidden>
         <div class="mode-switch" role="tablist" aria-label="Export mode">
           <button type="button" class="mode-btn is-active" data-mode="list" data-i18n="mode.list">Lead list</button>
           <button type="button" class="mode-btn" data-mode="search" data-i18n="mode.search">People search</button>
@@ -92,6 +108,7 @@
           <button type="submit" id="export-submit" data-i18n="form.submit">Export CSV</button>
           <input class="hp" type="text" name="company_url" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
         </form>
+        </div>
 
         <p class="examples-hint" data-i18n="form.hint">
           Open your list in Sales Navigator, copy the browser URL and paste it above. Large lists may take a minute — keep this tab open.
@@ -276,6 +293,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=1"></script>
+  <script src="/salesnav/salesnav.js?v=2"></script>
 </body>
 </html>

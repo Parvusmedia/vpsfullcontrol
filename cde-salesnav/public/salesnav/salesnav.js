@@ -7,7 +7,20 @@ const I18N = {
     "hero.lede":
       "Turn saved SN lists and people searches into a clean CSV — name, job title, company, location and LinkedIn profile URL — ready for CRM or outreach.",
     "hero.note":
-      "Requires a LinkedIn account with Sales Navigator access. Demo exports up to <strong>25 leads</strong> free; raise the limit for full lists.",
+      "Connect your LinkedIn account with Sales Navigator, then paste a list or search URL. Demo exports up to <strong>25 leads</strong> free.",
+    "connect.title": "LinkedIn connection",
+    "connect.disconnected": "Not connected",
+    "connect.connected": "Connected",
+    "connect.connectedAs": "Connected as {label}",
+    "connect.body":
+      "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
+    "connect.cta": "Connect LinkedIn",
+    "connect.disconnect": "Disconnect",
+    "connect.reconnect": "Reconnect",
+    "connect.starting": "Opening Unipile…",
+    "connect.success": "LinkedIn connected. You can export now.",
+    "connect.failed": "Connection failed or was cancelled. Try again.",
+    "connect.required": "Connect LinkedIn before exporting.",
     "mode.list": "Lead list",
     "mode.search": "People search",
     "form.listLabel": "Sales Navigator list URL",
@@ -97,7 +110,20 @@ const I18N = {
     "hero.lede":
       "Convierte listas guardadas y búsquedas de SN en un CSV limpio — nombre, cargo, empresa, ubicación y URL de LinkedIn — listo para CRM o outreach.",
     "hero.note":
-      "Requiere cuenta LinkedIn con Sales Navigator. Demo gratis hasta <strong>25 leads</strong>; sube el límite para listas completas.",
+      "Conecta tu cuenta LinkedIn con Sales Navigator y pega la URL de lista o búsqueda. Demo gratis hasta <strong>25 leads</strong>.",
+    "connect.title": "Conexión LinkedIn",
+    "connect.disconnected": "Sin conectar",
+    "connect.connected": "Conectado",
+    "connect.connectedAs": "Conectado como {label}",
+    "connect.body":
+      "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
+    "connect.cta": "Conectar LinkedIn",
+    "connect.disconnect": "Desconectar",
+    "connect.reconnect": "Reconectar",
+    "connect.starting": "Abriendo Unipile…",
+    "connect.success": "LinkedIn conectado. Ya puedes exportar.",
+    "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
+    "connect.required": "Conecta LinkedIn antes de exportar.",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
     "form.listLabel": "URL de lista Sales Navigator",
@@ -184,6 +210,8 @@ const I18N = {
 let lang = "en";
 let lastRows = [];
 let contactChallengeToken = "";
+let isConnected = false;
+let lastConnection = { connected: false, label: "" };
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -218,6 +246,7 @@ function initLang() {
     btn.addEventListener("click", () => {
       lang = btn.dataset.lang === "es" ? "es" : "en";
       applyI18n();
+      renderConnectionStatus(lastConnection);
     });
   });
 }
@@ -228,6 +257,134 @@ function setNote(text, tone = "ok") {
   note.hidden = !text;
   note.dataset.tone = tone;
   note.textContent = text || "";
+}
+
+function setExportGate(visible) {
+  const gate = document.getElementById("export-gate");
+  if (gate) gate.hidden = !visible;
+}
+
+function renderConnectionStatus(data) {
+  lastConnection = {
+    connected: !!data?.connected,
+    label: data?.label || "",
+    connected_at: data?.connected_at || "",
+  };
+  isConnected = lastConnection.connected;
+  const badge = document.getElementById("connect-badge");
+  const copy = document.getElementById("connect-copy");
+  const connectBtn = document.getElementById("connect-btn");
+  const disconnectBtn = document.getElementById("disconnect-btn");
+  const reconnectBtn = document.getElementById("reconnect-btn");
+
+  if (badge) {
+    badge.dataset.state = isConnected ? "connected" : "disconnected";
+    if (isConnected && data.label) {
+      badge.textContent = t("connect.connectedAs", { label: data.label });
+    } else {
+      badge.textContent = t(isConnected ? "connect.connected" : "connect.disconnected");
+    }
+  }
+
+  if (copy && isConnected && data.label) {
+    copy.textContent = t("connect.connectedAs", { label: data.label });
+  } else if (copy) {
+    copy.innerHTML = t("connect.body");
+  }
+
+  if (connectBtn) connectBtn.hidden = isConnected;
+  if (disconnectBtn) disconnectBtn.hidden = !isConnected;
+  if (reconnectBtn) reconnectBtn.hidden = !isConnected;
+
+  setExportGate(isConnected);
+}
+
+async function fetchConnectionStatus() {
+  const res = await fetch("/api/salesnav-status.php", { credentials: "same-origin" });
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  renderConnectionStatus(data);
+  return data;
+}
+
+async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const data = await fetchConnectionStatus();
+      if (data.connected) return data;
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return { connected: false };
+}
+
+async function startConnect(reconnect = false) {
+  const btn = document.getElementById("connect-btn");
+  const reconnectBtn = document.getElementById("reconnect-btn");
+  const active = reconnect ? reconnectBtn : btn;
+  if (active) active.disabled = true;
+  setNote(t("connect.starting"), "ok");
+  try {
+    const res = await fetch("/api/salesnav-connect.php", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reconnect }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok || !data.url) {
+      throw new Error(data.error || t("msg.generic"));
+    }
+    window.location.href = data.url;
+  } catch (err) {
+    setNote(err.message || t("msg.generic"), "error");
+    if (active) active.disabled = false;
+  }
+}
+
+async function disconnectLinkedIn() {
+  try {
+    const res = await fetch("/api/salesnav-disconnect.php", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || t("msg.generic"));
+    }
+    renderConnectionStatus({ connected: false });
+    setNote("", "ok");
+  } catch (err) {
+    setNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+function handleConnectQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const connected = params.get("connected");
+  if (connected === "1") {
+    pollConnectionStatus().then((data) => {
+      if (data.connected) {
+        setNote(t("connect.success"), "ok");
+      } else {
+        setNote(t("connect.failed"), "error");
+      }
+    });
+    params.delete("connected");
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    window.history.replaceState({}, "", next);
+  } else if (connected === "0") {
+    setNote(t("connect.failed"), "error");
+    params.delete("connected");
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    window.history.replaceState({}, "", next);
+  }
 }
 
 function setProgress(active) {
@@ -301,6 +458,10 @@ async function getChallenge() {
 }
 
 async function runExport() {
+  if (!isConnected) {
+    setNote(t("connect.required"), "error");
+    return;
+  }
   const mode = document.querySelector(".mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
@@ -341,6 +502,10 @@ async function runExport() {
 
     if (res.status === 429) {
       throw new Error(t("msg.rateLimit"));
+    }
+    if (data.needs_connect) {
+      renderConnectionStatus({ connected: false });
+      throw new Error(t("connect.required"));
     }
     if (!res.ok || !data.ok) {
       throw new Error(data.error || t("msg.generic"));
@@ -477,6 +642,12 @@ document.getElementById("y").textContent = new Date().getFullYear();
 initLang();
 initModeSwitch();
 initContactForm();
+handleConnectQuery();
+fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
+
+document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
+document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
+document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 
 document.getElementById("export-form")?.addEventListener("submit", (e) => {
   e.preventDefault();

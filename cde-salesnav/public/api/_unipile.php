@@ -5,15 +5,18 @@
 
 declare(strict_types=1);
 
-function cde_load_unipile_config(): array
+function cde_unipile_env_paths(): array
 {
-    $candidates = [
+    return [
         dirname(__DIR__, 2) . '/private/cde/unipile.env',
         __DIR__ . '/unipile.env',
     ];
+}
 
+function cde_unipile_read_env(): array
+{
     $env = [];
-    foreach ($candidates as $path) {
+    foreach (cde_unipile_env_paths() as $path) {
         if (!is_readable($path)) {
             continue;
         }
@@ -27,28 +30,269 @@ function cde_load_unipile_config(): array
         }
         break;
     }
+    return $env;
+}
 
+function cde_unipile_api_config(?string $accountId = null): array
+{
+    $env = cde_unipile_read_env();
     $apiKey = $env['UNIPILE_API_KEY'] ?? getenv('UNIPILE_API_KEY') ?: '';
-    $accountId = $env['UNIPILE_ACCOUNT_ID'] ?? getenv('UNIPILE_ACCOUNT_ID') ?: '';
     $base = $env['UNIPILE_BASE_URL'] ?? getenv('UNIPILE_BASE_URL') ?: 'https://api.unipile.com/v2';
     $base = rtrim(trim($base), '/');
 
-    if ($apiKey === '' || $accountId === '') {
+    if ($apiKey === '') {
         cde_json_response(500, [
             'ok' => false,
-            'error' => 'Server misconfigured: Unipile credentials missing.',
+            'error' => 'Server misconfigured: Unipile API key missing.',
         ]);
     }
 
     $isV1 = (strpos($base, '/api/v1') !== false)
         || (substr($base, -3) !== '/v2' && strpos($base, 'api.unipile.com/v2') === false);
 
+    $resolvedAccount = $accountId
+        ?? ($env['UNIPILE_ACCOUNT_ID'] ?? getenv('UNIPILE_ACCOUNT_ID') ?: '');
+
     return [
         'api_key' => $apiKey,
-        'account_id' => $accountId,
+        'account_id' => $resolvedAccount,
         'base' => $base,
         'is_v1' => $isV1,
+        'dsn_url' => cde_unipile_dsn_url($base),
+        'notify_secret' => (string) ($env['SALESNAV_NOTIFY_SECRET'] ?? ''),
+        'site_origin' => (string) ($env['SALESNAV_SITE_ORIGIN'] ?? 'https://companydataenrichment.com'),
     ];
+}
+
+/** @deprecated use cde_unipile_api_config() */
+function cde_load_unipile_config(): array
+{
+    return cde_unipile_api_config();
+}
+
+function cde_unipile_dsn_url(string $apiBase): string
+{
+    $base = rtrim($apiBase, '/');
+    if (preg_match('#^(https?://[^/]+(?::\d+)?)/api/v\d+$#', $base, $m)) {
+        return $m[1];
+    }
+    if (substr($base, -3) === '/v2') {
+        return substr($base, 0, -3);
+    }
+    return $base;
+}
+
+function cde_salesnav_private_dir(): string
+{
+    $dir = dirname(__DIR__, 2) . '/private/cde';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    return $dir;
+}
+
+function cde_salesnav_accounts_file(): string
+{
+    return cde_salesnav_private_dir() . '/salesnav_accounts.json';
+}
+
+function cde_salesnav_user_id(): string
+{
+    cde_session_start();
+    if (empty($_SESSION['salesnav_user_id']) || !is_string($_SESSION['salesnav_user_id'])) {
+        $_SESSION['salesnav_user_id'] = bin2hex(random_bytes(16));
+    }
+    return (string) $_SESSION['salesnav_user_id'];
+}
+
+function cde_salesnav_load_accounts(): array
+{
+    $path = cde_salesnav_accounts_file();
+    if (!is_readable($path)) {
+        return [];
+    }
+    $raw = file_get_contents($path);
+    $data = json_decode((string) $raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function cde_salesnav_save_account(string $userId, array $record): void
+{
+    $all = cde_salesnav_load_accounts();
+    $all[$userId] = $record;
+    $path = cde_salesnav_accounts_file();
+    @file_put_contents($path, json_encode($all, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    @chmod($path, 0600);
+}
+
+function cde_salesnav_set_session_account(string $accountId, string $label = ''): void
+{
+    cde_session_start();
+    $_SESSION['salesnav_account_id'] = $accountId;
+    $_SESSION['salesnav_account_label'] = $label;
+    $_SESSION['salesnav_connected_at'] = gmdate('c');
+}
+
+function cde_salesnav_clear_session_account(): void
+{
+    cde_session_start();
+    unset(
+        $_SESSION['salesnav_account_id'],
+        $_SESSION['salesnav_account_label'],
+        $_SESSION['salesnav_connected_at']
+    );
+}
+
+function cde_salesnav_session_account(): ?array
+{
+    cde_session_start();
+    $accountId = trim((string) ($_SESSION['salesnav_account_id'] ?? ''));
+    if ($accountId === '') {
+        $userId = cde_salesnav_user_id();
+        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+        if (is_array($stored) && !empty($stored['account_id'])) {
+            cde_salesnav_set_session_account(
+                (string) $stored['account_id'],
+                (string) ($stored['label'] ?? '')
+            );
+            $accountId = (string) $stored['account_id'];
+        }
+    }
+    if ($accountId === '') {
+        return null;
+    }
+    return [
+        'account_id' => $accountId,
+        'label' => trim((string) ($_SESSION['salesnav_account_label'] ?? '')),
+        'connected_at' => (string) ($_SESSION['salesnav_connected_at'] ?? ''),
+    ];
+}
+
+function cde_salesnav_require_account(): array
+{
+    $account = cde_salesnav_session_account();
+    if ($account === null || $account['account_id'] === '') {
+        cde_json_response(403, [
+            'ok' => false,
+            'error' => 'Connect your LinkedIn / Sales Navigator account before exporting.',
+            'needs_connect' => true,
+        ]);
+    }
+    return $account;
+}
+
+function cde_salesnav_notify_secret(): string
+{
+    $cfg = cde_unipile_api_config();
+    if ($cfg['notify_secret'] !== '') {
+        return $cfg['notify_secret'];
+    }
+    return hash('sha256', $cfg['api_key'] . '|salesnav-notify');
+}
+
+function cde_salesnav_site_origin(): string
+{
+    $cfg = cde_unipile_api_config();
+    return rtrim($cfg['site_origin'], '/');
+}
+
+function cde_salesnav_fetch_account_label(array $config, string $accountId): string
+{
+    $resp = cde_unipile_request($config, 'GET', '/accounts/' . rawurlencode($accountId));
+    if (!$resp['ok']) {
+        $resp = cde_unipile_request($config, 'GET', '/accounts');
+        if ($resp['ok']) {
+            $items = $resp['data'];
+            if (isset($items['items']) && is_array($items['items'])) {
+                $items = $items['items'];
+            }
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    if (!is_array($item)) {
+                        continue;
+                    }
+                    if (($item['id'] ?? '') === $accountId) {
+                        return cde_salesnav_account_label_from_item($item);
+                    }
+                }
+            }
+        }
+        return '';
+    }
+    $item = $resp['data'];
+    if (isset($item['data']) && is_array($item['data'])) {
+        $item = $item['data'];
+    }
+    return is_array($item) ? cde_salesnav_account_label_from_item($item) : '';
+}
+
+function cde_salesnav_account_label_from_item(array $item): string
+{
+    $params = $item['connection_params']['im'] ?? [];
+    if (is_array($params)) {
+        $username = trim((string) ($params['username'] ?? $params['publicIdentifier'] ?? ''));
+        if ($username !== '') {
+            return $username;
+        }
+    }
+    $name = trim((string) ($item['name'] ?? ''));
+    return $name !== '' ? $name : (string) ($item['id'] ?? '');
+}
+
+function cde_salesnav_create_hosted_link(string $type = 'create', ?string $reconnectAccountId = null): array
+{
+    $config = cde_unipile_api_config();
+    $userId = cde_salesnav_user_id();
+    $origin = cde_salesnav_site_origin();
+    $token = cde_salesnav_notify_secret();
+    $expires = gmdate('Y-m-d\TH:i:s.v\Z', time() + 900);
+
+    $body = [
+        'type' => $type,
+        'providers' => ['LINKEDIN'],
+        'api_url' => $config['dsn_url'],
+        'expiresOn' => $expires,
+        'name' => $userId,
+        'notify_url' => $origin . '/api/salesnav-unipile-notify.php?token=' . rawurlencode($token),
+        'success_redirect_url' => $origin . '/salesnav/?connected=1',
+        'failure_redirect_url' => $origin . '/salesnav/?connected=0',
+        'config' => [
+            'linkedin' => [
+                'allow_methods' => ['credentials', 'cookies'],
+                'products' => ['classic', 'sales_navigator'],
+            ],
+        ],
+    ];
+
+    if ($type === 'reconnect' && $reconnectAccountId) {
+        $body['reconnect_account'] = $reconnectAccountId;
+    }
+
+    $resp = cde_unipile_request(
+        $config,
+        'POST',
+        '/hosted/accounts/link',
+        null,
+        $body,
+        60
+    );
+
+    if (!$resp['ok']) {
+        cde_json_response($resp['status'] >= 400 && $resp['status'] < 600 ? $resp['status'] : 502, [
+            'ok' => false,
+            'error' => $resp['error'] ?? 'Could not start LinkedIn connection.',
+        ]);
+    }
+
+    $url = (string) ($resp['data']['url'] ?? '');
+    if ($url === '') {
+        cde_json_response(502, [
+            'ok' => false,
+            'error' => 'Unipile did not return a connection URL.',
+        ]);
+    }
+
+    return ['url' => $url, 'user_id' => $userId];
 }
 
 function cde_salesnav_normalize_list_url(string $value): string

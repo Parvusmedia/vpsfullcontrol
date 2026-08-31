@@ -36,7 +36,8 @@ if ($limit > 2000) {
 
 cde_enforce_salesnav_rate_limits($limit);
 
-$mode = 'list';
+$linked = cde_salesnav_require_account();
+$config = cde_unipile_api_config($linked['account_id']);
 $sourceUrl = '';
 if ($listUrl !== '') {
     $sourceUrl = cde_salesnav_normalize_list_url($listUrl);
@@ -51,7 +52,6 @@ if ($listUrl !== '') {
     ]);
 }
 
-$config = cde_load_unipile_config();
 $started = microtime(true);
 $rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
 $rows = [];

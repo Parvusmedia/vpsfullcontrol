@@ -12,6 +12,8 @@ STAGING="/opt/apps/companydataenrichment/public"
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
 
 echo "==> Apply patches on parvus-vps staging (if not already)"
 ssh "$REMOTE" "bash /opt/apps/companydataenrichment/../..//workspace/cde-salesnav/deploy-salesnav.sh 2>/dev/null || true"
@@ -29,8 +31,11 @@ if '_unipile' not in text:
 print('staging ready')
 PY"
 
-echo "==> Sync Unipile env to production (from linkedinreport on parvus-vps)"
-ssh "$REMOTE" "grep '^UNIPILE_' /etc/linkedinreport/app.env | ssh $PROD \"install -d -m 700 $PRIVATE && cat > $PRIVATE/unipile.env && chmod 600 $PRIVATE/unipile.env\""
+echo "==> Merge Unipile API keys on production (keep existing notify secret)"
+ssh "$REMOTE" "grep '^UNIPILE_' /etc/linkedinreport/app.env | ssh $PROD \"install -d -m 700 $PRIVATE; touch $PRIVATE/unipile.env; chmod 640 $PRIVATE/unipile.env; chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/unipile.env\""
+
+echo "==> Ensure notify secret + writable private dir on production"
+ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_accounts.json && chmod 660 $PRIVATE/salesnav_accounts.json && chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/salesnav_accounts.json 2>/dev/null || true; if ! grep -q ^SALESNAV_NOTIFY_SECRET= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_NOTIFY_SECRET=\$(openssl rand -hex 24) >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_SITE_ORIGIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_SITE_ORIGIN=https://companydataenrichment.com >> $PRIVATE/unipile.env; fi'"
 
 echo "==> Rsync public site to production httpdocs"
 ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' \
@@ -111,6 +116,6 @@ print('sitemap/app.js ok')
 PY"
 
 echo "==> Set ownership on production"
-ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/salesnav-export.php 2>/dev/null || true\""
+ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php 2>/dev/null || true\""
 
 echo "==> Done — production deploy complete"
