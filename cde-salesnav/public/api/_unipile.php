@@ -112,14 +112,50 @@ function cde_salesnav_hosted_auth_domain_resolves(string $domain): bool
     return is_array($records) && $records !== [];
 }
 
+/** True when HTTPS presents a valid cert for the custom domain (Unipile white-label ready). */
+function cde_salesnav_hosted_auth_domain_ssl_ready(string $domain): bool
+{
+    $domain = cde_salesnav_normalize_hosted_auth_domain($domain);
+    if ($domain === '') {
+        return false;
+    }
+
+    $ctx = stream_context_create([
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+            'peer_name' => $domain,
+            'SNI_enabled' => true,
+        ],
+    ]);
+
+    $fp = @stream_socket_client(
+        'ssl://' . $domain . ':443',
+        $errno,
+        $errstr,
+        8,
+        STREAM_CLIENT_CONNECT,
+        $ctx
+    );
+
+    if ($fp === false) {
+        return false;
+    }
+
+    fclose($fp);
+    return true;
+}
+
 /**
- * Apply white-label rewrite only when DNS for the custom domain is live.
- * Falls back to account.unipile.com until Piensa (or registrar) publishes the CNAME.
+ * Apply white-label rewrite only when DNS and Unipile SSL for the domain are ready.
+ * Falls back to account.unipile.com until Piensa DNS + Unipile Hosted Auth validation complete.
  */
 function cde_salesnav_apply_hosted_auth_domain(string $url, string $domain): string
 {
     $domain = cde_salesnav_normalize_hosted_auth_domain($domain);
-    if ($domain === '' || !cde_salesnav_hosted_auth_domain_resolves($domain)) {
+    if ($domain === ''
+        || !cde_salesnav_hosted_auth_domain_resolves($domain)
+        || !cde_salesnav_hosted_auth_domain_ssl_ready($domain)) {
         return $url;
     }
     return cde_salesnav_rewrite_hosted_auth_url($url, $domain);

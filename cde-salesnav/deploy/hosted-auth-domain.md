@@ -5,7 +5,7 @@ Opción 2: subdominio propio para el wizard de Unipile Hosted Auth (sin iframe).
 ## 1. DNS (registrar / Piensa Solutions)
 
 El dominio usa nameservers públicos **Piensa Solutions** (`ns97.piensasolutions.com`, `ns98.piensasolutions.com`).  
-El CNAME también está en **Plesk** del VPS (`82.223.3.205`). Hasta que Piensa publique el registro, el backend **no reescribe** la URL de Unipile (sigue usando `account.unipile.com`).
+El CNAME también está en **Plesk** del VPS (`82.223.3.205`). El backend solo reescribe la URL cuando **DNS + certificado SSL** de Unipile están listos; si no, usa `account.unipile.com`.
 
 Crear un registro **CNAME** en el panel DNS de Piensa (Área de Cliente → dominio → DNS):
 
@@ -24,42 +24,26 @@ dig +short connect.companydataenrichment.com CNAME @ns97.piensasolutions.com
 
 ### Estado DNS (2026-08-31)
 
-| Resolver / origen | Resultado |
-|-------------------|-----------|
-| `@ns97.piensasolutions.com` | Sin respuesta desde este entorno (timeout en NS autoritativos) |
-| `@8.8.8.8` / `@1.1.1.1` | **NXDOMAIN** — el registro no existe aún en DNS público Piensa |
-| Plesk VPS (`82.223.3.205`) | CNAME `connect` → `account.unipile.com` **configurado** (según deploy previo) |
+| Check | Resultado |
+|-------|-----------|
+| CNAME público | `connect` → `account.unipile.com` ✅ |
+| HTTPS / certificado | **Pendiente Unipile** — cert actual: `account-auth.allconnects.ai` → `NET::ERR_CERT_COMMON_NAME_INVALID` |
 
-**Acción pendiente:** crear el CNAME `connect` → `account.unipile.com` en el panel DNS de **Piensa Solutions** (Área de Cliente → dominio → DNS). Hasta que Piensa propague, el white-label Unipile no funcionará fuera del DNS local del VPS.
+Hasta que Unipile habilite el dominio, el backend **no reescribe** la URL (Connect usa `account.unipile.com`).
 
-Verificación rápida cuando esté hecho:
-
-```bash
-host -t CNAME connect.companydataenrichment.com 8.8.8.8
-# connect.companydataenrichment.com is an alias for account.unipile.com.
-```
-
-**Plesk (ya aplicado en el VPS):**
-
-```bash
-ssh nextconvers-vps "plesk bin dns --info companydataenrichment.com | grep connect"
-# connect.companydataenrichment.com. CNAME account.unipile.com.
-```
-
-Consulta directa al DNS del VPS (funciona aunque Piensa aún no propague):
-
-```bash
-dig +short connect.companydataenrichment.com CNAME @82.223.3.205
-```
-
-**Importante:** no apuntar `connect` al VPS. Unipile sirve el wizard y el certificado SSL.
-
-## 2. Validación en Unipile
+## 2. Validación en Unipile (obligatorio para HTTPS)
 
 1. Entrar al [Unipile Dashboard](https://dashboard.unipile.com) → **Hosted Auth**.
-2. En **Hosted auth domain**, enviar el CNAME `connect.companydataenrichment.com`.
-3. Esperar a que aparezca en **Enabled domains** (Unipile genera el certificado).
-4. Si tarda, contactar soporte Unipile con la URL completa: `https://connect.companydataenrichment.com`.
+2. En **Hosted auth domain**, enviar `connect.companydataenrichment.com` (CNAME ya debe estar activo en Piensa).
+3. Esperar a que aparezca en **Enabled domains** — Unipile genera el certificado Let's Encrypt para tu subdominio.
+4. Verificar certificado:
+
+```bash
+curl -sSI https://connect.companydataenrichment.com/ | head -3
+# Sin error SSL; el cert debe incluir connect.companydataenrichment.com
+```
+
+5. Si tarda >24h, contactar soporte Unipile con: `https://connect.companydataenrichment.com`
 
 Requisito: cuenta Unipile con suscripción activa.
 
