@@ -66,6 +66,10 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     $pack = $packs[$packId];
     $cfg = cde_stripe_config();
 
+    $paidBase = (int) ($pack['paid_base'] ?? $pack['credits']);
+    $bonus = (int) ($pack['bonus_credits'] ?? 0);
+    $total = (int) $pack['credits'];
+
     $fields = [
         'mode' => 'payment',
         'success_url' => $cfg['origin'] . '/salesnav/?credits=1',
@@ -73,12 +77,14 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
         'client_reference_id' => $userId,
         'metadata[user_id]' => $userId,
         'metadata[pack_id]' => $packId,
-        'metadata[credits]' => (string) $pack['credits'],
+        'metadata[credits]' => (string) $total,
+        'metadata[paid_base]' => (string) $paidBase,
+        'metadata[bonus_credits]' => (string) $bonus,
         'line_items[0][quantity]' => '1',
         'line_items[0][price_data][currency]' => 'eur',
         'line_items[0][price_data][unit_amount]' => (string) $pack['amount_cents'],
         'line_items[0][price_data][product_data][name]' => $pack['label'],
-        'line_items[0][price_data][product_data][description]' => 'NavExport — 1 credit = 1 exported lead (Basic tier)',
+        'line_items[0][price_data][product_data][description' => 'Prepaid export credits — Basic €0.05/lead; Enriched +€0.02; Mail +€0.09 if found. Min top-up €20.',
     ];
 
     $resp = cde_stripe_request('POST', 'checkout/sessions', $fields);

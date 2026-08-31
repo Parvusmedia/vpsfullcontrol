@@ -22,12 +22,13 @@ const I18N = {
     "connect.failed": "Connection failed or was cancelled. Try again.",
     "connect.required": "Connect LinkedIn before exporting.",
     "credits.balance": "{count} export credits available",
-    "credits.required": "Buy export credits first — 1 credit = 1 lead in your CSV.",
-    "credits.buy": "Buy credits",
+    "credits.required": "Minimum top-up €20 — Basic 1 credit/lead; Enriched +0.4; Mail +1.8 per email found.",
+    "credits.buy": "Buy credits (from €20)",
     "credits.checkoutOpened": "Stripe checkout opened in a new window. Return here after payment.",
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
-    "credits.insufficient": "Not enough credits for this export. Buy more credits.",
+    "credits.insufficient": "Not enough credits for this export. Buy more credits (min €20).",
+    "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 120 credits).",
     "mode.list": "Lead list",
     "mode.search": "People search",
     "form.listLabel": "Sales Navigator list URL",
@@ -39,6 +40,9 @@ const I18N = {
     "form.limit100": "100",
     "form.limit500": "500",
     "form.limit2000": "2,000 (max)",
+    "form.tiers": "Export options",
+    "form.tierEnriched": "Enriched (+€0.02/lead)",
+    "form.tierMail": "Mail (+€0.09/email found)",
     "form.submit": "Export CSV",
     "form.hint":
       "Open your list in Sales Navigator, copy the browser URL and paste it above. Large lists may take a minute — keep this tab open.",
@@ -47,7 +51,7 @@ const I18N = {
     "results.another": "Export another",
     "results.csv": "Download CSV",
     "results.volume": "Request volume access",
-    "results.summary": "Exported {count} leads in {seconds}s (showing first 10).",
+    "results.summary": "Exported {count} leads in {seconds}s ({credits} credits used · showing first 10).",
     "col.name": "Name",
     "col.title": "Title",
     "col.company": "Company",
@@ -145,12 +149,13 @@ const I18N = {
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
     "connect.required": "Conecta LinkedIn antes de exportar.",
     "credits.balance": "{count} créditos de export disponibles",
-    "credits.required": "Compra créditos primero — 1 crédito = 1 lead en tu CSV.",
-    "credits.buy": "Comprar créditos",
+    "credits.required": "Recarga mínima €20 — Basic 1 crédito/lead; Enriched +0,4; Mail +1,8 por email encontrado.",
+    "credits.buy": "Comprar créditos (desde €20)",
     "credits.checkoutOpened": "Checkout de Stripe abierto en ventana nueva. Vuelve aquí tras pagar.",
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
-    "credits.insufficient": "Créditos insuficientes para este export. Compra más créditos.",
+    "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
+    "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 120 créditos).",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
     "form.listLabel": "URL de lista Sales Navigator",
@@ -162,6 +167,9 @@ const I18N = {
     "form.limit100": "100",
     "form.limit500": "500",
     "form.limit2000": "2.000 (máx.)",
+    "form.tiers": "Opciones de export",
+    "form.tierEnriched": "Enriched (+€0,02/lead)",
+    "form.tierMail": "Mail (+€0,09/email encontrado)",
     "form.submit": "Exportar CSV",
     "form.hint":
       "Abre tu lista en Sales Navigator, copia la URL del navegador y pégala arriba. Listas grandes pueden tardar un minuto — no cierres esta pestaña.",
@@ -170,7 +178,7 @@ const I18N = {
     "results.another": "Exportar otra",
     "results.csv": "Descargar CSV",
     "results.volume": "Pedir acceso por volumen",
-    "results.summary": "Exportados {count} leads en {seconds}s (mostrando los 10 primeros).",
+    "results.summary": "Exportados {count} leads en {seconds}s ({credits} créditos usados · primeros 10).",
     "col.name": "Nombre",
     "col.title": "Cargo",
     "col.company": "Empresa",
@@ -254,6 +262,7 @@ let isConnected = false;
 let lastConnection = { connected: false, label: "" };
 let billingEnabled = false;
 let creditBalance = 0;
+let defaultPackId = "120";
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -363,6 +372,9 @@ async function fetchCredits() {
     if (!res.ok || !data.ok) return;
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
+    if (Array.isArray(data.packs) && data.packs.length) {
+      defaultPackId = String(data.packs[0].id);
+    }
     renderCredits();
   } catch {
     /* optional */
@@ -397,7 +409,7 @@ function openAuthPopup(url, messageType) {
   });
 }
 
-async function startStripeCheckout(pack = "100") {
+async function startStripeCheckout(pack = defaultPackId) {
   const res = await fetch("/api/salesnav-stripe-checkout.php", {
     method: "POST",
     credentials: "same-origin",
@@ -444,7 +456,7 @@ async function startConnect(reconnect = false) {
   try {
     if (!reconnect && billingEnabled && creditBalance <= 0) {
       setNote(t("credits.required"), "ok");
-      await startStripeCheckout("100");
+      await startStripeCheckout(defaultPackId);
       return;
     }
     const res = await fetch("/api/salesnav-connect.php", {
@@ -455,7 +467,7 @@ async function startConnect(reconnect = false) {
     });
     const data = await res.json();
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout("100");
+      await startStripeCheckout(defaultPackId);
       return;
     }
     if (!res.ok || !data.ok || !data.url) {
@@ -631,10 +643,14 @@ async function runExport() {
 
   try {
     const challenge = await getChallenge();
+    const tierEnriched = document.getElementById("tier-enriched")?.checked;
+    const tierMail = document.getElementById("tier-mail")?.checked;
     const body = {
       challenge,
       company_url: honeypot,
       limit,
+      tier_enriched: tierEnriched ? 1 : 0,
+      tier_mail: tierMail ? 1 : 0,
     };
     if (mode === "list") body.list_url = listUrl;
     else body.search_url = searchUrl;
@@ -651,7 +667,7 @@ async function runExport() {
       throw new Error(t("msg.rateLimit"));
     }
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout("100");
+      await startStripeCheckout(defaultPackId);
       throw new Error(t("credits.insufficient"));
     }
     if (data.needs_connect) {
@@ -675,6 +691,7 @@ async function runExport() {
       summary.textContent = t("results.summary", {
         count: data.count || lastRows.length,
         seconds: data.seconds || 1,
+        credits: data.credits_used ?? data.count ?? lastRows.length,
       });
     }
     document.getElementById("results")?.removeAttribute("hidden");
@@ -802,7 +819,7 @@ fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false })
 
 document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
 document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
-document.getElementById("buy-credits-btn")?.addEventListener("click", () => startStripeCheckout("100"));
+document.getElementById("buy-credits-btn")?.addEventListener("click", () => startStripeCheckout(defaultPackId));
 document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 
 document.getElementById("export-form")?.addEventListener("submit", (e) => {

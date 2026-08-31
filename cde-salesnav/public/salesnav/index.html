@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=9" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=10" />
   <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
@@ -109,6 +109,17 @@
               </select>
             </label>
           </div>
+          <fieldset class="export-tiers">
+            <legend data-i18n="form.tiers">Export options</legend>
+            <label class="export-tier-option tier-enriched">
+              <input type="checkbox" id="tier-enriched" name="tier_enriched" value="1" />
+              <span data-i18n="form.tierEnriched">Enriched (+€0.02/lead)</span>
+            </label>
+            <label class="export-tier-option tier-mail">
+              <input type="checkbox" id="tier-mail" name="tier_mail" value="1" />
+              <span data-i18n="form.tierMail">Mail (+€0.09/email found)</span>
+            </label>
+          </fieldset>
           <button type="submit" id="export-submit" data-i18n="form.submit">Export CSV</button>
           <input class="hp" type="text" name="company_url" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
         </form>
@@ -329,6 +340,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=5"></script>
+  <script src="/salesnav/salesnav.js?v=6"></script>
 </body>
 </html>

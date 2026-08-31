@@ -70,18 +70,37 @@ if ($rows === []) {
 }
 
 $exportCount = count($rows);
+$tiers = cde_credits_parse_tiers($payload);
+$creditCost = cde_credits_export_cost($rows, $tiers);
 $userId = cde_salesnav_user_id();
-if (!cde_credits_consume($userId, $exportCount, 'export:' . substr(hash('sha256', $sourceUrl . '|' . $exportCount . '|' . gmdate('Y-m-d-H-i')), 0, 16), [
+
+if (cde_credits_billing_enabled() && cde_credits_get_balance($userId) < $creditCost) {
+    cde_json_response(402, [
+        'ok' => false,
+        'needs_payment' => true,
+        'error' => 'Insufficient export credits for this download.',
+        'balance' => cde_credits_get_balance($userId),
+        'required' => $creditCost,
+        'lead_count' => $exportCount,
+        'tiers' => $tiers,
+    ]);
+}
+
+if (!cde_credits_consume($userId, $creditCost, 'export:' . substr(hash('sha256', $sourceUrl . '|' . $exportCount . '|' . gmdate('Y-m-d-H-i')), 0, 16), [
     'mode' => $mode,
     'limit' => $limit,
     'count' => $exportCount,
+    'credit_cost' => $creditCost,
+    'tiers' => $tiers,
 ])) {
     cde_json_response(402, [
         'ok' => false,
         'needs_payment' => true,
         'error' => 'Insufficient export credits for this download.',
         'balance' => cde_credits_get_balance($userId),
-        'required' => $exportCount,
+        'required' => $creditCost,
+        'lead_count' => $exportCount,
+        'tiers' => $tiers,
     ]);
 }
 
@@ -95,4 +114,7 @@ cde_json_response(200, [
     'seconds' => $seconds,
     'rows' => $rows,
     'preview' => array_slice($rows, 0, 10),
+    'credits_used' => $creditCost,
+    'tiers' => $tiers,
+    'balance' => cde_credits_get_balance($userId),
 ]);

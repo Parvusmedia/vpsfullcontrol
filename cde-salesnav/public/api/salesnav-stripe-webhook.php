@@ -36,6 +36,8 @@ if ($type === 'checkout.session.completed') {
     if ($userId !== '' && $credits > 0 && $sessionId !== '') {
         cde_credits_add($userId, $credits, 'stripe:' . $sessionId, [
             'pack_id' => (string) ($session['metadata']['pack_id'] ?? ''),
+            'paid_base' => (int) ($session['metadata']['paid_base'] ?? 0),
+            'bonus_credits' => (int) ($session['metadata']['bonus_credits'] ?? 0),
             'amount_total' => (int) ($session['amount_total'] ?? 0),
         ]);
     }

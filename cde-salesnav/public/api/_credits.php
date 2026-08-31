@@ -1,11 +1,16 @@
 <?php
 /**
- * Prepaid export credits (1 credit = 1 lead row in CSV, Basic tier).
+ * Prepaid export credits — modular Basic / Enriched / Mail pricing.
+ * 1 credit ≈ €0.05 (Basic lead). Minimum recharge €20. +20% bonus from 100 base credits.
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/_unipile.php';
+
+const CDE_CREDITS_MIN_EUR_CENTS = 2000;
+const CDE_CREDITS_BONUS_THRESHOLD = 100;
+const CDE_CREDITS_BONUS_PERCENT = 20;
 
 function cde_credits_env_paths(): array
 {
@@ -44,14 +49,47 @@ function cde_credits_billing_enabled(): bool
     return $key !== '';
 }
 
-/** @return array<string, array{credits: int, amount_cents: int, label: string}> */
+/** Credits granted for a paid base amount (100 → 120 with +20%). */
+function cde_credits_grant_for_base(int $paidBase): int
+{
+    if ($paidBase <= 0) {
+        return 0;
+    }
+    if ($paidBase >= CDE_CREDITS_BONUS_THRESHOLD) {
+        return (int) round($paidBase * (1 + CDE_CREDITS_BONUS_PERCENT / 100));
+    }
+    return $paidBase;
+}
+
+/**
+ * @return array<string, array{
+ *   paid_base: int,
+ *   credits: int,
+ *   amount_cents: int,
+ *   label: string,
+ *   bonus_credits: int
+ * }>
+ */
 function cde_credits_packs(): array
 {
-    return [
-        '100' => ['credits' => 100, 'amount_cents' => 500, 'label' => '100 export credits'],
-        '500' => ['credits' => 500, 'amount_cents' => 2500, 'label' => '500 export credits'],
-        '1000' => ['credits' => 1000, 'amount_cents' => 5000, 'label' => '1,000 export credits'],
+    $defs = [
+        '120' => ['paid_base' => 100, 'amount_cents' => 2000, 'label' => '120 credits (100 + 20% bonus)'],
+        '300' => ['paid_base' => 250, 'amount_cents' => 5000, 'label' => '300 credits (250 + 20% bonus)'],
+        '600' => ['paid_base' => 500, 'amount_cents' => 10000, 'label' => '600 credits (500 + 20% bonus)'],
+        '1200' => ['paid_base' => 1000, 'amount_cents' => 20000, 'label' => '1,200 credits (1,000 + 20% bonus)'],
     ];
+    $packs = [];
+    foreach ($defs as $id => $def) {
+        $granted = cde_credits_grant_for_base($def['paid_base']);
+        $packs[$id] = [
+            'paid_base' => $def['paid_base'],
+            'credits' => $granted,
+            'amount_cents' => $def['amount_cents'],
+            'label' => $def['label'],
+            'bonus_credits' => $granted - $def['paid_base'],
+        ];
+    }
+    return $packs;
 }
 
 function cde_credits_wallet_file(): string
@@ -152,6 +190,48 @@ function cde_credits_consume(string $userId, int $amount, string $ref, array $me
     return true;
 }
 
+/** @return array{basic: bool, enriched: bool, mail: bool} */
+function cde_credits_parse_tiers(array $payload): array
+{
+    return [
+        'basic' => true,
+        'enriched' => !empty($payload['tier_enriched']),
+        'mail' => !empty($payload['tier_mail']),
+    ];
+}
+
+/**
+ * Cost in credits for an export (Basic=1, +Enriched=0.4/lead, +Mail=1.8/email found).
+ *
+ * @param list<array<string, mixed>> $rows
+ */
+function cde_credits_export_cost(array $rows, array $tiers): int
+{
+    $count = count($rows);
+    if ($count === 0) {
+        return 0;
+    }
+
+    $perRow = 1.0;
+    if (!empty($tiers['enriched'])) {
+        $perRow += 0.4;
+    }
+    $total = (int) ceil($count * $perRow);
+
+    if (!empty($tiers['mail'])) {
+        $emails = 0;
+        foreach ($rows as $row) {
+            $email = trim((string) ($row['work_email'] ?? ''));
+            if ($email !== '') {
+                $emails++;
+            }
+        }
+        $total += (int) ceil($emails * 1.8);
+    }
+
+    return max(1, $total);
+}
+
 function cde_credits_require_positive_balance(): void
 {
     if (!cde_credits_billing_enabled()) {
@@ -164,7 +244,8 @@ function cde_credits_require_positive_balance(): void
     cde_json_response(402, [
         'ok' => false,
         'needs_payment' => true,
-        'error' => 'Add export credits before connecting LinkedIn.',
+        'error' => 'Add export credits before connecting LinkedIn (minimum €20).',
         'balance' => 0,
+        'min_eur' => CDE_CREDITS_MIN_EUR_CENTS / 100,
     ]);
 }

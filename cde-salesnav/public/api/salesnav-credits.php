@@ -23,8 +23,11 @@ foreach ($packs as $id => $pack) {
     $out[] = [
         'id' => $id,
         'credits' => $pack['credits'],
+        'paid_base' => $pack['paid_base'],
+        'bonus_credits' => $pack['bonus_credits'],
         'amount_cents' => $pack['amount_cents'],
         'price_eur' => number_format($pack['amount_cents'] / 100, 2, '.', ''),
+        'label' => $pack['label'],
     ];
 }
 
@@ -33,4 +36,16 @@ cde_json_response(200, [
     'billing_enabled' => $billing,
     'balance' => $balance,
     'packs' => $out,
+    'min_eur' => CDE_CREDITS_MIN_EUR_CENTS / 100,
+    'bonus_rule' => [
+        'threshold_base_credits' => CDE_CREDITS_BONUS_THRESHOLD,
+        'percent' => CDE_CREDITS_BONUS_PERCENT,
+        'example' => '100 base credits → 120 in wallet (+20%)',
+    ],
+    'pricing' => [
+        'basic_per_lead_eur' => 0.05,
+        'enriched_extra_eur' => 0.02,
+        'mail_extra_eur' => 0.09,
+        'note' => 'Credits per export: Basic 1/lead; +Enriched +0.4/lead; +Mail +1.8 per work email found.',
+    ],
 ]);

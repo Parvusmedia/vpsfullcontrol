@@ -131,6 +131,42 @@
   min-width: 9rem;
 }
 
+.export-tiers {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.export-tiers legend {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 0 0.35rem;
+}
+
+.export-tier-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.export-tier-option.tier-enriched span {
+  color: var(--sn-tier-enriched-fg);
+}
+
+.export-tier-option.tier-mail span {
+  color: var(--sn-tier-mail-fg);
+}
+
 .salesnav-results {
   margin-top: 1.5rem;
 }

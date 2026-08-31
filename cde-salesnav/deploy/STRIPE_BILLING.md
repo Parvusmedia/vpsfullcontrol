@@ -4,12 +4,21 @@
 
 | Concept | Rule |
 |---------|------|
-| **1 credit** | 1 lead row exported (Basic tier) |
+| **1 credit** | ≈ €0.05 of Basic export (1 credit per lead) |
+| **Minimum top-up** | **€20** |
+| **Bonus** | From **100 base credits** paid → **+20%** in wallet (e.g. pay €20 → 120 credits) |
 | **When to pay** | Before first LinkedIn connect (wallet must be > 0) |
-| **When to deduct** | After successful export, `count(rows)` credits |
-| **Enriched / Mail** | Phase 2 — add multipliers or separate meters |
+| **When to deduct** | After successful export, tier-based cost |
 
-Retail anchor: **€0.05 / lead** → packs at €5 / 100 credits.
+### Export cost (credits)
+
+| Tier | Retail | Credits |
+|------|--------|---------|
+| **Basic** | €0.05 / lead | 1.0 / lead |
+| **+ Enriched** | + €0.02 / lead | +0.4 / lead |
+| **+ Mail** | + €0.09 / email found | +1.8 / work email found |
+
+Enriched/Mail columns are billing flags today; pipeline enrichment (Harvest/Icypeas) is phase 2.
 
 ## User flow
 
@@ -17,11 +26,13 @@ Retail anchor: **€0.05 / lead** → packs at €5 / 100 credits.
 Connect LinkedIn
   ├─ billing off → Unipile popup (demo, current behaviour)
   └─ billing on
-       ├─ balance = 0 → Stripe Checkout popup (100 credits = €5)
+       ├─ balance = 0 → Stripe Checkout (min pack €20 → 120 credits)
        └─ balance > 0 → Unipile popup (connect-callback.html)
 
 Export CSV
-  └─ POST salesnav-export.php → deduct credits server-side
+  └─ POST salesnav-export.php
+       ├─ tier_enriched / tier_mail in JSON body
+       ├─ deduct cde_credits_export_cost(rows, tiers)
        └─ 402 if insufficient → Stripe Checkout
 ```
 
@@ -29,9 +40,9 @@ Export CSV
 
 | File | Role |
 |------|------|
-| `public/api/_credits.php` | Wallet + ledger (`private/cde/salesnav_wallets.json`) |
+| `public/api/_credits.php` | Wallet, packs, tier cost, bonus grant |
 | `public/api/_stripe.php` | Checkout Session + webhook verify |
-| `public/api/salesnav-credits.php` | GET balance + packs |
+| `public/api/salesnav-credits.php` | GET balance + packs + pricing |
 | `public/api/salesnav-stripe-checkout.php` | POST → Stripe Checkout URL |
 | `public/api/salesnav-stripe-webhook.php` | `checkout.session.completed` → add credits |
 | `public/salesnav/connect-callback.html` | Unipile popup callback → `postMessage` + close |
@@ -59,20 +70,16 @@ SALESNAV_SITE_ORIGIN=https://companydataenrichment.com
 
 ## Credit packs (code)
 
-| Pack ID | Credits | Price |
-|---------|---------|-------|
-| `100` | 100 | €5.00 |
-| `500` | 500 | €25.00 |
-| `1000` | 1000 | €50.00 |
+Defined in `cde_credits_packs()` — `_credits.php`:
 
-Edit `cde_credits_packs()` in `_credits.php` to change.
+| Pack ID | Price | Paid base | Granted (with bonus) |
+|---------|-------|-----------|----------------------|
+| `120` | €20 | 100 | **120** (+20%) |
+| `300` | €50 | 250 | 300 |
+| `600` | €100 | 500 | 600 |
+| `1200` | €200 | 1,000 | 1,200 |
 
-## Phase 2 ideas
-
-- **Hold + settle**: reserve `limit` credits before export, refund delta if fewer rows returned
-- **Tier multipliers**: Enriched +0.4 cr/lead, Mail +1.8 cr/email found
-- **Stripe Customer Portal** for top-ups and invoices
-- **Email login** instead of session-only wallet (tie credits to account)
+Edit pack definitions to change retail tiers.
 
 ## Until Stripe is live
 
