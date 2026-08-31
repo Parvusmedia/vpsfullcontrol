@@ -56,14 +56,14 @@ const I18N = {
     "tiers.basic.body":
       "Sales Navigator list/search export — name, title, company, location, LinkedIn URL and SN metadata.",
     "tiers.enriched.badge": "Enriched",
-    "tiers.enriched.price": "+ €0.03",
+    "tiers.enriched.price": "+ €0.02",
     "tiers.enriched.priceUnit": "/ lead",
     "tiers.enriched.priceNote": "Add-on to Basic",
     "tiers.enriched.title": "Enriched",
     "tiers.enriched.body":
       "Company domain, industry, size, HQ, seniority, tenure, summary, skills and languages.",
     "tiers.mail.badge": "Mail",
-    "tiers.mail.price": "+ €0.12",
+    "tiers.mail.price": "+ €0.09",
     "tiers.mail.priceUnit": "/ email found",
     "tiers.mail.priceNote": "Add-on · pay only when found",
     "tiers.mail.title": "Mail",
@@ -172,14 +172,14 @@ const I18N = {
     "tiers.basic.body":
       "Export de lista/búsqueda SN — nombre, cargo, empresa, ubicación, URL LinkedIn y metadatos SN.",
     "tiers.enriched.badge": "Enriched",
-    "tiers.enriched.price": "+ €0,03",
+    "tiers.enriched.price": "+ €0,02",
     "tiers.enriched.priceUnit": "/ lead",
     "tiers.enriched.priceNote": "Extra sobre Basic",
     "tiers.enriched.title": "Enriched",
     "tiers.enriched.body":
       "Dominio, industria, tamaño, HQ, seniority, antigüedad, resumen, skills e idiomas.",
     "tiers.mail.badge": "Mail",
-    "tiers.mail.price": "+ €0,12",
+    "tiers.mail.price": "+ €0,09",
     "tiers.mail.priceUnit": "/ email encontrado",
     "tiers.mail.priceNote": "Extra · pagas solo si se encuentra",
     "tiers.mail.title": "Mail",

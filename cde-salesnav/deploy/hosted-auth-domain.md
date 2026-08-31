@@ -22,6 +22,23 @@ dig +short connect.companydataenrichment.com CNAME @ns97.piensasolutions.com
 # debe devolver: account.unipile.com.
 ```
 
+### Estado DNS (2026-08-31)
+
+| Resolver / origen | Resultado |
+|-------------------|-----------|
+| `@ns97.piensasolutions.com` | Sin respuesta desde este entorno (timeout en NS autoritativos) |
+| `@8.8.8.8` / `@1.1.1.1` | **NXDOMAIN** — el registro no existe aún en DNS público Piensa |
+| Plesk VPS (`82.223.3.205`) | CNAME `connect` → `account.unipile.com` **configurado** (según deploy previo) |
+
+**Acción pendiente:** crear el CNAME `connect` → `account.unipile.com` en el panel DNS de **Piensa Solutions** (Área de Cliente → dominio → DNS). Hasta que Piensa propague, el white-label Unipile no funcionará fuera del DNS local del VPS.
+
+Verificación rápida cuando esté hecho:
+
+```bash
+host -t CNAME connect.companydataenrichment.com 8.8.8.8
+# connect.companydataenrichment.com is an alias for account.unipile.com.
+```
+
 **Plesk (ya aplicado en el VPS):**
 
 ```bash
