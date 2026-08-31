@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_unipile.php';
+require __DIR__ . '/_credits.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -33,6 +34,9 @@ if (!is_array($payload)) {
 
 $existing = cde_salesnav_session_account();
 $reconnect = !empty($payload['reconnect']) && $existing !== null;
+if (!$reconnect) {
+    cde_credits_require_positive_balance();
+}
 $type = $reconnect ? 'reconnect' : 'create';
 $reconnectId = $reconnect ? (string) $existing['account_id'] : null;
 

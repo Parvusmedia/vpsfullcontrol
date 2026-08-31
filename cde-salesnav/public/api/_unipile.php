@@ -381,8 +381,8 @@ function cde_salesnav_create_hosted_link(string $type = 'create', ?string $recon
         'expiresOn' => $expires,
         'name' => $userId,
         'notify_url' => $origin . '/api/salesnav-unipile-notify.php?token=' . rawurlencode($token),
-        'success_redirect_url' => $origin . '/salesnav/?connected=1',
-        'failure_redirect_url' => $origin . '/salesnav/?connected=0',
+        'success_redirect_url' => $origin . '/salesnav/connect-callback.html?connected=1',
+        'failure_redirect_url' => $origin . '/salesnav/connect-callback.html?connected=0',
         'config' => [
             'linkedin' => [
                 'allow_methods' => ['credentials', 'cookies'],

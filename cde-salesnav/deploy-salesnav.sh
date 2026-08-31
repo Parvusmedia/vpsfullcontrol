@@ -113,9 +113,6 @@ ssh "$REMOTE" "grep -q '.site-nav' $ROOT/styles.css || cat >> $ROOT/styles.css <
   align-items: center;
   gap: 0.75rem;
 }
-@media (max-width: 900px) {
-  .site-nav { display: none; }
-}
 CSS"
 
 echo "==> Patch sitemap.xml"

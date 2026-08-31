@@ -21,6 +21,13 @@ const I18N = {
     "connect.success": "LinkedIn connected. You can export now.",
     "connect.failed": "Connection failed or was cancelled. Try again.",
     "connect.required": "Connect LinkedIn before exporting.",
+    "credits.balance": "{count} export credits available",
+    "credits.required": "Buy export credits first — 1 credit = 1 lead in your CSV.",
+    "credits.buy": "Buy credits",
+    "credits.checkoutOpened": "Stripe checkout opened in a new window. Return here after payment.",
+    "credits.paid": "Credits added. You can connect LinkedIn now.",
+    "credits.cancelled": "Payment cancelled.",
+    "credits.insufficient": "Not enough credits for this export. Buy more credits.",
     "mode.list": "Lead list",
     "mode.search": "People search",
     "form.listLabel": "Sales Navigator list URL",
@@ -137,6 +144,13 @@ const I18N = {
     "connect.success": "LinkedIn conectado. Ya puedes exportar.",
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
     "connect.required": "Conecta LinkedIn antes de exportar.",
+    "credits.balance": "{count} créditos de export disponibles",
+    "credits.required": "Compra créditos primero — 1 crédito = 1 lead en tu CSV.",
+    "credits.buy": "Comprar créditos",
+    "credits.checkoutOpened": "Checkout de Stripe abierto en ventana nueva. Vuelve aquí tras pagar.",
+    "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
+    "credits.cancelled": "Pago cancelado.",
+    "credits.insufficient": "Créditos insuficientes para este export. Compra más créditos.",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
     "form.listLabel": "URL de lista Sales Navigator",
@@ -238,6 +252,8 @@ let lastRows = [];
 let contactChallengeToken = "";
 let isConnected = false;
 let lastConnection = { connected: false, label: "" };
+let billingEnabled = false;
+let creditBalance = 0;
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -323,6 +339,77 @@ function renderConnectionStatus(data) {
   if (reconnectBtn) reconnectBtn.hidden = !isConnected;
 
   setExportGate(isConnected);
+  renderCredits();
+}
+
+function renderCredits() {
+  const el = document.getElementById("connect-credits");
+  const buyBtn = document.getElementById("buy-credits-btn");
+  if (!el) return;
+  if (!billingEnabled) {
+    el.hidden = true;
+    if (buyBtn) buyBtn.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = t("credits.balance", { count: creditBalance });
+  if (buyBtn) buyBtn.hidden = creditBalance > 0;
+}
+
+async function fetchCredits() {
+  try {
+    const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return;
+    billingEnabled = !!data.billing_enabled;
+    creditBalance = Number(data.balance) || 0;
+    renderCredits();
+  } catch {
+    /* optional */
+  }
+}
+
+function openAuthPopup(url, messageType) {
+  const features = "width=520,height=720,menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes";
+  const popup = window.open(url, "salesnav_auth", features);
+  if (!popup) {
+    window.location.href = url;
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("message", onMessage);
+      clearInterval(timer);
+      resolve(value);
+    };
+    const onMessage = (ev) => {
+      if (ev.origin !== window.location.origin) return;
+      if (ev.data?.type !== messageType) return;
+      finish(!!ev.data.ok);
+    };
+    window.addEventListener("message", onMessage);
+    const timer = setInterval(() => {
+      if (popup.closed) finish(null);
+    }, 500);
+  });
+}
+
+async function startStripeCheckout(pack = "100") {
+  const res = await fetch("/api/salesnav-stripe-checkout.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pack }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.ok || !data.url) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  window.open(data.url, "salesnav_stripe", "width=520,height=720,menubar=no,toolbar=no,location=yes,status=no");
+  setNote(t("credits.checkoutOpened"), "ok");
 }
 
 async function fetchConnectionStatus() {
@@ -355,6 +442,11 @@ async function startConnect(reconnect = false) {
   if (active) active.disabled = true;
   setNote(t("connect.starting"), "ok");
   try {
+    if (!reconnect && billingEnabled && creditBalance <= 0) {
+      setNote(t("credits.required"), "ok");
+      await startStripeCheckout("100");
+      return;
+    }
     const res = await fetch("/api/salesnav-connect.php", {
       method: "POST",
       credentials: "same-origin",
@@ -362,12 +454,25 @@ async function startConnect(reconnect = false) {
       body: JSON.stringify({ reconnect }),
     });
     const data = await res.json();
+    if (res.status === 402 && data.needs_payment) {
+      await startStripeCheckout("100");
+      return;
+    }
     if (!res.ok || !data.ok || !data.url) {
       throw new Error(data.error || t("msg.generic"));
     }
-    window.location.href = data.url;
+    const popupOk = await openAuthPopup(data.url, "salesnav-connect");
+    const status = await pollConnectionStatus(12, 1500);
+    if (status.connected) {
+      setNote(t("connect.success"), "ok");
+    } else if (popupOk === false) {
+      setNote(t("connect.failed"), "error");
+    } else if (popupOk === null && !status.connected) {
+      setNote(t("connect.failed"), "error");
+    }
   } catch (err) {
     setNote(err.message || t("msg.generic"), "error");
+  } finally {
     if (active) active.disabled = false;
   }
 }
@@ -410,6 +515,22 @@ function handleConnectQuery() {
     const qs = params.toString();
     const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
     window.history.replaceState({}, "", next);
+  }
+}
+
+function handleCreditsQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const credits = params.get("credits");
+  if (credits === "1") {
+    fetchCredits().then(() => setNote(t("credits.paid"), "ok"));
+    params.delete("credits");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+  } else if (credits === "0") {
+    setNote(t("credits.cancelled"), "error");
+    params.delete("credits");
+    const qs = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
   }
 }
 
@@ -529,6 +650,10 @@ async function runExport() {
     if (res.status === 429) {
       throw new Error(t("msg.rateLimit"));
     }
+    if (res.status === 402 && data.needs_payment) {
+      await startStripeCheckout("100");
+      throw new Error(t("credits.insufficient"));
+    }
     if (data.needs_connect) {
       renderConnectionStatus({ connected: false });
       throw new Error(t("connect.required"));
@@ -541,6 +666,8 @@ async function runExport() {
     if (!lastRows.length) {
       throw new Error(t("msg.empty"));
     }
+
+    await fetchCredits();
 
     renderPreview(lastRows);
     const summary = document.getElementById("results-summary");
@@ -669,10 +796,13 @@ initLang();
 initModeSwitch();
 initContactForm();
 handleConnectQuery();
+handleCreditsQuery();
+fetchCredits();
 fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
 
 document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
 document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
+document.getElementById("buy-credits-btn")?.addEventListener("click", () => startStripeCheckout("100"));
 document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 
 document.getElementById("export-form")?.addEventListener("submit", (e) => {

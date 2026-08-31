@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LinkedIn connection</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1.5rem;
+      text-align: center;
+      color: #1a2b3c;
+      background: #f4f7fb;
+    }
+  </style>
+</head>
+<body>
+  <p id="msg">Finishing connection…</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var ok = params.get("connected") === "1";
+      var msg = document.getElementById("msg");
+      if (ok) {
+        msg.textContent = "LinkedIn connected. Closing window…";
+      } else {
+        msg.textContent = "Connection cancelled or failed. Closing window…";
+      }
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: "salesnav-connect", ok: ok }, location.origin);
+      }
+      setTimeout(function () {
+        window.close();
+      }, 600);
+    })();
+  </script>
+</body>
+</html>

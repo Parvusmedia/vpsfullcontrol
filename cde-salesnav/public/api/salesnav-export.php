@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_unipile.php';
+require __DIR__ . '/_credits.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -65,6 +66,22 @@ if ($rows === []) {
     cde_json_response(404, [
         'ok' => false,
         'error' => 'No leads returned. Check the URL and that your LinkedIn account has access to this list.',
+    ]);
+}
+
+$exportCount = count($rows);
+$userId = cde_salesnav_user_id();
+if (!cde_credits_consume($userId, $exportCount, 'export:' . substr(hash('sha256', $sourceUrl . '|' . $exportCount . '|' . gmdate('Y-m-d-H-i')), 0, 16), [
+    'mode' => $mode,
+    'limit' => $limit,
+    'count' => $exportCount,
+])) {
+    cde_json_response(402, [
+        'ok' => false,
+        'needs_payment' => true,
+        'error' => 'Insufficient export credits for this download.',
+        'balance' => cde_credits_get_balance($userId),
+        'required' => $exportCount,
     ]);
 }
 
