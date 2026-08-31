@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,22 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 BASE = "https://api.unipile.com/v2"
+
+LIST_URL_RE = re.compile(
+    r"linkedin\.com/sales/lists/people/(?P<id>\d+)",
+    re.I,
+)
+
+
+def parse_list_id(value: str) -> str:
+    """Accept raw list id or full Sales Navigator list URL."""
+    value = value.strip()
+    m = LIST_URL_RE.search(value)
+    if m:
+        return m.group("id")
+    if value.isdigit():
+        return value
+    raise SystemExit(f"Invalid list id or URL: {value!r}")
 
 
 def _env(name: str) -> str:
@@ -233,7 +250,11 @@ def main() -> None:
     sub.add_parser("lists", help="List Sales Navigator lead lists for the connected account")
 
     p_list = sub.add_parser("list", help="Export a saved SN lead list")
-    p_list.add_argument("--list-id", required=True)
+    p_list.add_argument(
+        "--list-id",
+        help="List id or full SN list URL (e.g. .../sales/lists/people/7298...)",
+    )
+    p_list.add_argument("--list-url", help="Alias for --list-id when passing a URL")
     p_list.add_argument("--limit", type=int, default=25, help="Max leads (default 25 for safe test)")
     p_list.add_argument("--out", type=Path, default=Path("/opt/cursor/artifacts/navexport_test.csv"))
 
@@ -251,7 +272,12 @@ def main() -> None:
     elif args.cmd == "lists":
         cmd_lists(api_key, account_id)
     elif args.cmd == "list":
-        cmd_list_export(api_key, account_id, args.list_id, args.limit, args.out)
+        raw = args.list_id or args.list_url
+        if not raw:
+            print("Provide --list-id or --list-url", file=sys.stderr)
+            sys.exit(1)
+        list_id = parse_list_id(raw)
+        cmd_list_export(api_key, account_id, list_id, args.limit, args.out)
     elif args.cmd == "search":
         cmd_search_export(api_key, account_id, args.url, args.limit, args.out)
 
