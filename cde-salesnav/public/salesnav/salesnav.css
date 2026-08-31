@@ -194,8 +194,7 @@
 }
 
 .sn-output {
-  max-height: 22rem;
-  overflow: auto;
+  overflow: visible;
 }
 
 .sn-fields-legend {
@@ -216,21 +215,21 @@
 }
 
 .sn-legend-basic {
-  background: var(--sn-tier-basic-bg, rgba(10, 102, 194, 0.12));
-  color: var(--sn-tier-basic-fg, #004182);
-  border-color: rgba(10, 102, 194, 0.22);
+  background: var(--sn-tier-basic-bg);
+  color: var(--sn-tier-basic-fg);
+  border-color: var(--sn-tier-basic-border);
 }
 
 .sn-legend-enriched {
-  background: var(--sn-tier-enriched-bg, rgba(31, 111, 106, 0.14));
-  color: var(--sn-tier-enriched-fg, #14343a);
-  border-color: rgba(31, 111, 106, 0.28);
+  background: var(--sn-tier-enriched-bg);
+  color: var(--sn-tier-enriched-fg);
+  border-color: var(--sn-tier-enriched-border);
 }
 
 .sn-legend-mail {
-  background: var(--sn-tier-mail-bg, rgba(196, 92, 38, 0.14));
-  color: var(--sn-tier-mail-fg, #8a3d12);
-  border-color: rgba(196, 92, 38, 0.28);
+  background: var(--sn-tier-mail-bg);
+  color: var(--sn-tier-mail-fg);
+  border-color: var(--sn-tier-mail-border);
 }
 
 .sn-fields {
@@ -244,15 +243,15 @@
 .sn-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
-  padding: 0.28rem 0.45rem;
+  gap: 0.3rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 2px;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.14rem;
 }
 
 .sn-field-row span {
   font-family: ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -265,24 +264,27 @@
 }
 
 .sn-field-row.tier-basic {
-  background: var(--sn-tier-basic-bg, rgba(10, 102, 194, 0.1));
+  background: var(--sn-tier-basic-bg);
 }
 
 .sn-field-row.tier-enriched {
-  background: var(--sn-tier-enriched-bg, rgba(31, 111, 106, 0.12));
+  background: var(--sn-tier-enriched-bg);
 }
 
 .sn-field-row.tier-mail {
-  background: var(--sn-tier-mail-bg, rgba(196, 92, 38, 0.12));
+  background: var(--sn-tier-mail-bg);
 }
 
-body.product-salesnav {
-  --sn-tier-basic-bg: rgba(10, 102, 194, 0.11);
-  --sn-tier-basic-fg: #004182;
-  --sn-tier-enriched-bg: rgba(20, 52, 58, 0.09);
-  --sn-tier-enriched-fg: #14343a;
-  --sn-tier-mail-bg: rgba(196, 92, 38, 0.13);
-  --sn-tier-mail-fg: #8a3d12;
+:root {
+  --sn-tier-basic-bg: #dceaf8;
+  --sn-tier-basic-fg: #0a66c2;
+  --sn-tier-basic-border: #9ec5e8;
+  --sn-tier-enriched-bg: #dff3e4;
+  --sn-tier-enriched-fg: #1b5e20;
+  --sn-tier-enriched-border: #81c784;
+  --sn-tier-mail-bg: #fdebd6;
+  --sn-tier-mail-fg: #bf360c;
+  --sn-tier-mail-border: #ffb74d;
 }
 
 .tier-grid {
