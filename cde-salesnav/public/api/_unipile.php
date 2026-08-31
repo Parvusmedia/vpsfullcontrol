@@ -61,6 +61,9 @@ function cde_unipile_api_config(?string $accountId = null): array
         'dsn_url' => cde_unipile_dsn_url($base),
         'notify_secret' => (string) ($env['SALESNAV_NOTIFY_SECRET'] ?? ''),
         'site_origin' => (string) ($env['SALESNAV_SITE_ORIGIN'] ?? 'https://companydataenrichment.com'),
+        'hosted_auth_domain' => cde_salesnav_normalize_hosted_auth_domain(
+            (string) ($env['SALESNAV_HOSTED_AUTH_DOMAIN'] ?? getenv('SALESNAV_HOSTED_AUTH_DOMAIN') ?: '')
+        ),
     ];
 }
 
@@ -80,6 +83,69 @@ function cde_unipile_dsn_url(string $apiBase): string
         return substr($base, 0, -3);
     }
     return $base;
+}
+
+/** Hostname only, no scheme or path (e.g. connect.companydataenrichment.com). */
+function cde_salesnav_normalize_hosted_auth_domain(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+    $value = preg_replace('#^https?://#i', '', $value) ?? $value;
+    $value = rtrim($value, '/');
+    if (!preg_match('/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i', $value)) {
+        return '';
+    }
+    return strtolower($value);
+}
+
+/**
+ * Replace Unipile hosted-auth host with our white-label subdomain.
+ * @see https://developer.unipile.com/docs/hosted-auth#custom-domain-url-white-label
+ */
+function cde_salesnav_rewrite_hosted_auth_url(string $url, ?string $domain = null): string
+{
+    $domain = cde_salesnav_normalize_hosted_auth_domain($domain ?? '');
+    if ($domain === '' || $url === '') {
+        return $url;
+    }
+
+    $parts = parse_url($url);
+    if (!is_array($parts) || empty($parts['host'])) {
+        return $url;
+    }
+
+    $host = strtolower((string) $parts['host']);
+    $unipileHosts = ['account.unipile.com', 'auth.unipile.com'];
+    if (!in_array($host, $unipileHosts, true)) {
+        return $url;
+    }
+
+    $parts['scheme'] = 'https';
+    $parts['host'] = $domain;
+
+    $rewritten = cde_salesnav_build_url($parts);
+    return $rewritten !== '' ? $rewritten : $url;
+}
+
+function cde_salesnav_build_url(array $parts): string
+{
+    $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+    $host = (string) ($parts['host'] ?? '');
+    if ($host === '') {
+        return '';
+    }
+
+    $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+    $user = (string) ($parts['user'] ?? '');
+    $pass = isset($parts['pass']) ? ':' . $parts['pass'] : '';
+    $auth = $user !== '' ? $user . $pass . '@' : '';
+    $path = (string) ($parts['path'] ?? '');
+    $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+    $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+    return $scheme . $auth . $host . $port . $path . $query . $fragment;
 }
 
 function cde_salesnav_private_dir(): string
@@ -291,6 +357,8 @@ function cde_salesnav_create_hosted_link(string $type = 'create', ?string $recon
             'error' => 'Unipile did not return a connection URL.',
         ]);
     }
+
+    $url = cde_salesnav_rewrite_hosted_auth_url($url, $config['hosted_auth_domain'] ?? '');
 
     return ['url' => $url, 'user_id' => $userId];
 }
