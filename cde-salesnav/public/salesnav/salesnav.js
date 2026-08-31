@@ -46,16 +46,29 @@ const I18N = {
     "col.company": "Company",
     "col.location": "Location",
     "tiers.title": "Modular tiers",
-    "tiers.lede": "Start with a simple CSV export. Add enrichment or verified email only when you need it.",
-    "tiers.simple.title": "Simple",
-    "tiers.simple.body":
-      "List/search export via Sales Navigator — name, title, company, location, LinkedIn URL. <strong>Available now</strong> on this page.",
+    "tiers.lede":
+      "Start with Basic export pricing. Add Enriched or Mail only when you need those columns — same colors as the CSV preview above.",
+    "tiers.basic.badge": "Basic",
+    "tiers.basic.price": "€0.05",
+    "tiers.basic.priceUnit": "/ lead",
+    "tiers.basic.priceNote": "Base export · available now",
+    "tiers.basic.title": "Basic",
+    "tiers.basic.body":
+      "Sales Navigator list/search export — name, title, company, location, LinkedIn URL and SN metadata.",
+    "tiers.enriched.badge": "Enriched",
+    "tiers.enriched.price": "+ €0.03",
+    "tiers.enriched.priceUnit": "/ lead",
+    "tiers.enriched.priceNote": "Add-on to Basic",
     "tiers.enriched.title": "Enriched",
     "tiers.enriched.body":
-      "Adds profile and company fields from public sources. Request access — we enable it on your account.",
-    "tiers.email.title": "Enriched + email",
-    "tiers.email.body":
-      "Work email discovery with pay-per-found pricing. Best for outbound teams that need inbox-ready lists.",
+      "Company domain, industry, size, HQ, seniority, tenure, summary, skills and languages.",
+    "tiers.mail.badge": "Mail",
+    "tiers.mail.price": "+ €0.12",
+    "tiers.mail.priceUnit": "/ email found",
+    "tiers.mail.priceNote": "Add-on · pay only when found",
+    "tiers.mail.title": "Mail",
+    "tiers.mail.body":
+      "Work email discovery with status, confidence and source — ideal for outbound teams.",
     "pricing.kicker": "Volume & API",
     "pricing.title": "Need higher limits or automation?",
     "pricing.lede":
@@ -74,9 +87,9 @@ const I18N = {
     "contact.volume3k10k": "3,000 – 10,000",
     "contact.volume10k": "10,000+",
     "contact.tier": "Tier interest",
-    "contact.tierSimple": "Simple export",
-    "contact.tierEnriched": "Enriched",
-    "contact.tierEmail": "Enriched + email",
+    "contact.tierBasic": "Basic export",
+    "contact.tierEnriched": "Basic + Enriched",
+    "contact.tierMail": "Basic + Enriched + Mail",
     "contact.captcha": "Anti-spam",
     "contact.submit": "Send request",
     "contact.privacy":
@@ -149,16 +162,29 @@ const I18N = {
     "col.company": "Empresa",
     "col.location": "Ubicación",
     "tiers.title": "Tiers modulares",
-    "tiers.lede": "Empieza con export CSV simple. Añade enriquecimiento o email verificado solo si lo necesitas.",
-    "tiers.simple.title": "Simple",
-    "tiers.simple.body":
-      "Export de lista/búsqueda SN — nombre, cargo, empresa, ubicación, URL LinkedIn. <strong>Disponible ya</strong> en esta página.",
-    "tiers.enriched.title": "Enriquecida",
+    "tiers.lede":
+      "Empieza con el precio Basic. Añade Enriched o Mail solo si necesitas esas columnas — mismos colores que el preview CSV de arriba.",
+    "tiers.basic.badge": "Basic",
+    "tiers.basic.price": "€0,05",
+    "tiers.basic.priceUnit": "/ lead",
+    "tiers.basic.priceNote": "Export base · disponible ya",
+    "tiers.basic.title": "Basic",
+    "tiers.basic.body":
+      "Export de lista/búsqueda SN — nombre, cargo, empresa, ubicación, URL LinkedIn y metadatos SN.",
+    "tiers.enriched.badge": "Enriched",
+    "tiers.enriched.price": "+ €0,03",
+    "tiers.enriched.priceUnit": "/ lead",
+    "tiers.enriched.priceNote": "Extra sobre Basic",
+    "tiers.enriched.title": "Enriched",
     "tiers.enriched.body":
-      "Añade campos de perfil y empresa desde fuentes públicas. Pide acceso — lo activamos en tu cuenta.",
-    "tiers.email.title": "Enriquecida + email",
-    "tiers.email.body":
-      "Descubrimiento de email laboral con pago por email encontrado. Ideal para equipos de outbound.",
+      "Dominio, industria, tamaño, HQ, seniority, antigüedad, resumen, skills e idiomas.",
+    "tiers.mail.badge": "Mail",
+    "tiers.mail.price": "+ €0,12",
+    "tiers.mail.priceUnit": "/ email encontrado",
+    "tiers.mail.priceNote": "Extra · pagas solo si se encuentra",
+    "tiers.mail.title": "Mail",
+    "tiers.mail.body":
+      "Email laboral con status, confianza y fuente — ideal para equipos de outbound.",
     "pricing.kicker": "Volumen y API",
     "pricing.title": "¿Necesitas más límite o automatización?",
     "pricing.lede":
@@ -177,9 +203,9 @@ const I18N = {
     "contact.volume3k10k": "3.000 – 10.000",
     "contact.volume10k": "10.000+",
     "contact.tier": "Tier de interés",
-    "contact.tierSimple": "Export simple",
-    "contact.tierEnriched": "Enriquecida",
-    "contact.tierEmail": "Enriquecida + email",
+    "contact.tierBasic": "Export Basic",
+    "contact.tierEnriched": "Basic + Enriched",
+    "contact.tierMail": "Basic + Enriched + Mail",
     "contact.captcha": "Anti-spam",
     "contact.submit": "Enviar solicitud",
     "contact.privacy":
@@ -583,7 +609,7 @@ function initContactForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     setContactNote("", "ok");
-    const tier = document.getElementById("contact-tier")?.value || "simple";
+    const tier = document.getElementById("contact-tier")?.value || "basic";
     const volume = document.getElementById("contact-volume")?.value || "";
     const message = `Sales Navigator export · tier: ${tier}`;
 

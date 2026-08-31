@@ -296,19 +296,89 @@
 
 .tier-card {
   padding: 1.1rem 1.15rem;
-  border: 1.5px solid var(--line);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid transparent;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.tier-card.is-featured {
-  border-color: var(--teal);
-  background: rgba(31, 111, 106, 0.08);
+.tier-card.tier-basic {
+  background: var(--sn-tier-basic-bg);
+  border-color: var(--sn-tier-basic-border);
+}
+
+.tier-card.tier-enriched {
+  background: var(--sn-tier-enriched-bg);
+  border-color: var(--sn-tier-enriched-border);
+}
+
+.tier-card.tier-mail {
+  background: var(--sn-tier-mail-bg);
+  border-color: var(--sn-tier-mail-border);
+}
+
+.tier-card .sn-legend-item {
+  align-self: flex-start;
+  margin-bottom: 0.55rem;
+}
+
+.tier-price {
+  margin: 0;
+  font-family: var(--font-display);
+  line-height: 1.1;
+}
+
+.tier-price-amount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.tier-card.tier-basic .tier-price-amount {
+  color: var(--sn-tier-basic-fg);
+}
+
+.tier-card.tier-enriched .tier-price-amount {
+  color: var(--sn-tier-enriched-fg);
+}
+
+.tier-card.tier-mail .tier-price-amount {
+  color: var(--sn-tier-mail-fg);
+}
+
+.tier-price-unit {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.tier-price-note {
+  margin: 0.35rem 0 0.85rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 .tier-card h3 {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.45rem;
   font-family: var(--font-display);
   font-size: 1rem;
+}
+
+.tier-card.tier-basic h3 {
+  color: var(--sn-tier-basic-fg);
+}
+
+.tier-card.tier-enriched h3 {
+  color: var(--sn-tier-enriched-fg);
+}
+
+.tier-card.tier-mail h3 {
+  color: var(--sn-tier-mail-fg);
 }
 
 .tier-card p {

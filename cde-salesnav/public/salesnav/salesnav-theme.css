@@ -117,11 +117,6 @@ body.product-salesnav .preview-table th {
   background: var(--sn-tint);
 }
 
-body.product-salesnav .tier-card.is-featured {
-  border-color: var(--teal);
-  background: var(--sn-tint);
-}
-
 body.product-salesnav .site-nav a.is-active {
   color: var(--teal-deep);
   border-color: var(--teal);

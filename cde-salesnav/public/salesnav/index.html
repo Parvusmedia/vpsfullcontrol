@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=24" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=6" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=7" />
   <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
@@ -197,17 +197,35 @@
         Start with a simple CSV export. Add enrichment or verified email only when you need it.
       </p>
       <div class="tier-grid">
-        <article class="tier-card is-featured">
-          <h3 data-i18n="tiers.simple.title">Simple</h3>
-          <p data-i18n="tiers.simple.body">List/search export via Sales Navigator — name, title, company, location, LinkedIn URL. <strong>Available now</strong> on this page.</p>
+        <article class="tier-card tier-basic">
+          <span class="sn-legend-item sn-legend-basic" data-i18n="tiers.basic.badge">Basic</span>
+          <p class="tier-price">
+            <span class="tier-price-amount" data-i18n="tiers.basic.price">€0.05</span>
+            <span class="tier-price-unit" data-i18n="tiers.basic.priceUnit">/ lead</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.basic.priceNote">Base export · available now</p>
+          <h3 data-i18n="tiers.basic.title">Basic</h3>
+          <p data-i18n="tiers.basic.body">Sales Navigator list/search export — name, title, company, location, LinkedIn URL and SN metadata.</p>
         </article>
-        <article class="tier-card">
+        <article class="tier-card tier-enriched">
+          <span class="sn-legend-item sn-legend-enriched" data-i18n="tiers.enriched.badge">Enriched</span>
+          <p class="tier-price">
+            <span class="tier-price-amount tier-price-addon" data-i18n="tiers.enriched.price">+ €0.03</span>
+            <span class="tier-price-unit" data-i18n="tiers.enriched.priceUnit">/ lead</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.enriched.priceNote">Add-on to Basic</p>
           <h3 data-i18n="tiers.enriched.title">Enriched</h3>
-          <p data-i18n="tiers.enriched.body">Adds profile and company fields from public sources. Request access — we enable it on your account.</p>
+          <p data-i18n="tiers.enriched.body">Company domain, industry, size, HQ, seniority, tenure, summary, skills and languages.</p>
         </article>
-        <article class="tier-card">
-          <h3 data-i18n="tiers.email.title">Enriched + email</h3>
-          <p data-i18n="tiers.email.body">Work email discovery with pay-per-found pricing. Best for outbound teams that need inbox-ready lists.</p>
+        <article class="tier-card tier-mail">
+          <span class="sn-legend-item sn-legend-mail" data-i18n="tiers.mail.badge">Mail</span>
+          <p class="tier-price">
+            <span class="tier-price-amount tier-price-addon" data-i18n="tiers.mail.price">+ €0.12</span>
+            <span class="tier-price-unit" data-i18n="tiers.mail.priceUnit">/ email found</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.mail.priceNote">Add-on · pay only when found</p>
+          <h3 data-i18n="tiers.mail.title">Mail</h3>
+          <p data-i18n="tiers.mail.body">Work email discovery with status, confidence and source — ideal for outbound teams.</p>
         </article>
       </div>
     </section>
@@ -253,9 +271,9 @@
           <label>
             <span data-i18n="contact.tier">Tier interest</span>
             <select name="tier" id="contact-tier">
-              <option value="simple" data-i18n="contact.tierSimple">Simple export</option>
-              <option value="enriched" data-i18n="contact.tierEnriched">Enriched</option>
-              <option value="email" data-i18n="contact.tierEmail">Enriched + email</option>
+              <option value="basic" data-i18n="contact.tierBasic">Basic export</option>
+              <option value="enriched" data-i18n="contact.tierEnriched">Basic + Enriched</option>
+              <option value="mail" data-i18n="contact.tierMail">Basic + Enriched + Mail</option>
             </select>
           </label>
           <label class="captcha-row">
@@ -309,6 +327,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=2"></script>
+  <script src="/salesnav/salesnav.js?v=4"></script>
 </body>
 </html>
