@@ -78,8 +78,9 @@
 }
 
 .salesnav-main .hero {
+  align-items: start;
   min-height: auto;
-  padding-bottom: 2rem;
+  padding: 0 0 3rem;
 }
 
 .salesnav-note {
