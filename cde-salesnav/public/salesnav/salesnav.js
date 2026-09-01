@@ -236,7 +236,7 @@ const I18N = {
     "trust.p2":
       "Los datos son auxiliares para prospección. Revísalos antes de importar al CRM o contactar; respeta los términos de LinkedIn y la normativa de privacidad.",
     "trust.p3":
-      "Hay límites de demo en esta página. Clientes de volumen reciben límites dedicados (~2.000/día por seat SN).",
+      "Los créditos se consumen por export. Aplican límites diarios de LinkedIn (~2.000/día por seat SN). Agencias con varias cuentas pueden contactarnos abajo.",
     "trust.privacy": "Términos y privacidad",
     "footer.tag": "Enriquecimiento de empresas · Export Sales Navigator",
     "footer.privacy": "Privacidad",
