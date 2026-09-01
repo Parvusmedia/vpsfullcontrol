@@ -233,6 +233,9 @@ function cde_credits_consume(string $userId, int $amount, string $ref, array $me
     if (!cde_credits_billing_enabled()) {
         return true;
     }
+    if (cde_credits_ledger_has_ref($ref)) {
+        return true;
+    }
     $wallets = cde_credits_load_wallets();
     $prev = max(0, (int) ($wallets[$userId]['balance'] ?? 0));
     if ($prev < $amount) {
@@ -252,6 +255,18 @@ function cde_credits_consume(string $userId, int $amount, string $ref, array $me
         'meta' => $meta,
     ]);
     return true;
+}
+
+function cde_credits_refund(string $userId, int $amount, string $ref, array $meta = []): int
+{
+    if ($amount <= 0 || !cde_credits_billing_enabled()) {
+        return cde_credits_get_balance($userId);
+    }
+    if (cde_credits_ledger_has_ref($ref)) {
+        return cde_credits_get_balance($userId);
+    }
+
+    return cde_credits_add($userId, $amount, $ref, $meta);
 }
 
 /** @return array{basic: bool, enriched: bool, mail: bool} */

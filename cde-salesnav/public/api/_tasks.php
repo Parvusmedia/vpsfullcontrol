@@ -423,6 +423,9 @@ function cde_tasks_run(string $taskId): void
         $accountId = (string) $linked['account_id'];
     }
 
+    $creditsCharged = 0;
+    $exportRef = 'export:' . $taskId;
+
     try {
         $config = cde_unipile_api_config($accountId);
         $sourceUrl = (string) ($task['source_url'] ?? '');
@@ -463,15 +466,17 @@ function cde_tasks_run(string $taskId): void
             throw new RuntimeException('Insufficient export credits.');
         }
 
-        if (!cde_credits_consume($userId, $creditCost, 'export:' . $taskId, [
+        cde_tasks_write_csv($taskId, $rows, $tiers);
+
+        if (!cde_credits_consume($userId, $creditCost, $exportRef, [
             'task_id' => $taskId,
             'count' => count($rows),
             'credit_cost' => $creditCost,
         ])) {
             throw new RuntimeException('Insufficient export credits.');
         }
+        $creditsCharged = $creditCost;
 
-        cde_tasks_write_csv($taskId, $rows, $tiers);
         $emailsFound = 0;
         if (!empty($tiers['mail'])) {
             foreach ($rows as $row) {
@@ -500,9 +505,21 @@ function cde_tasks_run(string $taskId): void
             cde_salesnav_mark_account_stale($userId, $msg);
             $msg = cde_salesnav_stale_account_message();
         }
+        if ($creditsCharged > 0) {
+            cde_credits_refund($userId, $creditsCharged, 'refund:' . $exportRef, [
+                'task_id' => $taskId,
+                'reason' => $msg,
+            ]);
+        }
+        $csvPath = cde_tasks_csv_path($taskId);
+        if (is_file($csvPath)) {
+            @unlink($csvPath);
+        }
         cde_tasks_update($taskId, [
             'status' => 'failed',
             'error' => $msg,
+            'credits_used' => 0,
+            'lead_count' => 0,
             'completed_at' => gmdate('c'),
         ]);
         $task['error'] = $msg;
