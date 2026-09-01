@@ -9,9 +9,8 @@ declare(strict_types=1);
 $docroot = '/var/www/vhosts/companydataenrichment.com/httpdocs';
 $private = '/var/www/vhosts/companydataenrichment.com/private/cde';
 
-require $docroot . '/api/_bootstrap.php';
-require $docroot . '/api/_stripe.php';
-require $docroot . '/api/_credits.php';
+require_once $docroot . '/api/_bootstrap.php';
+require_once $docroot . '/api/_stripe.php';
 
 $userId = cde_salesnav_user_id();
 $before = cde_credits_get_balance($userId);

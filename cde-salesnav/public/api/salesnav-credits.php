@@ -52,6 +52,6 @@ cde_json_response(200, [
         'basic_per_lead_eur' => 0.05,
         'enriched_extra_eur' => 0.02,
         'mail_extra_eur' => 0.09,
-        'note' => 'Credits per export: Basic 1/lead; +Enriched +0.4/lead; +Mail +1.8 per work email found.',
+        'note' => 'Credits per export: Basic 1/lead; +Enriched +0.4/lead; +Mail +1 per work email found.',
     ],
 ]);

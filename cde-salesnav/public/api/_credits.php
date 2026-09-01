@@ -234,7 +234,7 @@ function cde_credits_parse_tiers(array $payload): array
 }
 
 /**
- * Cost in credits for an export (Basic=1, +Enriched=0.4/lead, +Mail=1.8/email found).
+ * Cost in credits for an export (Basic=1, +Enriched=0.4/lead, +Mail=1/email found).
  *
  * @param list<array<string, mixed>> $rows
  */
