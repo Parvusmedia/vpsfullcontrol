@@ -52,6 +52,43 @@
           Connect your LinkedIn account with Sales Navigator, then paste a list or search URL. Demo exports up to <strong>25 leads</strong> free.
         </p>
 
+        <section class="account-panel" id="account-panel" hidden aria-live="polite">
+          <div class="account-head">
+            <h2 data-i18n="account.title">Account</h2>
+            <span class="account-badge" id="account-badge" hidden data-i18n="account.signedIn">Signed in</span>
+          </div>
+          <p class="account-balance" id="account-balance"></p>
+          <p class="account-email" id="account-email-line" hidden></p>
+          <p class="account-copy muted" id="account-session-note" data-i18n="credits.accountNote">
+            Credits are linked to your email. Sign in with the same email on any device to restore your balance.
+          </p>
+          <div class="account-signin" id="account-signin-wrap">
+            <label class="account-field" id="account-email-wrap">
+              <span data-i18n="credits.email">Work email</span>
+              <input id="billing-email" name="billing_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
+            </label>
+            <details class="account-restore" id="account-restore-wrap">
+              <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
+              <div class="account-restore-body">
+                <label class="account-field">
+                  <span data-i18n="credits.email">Work email</span>
+                  <input id="restore-email" name="restore_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
+                </label>
+                <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
+              </div>
+            </details>
+          </div>
+          <label class="account-field account-pack" id="account-pack-wrap">
+            <span data-i18n="credits.pack">Credit pack</span>
+            <select id="credit-pack" name="credit_pack"></select>
+          </label>
+          <div class="account-actions">
+            <button type="button" class="connect-btn" id="buy-credits-btn" data-i18n="credits.load">Top up (from €20)</button>
+            <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
+          </div>
+          <p class="account-note" id="account-note" hidden aria-live="polite"></p>
+        </section>
+
         <section class="connect-panel" id="connect-panel" aria-live="polite">
           <div class="connect-head">
             <h2 data-i18n="connect.title">LinkedIn connection</h2>
@@ -60,32 +97,8 @@
           <p class="connect-copy" id="connect-copy" data-i18n="connect.body">
             Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.
           </p>
-          <p class="connect-credits" id="connect-credits" hidden></p>
-          <p class="connect-account" id="connect-account" hidden></p>
-          <p class="connect-session-note muted" id="connect-session-note" hidden data-i18n="credits.accountNote">
-            Credits are linked to your email. Sign in with the same email on any device to restore your balance.
-          </p>
-          <label class="connect-email" id="connect-email-wrap" hidden>
-            <span data-i18n="credits.email">Work email</span>
-            <input id="billing-email" name="billing_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
-          </label>
-          <details class="connect-restore" id="connect-restore-wrap" hidden>
-            <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
-            <div class="connect-restore-body">
-              <label class="connect-email">
-                <span data-i18n="credits.email">Work email</span>
-                <input id="restore-email" name="restore_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
-              </label>
-              <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
-            </div>
-          </details>
-          <label class="connect-pack" id="connect-pack-wrap" hidden>
-            <span data-i18n="credits.pack">Credit pack</span>
-            <select id="credit-pack" name="credit_pack"></select>
-          </label>
           <div class="connect-actions connect-actions-billing" id="connect-actions-billing">
-            <button type="button" class="connect-btn" id="buy-credits-btn" data-i18n="credits.load">Top up (from €20)</button>
-            <button type="button" class="ghost-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
+            <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
           </div>
           <div class="connect-actions" id="connect-actions-demo" hidden>
             <button type="button" class="connect-btn" id="connect-btn-demo" data-i18n="connect.cta">Connect LinkedIn</button>
@@ -93,7 +106,6 @@
           <div class="connect-actions connect-actions-connected" id="connect-actions-connected" hidden>
             <button type="button" class="ghost-btn" id="disconnect-btn" hidden data-i18n="connect.disconnect">Disconnect</button>
             <button type="button" class="ghost-btn" id="reconnect-btn" hidden data-i18n="connect.reconnect">Reconnect</button>
-            <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
           </div>
           <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
         </section>
@@ -361,6 +373,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=18"></script>
+  <script src="/salesnav/salesnav.js?v=19"></script>
 </body>
 </html>

@@ -21,6 +21,9 @@ const I18N = {
     "connect.success": "LinkedIn connected. You can export now.",
     "connect.failed": "Connection failed or was cancelled. Try again.",
     "connect.required": "Connect LinkedIn before exporting.",
+    "account.title": "Account",
+    "account.signedIn": "Signed in",
+    "account.emailLabel": "Email",
     "credits.balance": "{count} export credits available",
     "credits.load": "Top up (from €20)",
     "credits.loadMore": "Load more credits",
@@ -160,6 +163,9 @@ const I18N = {
     "connect.success": "LinkedIn conectado. Ya puedes exportar.",
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
     "connect.required": "Conecta LinkedIn antes de exportar.",
+    "account.title": "Cuenta",
+    "account.signedIn": "Sesión iniciada",
+    "account.emailLabel": "Email",
     "credits.balance": "{count} créditos de export disponibles",
     "credits.load": "Recargar (desde €20)",
     "credits.loadMore": "Cargar más créditos",
@@ -356,14 +362,30 @@ function initLang() {
 
 function setNote(text, tone = "ok", scope = "auto") {
   const exportGateHidden = document.getElementById("export-gate")?.hidden !== false;
-  const preferConnect = scope === "connect" || (scope === "auto" && exportGateHidden);
-  const note = preferConnect
-    ? document.getElementById("connect-note") || document.getElementById("form-note")
-    : document.getElementById("form-note") || document.getElementById("connect-note");
+  let note;
+  if (scope === "account") {
+    note = document.getElementById("account-note");
+  } else if (scope === "connect") {
+    note = document.getElementById("connect-note");
+  } else if (scope === "export") {
+    note = document.getElementById("form-note");
+  } else if (exportGateHidden) {
+    note = document.getElementById("account-note") || document.getElementById("connect-note") || document.getElementById("form-note");
+  } else {
+    note = document.getElementById("form-note") || document.getElementById("account-note") || document.getElementById("connect-note");
+  }
   if (!note) return;
   note.hidden = !text;
   note.dataset.tone = tone;
   note.textContent = text || "";
+}
+
+function setAccountNote(text, tone = "ok") {
+  setNote(text, tone, "account");
+}
+
+function setConnectNote(text, tone = "ok") {
+  setNote(text, tone, "connect");
 }
 
 function setExportGate(visible) {
@@ -399,8 +421,6 @@ function renderConnectionStatus(data) {
 
   if (copy && isConnected && data.label) {
     copy.textContent = t("connect.connectedAs", { label: data.label });
-  } else if (copy && billingEnabled && !isConnected) {
-    copy.textContent = creditBalance > 0 ? t("connect.body") : t("credits.connectNeedsBalance");
   } else if (copy) {
     copy.innerHTML = t("connect.body");
   }
@@ -412,42 +432,51 @@ function renderConnectionStatus(data) {
   if (reconnectBtn) reconnectBtn.hidden = !isConnected;
 
   setExportGate(isConnected);
-  renderCredits();
+  renderAccount();
 }
 
-function renderCredits() {
-  const el = document.getElementById("connect-credits");
-  const accountEl = document.getElementById("connect-account");
-  const connectBtn = document.getElementById("connect-btn");
+function renderAccount() {
+  const panel = document.getElementById("account-panel");
+  const balanceEl = document.getElementById("account-balance");
+  const emailLine = document.getElementById("account-email-line");
+  const badge = document.getElementById("account-badge");
+  const signinWrap = document.getElementById("account-signin-wrap");
+  const emailWrap = document.getElementById("account-email-wrap");
+  const restoreWrap = document.getElementById("account-restore-wrap");
+  const packWrap = document.getElementById("account-pack-wrap");
+  const buyBtn = document.getElementById("buy-credits-btn");
   const buyMoreBtn = document.getElementById("buy-more-btn");
-  const sessionNote = document.getElementById("connect-session-note");
-  const emailWrap = document.getElementById("connect-email-wrap");
-  const restoreWrap = document.getElementById("connect-restore-wrap");
-  const packWrap = document.getElementById("connect-pack-wrap");
-  if (!el) return;
+  const connectBtn = document.getElementById("connect-btn");
+
+  if (!panel || !balanceEl) return;
+
   if (!billingEnabled) {
-    el.hidden = true;
-    if (accountEl) accountEl.hidden = true;
-    if (sessionNote) sessionNote.hidden = true;
-    if (emailWrap) emailWrap.hidden = true;
-    if (restoreWrap) restoreWrap.hidden = true;
-    if (packWrap) packWrap.hidden = true;
+    panel.hidden = true;
     if (connectBtn) {
       connectBtn.disabled = false;
       connectBtn.removeAttribute("aria-disabled");
     }
     return;
   }
-  el.hidden = false;
-  el.textContent = t("credits.balance", { count: creditBalance });
-  if (accountEl) {
-    accountEl.hidden = !accountEmail;
-    accountEl.textContent = accountEmail ? t("credits.accountLinked", { email: accountEmail }) : "";
+
+  panel.hidden = false;
+  balanceEl.textContent = t("credits.balance", { count: creditBalance });
+
+  const signedIn = !!accountEmail;
+  if (badge) badge.hidden = !signedIn;
+  if (emailLine) {
+    emailLine.hidden = !signedIn;
+    emailLine.textContent = signedIn ? `${t("account.emailLabel")}: ${accountEmail}` : "";
   }
-  if (sessionNote) sessionNote.hidden = false;
-  if (emailWrap) emailWrap.hidden = isConnected || !!accountEmail;
-  if (restoreWrap) restoreWrap.hidden = isConnected || !!accountEmail;
-  if (packWrap) packWrap.hidden = isConnected;
+  if (signinWrap) signinWrap.hidden = signedIn;
+  if (emailWrap) emailWrap.hidden = signedIn;
+  if (restoreWrap) restoreWrap.hidden = signedIn;
+  if (packWrap) packWrap.hidden = false;
+  if (buyBtn) {
+    buyBtn.hidden = false;
+    buyBtn.textContent = signedIn && creditBalance > 0 ? t("credits.loadMore") : t("credits.load");
+  }
+  if (buyMoreBtn) buyMoreBtn.hidden = true;
 
   const billingEmail = document.getElementById("billing-email");
   if (billingEmail && accountEmail && !billingEmail.value) {
@@ -459,7 +488,10 @@ function renderCredits() {
     connectBtn.disabled = !hasCredits;
     connectBtn.setAttribute("aria-disabled", hasCredits ? "false" : "true");
   }
-  if (buyMoreBtn) buyMoreBtn.hidden = !isConnected;
+}
+
+function renderCredits() {
+  renderAccount();
 }
 
 function renderCreditPacks(packs) {
@@ -562,7 +594,7 @@ async function startStripeCheckout(pack = defaultPackId) {
   const emailInput = document.getElementById("billing-email");
   const email = (emailInput?.value || accountEmail || "").trim();
   if (!email) {
-    setNote(t("credits.emailRequired"), "error");
+    setAccountNote(t("credits.emailRequired"), "error");
     emailInput?.focus();
     return;
   }
@@ -589,7 +621,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     accountEmail = result.email || accountEmail;
     await fetchCredits();
     const added = Number(result.credits_added) || Math.max(0, creditBalance - (Number(sessionStorage.getItem("sn_pre_balance")) || 0));
-    setNote(t("credits.paidWithEmail", { count: added || creditBalance, email: accountEmail }), "ok");
+    setAccountNote(t("credits.paidWithEmail", { count: added || creditBalance, email: accountEmail }), "ok");
     try {
       sessionStorage.removeItem("sn_pre_balance");
     } catch {
@@ -598,10 +630,10 @@ async function startStripeCheckout(pack = defaultPackId) {
     return;
   }
   if (result?.ok === false) {
-    setNote(t("credits.cancelled"), "error");
+    setAccountNote(t("credits.cancelled"), "error");
     return;
   }
-  setNote(t("credits.checkoutOpened"), "ok");
+  setAccountNote(t("credits.checkoutOpened"), "ok");
   await pollCreditsAfterReturn();
 }
 
@@ -609,7 +641,7 @@ async function restoreAccount() {
   const emailInput = document.getElementById("restore-email");
   const email = (emailInput?.value || "").trim();
   if (!email) {
-    setNote(t("credits.emailRequired"), "error");
+    setAccountNote(t("credits.emailRequired"), "error");
     emailInput?.focus();
     return;
   }
@@ -621,7 +653,7 @@ async function restoreAccount() {
   });
   const data = await res.json();
   if (!res.ok || !data.ok) {
-    setNote(data.error || t("msg.generic"), "error");
+    setAccountNote(data.error || t("msg.generic"), "error");
     return;
   }
   accountEmail = data.email || email;
@@ -629,9 +661,9 @@ async function restoreAccount() {
   renderCredits();
   renderConnectionStatus(lastConnection);
   if (creditBalance > 0) {
-    setNote(t("credits.restored", { count: creditBalance }), "ok");
+    setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
   } else {
-    setNote(t("credits.restoreEmpty"), "ok");
+    setAccountNote(t("credits.restoreEmpty"), "ok");
   }
 }
 
@@ -661,10 +693,10 @@ async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
 async function startConnect(reconnect = false) {
   const btn = reconnect ? document.getElementById("reconnect-btn") : document.getElementById("connect-btn") || document.getElementById("connect-btn-demo");
   if (btn) btn.disabled = true;
-  setNote(t("connect.starting"), "ok");
+  setConnectNote(t("connect.starting"), "ok");
   try {
     if (!reconnect && billingEnabled && creditBalance <= 0) {
-      setNote(t("credits.connectNeedsBalance"), "error");
+      setAccountNote(t("credits.connectNeedsBalance"), "error");
       return;
     }
     const res = await fetch("/api/salesnav-connect.php", {
@@ -675,7 +707,7 @@ async function startConnect(reconnect = false) {
     });
     const data = await res.json();
     if (res.status === 402 && data.needs_payment) {
-      setNote(t("credits.connectNeedsBalance"), "error");
+      setAccountNote(t("credits.connectNeedsBalance"), "error");
       return;
     }
     if (!res.ok || !data.ok || !data.url) {
@@ -684,14 +716,14 @@ async function startConnect(reconnect = false) {
     const popupOk = await openAuthPopup(data.url, "salesnav-connect");
     const status = await pollConnectionStatus(12, 1500);
     if (status.connected) {
-      setNote(t("connect.success"), "ok");
+      setConnectNote(t("connect.success"), "ok");
     } else if (popupOk === false) {
-      setNote(t("connect.failed"), "error");
+      setConnectNote(t("connect.failed"), "error");
     } else if (popupOk === null && !status.connected) {
-      setNote(t("connect.failed"), "error");
+      setConnectNote(t("connect.failed"), "error");
     }
   } catch (err) {
-    setNote(err.message || t("msg.generic"), "error");
+    setConnectNote(err.message || t("msg.generic"), "error");
   } finally {
     if (btn) {
       btn.disabled = billingEnabled && !reconnect && creditBalance <= 0;
@@ -713,9 +745,9 @@ async function disconnectLinkedIn() {
       throw new Error(data.error || t("msg.generic"));
     }
     renderConnectionStatus({ connected: false });
-    setNote("", "ok");
+    setConnectNote("", "ok");
   } catch (err) {
-    setNote(err.message || t("msg.generic"), "error");
+    setConnectNote(err.message || t("msg.generic"), "error");
   }
 }
 
@@ -725,9 +757,9 @@ function handleConnectQuery() {
   if (connected === "1") {
     pollConnectionStatus().then((data) => {
       if (data.connected) {
-        setNote(t("connect.success"), "ok");
+        setConnectNote(t("connect.success"), "ok");
       } else {
-        setNote(t("connect.failed"), "error");
+        setConnectNote(t("connect.failed"), "error");
       }
     });
     params.delete("connected");
@@ -735,7 +767,7 @@ function handleConnectQuery() {
     const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
     window.history.replaceState({}, "", next);
   } else if (connected === "0") {
-    setNote(t("connect.failed"), "error");
+    setConnectNote(t("connect.failed"), "error");
     params.delete("connected");
     const qs = params.toString();
     const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
@@ -758,7 +790,7 @@ function handleCreditsQuery() {
     const qs = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
   } else if (credits === "0") {
-    setNote(t("credits.cancelled"), "error");
+    setAccountNote(t("credits.cancelled"), "error");
     params.delete("credits");
     const qs = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
@@ -766,7 +798,7 @@ function handleCreditsQuery() {
 }
 
 async function completeStripeReturn(sessionId) {
-  setNote(t("credits.confirmingPayment"), "ok");
+  setAccountNote(t("credits.confirmingPayment"), "ok");
   try {
     const res = await fetch("/api/salesnav-stripe-complete.php", {
       method: "POST",
@@ -784,7 +816,7 @@ async function completeStripeReturn(sessionId) {
     renderCredits();
     renderConnectionStatus(lastConnection);
     const added = Number(data.credits_added) || 0;
-    setNote(
+    setAccountNote(
       accountEmail
         ? t("credits.paidWithEmail", { count: added || creditBalance, email: accountEmail })
         : t("credits.paid"),
@@ -802,7 +834,7 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
   } catch {
     prev = 0;
   }
-  setNote(t("credits.confirmingPayment"), "ok");
+  setAccountNote(t("credits.confirmingPayment"), "ok");
   for (let i = 0; i < maxAttempts; i += 1) {
     await fetchCredits();
     if (creditBalance > prev) {
@@ -812,7 +844,7 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
         /* ignore */
       }
       const email = accountEmail || sessionStorage.getItem("sn_checkout_email") || "";
-      setNote(
+      setAccountNote(
         email ? t("credits.paidWithEmail", { count: creditBalance - prev, email }) : t("credits.paid"),
         "ok"
       );
@@ -820,7 +852,7 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
     }
     await new Promise((r) => setTimeout(r, delayMs));
   }
-  setNote(t("credits.paidPending"), "ok");
+  setAccountNote(t("credits.paidPending"), "ok");
 }
 
 function setProgress(active, labelKey = "progress.label") {
@@ -1108,14 +1140,14 @@ document.getElementById("buy-credits-btn")?.addEventListener("click", async () =
   try {
     await startStripeCheckout(defaultPackId);
   } catch (err) {
-    setNote(err.message || t("msg.generic"), "error");
+    setAccountNote(err.message || t("msg.generic"), "error");
   }
 });
 document.getElementById("buy-more-btn")?.addEventListener("click", async () => {
   try {
     await startStripeCheckout(defaultPackId);
   } catch (err) {
-    setNote(err.message || t("msg.generic"), "error");
+    setAccountNote(err.message || t("msg.generic"), "error");
   }
 });
 document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
