@@ -1,9 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/_bootstrap.php';
-require __DIR__ . '/_customers.php';
-require __DIR__ . '/_tasks.php';
+require_once __DIR__ . '/_customers.php';
+require_once __DIR__ . '/_tasks.php';
 
 $taskId = trim((string) ($_GET['id'] ?? ''));
 if ($taskId === '') {

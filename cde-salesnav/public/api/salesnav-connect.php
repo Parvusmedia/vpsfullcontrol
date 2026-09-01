@@ -1,10 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/_bootstrap.php';
-require __DIR__ . '/_customers.php';
-require __DIR__ . '/_unipile.php';
-require __DIR__ . '/_credits.php';
+require_once __DIR__ . '/_customers.php';
+require_once __DIR__ . '/_credits.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');

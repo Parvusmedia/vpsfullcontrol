@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/_bootstrap.php';
-require __DIR__ . '/_customers.php';
-require __DIR__ . '/_unipile.php';
+require_once __DIR__ . '/_customers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     cde_json_response(405, ['ok' => false, 'error' => 'Method not allowed']);

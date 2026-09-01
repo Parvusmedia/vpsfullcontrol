@@ -1399,9 +1399,32 @@ async function fetchConnectionStatus() {
   return data;
 }
 
+async function syncConnectionFromStored() {
+  try {
+    const res = await fetch("/api/salesnav-connect-sync.php", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const data = await parseJsonResponse(res);
+    if (res.ok && data.ok && data.connected) {
+      renderConnectionStatus(data);
+      return data;
+    }
+  } catch {
+    /* fall through to status poll */
+  }
+  return null;
+}
+
 async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
   for (let i = 0; i < attempts; i += 1) {
     try {
+      if (i === 0 || i === 2 || i === 4) {
+        const synced = await syncConnectionFromStored();
+        if (synced?.connected) return synced;
+      }
       const data = await fetchConnectionStatus();
       if (data.connected) return data;
     } catch {
@@ -2098,7 +2121,16 @@ function initPanelPage() {
   handleConnectQuery();
   handleCreditsQuery();
   fetchCredits();
-  fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
+  fetchConnectionStatus()
+    .then(async (data) => {
+      if (!data.connected) {
+        await syncConnectionFromStored();
+      }
+    })
+    .catch(async () => {
+      renderConnectionStatus({ connected: false });
+      await syncConnectionFromStored();
+    });
   scrollPanelHash();
 
   document.getElementById("credit-pack")?.addEventListener("change", (e) => {

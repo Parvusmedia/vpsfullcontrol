@@ -326,6 +326,16 @@ function cde_salesnav_stored_account(?string $userId = null): ?array
     return $stored;
 }
 
+/** Stored account eligible for reconnect (kept after disconnect). */
+function cde_salesnav_reconnect_account(?string $userId = null): ?array
+{
+    $stored = cde_salesnav_stored_account($userId);
+    if ($stored === null) {
+        return null;
+    }
+    return $stored;
+}
+
 /** Copy LinkedIn connection from an anonymous wallet to the email-based wallet on login. */
 function cde_salesnav_merge_accounts(string $fromUserId, string $toUserId): void
 {
@@ -376,7 +386,7 @@ function cde_salesnav_session_account(): ?array
     if ($accountId === '') {
         $userId = cde_salesnav_user_id();
         $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-        if (is_array($stored) && !empty($stored['account_id'])) {
+        if (is_array($stored) && !empty($stored['account_id']) && empty($stored['disconnected_at'])) {
             cde_salesnav_set_session_account(
                 (string) $stored['account_id'],
                 (string) ($stored['label'] ?? ''),
@@ -520,6 +530,7 @@ function cde_salesnav_refresh_account_meta(string $userId, string $accountId): a
         'avatar_url' => $meta['avatar_url'],
         'linked_at' => (string) ($stored['linked_at'] ?? gmdate('c')),
         'status' => (string) ($stored['status'] ?? 'CONNECTED'),
+        'disconnected_at' => null,
     ]));
     if (cde_salesnav_user_id() === $userId) {
         cde_salesnav_set_session_account(
