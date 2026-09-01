@@ -640,6 +640,12 @@ function cde_salesnav_normalize_search_url(string $value): string
     ]);
 }
 
+/** Background exports must throw so task status can be updated. */
+function cde_salesnav_export_abort(string $error): void
+{
+    throw new RuntimeException($error);
+}
+
 function cde_unipile_request(
     array $config,
     string $method,
@@ -775,10 +781,7 @@ function cde_salesnav_paginate_v1(array $config, string $sourceUrl, int $maxLead
             ['url' => $sourceUrl]
         );
         if (!$resp['ok']) {
-            cde_json_response($resp['status'] >= 400 && $resp['status'] < 600 ? $resp['status'] : 502, [
-                'ok' => false,
-                'error' => $resp['error'] ?? 'Export failed',
-            ]);
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);
@@ -823,10 +826,7 @@ function cde_salesnav_paginate_v2_search(array $config, string $searchUrl, int $
             ['url' => $searchUrl]
         );
         if (!$resp['ok']) {
-            cde_json_response($resp['status'] >= 400 && $resp['status'] < 600 ? $resp['status'] : 502, [
-                'ok' => false,
-                'error' => $resp['error'] ?? 'Export failed',
-            ]);
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);
@@ -866,10 +866,7 @@ function cde_salesnav_paginate_v2_list(array $config, string $listId, int $maxLe
             []
         );
         if (!$resp['ok']) {
-            cde_json_response($resp['status'] >= 400 && $resp['status'] < 600 ? $resp['status'] : 502, [
-                'ok' => false,
-                'error' => $resp['error'] ?? 'Export failed',
-            ]);
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);

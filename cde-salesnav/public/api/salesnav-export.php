@@ -56,7 +56,14 @@ if ($listUrl !== '') {
 }
 
 $started = microtime(true);
-$rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
+try {
+    $rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
+} catch (RuntimeException $e) {
+    cde_json_response(502, [
+        'ok' => false,
+        'error' => $e->getMessage(),
+    ]);
+}
 $rows = [];
 foreach ($rawRows as $item) {
     if (is_array($item)) {
