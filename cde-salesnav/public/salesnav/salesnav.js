@@ -22,6 +22,25 @@ const I18N = {
     "panel.title": "My panel",
     "panel.lede": "Manage credits, LinkedIn connection and CSV exports.",
     "panel.exportTitle": "Export",
+    "panel.creditsLabel": "Credits",
+    "panel.topup": "Top up",
+    "panel.tasksTitle": "Export tasks",
+    "panel.newTask": "New export",
+    "panel.startTask": "Start export",
+    "tasks.colSource": "Source",
+    "tasks.colStatus": "Status",
+    "tasks.colLeads": "Leads",
+    "tasks.colCredits": "Credits",
+    "tasks.colCreated": "Created",
+    "tasks.colAction": "Action",
+    "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
+    "tasks.processing": "Processing — your export will appear in the table once ready. We also emailed you a confirmation.",
+    "tasks.status.processing": "Processing",
+    "tasks.status.ready": "Ready",
+    "tasks.status.failed": "Failed",
+    "tasks.download": "Download CSV",
+    "tasks.limitAll": "All",
+    "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
     "landing.getStarted": "Get started — from €20",
     "landing.panelNote": "After payment, manage credits, LinkedIn and exports in your private panel — not on this page.",
@@ -175,6 +194,25 @@ const I18N = {
     "panel.title": "Mi panel",
     "panel.lede": "Gestiona créditos, conexión LinkedIn y exports CSV.",
     "panel.exportTitle": "Exportar",
+    "panel.creditsLabel": "Créditos",
+    "panel.topup": "Recargar",
+    "panel.tasksTitle": "Tareas de export",
+    "panel.newTask": "Nuevo export",
+    "panel.startTask": "Iniciar export",
+    "tasks.colSource": "Origen",
+    "tasks.colStatus": "Estado",
+    "tasks.colLeads": "Leads",
+    "tasks.colCredits": "Créditos",
+    "tasks.colCreated": "Creado",
+    "tasks.colAction": "Acción",
+    "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
+    "tasks.processing": "Procesando — el export aparecerá en la tabla cuando esté listo. También te enviamos un email de confirmación.",
+    "tasks.status.processing": "Procesando",
+    "tasks.status.ready": "Listo",
+    "tasks.status.failed": "Fallido",
+    "tasks.download": "Descargar CSV",
+    "tasks.limitAll": "Todos",
+    "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
     "landing.getStarted": "Empezar — desde €20",
     "landing.panelNote": "Tras pagar, gestionas créditos, LinkedIn y exports en tu panel privado — no en esta página.",
@@ -359,6 +397,8 @@ let billingEnabled = false;
 let creditBalance = 0;
 let accountEmail = "";
 let defaultPackId = "240";
+let panelTasks = [];
+let tasksPollTimer = null;
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -419,7 +459,25 @@ function setNote(text, tone = "ok", scope = "auto") {
 }
 
 function setAccountNote(text, tone = "ok") {
+  if (IS_PANEL) {
+    const guestNote = document.getElementById("account-note-guest");
+    const note = document.getElementById("account-note");
+    const el = accountEmail ? note : guestNote || note;
+    if (!el) return;
+    el.hidden = !text;
+    el.dataset.tone = tone;
+    el.textContent = text || "";
+    return;
+  }
   setNote(text, tone, "account");
+}
+
+function setPanelFlash(text, tone = "ok") {
+  const el = document.getElementById("panel-flash");
+  if (!el) return;
+  el.hidden = !text;
+  el.dataset.tone = tone;
+  el.textContent = text || "";
 }
 
 function setConnectNote(text, tone = "ok") {
@@ -474,6 +532,11 @@ function renderConnectionStatus(data) {
 }
 
 function renderAccount() {
+  if (IS_PANEL) {
+    renderPanelAccount();
+    return;
+  }
+
   const dashboard = document.getElementById("user-dashboard");
   const panel = document.getElementById("account-panel");
   const guestWrap = document.getElementById("account-guest-wrap");
@@ -488,6 +551,14 @@ function renderAccount() {
 
   if (!billingEnabled) {
     if (dashboard) dashboard.hidden = true;
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.removeAttribute("aria-disabled");
+    }
+    return;
+  }
+
+  if (dashboard) dashboard.hidden = false;
   panel.hidden = false;
 
   const signedIn = !!accountEmail;
@@ -515,6 +586,39 @@ function renderAccount() {
   if (connectBtn && !isConnected) {
     connectBtn.disabled = !hasCredits;
     connectBtn.setAttribute("aria-disabled", hasCredits ? "false" : "true");
+  }
+}
+
+function renderPanelAccount() {
+  const guestWrap = document.getElementById("panel-guest-wrap");
+  const appWrap = document.getElementById("panel-app-wrap");
+  const balanceEl = document.getElementById("toolbar-balance");
+  const emailEl = document.getElementById("toolbar-email");
+  const buyBtn = document.getElementById("buy-credits-btn");
+  const connectBtn = document.getElementById("connect-btn");
+  const packWrap = document.getElementById("credit-pack");
+
+  const signedIn = billingEnabled && !!accountEmail;
+  if (guestWrap) guestWrap.hidden = signedIn;
+  if (appWrap) appWrap.hidden = !signedIn;
+
+  if (balanceEl) balanceEl.textContent = String(creditBalance);
+  if (emailEl) emailEl.textContent = accountEmail || "";
+  if (buyBtn) {
+    buyBtn.hidden = !billingEnabled;
+    buyBtn.textContent = t("panel.topup");
+  }
+  if (packWrap) packWrap.hidden = true;
+
+  const billingEmail = document.getElementById("billing-email");
+  if (billingEmail && accountEmail && !billingEmail.value) {
+    billingEmail.value = accountEmail;
+  }
+
+  const hasCredits = creditBalance > 0;
+  if (connectBtn && !isConnected) {
+    connectBtn.disabled = billingEnabled && !hasCredits;
+    connectBtn.setAttribute("aria-disabled", connectBtn.disabled ? "true" : "false");
   }
 }
 
@@ -560,6 +664,9 @@ async function signInAccount(email, opts = {}) {
   persistAccountEmail(accountEmail);
   renderAccount();
   renderConnectionStatus(lastConnection);
+  if (IS_PANEL) {
+    fetchTasks();
+  }
   if (!silent) {
     if (creditBalance > 0) {
       setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
@@ -619,6 +726,9 @@ async function fetchCredits() {
     }
     renderCredits();
     renderConnectionStatus(lastConnection);
+    if (IS_PANEL && accountEmail) {
+      fetchTasks();
+    }
   } catch {
     /* optional */
   }
@@ -964,6 +1074,238 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
   setAccountNote(t("credits.paidPending"), "ok");
 }
 
+function formatTaskDate(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(lang === "es" ? "es-ES" : "en-GB", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso.slice(0, 16).replace("T", " ");
+  }
+}
+
+function taskStatusLabel(status) {
+  if (status === "ready") return t("tasks.status.ready");
+  if (status === "failed") return t("tasks.status.failed");
+  return t("tasks.status.processing");
+}
+
+function taskLimitLabel(task) {
+  if (task.limit_label === "all") return t("tasks.limitAll");
+  return String(task.limit || "—");
+}
+
+function scheduleTasksPoll() {
+  if (tasksPollTimer) {
+    clearInterval(tasksPollTimer);
+    tasksPollTimer = null;
+  }
+  const hasProcessing = panelTasks.some((task) => task.status === "processing");
+  if (hasProcessing) {
+    tasksPollTimer = setInterval(() => {
+      fetchTasks({ silent: true });
+    }, 4000);
+  }
+}
+
+async function fetchTasks(opts = {}) {
+  if (!IS_PANEL || !accountEmail) return;
+  try {
+    const res = await fetch("/api/salesnav-tasks.php", { credentials: "same-origin" });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return;
+    panelTasks = Array.isArray(data.tasks) ? data.tasks : [];
+    renderTasksTable();
+    scheduleTasksPoll();
+    if (!opts.silent) {
+      highlightTaskFromQuery();
+    }
+  } catch {
+    /* optional */
+  }
+}
+
+function highlightTaskFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const taskId = params.get("task");
+  if (!taskId) return;
+  const row = document.querySelector(`tr[data-task-id="${CSS.escape(taskId)}"]`);
+  if (row) {
+    row.classList.add("tasks-row-highlight");
+    row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function renderTasksTable() {
+  const tbody = document.getElementById("tasks-body");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  if (!panelTasks.length) {
+    const tr = document.createElement("tr");
+    tr.className = "tasks-empty";
+    tr.id = "tasks-empty-row";
+    const td = document.createElement("td");
+    td.colSpan = 6;
+    td.textContent = t("tasks.empty");
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  panelTasks.forEach((task) => {
+    const tr = document.createElement("tr");
+    tr.dataset.taskId = task.id;
+    if (task.status === "processing") tr.classList.add("tasks-row-processing");
+    if (task.status === "failed") tr.classList.add("tasks-row-failed");
+
+    const source = document.createElement("td");
+    source.textContent = task.source_label || task.mode || "—";
+
+    const status = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "task-status";
+    badge.dataset.status = task.status || "processing";
+    badge.textContent = taskStatusLabel(task.status);
+    if (task.status === "failed" && task.error) {
+      badge.title = task.error;
+    }
+    status.appendChild(badge);
+
+    const leads = document.createElement("td");
+    leads.textContent = task.status === "ready" ? String(task.lead_count || 0) : "—";
+
+    const credits = document.createElement("td");
+    credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
+
+    const created = document.createElement("td");
+    created.textContent = formatTaskDate(task.created_at);
+
+    const action = document.createElement("td");
+    if (task.download_ready) {
+      const link = document.createElement("a");
+      link.className = "ghost-btn tasks-download-btn";
+      link.href = `/api/salesnav-tasks-download.php?id=${encodeURIComponent(task.id)}`;
+      link.textContent = t("tasks.download");
+      action.appendChild(link);
+    } else if (task.status === "failed") {
+      action.textContent = task.error || "—";
+      action.className = "tasks-error-cell";
+    } else {
+      action.textContent = "…";
+    }
+
+    tr.append(source, status, leads, credits, created, action);
+    tbody.appendChild(tr);
+  });
+}
+
+function openCreateTaskModal() {
+  if (!accountEmail) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  if (!isConnected) {
+    setConnectNote(t("connect.required"), "error");
+    return;
+  }
+  const modal = document.getElementById("create-task-modal");
+  if (!modal) return;
+  if (typeof modal.showModal === "function") {
+    modal.showModal();
+  } else {
+    modal.setAttribute("open", "");
+  }
+}
+
+function closeCreateTaskModal() {
+  const modal = document.getElementById("create-task-modal");
+  if (!modal) return;
+  if (typeof modal.close === "function") {
+    modal.close();
+  } else {
+    modal.removeAttribute("open");
+  }
+}
+
+async function submitCreateTask(e) {
+  e.preventDefault();
+  if (!isConnected) {
+    setConnectNote(t("connect.required"), "error");
+    return;
+  }
+
+  const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const limitRaw = document.getElementById("export-limit")?.value || "25";
+  const honeypot = document.getElementById("company_url")?.value || "";
+  const tierEnriched = document.getElementById("tier-enriched")?.checked;
+
+  if (mode === "list" && !listUrl) {
+    setPanelFlash(lang === "es" ? "Pega la URL de la lista." : "Paste a list URL.", "error");
+    return;
+  }
+  if (mode === "search" && !searchUrl) {
+    setPanelFlash(lang === "es" ? "Pega la URL de búsqueda." : "Paste a search URL.", "error");
+    return;
+  }
+
+  const submitBtn = document.getElementById("create-task-submit");
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const challenge = await getChallenge();
+    const body = {
+      challenge,
+      company_url: honeypot,
+      limit: limitRaw,
+      tier_enriched: tierEnriched ? 1 : 0,
+    };
+    if (mode === "list") body.list_url = listUrl;
+    else body.search_url = searchUrl;
+
+    const res = await fetch("/api/salesnav-tasks.php", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (res.status === 402 && data.needs_payment) {
+      await startStripeCheckout(defaultPackId);
+      throw new Error(t("credits.insufficient"));
+    }
+    if (data.needs_connect) {
+      renderConnectionStatus({ connected: false });
+      throw new Error(t("connect.required"));
+    }
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || t("msg.generic"));
+    }
+
+    closeCreateTaskModal();
+    setPanelFlash(t("tasks.processing"), "ok");
+    if (data.task) {
+      panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
+      renderTasksTable();
+      scheduleTasksPoll();
+    } else {
+      await fetchTasks();
+    }
+    document.getElementById("create-task-form")?.reset();
+    document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
+  } catch (err) {
+    setPanelFlash(err.message || t("msg.generic"), "error");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
 function setProgress(active, labelKey = "progress.label") {
   const progress = document.getElementById("progress");
   const label = document.getElementById("progress-label");
@@ -1251,7 +1593,6 @@ function initPanelPage() {
     defaultPackId = e.target.value || defaultPackId;
   });
   document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
-  document.getElementById("connect-btn-demo")?.addEventListener("click", () => startConnect(false));
   document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
   document.getElementById("buy-credits-btn")?.addEventListener("click", async () => {
     try {
@@ -1260,28 +1601,21 @@ function initPanelPage() {
       setAccountNote(err.message || t("msg.generic"), "error");
     }
   });
-  document.getElementById("buy-more-btn")?.addEventListener("click", async () => {
-    try {
-      await startStripeCheckout(defaultPackId);
-    } catch (err) {
-      setAccountNote(err.message || t("msg.generic"), "error");
-    }
-  });
   document.getElementById("sign-in-btn")?.addEventListener("click", () => signInFromForm());
-  document.getElementById("sign-out-btn")?.addEventListener("click", () => signOutAccount());
+  document.getElementById("sign-out-btn")?.addEventListener("click", () => {
+    panelTasks = [];
+    if (tasksPollTimer) {
+      clearInterval(tasksPollTimer);
+      tasksPollTimer = null;
+    }
+    signOutAccount();
+  });
   document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
   document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
-  document.getElementById("export-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    runExport();
-  });
-  document.getElementById("download-csv")?.addEventListener("click", () => {
-    if (lastRows.length) downloadCsv(lastRows);
-  });
-  document.getElementById("export-another")?.addEventListener("click", () => {
-    document.getElementById("results")?.setAttribute("hidden", "");
-    lastRows = [];
-    setNote("", "ok", "export");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("create-task-btn")?.addEventListener("click", () => openCreateTaskModal());
+  document.getElementById("create-task-cancel")?.addEventListener("click", () => closeCreateTaskModal());
+  document.getElementById("create-task-form")?.addEventListener("submit", (e) => submitCreateTask(e));
+  document.getElementById("create-task-modal")?.addEventListener("click", (e) => {
+    if (e.target?.id === "create-task-modal") closeCreateTaskModal();
   });
 }
