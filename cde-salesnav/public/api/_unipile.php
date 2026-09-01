@@ -670,7 +670,29 @@ function cde_salesnav_list_unipile_account_items(): array
     return is_array($items) ? $items : [];
 }
 
-function cde_salesnav_resolve_linked_account_id(string $userId): ?string
+function cde_salesnav_unipile_seat_exists(string $accountId): bool
+{
+    if ($accountId === '') {
+        return false;
+    }
+    foreach (cde_salesnav_list_unipile_account_items() as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
+        if ($id === $accountId) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Find an existing Unipile seat to reconnect (never bill a duplicate).
+ * Includes expired/disconnected seats still present in Unipile — reconnect fixes them.
+ */
+function cde_salesnav_find_reconnectable_seat(string $userId): ?string
 {
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     $storedLabel = is_array($stored) ? trim((string) ($stored['label'] ?? '')) : '';
@@ -686,23 +708,32 @@ function cde_salesnav_resolve_linked_account_id(string $userId): ?string
             continue;
         }
         $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
-        if ($id === '' || !cde_salesnav_is_account_alive($id)) {
+        if ($id === '') {
             continue;
         }
 
         $linkedName = trim((string) ($item['name'] ?? ''));
-        $meta = cde_salesnav_fetch_account_meta(cde_unipile_api_config($id), $id);
-        $label = trim((string) ($meta['label'] ?? ''));
+        $alive = cde_salesnav_is_account_alive($id);
+        $label = '';
+        if ($alive) {
+            $meta = cde_salesnav_fetch_account_meta(cde_unipile_api_config($id), $id);
+            $label = trim((string) ($meta['label'] ?? ''));
+        } else {
+            $label = trim(cde_salesnav_account_label_from_item($item));
+        }
 
         $score = 0;
         if ($linkedName !== '' && $linkedName === $userId) {
-            $score += 100;
-        }
-        if ($storedLabel !== '' && $label !== '' && strcasecmp($label, $storedLabel) === 0) {
-            $score += 50;
+            $score += 1000;
         }
         if ($storedAccountId !== '' && $id === $storedAccountId) {
-            $score += 10;
+            $score += 500;
+        }
+        if ($storedLabel !== '' && $label !== '' && strcasecmp($label, $storedLabel) === 0) {
+            $score += 100;
+        }
+        if ($alive) {
+            $score += 50;
         }
 
         $created = strtotime((string) ($item['created_at'] ?? $item['last_update'] ?? ''));
@@ -726,11 +757,59 @@ function cde_salesnav_resolve_linked_account_id(string $userId): ?string
     });
 
     $best = $candidates[0];
-    if ($best['score'] <= 0 && count($candidates) > 1) {
+    if ($best['score'] <= 0) {
         return null;
     }
 
     return (string) $best['id'];
+}
+
+function cde_salesnav_resolve_linked_account_id(string $userId): ?string
+{
+    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($seat === null) {
+        return null;
+    }
+    if (!cde_salesnav_is_account_alive($seat)) {
+        return null;
+    }
+
+    return $seat;
+}
+
+/**
+ * Plan Unipile hosted link: reuse existing seat whenever possible (avoid paid duplicates).
+ *
+ * @return array{type: string, reconnect_id: ?string, reused_account: bool}
+ */
+function cde_salesnav_plan_connect(string $userId, bool $explicitReconnect = false): array
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $hadPriorLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
+
+    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($seat !== null) {
+        return [
+            'type' => 'reconnect',
+            'reconnect_id' => $seat,
+            'reused_account' => true,
+        ];
+    }
+
+    if ($hadPriorLink || $explicitReconnect) {
+        cde_json_response(409, [
+            'ok' => false,
+            'error' => 'No existing LinkedIn seat was found in Unipile to reconnect. '
+                . 'Creating a new seat would duplicate billing — contact support.',
+            'needs_support' => true,
+        ]);
+    }
+
+    return [
+        'type' => 'create',
+        'reconnect_id' => null,
+        'reused_account' => false,
+    ];
 }
 
 function cde_salesnav_unipile_account_owner_wallet(string $accountId): ?string

@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $auth = cde_salesnav_require_auth();
 $userId = $auth['user_id'];
 $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-$accountId = cde_salesnav_resolve_linked_account_id($userId);
+$accountId = cde_salesnav_find_reconnectable_seat($userId);
 
 if ($accountId === null) {
     if (!is_array($stored)) {
@@ -30,6 +30,15 @@ if ($accountId === null) {
         'ok' => false,
         'error' => 'LinkedIn connection not ready yet. Try again in a moment.',
         'retry' => true,
+    ]);
+}
+
+if (!cde_salesnav_is_account_alive($accountId)) {
+    cde_json_response(404, [
+        'ok' => false,
+        'error' => 'LinkedIn connection not ready yet. Try again in a moment.',
+        'retry' => true,
+        'account_id' => $accountId,
     ]);
 }
 

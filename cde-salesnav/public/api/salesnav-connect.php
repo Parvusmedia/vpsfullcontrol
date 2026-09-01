@@ -32,47 +32,19 @@ if (!is_array($payload)) {
 }
 
 $userId = cde_salesnav_user_id();
-$stored = cde_salesnav_load_accounts()[$userId] ?? null;
-$sessionAccount = cde_salesnav_session_account();
 $explicitReconnect = !empty($payload['reconnect']);
-$storedInvalid = is_array($stored) && !empty($stored['invalid_at']);
-$storedAlive = is_array($stored)
-    && !empty($stored['account_id'])
-    && !$storedInvalid
-    && cde_salesnav_is_account_alive((string) $stored['account_id']);
-$hadPriorLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
+$plan = cde_salesnav_plan_connect($userId, $explicitReconnect);
 
-if ($storedAlive) {
-    $type = 'reconnect';
-    $reconnectId = (string) $stored['account_id'];
-} elseif ($explicitReconnect && $sessionAccount !== null && ($sessionAccount['account_id'] ?? '') !== '') {
-    $accountId = (string) $sessionAccount['account_id'];
-    if (cde_salesnav_is_account_alive($accountId)) {
-        $type = 'reconnect';
-        $reconnectId = $accountId;
-    } else {
-        $type = 'create';
-        $reconnectId = null;
-    }
-} else {
-    $resolved = cde_salesnav_resolve_linked_account_id($userId);
-    if ($resolved !== null && cde_salesnav_is_account_alive($resolved)) {
-        $type = 'reconnect';
-        $reconnectId = $resolved;
-    } else {
-        if (!$hadPriorLink && !$explicitReconnect) {
-            cde_credits_require_positive_balance();
-        }
-        $type = 'create';
-        $reconnectId = null;
-    }
+if ($plan['type'] === 'create') {
+    cde_credits_require_positive_balance();
 }
 
-$result = cde_salesnav_create_hosted_link($type, $reconnectId);
+$result = cde_salesnav_create_hosted_link($plan['type'], $plan['reconnect_id']);
 
 cde_json_response(200, [
     'ok' => true,
     'url' => $result['url'],
-    'type' => $type,
-    'reused_account' => $type === 'reconnect',
+    'type' => $plan['type'],
+    'reused_account' => $plan['reused_account'],
+    'reconnect_account_id' => $plan['reconnect_id'],
 ]);
