@@ -108,13 +108,17 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     }
 
     $priceId = cde_stripe_price_id_for_pack($packId);
-    if ($priceId !== '') {
+    // custom_unit_amount Prices cannot use promotion codes — use fixed price_data instead.
+    $useCatalogPrice = $priceId !== '' && !$allowPromo;
+
+    if ($useCatalogPrice) {
         $fields['line_items[0][price]'] = $priceId;
     } else {
         // Existing catalog product — do not mix product + product_data (Stripe rejects it).
         $fields['line_items[0][price_data][currency]'] = 'eur';
         $fields['line_items[0][price_data][unit_amount]'] = (string) $pack['amount_cents'];
         $fields['line_items[0][price_data][product]'] = $cfg['product_id'];
+        $priceId = '';
     }
 
     $resp = cde_stripe_request('POST', 'checkout/sessions', $fields);
