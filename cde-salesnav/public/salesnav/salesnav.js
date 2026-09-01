@@ -64,12 +64,8 @@ const I18N = {
     "connect.reconnect": "Reconnect",
     "connect.expired":
       "Your LinkedIn connection expired. Reconnect to continue exporting.",
-    "connect.unipileSeat": "Active Unipile seat (keep this one)",
-    "connect.copySeatId": "Copy ID",
-    "connect.unipileSeatHint":
-      "Keep this seat in Unipile. You can delete other duplicate seats for the same LinkedIn profile.",
-    "connect.unipileSeatCopied": "Unipile seat ID copied.",
-    "connect.unipileSeatPrev": "Previous seat (safe to remove in Unipile): {id}",
+    "connect.copySeatId": "Copy",
+    "connect.seatIdCopied": "Copied.",
     "connect.starting": "Opening secure connection…",
     "connect.success": "LinkedIn connected. You can export now.",
     "connect.failed": "Connection failed or was cancelled. Try again.",
@@ -280,12 +276,8 @@ const I18N = {
     "connect.reconnect": "Reconectar",
     "connect.expired":
       "Tu conexión con LinkedIn expiró. Reconecta para seguir exportando.",
-    "connect.unipileSeat": "Asiento Unipile activo (conserva este)",
-    "connect.copySeatId": "Copiar ID",
-    "connect.unipileSeatHint":
-      "Conserva este asiento en Unipile. Puedes eliminar otros asientos duplicados del mismo perfil de LinkedIn.",
-    "connect.unipileSeatCopied": "ID del asiento Unipile copiado.",
-    "connect.unipileSeatPrev": "Asiento anterior (puedes eliminarlo en Unipile): {id}",
+    "connect.copySeatId": "Copiar",
+    "connect.seatIdCopied": "Copiado.",
     "connect.starting": "Abriendo conexión segura…",
     "connect.success": "LinkedIn conectado. Ya puedes exportar.",
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
@@ -692,33 +684,17 @@ function renderUnipileSeatInfo(data) {
   if (!IS_PANEL) return;
   const wrap = document.getElementById("unipile-seat-wrap");
   const idEl = document.getElementById("unipile-seat-id");
-  const prevEl = document.getElementById("unipile-seat-prev");
   if (!wrap || !idEl) return;
 
   const seatId = String(data?.unipile_account_id || "").trim();
-  const prevId = String(data?.previous_unipile_account_id || "").trim();
-
   if (seatId === "") {
     wrap.hidden = true;
     idEl.textContent = "";
-    if (prevEl) {
-      prevEl.hidden = true;
-      prevEl.textContent = "";
-    }
     return;
   }
 
   wrap.hidden = false;
   idEl.textContent = seatId;
-  if (prevEl) {
-    if (prevId !== "") {
-      prevEl.hidden = false;
-      prevEl.textContent = t("connect.unipileSeatPrev", { id: prevId });
-    } else {
-      prevEl.hidden = true;
-      prevEl.textContent = "";
-    }
-  }
 }
 
 async function copyUnipileSeatId() {
@@ -727,7 +703,7 @@ async function copyUnipileSeatId() {
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    setConnectNote(t("connect.unipileSeatCopied"), "ok");
+    setConnectNote(t("connect.seatIdCopied"), "ok");
   } catch {
     setConnectNote(text, "ok");
   }
@@ -1482,8 +1458,7 @@ async function syncConnectionFromStored() {
     });
     const data = await parseJsonResponse(res);
     if (res.ok && data.ok && data.connected) {
-      renderConnectionStatus(data);
-      return data;
+      return fetchConnectionStatus();
     }
   } catch {
     /* fall through to status poll */
@@ -2226,6 +2201,7 @@ function initPanelPage() {
   });
   document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
   document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
+  document.getElementById("unipile-seat-copy")?.addEventListener("click", () => copyUnipileSeatId());
   document.getElementById("buy-credits-btn")?.addEventListener("click", async () => {
     try {
       const packSelect = document.getElementById("credit-pack");
