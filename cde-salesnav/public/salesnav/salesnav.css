@@ -62,6 +62,38 @@
   gap: 0.55rem;
 }
 
+.connect-actions[hidden] {
+  display: none !important;
+}
+
+.connect-actions-billing {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.connect-actions-billing .connect-btn,
+.connect-actions-billing .ghost-btn {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  border-radius: 3px;
+}
+
+.connect-actions-billing .ghost-btn {
+  border: 1.5px solid rgba(20, 32, 40, 0.28);
+  background: #fff;
+  padding: 0.65rem 1rem;
+  font: 700 0.85rem/1 var(--font-display);
+}
+
+.connect-actions-billing .ghost-btn:disabled,
+.connect-actions-billing .ghost-btn[aria-disabled="true"] {
+  opacity: 1;
+  background: #eef3f8;
+  border-color: rgba(0, 65, 130, 0.22);
+  color: rgba(0, 65, 130, 0.42);
+}
+
 .connect-btn {
   border: 1.5px solid var(--teal-deep);
   background: var(--teal-deep);
