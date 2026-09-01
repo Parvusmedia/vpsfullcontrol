@@ -1014,6 +1014,57 @@
   color: var(--ink-soft);
 }
 
+.panel-unipile-seat {
+  margin-top: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.panel-unipile-seat-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.panel-unipile-seat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.panel-unipile-seat-id {
+  font-size: 0.78rem;
+  word-break: break-all;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.panel-unipile-copy {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.panel-unipile-prev {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  word-break: break-all;
+}
+
+.panel-unipile-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
 .panel-li-badge {
   max-width: 14rem;
   white-space: nowrap;

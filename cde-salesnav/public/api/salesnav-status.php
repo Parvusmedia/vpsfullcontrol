@@ -21,6 +21,27 @@ $connected = $account !== null && ($account['account_id'] ?? '') !== '';
 $needsReconnect = is_array($stored) && !empty($stored['invalid_at']);
 $hadLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
 
+$unipileSeatId = '';
+if ($connected) {
+    $unipileSeatId = trim((string) ($account['account_id'] ?? ''));
+} else {
+    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($seat !== null) {
+        $unipileSeatId = $seat;
+    }
+}
+
+$previousUnipileId = '';
+if (is_array($stored)) {
+    $prev = trim((string) ($stored['previous_account_id'] ?? ''));
+    $storedId = trim((string) ($stored['account_id'] ?? ''));
+    if ($prev !== '' && $prev !== $unipileSeatId) {
+        $previousUnipileId = $prev;
+    } elseif ($storedId !== '' && $storedId !== $unipileSeatId && !cde_salesnav_is_account_alive($storedId)) {
+        $previousUnipileId = $storedId;
+    }
+}
+
 cde_json_response(200, [
     'ok' => true,
     'connected' => $connected,
@@ -31,4 +52,6 @@ cde_json_response(200, [
     'reconnect_available' => !$connected && $hadLink,
     'stored_label' => !$connected && $hadLink ? (string) ($stored['label'] ?? '') : '',
     'connect_message' => $needsReconnect ? cde_salesnav_stale_account_message() : '',
+    'unipile_account_id' => $unipileSeatId,
+    'previous_unipile_account_id' => $previousUnipileId,
 ]);
