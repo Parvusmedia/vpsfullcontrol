@@ -315,6 +315,17 @@ function cde_salesnav_save_account(string $userId, array $record): void
     @chmod($path, 0600);
 }
 
+/** Persisted LinkedIn link for a wallet (survives panel disconnect). */
+function cde_salesnav_stored_account(?string $userId = null): ?array
+{
+    $userId = $userId ?? cde_salesnav_user_id();
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (!is_array($stored) || empty($stored['account_id'])) {
+        return null;
+    }
+    return $stored;
+}
+
 /** Copy LinkedIn connection from an anonymous wallet to the email-based wallet on login. */
 function cde_salesnav_merge_accounts(string $fromUserId, string $toUserId): void
 {

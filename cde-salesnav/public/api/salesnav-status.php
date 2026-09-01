@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $account = cde_salesnav_session_account();
+$stored = cde_salesnav_stored_account();
 $connected = $account !== null && ($account['account_id'] ?? '') !== '';
 
 cde_json_response(200, [
@@ -25,4 +26,6 @@ cde_json_response(200, [
     'label' => $connected ? ($account['label'] ?? '') : '',
     'avatar_url' => $connected ? ($account['avatar_url'] ?? '') : '',
     'connected_at' => $connected ? ($account['connected_at'] ?? '') : '',
+    'reconnect_available' => !$connected && $stored !== null,
+    'stored_label' => !$connected && $stored !== null ? (string) ($stored['label'] ?? '') : '',
 ]);

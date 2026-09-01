@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
+require __DIR__ . '/_customers.php';
 require __DIR__ . '/_unipile.php';
 require __DIR__ . '/_credits.php';
 
@@ -32,13 +33,22 @@ if (!is_array($payload)) {
     $payload = [];
 }
 
-$existing = cde_salesnav_session_account();
-$reconnect = !empty($payload['reconnect']) && $existing !== null;
-if (!$reconnect) {
+$userId = cde_salesnav_user_id();
+$stored = cde_salesnav_stored_account($userId);
+$sessionAccount = cde_salesnav_session_account();
+$explicitReconnect = !empty($payload['reconnect']);
+
+if ($stored !== null) {
+    $type = 'reconnect';
+    $reconnectId = (string) $stored['account_id'];
+} elseif ($explicitReconnect && $sessionAccount !== null && ($sessionAccount['account_id'] ?? '') !== '') {
+    $type = 'reconnect';
+    $reconnectId = (string) $sessionAccount['account_id'];
+} else {
     cde_credits_require_positive_balance();
+    $type = 'create';
+    $reconnectId = null;
 }
-$type = $reconnect ? 'reconnect' : 'create';
-$reconnectId = $reconnect ? (string) $existing['account_id'] : null;
 
 $result = cde_salesnav_create_hosted_link($type, $reconnectId);
 
@@ -46,4 +56,5 @@ cde_json_response(200, [
     'ok' => true,
     'url' => $result['url'],
     'type' => $type,
+    'reused_account' => $type === 'reconnect',
 ]);

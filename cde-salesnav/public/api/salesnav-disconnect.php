@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
+require __DIR__ . '/_customers.php';
 require __DIR__ . '/_unipile.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -16,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $userId = cde_salesnav_user_id();
-$all = cde_salesnav_load_accounts();
-if (isset($all[$userId])) {
-    unset($all[$userId]);
-    $path = cde_salesnav_accounts_file();
-    @file_put_contents($path, json_encode($all, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+$stored = cde_salesnav_stored_account($userId);
+if ($stored !== null) {
+    cde_salesnav_save_account($userId, array_merge($stored, [
+        'disconnected_at' => gmdate('c'),
+    ]));
 }
 
 cde_salesnav_clear_session_account();

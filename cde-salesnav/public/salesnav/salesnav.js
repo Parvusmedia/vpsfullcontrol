@@ -59,6 +59,7 @@ const I18N = {
     "connect.body":
       "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
     "connect.cta": "Connect LinkedIn",
+    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
     "connect.starting": "Opening secure connection…",
@@ -266,6 +267,7 @@ const I18N = {
     "connect.body":
       "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
     "connect.cta": "Conectar LinkedIn",
+    "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
     "connect.starting": "Abriendo conexión segura…",
@@ -462,6 +464,7 @@ const ENRICHED_CSV_COLS = [
 ];
 let contactChallengeToken = "";
 let isConnected = false;
+let reconnectAvailable = false;
 let lastConnection = { connected: false, label: "", avatar_url: "", connected_at: "" };
 let billingEnabled = false;
 let creditBalance = 0;
@@ -576,9 +579,10 @@ async function parseJsonResponse(res) {
 }
 
 function renderConnectionStatus(data) {
+  reconnectAvailable = !!data?.reconnect_available;
   lastConnection = {
     connected: !!data?.connected,
-    label: data?.label || "",
+    label: data?.label || data?.stored_label || "",
     avatar_url: data?.avatar_url || "",
     connected_at: data?.connected_at || "",
   };
@@ -633,7 +637,19 @@ function renderConnectionStatus(data) {
   }
   if (demoActions) demoActions.hidden = billingEnabled || isConnected;
   if (connectedActions) connectedActions.hidden = !isConnected;
-  if (connectBtn) connectBtn.hidden = isConnected;
+  if (connectBtn) {
+    connectBtn.hidden = isConnected;
+    if (!isConnected) {
+      connectBtn.textContent = reconnectAvailable ? t("connect.reconnect") : t("connect.cta");
+    }
+  }
+
+  if (!isConnected && reconnectAvailable && copy) {
+    const hint = data?.stored_label
+      ? t("connect.connectedAs", { label: data.stored_label }) + " — " + t("connect.reconnectHint")
+      : t("connect.reconnectHint");
+    copy.textContent = hint;
+  }
 
   const liCard = document.querySelector(".panel-card-linkedin");
   if (liCard) {
@@ -1397,11 +1413,16 @@ async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
 }
 
 async function startConnect(reconnect = false) {
-  const btn = reconnect ? document.getElementById("reconnect-btn") : document.getElementById("connect-btn") || document.getElementById("connect-btn-demo");
+  const isReconnect = reconnect || reconnectAvailable;
+  const btn = isReconnect && !reconnect
+    ? document.getElementById("connect-btn") || document.getElementById("reconnect-btn")
+    : reconnect
+      ? document.getElementById("reconnect-btn")
+      : document.getElementById("connect-btn") || document.getElementById("connect-btn-demo");
   if (btn) btn.disabled = true;
   setConnectNote(t("connect.starting"), "ok");
   try {
-    if (!reconnect && billingEnabled && creditBalance <= 0) {
+    if (!isReconnect && billingEnabled && creditBalance <= 0) {
       setAccountNote(t("credits.connectNeedsBalance"), "error");
       return;
     }
@@ -1409,7 +1430,7 @@ async function startConnect(reconnect = false) {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reconnect }),
+      body: JSON.stringify({ reconnect: isReconnect }),
     });
     const data = await parseJsonResponse(res);
     if (res.status === 402 && data.needs_payment) {
@@ -1432,7 +1453,7 @@ async function startConnect(reconnect = false) {
     setConnectNote(err.message || t("msg.generic"), "error");
   } finally {
     if (btn) {
-      btn.disabled = billingEnabled && !reconnect && creditBalance <= 0;
+      btn.disabled = !isReconnect && billingEnabled && creditBalance <= 0;
       if (btn.id === "connect-btn") {
         btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
       }
