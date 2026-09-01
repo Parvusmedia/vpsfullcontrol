@@ -56,6 +56,35 @@
   color: var(--teal-deep);
 }
 
+.connect-session-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.connect-pack {
+  display: block;
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+
+.connect-pack span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.connect-pack select {
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.45rem 0.55rem;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font: inherit;
+}
+
 .connect-actions {
   display: flex;
   flex-wrap: wrap;

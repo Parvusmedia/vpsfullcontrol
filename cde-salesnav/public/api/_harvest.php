@@ -315,41 +315,166 @@ function cde_harvest_enrich_rows(array $rows): array
         return $rows;
     }
 
-    @set_time_limit(max(120, min(900, count($rows) * 8)));
-    $companyCache = [];
+    $count = count($rows);
+    @set_time_limit(max(180, min(900, $count * 6)));
 
+    $cfg = cde_harvest_config();
+    $batchSize = max(3, min(15, (int) (getenv('HARVEST_BATCH_SIZE') ?: 10)));
+
+    $profileJobs = [];
     foreach ($rows as $i => $row) {
         $url = trim((string) ($row['linkedin_url'] ?? ''));
-        if ($url === '') {
-            continue;
+        if ($url !== '') {
+            $profileJobs[$i] = $url;
         }
+    }
 
-        $profileResp = cde_harvest_get_profile($url);
-        if (!$profileResp['ok']) {
+    $profilesByIndex = cde_harvest_fetch_profiles_batch($profileJobs, $batchSize, $cfg);
+    $companyUrls = [];
+    foreach ($profilesByIndex as $profile) {
+        if (!is_array($profile)) {
             continue;
         }
-        $profile = $profileResp['profile'];
+        $experience = $profile['experience'][0] ?? $profile['currentPosition'][0] ?? [];
+        if (!is_array($experience)) {
+            continue;
+        }
+        $companyUrl = trim((string) ($experience['companyLinkedinUrl'] ?? ''));
+        if ($companyUrl !== '') {
+            $companyUrls[$companyUrl] = true;
+        }
+    }
+
+    $companyCache = cde_harvest_fetch_companies_batch(array_keys($companyUrls), $batchSize, $cfg);
+
+    foreach ($rows as $i => $row) {
+        $profile = $profilesByIndex[$i] ?? null;
+        if (!is_array($profile)) {
+            continue;
+        }
         $experience = $profile['experience'][0] ?? $profile['currentPosition'][0] ?? [];
         if (!is_array($experience)) {
             $experience = [];
         }
-
         $companyUrl = trim((string) ($experience['companyLinkedinUrl'] ?? ''));
-        $company = null;
-        if ($companyUrl !== '') {
-            if (isset($companyCache[$companyUrl])) {
-                $company = $companyCache[$companyUrl];
-            } else {
-                $companyResp = cde_harvest_get_company($companyUrl);
-                if ($companyResp['ok']) {
-                    $company = $companyResp['company'];
-                    $companyCache[$companyUrl] = $company;
-                }
-            }
-        }
-
+        $company = ($companyUrl !== '' && isset($companyCache[$companyUrl])) ? $companyCache[$companyUrl] : null;
         $rows[$i] = array_merge($row, cde_harvest_map_enriched_fields($profile, $company, $experience));
     }
 
     return $rows;
+}
+
+/**
+ * @param array<int, string> $jobs index => linkedin profile url
+ * @return array<int, array<string, mixed>|null>
+ */
+function cde_harvest_fetch_profiles_batch(array $jobs, int $batchSize, array $cfg): array
+{
+    $out = [];
+    $chunks = array_chunk($jobs, $batchSize, true);
+    foreach ($chunks as $chunk) {
+        $requests = [];
+        foreach ($chunk as $idx => $url) {
+            $query = ['url' => $url];
+            if (!empty($cfg['profile_main'])) {
+                $query['main'] = 'true';
+            }
+            $requests[$idx] = ['/linkedin/profile', $query];
+        }
+        $responses = cde_harvest_multi_request($requests, $cfg);
+        foreach ($chunk as $idx => $url) {
+            $resp = $responses[$idx] ?? ['ok' => false];
+            $out[$idx] = ($resp['ok'] && is_array($resp['profile'] ?? null)) ? $resp['profile'] : null;
+        }
+    }
+    return $out;
+}
+
+/**
+ * @param list<string> $urls
+ * @return array<string, array<string, mixed>>
+ */
+function cde_harvest_fetch_companies_batch(array $urls, int $batchSize, array $cfg): array
+{
+    $cache = [];
+    if ($urls === []) {
+        return $cache;
+    }
+    $chunks = array_chunk($urls, $batchSize);
+    foreach ($chunks as $chunk) {
+        $requests = [];
+        foreach ($chunk as $i => $url) {
+            $requests['c' . $i] = ['/linkedin/company', ['url' => $url]];
+        }
+        $responses = cde_harvest_multi_request($requests, $cfg);
+        foreach ($chunk as $i => $url) {
+            $resp = $responses['c' . $i] ?? ['ok' => false];
+            if ($resp['ok'] && is_array($resp['company'] ?? null)) {
+                $cache[$url] = $resp['company'];
+            }
+        }
+    }
+    return $cache;
+}
+
+/**
+ * @param array<int|string, array{0: string, 1: array<string, string>}> $requests
+ * @return array<int|string, array<string, mixed>>
+ */
+function cde_harvest_multi_request(array $requests, array $cfg): array
+{
+    $results = [];
+    if ($requests === []) {
+        return $results;
+    }
+
+    $mh = curl_multi_init();
+    $handles = [];
+    foreach ($requests as $key => $req) {
+        [$path, $query] = $req;
+        $url = $cfg['base_url'] . $path . '?' . http_build_query($query);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'X-API-Key: ' . $cfg['api_key'],
+            ],
+            CURLOPT_TIMEOUT => $cfg['timeout'],
+        ]);
+        curl_multi_add_handle($mh, $ch);
+        $handles[$key] = $ch;
+    }
+
+    $running = null;
+    do {
+        $status = curl_multi_exec($mh, $running);
+        if ($running > 0) {
+            curl_multi_select($mh, 1.0);
+        }
+    } while ($running > 0 && $status === CURLM_OK);
+
+    foreach ($handles as $key => $ch) {
+        $raw = curl_multi_getcontent($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+
+        $parsed = ['ok' => false];
+        if ($raw !== false && $raw !== '') {
+            $data = json_decode($raw, true);
+            if (is_array($data) && $code < 400 && is_array($data['element'] ?? null)) {
+                $element = $data['element'];
+                if (strpos((string) $requests[$key][0], '/company') !== false) {
+                    $parsed = ['ok' => true, 'company' => $element];
+                } else {
+                    $parsed = ['ok' => true, 'profile' => $element];
+                }
+            }
+        }
+        $results[$key] = $parsed;
+    }
+
+    curl_multi_close($mh);
+    return $results;
 }

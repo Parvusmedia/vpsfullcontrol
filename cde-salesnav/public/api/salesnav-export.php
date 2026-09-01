@@ -117,6 +117,15 @@ if (!cde_credits_consume($userId, $creditCost, 'export:' . substr(hash('sha256',
 
 $seconds = max(1, (int) round(microtime(true) - $started));
 
+$enrichedCount = 0;
+if (!empty($tiers['enriched'])) {
+    foreach ($rows as $row) {
+        if (trim((string) ($row['company_domain'] ?? '')) !== '' || trim((string) ($row['profile_summary'] ?? '')) !== '') {
+            $enrichedCount++;
+        }
+    }
+}
+
 cde_json_response(200, [
     'ok' => true,
     'count' => count($rows),
@@ -128,4 +137,5 @@ cde_json_response(200, [
     'credits_used' => $creditCost,
     'tiers' => $tiers,
     'balance' => cde_credits_get_balance($userId),
+    'enriched_count' => $enrichedCount,
 ]);

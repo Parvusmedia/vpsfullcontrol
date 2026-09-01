@@ -138,9 +138,41 @@ function cde_credits_append_ledger(array $entry): void
     @file_put_contents(cde_credits_ledger_file(), $line . "\n", FILE_APPEND | LOCK_EX);
 }
 
+function cde_credits_ledger_has_ref(string $ref): bool
+{
+    $ref = trim($ref);
+    if ($ref === '') {
+        return false;
+    }
+    $path = cde_credits_ledger_file();
+    if (!is_readable($path)) {
+        return false;
+    }
+    $needle = '"ref":"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $ref) . '"';
+    $handle = fopen($path, 'rb');
+    if ($handle === false) {
+        return false;
+    }
+    while (!feof($handle)) {
+        $line = fgets($handle);
+        if ($line === false) {
+            break;
+        }
+        if (strpos($line, $needle) !== false) {
+            fclose($handle);
+            return true;
+        }
+    }
+    fclose($handle);
+    return false;
+}
+
 function cde_credits_add(string $userId, int $amount, string $ref, array $meta = []): int
 {
     if ($amount <= 0) {
+        return cde_credits_get_balance($userId);
+    }
+    if (cde_credits_ledger_has_ref($ref)) {
         return cde_credits_get_balance($userId);
     }
     $wallets = cde_credits_load_wallets();

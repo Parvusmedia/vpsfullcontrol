@@ -26,6 +26,10 @@ const I18N = {
     "credits.loadMore": "Load more credits",
     "credits.connectNeedsBalance": "Load credits first, then connect LinkedIn.",
     "credits.checkoutOpened": "Stripe checkout opened in a new window. Return here after payment.",
+    "credits.confirmingPayment": "Confirming payment…",
+    "credits.paidPending": "Payment received. Credits may take a few seconds — refresh if balance is still zero.",
+    "credits.sessionNote": "Credits stay in this browser session — use the same device and do not clear cookies after topping up.",
+    "credits.pack": "Credit pack",
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
     "credits.insufficient": "Not enough credits for this export. Buy more credits (min €20).",
@@ -48,6 +52,7 @@ const I18N = {
     "form.hint":
       "Open your list in Sales Navigator, copy the browser URL and paste it above. Large lists may take a minute — keep this tab open.",
     "progress.label": "Exporting leads…",
+    "progress.enriched": "Exporting and enriching profiles…",
     "results.title": "Export ready",
     "results.another": "Export another",
     "results.csv": "Download CSV",
@@ -121,6 +126,7 @@ const I18N = {
     "msg.rateLimit": "Rate limit reached. Try again later or contact us for multi-account setup.",
     "msg.empty": "No leads returned. Check the URL and Sales Navigator access.",
     "msg.exporting": "Exporting… this may take up to a minute for large lists.",
+    "msg.exportingEnriched": "Exporting and enriching via Harvest… large lists may take several minutes.",
     "msg.contactOk": "Request sent. We will reply by email.",
   },
   es: {
@@ -150,6 +156,10 @@ const I18N = {
     "credits.loadMore": "Cargar más créditos",
     "credits.connectNeedsBalance": "Carga saldo primero y después conecta LinkedIn.",
     "credits.checkoutOpened": "Checkout de Stripe abierto. Vuelve aquí tras pagar.",
+    "credits.confirmingPayment": "Confirmando pago…",
+    "credits.paidPending": "Pago recibido. Los créditos pueden tardar unos segundos — recarga si el saldo sigue en cero.",
+    "credits.sessionNote": "Los créditos quedan en esta sesión del navegador — usa el mismo dispositivo y no borres cookies tras recargar.",
+    "credits.pack": "Pack de créditos",
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
@@ -172,6 +182,7 @@ const I18N = {
     "form.hint":
       "Abre tu lista en Sales Navigator, copia la URL del navegador y pégala arriba. Listas grandes pueden tardar un minuto — no cierres esta pestaña.",
     "progress.label": "Exportando leads…",
+    "progress.enriched": "Exportando y enriqueciendo perfiles…",
     "results.title": "Exportación lista",
     "results.another": "Exportar otra",
     "results.csv": "Descargar CSV",
@@ -245,6 +256,7 @@ const I18N = {
     "msg.rateLimit": "Límite de uso alcanzado. Prueba más tarde o contáctanos para multi-cuenta.",
     "msg.empty": "No se devolvieron leads. Revisa la URL y el acceso a Sales Navigator.",
     "msg.exporting": "Exportando… puede tardar hasta un minuto en listas grandes.",
+    "msg.exportingEnriched": "Exportando y enriqueciendo con Harvest… listas grandes pueden tardar varios minutos.",
     "msg.contactOk": "Solicitud enviada. Responderemos por email.",
   },
 };
@@ -384,9 +396,13 @@ function renderCredits() {
   const el = document.getElementById("connect-credits");
   const connectBtn = document.getElementById("connect-btn");
   const buyMoreBtn = document.getElementById("buy-more-btn");
+  const sessionNote = document.getElementById("connect-session-note");
+  const packWrap = document.getElementById("connect-pack-wrap");
   if (!el) return;
   if (!billingEnabled) {
     el.hidden = true;
+    if (sessionNote) sessionNote.hidden = true;
+    if (packWrap) packWrap.hidden = true;
     if (connectBtn) {
       connectBtn.disabled = false;
       connectBtn.removeAttribute("aria-disabled");
@@ -395,6 +411,8 @@ function renderCredits() {
   }
   el.hidden = false;
   el.textContent = t("credits.balance", { count: creditBalance });
+  if (sessionNote) sessionNote.hidden = false;
+  if (packWrap) packWrap.hidden = isConnected;
 
   const hasCredits = creditBalance > 0;
   if (connectBtn && !isConnected) {
@@ -402,6 +420,24 @@ function renderCredits() {
     connectBtn.setAttribute("aria-disabled", hasCredits ? "false" : "true");
   }
   if (buyMoreBtn) buyMoreBtn.hidden = !isConnected;
+}
+
+function renderCreditPacks(packs) {
+  const select = document.getElementById("credit-pack");
+  if (!select || !Array.isArray(packs) || !packs.length) return;
+  const prev = select.value || defaultPackId;
+  select.innerHTML = "";
+  packs.forEach((pack) => {
+    const opt = document.createElement("option");
+    opt.value = String(pack.id);
+    const price = pack.price_eur ? `€${pack.price_eur}` : "";
+    opt.textContent = price ? `${pack.label} — ${price}` : pack.label;
+    select.appendChild(opt);
+  });
+  if ([...select.options].some((o) => o.value === String(prev))) {
+    select.value = String(prev);
+  }
+  defaultPackId = select.value || defaultPackId;
 }
 
 async function fetchCredits() {
@@ -412,7 +448,9 @@ async function fetchCredits() {
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
     if (Array.isArray(data.packs) && data.packs.length) {
-      defaultPackId = String(data.packs[0].id);
+      renderCreditPacks(data.packs);
+      const packSelect = document.getElementById("credit-pack");
+      if (packSelect?.value) defaultPackId = packSelect.value;
     }
     renderCredits();
     renderConnectionStatus(lastConnection);
@@ -450,6 +488,13 @@ function openAuthPopup(url, messageType) {
 }
 
 async function startStripeCheckout(pack = defaultPackId) {
+  const packSelect = document.getElementById("credit-pack");
+  if (packSelect?.value) pack = packSelect.value;
+  try {
+    sessionStorage.setItem("sn_pre_balance", String(creditBalance));
+  } catch {
+    /* ignore */
+  }
   const res = await fetch("/api/salesnav-stripe-checkout.php", {
     method: "POST",
     credentials: "same-origin",
@@ -576,7 +621,7 @@ function handleCreditsQuery() {
   const params = new URLSearchParams(window.location.search);
   const credits = params.get("credits");
   if (credits === "1") {
-    fetchCredits().then(() => setNote(t("credits.paid"), "ok"));
+    pollCreditsAfterReturn();
     params.delete("credits");
     const qs = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
@@ -588,8 +633,34 @@ function handleCreditsQuery() {
   }
 }
 
-function setProgress(active) {
+async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
+  let prev = 0;
+  try {
+    prev = parseInt(sessionStorage.getItem("sn_pre_balance") || "0", 10) || 0;
+  } catch {
+    prev = 0;
+  }
+  setNote(t("credits.confirmingPayment"), "ok");
+  for (let i = 0; i < maxAttempts; i += 1) {
+    await fetchCredits();
+    if (creditBalance > prev) {
+      try {
+        sessionStorage.removeItem("sn_pre_balance");
+      } catch {
+        /* ignore */
+      }
+      setNote(t("credits.paid"), "ok");
+      return;
+    }
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  setNote(t("credits.paidPending"), "ok");
+}
+
+function setProgress(active, labelKey = "progress.label") {
   const progress = document.getElementById("progress");
+  const label = document.getElementById("progress-label");
+  if (label) label.textContent = t(labelKey);
   if (progress) progress.hidden = !active;
 }
 
@@ -675,15 +746,16 @@ async function runExport() {
     return;
   }
 
-  setNote(t("msg.exporting"), "ok");
-  setProgress(true);
+  const tierEnriched = document.getElementById("tier-enriched")?.checked;
+  const tierMail = document.getElementById("tier-mail")?.checked;
+
+  setNote(tierEnriched ? t("msg.exportingEnriched") : t("msg.exporting"), "ok");
+  setProgress(true, tierEnriched ? "progress.enriched" : "progress.label");
   document.getElementById("results")?.setAttribute("hidden", "");
   document.getElementById("export-submit").disabled = true;
 
   try {
     const challenge = await getChallenge();
-    const tierEnriched = document.getElementById("tier-enriched")?.checked;
-    const tierMail = document.getElementById("tier-mail")?.checked;
     const body = {
       challenge,
       company_url: honeypot,
@@ -858,6 +930,10 @@ handleConnectQuery();
 handleCreditsQuery();
 fetchCredits();
 fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
+
+document.getElementById("credit-pack")?.addEventListener("change", (e) => {
+  defaultPackId = e.target.value || defaultPackId;
+});
 
 document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
 document.getElementById("connect-btn-demo")?.addEventListener("click", () => startConnect(false));

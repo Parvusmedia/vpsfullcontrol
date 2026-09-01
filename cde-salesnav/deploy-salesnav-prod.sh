@@ -91,6 +91,9 @@ path.write_text(text)
 print('index.html updated')
 PY"
 
+echo "==> Remove legacy salesnav-redeem-promo.php on production"
+ssh "$REMOTE" "ssh $PROD 'rm -f $DOCROOT/api/salesnav-redeem-promo.php 2>/dev/null || true'"
+
 echo "==> Patch homepage hub copy (badges, SN pricing, CTAs)"
 scp "/workspace/cde-salesnav/deploy/patch-home-hub-copy.py" "$REMOTE:/tmp/patch-home-hub-copy.py"
 ssh "$REMOTE" "ssh $PROD python3 /tmp/patch-home-hub-copy.py $DOCROOT"
