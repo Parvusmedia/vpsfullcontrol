@@ -331,9 +331,7 @@ function cde_tasks_recover_stale(int $maxAgeSeconds = 900): void
             continue;
         }
         cde_tasks_update($taskId, ['run_retries' => $retries + 1]);
-        if (!cde_tasks_spawn_run($taskId)) {
-            cde_tasks_run($taskId);
-        }
+        cde_tasks_spawn_run($taskId);
     }
 }
 
@@ -495,6 +493,13 @@ function cde_tasks_run(string $taskId): void
         cde_tasks_notify_ready($task, $taskId);
     } catch (Throwable $e) {
         $msg = $e->getMessage();
+        if (
+            $msg === cde_salesnav_stale_account_message()
+            || cde_unipile_account_error_is_stale(['status' => 404, 'error' => $msg])
+        ) {
+            cde_salesnav_mark_account_stale($userId, $msg);
+            $msg = cde_salesnav_stale_account_message();
+        }
         cde_tasks_update($taskId, [
             'status' => 'failed',
             'error' => $msg,

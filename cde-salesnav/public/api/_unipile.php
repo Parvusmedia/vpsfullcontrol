@@ -386,7 +386,12 @@ function cde_salesnav_session_account(): ?array
     if ($accountId === '') {
         $userId = cde_salesnav_user_id();
         $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-        if (is_array($stored) && !empty($stored['account_id']) && empty($stored['disconnected_at'])) {
+        if (
+            is_array($stored)
+            && !empty($stored['account_id'])
+            && empty($stored['disconnected_at'])
+            && empty($stored['invalid_at'])
+        ) {
             cde_salesnav_set_session_account(
                 (string) $stored['account_id'],
                 (string) ($stored['label'] ?? ''),
@@ -640,9 +645,146 @@ function cde_salesnav_normalize_search_url(string $value): string
     ]);
 }
 
-/** Background exports must throw so task status can be updated. */
-function cde_salesnav_export_abort(string $error): void
+function cde_unipile_account_error_is_stale(array $resp): bool
 {
+    $status = (int) ($resp['status'] ?? 0);
+    if ($status === 404) {
+        return true;
+    }
+    $err = strtolower((string) ($resp['error'] ?? ''));
+    return str_contains($err, 'resource not found')
+        || str_contains($err, 'not found')
+        || str_contains($err, 'expired credentials');
+}
+
+function cde_salesnav_stale_account_message(): string
+{
+    return 'LinkedIn connection expired. Reconnect your account from the panel and try again.';
+}
+
+function cde_salesnav_account_revalidate_ttl(): int
+{
+    return 300;
+}
+
+function cde_salesnav_is_account_alive(string $accountId): bool
+{
+    if ($accountId === '') {
+        return false;
+    }
+    $config = cde_unipile_api_config($accountId);
+    $resp = cde_unipile_request($config, 'GET', '/users/me', ['account_id' => $accountId], null, 30);
+
+    return $resp['ok'];
+}
+
+function cde_salesnav_should_revalidate_account(?array $stored): bool
+{
+    if (!is_array($stored) || empty($stored['account_id']) || !empty($stored['invalid_at'])) {
+        return false;
+    }
+    $validated = strtotime((string) ($stored['validated_at'] ?? ''));
+    if ($validated === false) {
+        return true;
+    }
+
+    return (time() - $validated) >= cde_salesnav_account_revalidate_ttl();
+}
+
+function cde_salesnav_touch_account_validated(string $userId): void
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (!is_array($stored)) {
+        return;
+    }
+    cde_salesnav_save_account($userId, array_merge($stored, [
+        'validated_at' => gmdate('c'),
+        'status' => 'CONNECTED',
+        'invalid_at' => null,
+        'invalid_reason' => null,
+    ]));
+}
+
+function cde_salesnav_mark_account_stale(?string $userId = null, string $reason = ''): void
+{
+    $userId = $userId ?? cde_salesnav_user_id();
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (!is_array($stored)) {
+        cde_salesnav_clear_session_account();
+        return;
+    }
+    cde_salesnav_save_account($userId, array_merge($stored, [
+        'disconnected_at' => gmdate('c'),
+        'invalid_at' => gmdate('c'),
+        'invalid_reason' => $reason !== '' ? $reason : 'LinkedIn connection is no longer valid in Unipile.',
+        'status' => 'INVALID',
+    ]));
+    cde_salesnav_clear_session_account();
+}
+
+function cde_salesnav_handle_stale_unipile_response(array $resp, ?string $userId = null): bool
+{
+    if (!cde_unipile_account_error_is_stale($resp)) {
+        return false;
+    }
+    cde_salesnav_mark_account_stale($userId, (string) ($resp['error'] ?? ''));
+
+    return true;
+}
+
+/** @return array{account_id: string, label: string, avatar_url: string, connected_at: string}|null */
+function cde_salesnav_ensure_account_valid(?string $userId = null): ?array
+{
+    $userId = $userId ?? cde_salesnav_user_id();
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (is_array($stored) && !empty($stored['invalid_at'])) {
+        cde_salesnav_clear_session_account();
+        return null;
+    }
+
+    $account = cde_salesnav_session_account();
+    if ($account === null || ($account['account_id'] ?? '') === '') {
+        return null;
+    }
+
+    if (cde_salesnav_should_revalidate_account($stored)) {
+        if (!cde_salesnav_is_account_alive((string) $account['account_id'])) {
+            cde_salesnav_mark_account_stale($userId);
+            return null;
+        }
+        cde_salesnav_touch_account_validated($userId);
+    }
+
+    return $account;
+}
+
+/** @return array{account_id: string, label: string, avatar_url: string, connected_at: string} */
+function cde_salesnav_require_valid_account(): array
+{
+    $userId = cde_salesnav_user_id();
+    $account = cde_salesnav_ensure_account_valid($userId);
+    if ($account !== null) {
+        return $account;
+    }
+
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $hadLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
+    cde_json_response(403, [
+        'ok' => false,
+        'error' => cde_salesnav_stale_account_message(),
+        'needs_connect' => true,
+        'needs_reconnect' => $hadLink,
+        'reconnect_available' => $hadLink,
+        'stored_label' => is_array($stored) ? (string) ($stored['label'] ?? '') : '',
+    ]);
+}
+
+/** Background exports must throw so task status can be updated. */
+function cde_salesnav_export_abort(string $error, ?array $resp = null): void
+{
+    if (is_array($resp) && cde_unipile_account_error_is_stale($resp)) {
+        throw new RuntimeException(cde_salesnav_stale_account_message());
+    }
     throw new RuntimeException($error);
 }
 
@@ -781,7 +923,7 @@ function cde_salesnav_paginate_v1(array $config, string $sourceUrl, int $maxLead
             ['url' => $sourceUrl]
         );
         if (!$resp['ok']) {
-            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed', $resp);
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);
@@ -826,7 +968,7 @@ function cde_salesnav_paginate_v2_search(array $config, string $searchUrl, int $
             ['url' => $searchUrl]
         );
         if (!$resp['ok']) {
-            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed', $resp);
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);
@@ -866,7 +1008,7 @@ function cde_salesnav_paginate_v2_list(array $config, string $listId, int $maxLe
             []
         );
         if (!$resp['ok']) {
-            cde_salesnav_export_abort($resp['error'] ?? 'Export failed');
+            cde_salesnav_export_abort($resp['error'] ?? 'Export failed', $resp);
         }
 
         $batch = cde_salesnav_collect_items($resp['data']);

@@ -24,13 +24,33 @@ if ($stored === null || empty($stored['account_id'])) {
     ]);
 }
 
+if (!empty($stored['invalid_at'])) {
+    cde_json_response(403, [
+        'ok' => false,
+        'error' => cde_salesnav_stale_account_message(),
+        'needs_reconnect' => true,
+        'reconnect_available' => true,
+    ]);
+}
+
 $accountId = (string) $stored['account_id'];
+if (!cde_salesnav_is_account_alive($accountId)) {
+    cde_salesnav_mark_account_stale($userId);
+    cde_json_response(403, [
+        'ok' => false,
+        'error' => cde_salesnav_stale_account_message(),
+        'needs_reconnect' => true,
+        'reconnect_available' => true,
+    ]);
+}
+
 if (!empty($stored['disconnected_at'])) {
     cde_salesnav_save_account($userId, array_merge($stored, [
         'disconnected_at' => null,
     ]));
 }
 $meta = cde_salesnav_refresh_account_meta($userId, $accountId);
+cde_salesnav_touch_account_validated($userId);
 $account = cde_salesnav_session_account();
 $connected = $account !== null && ($account['account_id'] ?? '') !== '';
 

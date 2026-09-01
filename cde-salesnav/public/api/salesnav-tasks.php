@@ -29,14 +29,7 @@ if ($email === '') {
     cde_json_response(401, ['ok' => false, 'error' => 'Sign in with your work email first.']);
 }
 
-$linked = cde_salesnav_session_account();
-if ($linked === null) {
-    cde_json_response(403, [
-        'ok' => false,
-        'error' => 'Connect LinkedIn before starting an export.',
-        'needs_connect' => true,
-    ]);
-}
+$linked = cde_salesnav_require_valid_account();
 
 $raw = file_get_contents('php://input') ?: '';
 $payload = json_decode($raw, true);

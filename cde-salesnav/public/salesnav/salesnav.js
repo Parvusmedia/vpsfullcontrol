@@ -62,6 +62,8 @@ const I18N = {
     "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
+    "connect.expired":
+      "Your LinkedIn connection expired. Reconnect to continue exporting.",
     "connect.starting": "Opening secure connection…",
     "connect.success": "LinkedIn connected. You can export now.",
     "connect.failed": "Connection failed or was cancelled. Try again.",
@@ -270,6 +272,8 @@ const I18N = {
     "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
+    "connect.expired":
+      "Tu conexión con LinkedIn expiró. Reconecta para seguir exportando.",
     "connect.starting": "Abriendo conexión segura…",
     "connect.success": "LinkedIn conectado. Ya puedes exportar.",
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
@@ -578,13 +582,20 @@ async function parseJsonResponse(res) {
   }
 }
 
+function isLinkedInReconnectError(message) {
+  const text = String(message || "").toLowerCase();
+  return text.includes("reconnect your account") || text.includes("reconecta");
+}
+
 function renderConnectionStatus(data) {
-  reconnectAvailable = !!data?.reconnect_available;
+  reconnectAvailable = !!data?.reconnect_available || !!data?.needs_reconnect;
   lastConnection = {
     connected: !!data?.connected,
     label: data?.label || data?.stored_label || "",
     avatar_url: data?.avatar_url || "",
     connected_at: data?.connected_at || "",
+    needs_reconnect: !!data?.needs_reconnect,
+    connect_message: data?.connect_message || "",
   };
   isConnected = lastConnection.connected;
   const badge = document.getElementById("connect-badge");
@@ -645,10 +656,13 @@ function renderConnectionStatus(data) {
   }
 
   if (!isConnected && reconnectAvailable && copy) {
+    const expiredMsg = data?.needs_reconnect
+      ? t("connect.expired")
+      : data?.connect_message || "";
     const hint = data?.stored_label
       ? t("connect.connectedAs", { label: data.stored_label }) + " — " + t("connect.reconnectHint")
       : t("connect.reconnectHint");
-    copy.textContent = hint;
+    copy.textContent = expiredMsg || hint;
   }
 
   const liCard = document.querySelector(".panel-card-linkedin");
@@ -1653,6 +1667,9 @@ async function fetchTasks(opts = {}) {
     panelTasks = Array.isArray(data.tasks) ? data.tasks : [];
     renderTasksTable();
     scheduleTasksPoll();
+    if (panelTasks.some((task) => task.status === "failed" && isLinkedInReconnectError(task.error))) {
+      fetchConnectionStatus().catch(() => {});
+    }
     if (!opts.silent) {
       highlightTaskFromQuery();
     }
@@ -1813,9 +1830,15 @@ async function submitCreateTask(e) {
       await startStripeCheckout(defaultPackId);
       throw new Error(t("credits.insufficient"));
     }
-    if (data.needs_connect) {
-      renderConnectionStatus({ connected: false });
-      throw new Error(t("connect.required"));
+    if (data.needs_connect || data.needs_reconnect) {
+      renderConnectionStatus({
+        connected: false,
+        reconnect_available: true,
+        needs_reconnect: !!data.needs_reconnect,
+        stored_label: data.stored_label || "",
+        connect_message: data.error || "",
+      });
+      throw new Error(data.error || t("connect.required"));
     }
     if (!res.ok || !data.ok) {
       throw new Error(data.error || t("msg.generic"));
@@ -1961,9 +1984,15 @@ async function runExport() {
       await startStripeCheckout(defaultPackId);
       throw new Error(t("credits.insufficient"));
     }
-    if (data.needs_connect) {
-      renderConnectionStatus({ connected: false });
-      throw new Error(t("connect.required"));
+    if (data.needs_connect || data.needs_reconnect) {
+      renderConnectionStatus({
+        connected: false,
+        reconnect_available: true,
+        needs_reconnect: !!data.needs_reconnect,
+        stored_label: data.stored_label || "",
+        connect_message: data.error || "",
+      });
+      throw new Error(data.error || t("connect.required"));
     }
     if (!res.ok || !data.ok) {
       throw new Error(data.error || t("msg.generic"));

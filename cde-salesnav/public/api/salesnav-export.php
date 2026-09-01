@@ -39,7 +39,7 @@ if ($limit > 2000) {
 
 cde_enforce_salesnav_rate_limits($limit);
 
-$linked = cde_salesnav_require_account();
+$linked = cde_salesnav_require_valid_account();
 $config = cde_unipile_api_config($linked['account_id']);
 $sourceUrl = '';
 if ($listUrl !== '') {

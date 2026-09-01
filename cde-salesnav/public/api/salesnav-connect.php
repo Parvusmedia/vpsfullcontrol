@@ -32,18 +32,32 @@ if (!is_array($payload)) {
 }
 
 $userId = cde_salesnav_user_id();
-$stored = cde_salesnav_stored_account($userId);
+$stored = cde_salesnav_load_accounts()[$userId] ?? null;
 $sessionAccount = cde_salesnav_session_account();
 $explicitReconnect = !empty($payload['reconnect']);
+$storedInvalid = is_array($stored) && !empty($stored['invalid_at']);
+$storedAlive = is_array($stored)
+    && !empty($stored['account_id'])
+    && !$storedInvalid
+    && cde_salesnav_is_account_alive((string) $stored['account_id']);
+$hadPriorLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
 
-if ($stored !== null) {
+if ($storedAlive) {
     $type = 'reconnect';
     $reconnectId = (string) $stored['account_id'];
 } elseif ($explicitReconnect && $sessionAccount !== null && ($sessionAccount['account_id'] ?? '') !== '') {
-    $type = 'reconnect';
-    $reconnectId = (string) $sessionAccount['account_id'];
+    $accountId = (string) $sessionAccount['account_id'];
+    if (cde_salesnav_is_account_alive($accountId)) {
+        $type = 'reconnect';
+        $reconnectId = $accountId;
+    } else {
+        $type = 'create';
+        $reconnectId = null;
+    }
 } else {
-    cde_credits_require_positive_balance();
+    if (!$hadPriorLink && !$explicitReconnect) {
+        cde_credits_require_positive_balance();
+    }
     $type = 'create';
     $reconnectId = null;
 }

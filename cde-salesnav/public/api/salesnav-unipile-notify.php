@@ -45,6 +45,9 @@ cde_salesnav_save_account($userId, array_merge($existing, [
     'status' => $status,
     'linked_at' => gmdate('c'),
     'disconnected_at' => null,
+    'invalid_at' => null,
+    'invalid_reason' => null,
+    'validated_at' => gmdate('c'),
 ]));
 
 // If this browser session initiated the connect flow, attach immediately.
