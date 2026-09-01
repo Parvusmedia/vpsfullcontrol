@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_credits.php';
+require __DIR__ . '/_stripe.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -20,7 +21,7 @@ $packs = cde_credits_packs();
 
 $out = [];
 foreach ($packs as $id => $pack) {
-    $out[] = [
+    $item = [
         'id' => $id,
         'credits' => $pack['credits'],
         'paid_base' => $pack['paid_base'],
@@ -29,6 +30,11 @@ foreach ($packs as $id => $pack) {
         'price_eur' => number_format($pack['amount_cents'] / 100, 2, '.', ''),
         'label' => $pack['label'],
     ];
+    $priceId = cde_stripe_price_id_for_pack((string) $id);
+    if ($priceId !== '') {
+        $item['stripe_price_id'] = $priceId;
+    }
+    $out[] = $item;
 }
 
 cde_json_response(200, [

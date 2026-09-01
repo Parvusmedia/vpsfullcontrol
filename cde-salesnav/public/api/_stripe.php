@@ -13,6 +13,7 @@ function cde_stripe_config(): array
     $secret = $env['STRIPE_SECRET_KEY'] ?? getenv('STRIPE_SECRET_KEY') ?: '';
     $webhook = $env['STRIPE_WEBHOOK_SECRET'] ?? getenv('STRIPE_WEBHOOK_SECRET') ?: '';
     $origin = $env['SALESNAV_SITE_ORIGIN'] ?? getenv('SALESNAV_SITE_ORIGIN') ?: 'https://companydataenrichment.com';
+    $productId = $env['STRIPE_PRODUCT_ID'] ?? getenv('STRIPE_PRODUCT_ID') ?: 'prod_VB9BUSTFvzzBRm';
 
     if ($secret === '') {
         cde_json_response(503, [
@@ -25,7 +26,22 @@ function cde_stripe_config(): array
         'secret_key' => $secret,
         'webhook_secret' => $webhook,
         'origin' => rtrim($origin, '/'),
+        'product_id' => $productId,
     ];
+}
+
+/** Stripe Price ID for a pack (env override: STRIPE_PRICE_ID_120, or STRIPE_PRICE_ID for min pack). */
+function cde_stripe_price_id_for_pack(string $packId): string
+{
+    $env = cde_credits_read_env();
+    $specific = $env['STRIPE_PRICE_ID_' . $packId] ?? getenv('STRIPE_PRICE_ID_' . $packId) ?: '';
+    if ($specific !== '') {
+        return $specific;
+    }
+    if ($packId === '120') {
+        return $env['STRIPE_PRICE_ID'] ?? getenv('STRIPE_PRICE_ID') ?: 'price_1UAmt1L0sc6a4STMnQu6BJcY';
+    }
+    return '';
 }
 
 function cde_stripe_request(string $method, string $path, array $fields): array
@@ -80,12 +96,20 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
         'metadata[credits]' => (string) $total,
         'metadata[paid_base]' => (string) $paidBase,
         'metadata[bonus_credits]' => (string) $bonus,
+        'metadata[stripe_product_id]' => $cfg['product_id'],
         'line_items[0][quantity]' => '1',
-        'line_items[0][price_data][currency]' => 'eur',
-        'line_items[0][price_data][unit_amount]' => (string) $pack['amount_cents'],
-        'line_items[0][price_data][product_data][name]' => $pack['label'],
-        'line_items[0][price_data][product_data][description' => 'Prepaid export credits — Basic €0.05/lead; Enriched +€0.02; Mail +€0.09 if found. Min top-up €20.',
     ];
+
+    $priceId = cde_stripe_price_id_for_pack($packId);
+    if ($priceId !== '') {
+        $fields['line_items[0][price]'] = $priceId;
+    } else {
+        $fields['line_items[0][price_data][currency]'] = 'eur';
+        $fields['line_items[0][price_data][unit_amount]'] = (string) $pack['amount_cents'];
+        $fields['line_items[0][price_data][product]'] = $cfg['product_id'];
+        $fields['line_items[0][price_data][product_data][name]'] = $pack['label'];
+        $fields['line_items[0][price_data][product_data][description]'] = 'Prepaid export credits (NavExport / Sales Navigator).';
+    }
 
     $resp = cde_stripe_request('POST', 'checkout/sessions', $fields);
     if (!$resp['ok']) {
@@ -105,6 +129,7 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
         'session_id' => (string) ($resp['data']['id'] ?? ''),
         'credits' => $pack['credits'],
         'amount_cents' => $pack['amount_cents'],
+        'stripe_price_id' => $priceId !== '' ? $priceId : null,
     ];
 }
 

@@ -62,9 +62,13 @@ Export CSV
 ```env
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRODUCT_ID=prod_VB9BUSTFvzzBRm
+STRIPE_PRICE_ID=price_1UAmt1L0sc6a4STMnQu6BJcY
 SALESNAV_SITE_ORIGIN=https://companydataenrichment.com
 # SALESNAV_BILLING_ENABLED=1   # omit or set 1 when ready; set 0 to disable
 ```
+
+Pack `120` (€20 → 120 credits) uses `STRIPE_PRICE_ID`. Other packs fall back to ad-hoc `price_data` until you add `STRIPE_PRICE_ID_300`, etc.
 
 4. Deploy + test with Stripe test keys first (`sk_test_`, test webhook).
 
