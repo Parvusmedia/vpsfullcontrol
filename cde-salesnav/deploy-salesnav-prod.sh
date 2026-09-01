@@ -91,23 +91,9 @@ path.write_text(text)
 print('index.html updated')
 PY"
 
-echo "==> Remove 'No credit card' hub badge on production"
-ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
-import re
-from pathlib import Path
-idx = Path('$DOCROOT/index.html')
-text = idx.read_text()
-text2 = re.sub(r'\n\s*<span class=\"hub-badge\" data-i18n=\"hub\.badge2\">[^<]*</span>', '', text)
-if text2 != text:
-    idx.write_text(text2)
-    print('index.html badge removed')
-js = Path('$DOCROOT/app.js')
-j = js.read_text()
-j2 = re.sub(r'\n\s*\"hub\.badge2\": \"[^\"]*\",', '', j)
-if j2 != j:
-    js.write_text(j2)
-    print('app.js badge removed')
-PY"
+echo "==> Patch homepage hub copy (badges, SN pricing, CTAs)"
+scp "/workspace/cde-salesnav/deploy/patch-home-hub-copy.py" "$REMOTE:/tmp/patch-home-hub-copy.py"
+ssh "$REMOTE" "ssh $PROD python3 /tmp/patch-home-hub-copy.py $DOCROOT"
 
 echo "==> Patch mobile site-nav in production styles.css"
 ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
