@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Navigator Export — CSV leads from your SN lists</title>
+  <meta name="description" content="Export Sales Navigator lead lists and people searches to CSV — name, title, company, location and LinkedIn URL. Simple tier powered by Unipile." />
+  <link rel="canonical" href="https://companydataenrichment.com/salesnav/" />
+  <link rel="alternate" hreflang="en" href="https://companydataenrichment.com/salesnav/" />
+  <link rel="alternate" hreflang="es" href="https://companydataenrichment.com/salesnav/?lang=es" />
+  <link rel="alternate" hreflang="x-default" href="https://companydataenrichment.com/salesnav/" />
+  <meta property="og:title" content="Sales Navigator Export — CompanyDataEnrichment" />
+  <meta property="og:description" content="Paste a Sales Navigator list or search URL and download leads as CSV." />
+  <meta property="og:url" content="https://companydataenrichment.com/salesnav/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://companydataenrichment.com/og-image.jpg" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=25" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=16" />
+  <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
+  <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
+</head>
+<body class="product-salesnav">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="/">CompanyDataEnrichment</a>
+    <nav class="site-nav" aria-label="Products">
+      <a href="/" data-i18n="nav.companies">Companies</a>
+      <a href="/salesnav/" class="is-active" aria-current="page" data-i18n="nav.salesnav">Sales Navigator</a>
+      <a href="/salesnav/panel/" data-i18n="nav.panel">My panel</a>
+    </nav>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" class="lang-btn" data-lang="es" aria-pressed="false">ES</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="salesnav-main">
+    <section class="hero salesnav-hero">
+      <div class="hero-copy">
+        <h2 class="hero-kicker" data-i18n="hero.kicker">Paste a Sales Navigator list or search URL.</h2>
+        <h1 data-i18n="hero.title">Export leads to CSV in minutes.</h1>
+        <p class="lede" data-i18n="hero.lede">
+          Turn saved SN lists and people searches into a clean CSV — name, job title, company, location and LinkedIn profile URL — ready for CRM or outreach.
+        </p>
+        <p class="coverage salesnav-note" data-i18n="hero.note">
+          Connect your LinkedIn account with Sales Navigator, then paste a list or search URL. Demo exports up to <strong>25 leads</strong> free.
+        </p>
+
+        <div class="hero-cta">
+          <a class="connect-btn" href="/salesnav/panel/" data-i18n="landing.openPanel">Open my panel</a>
+          <a class="ghost-btn" href="/salesnav/panel/#topup" data-i18n="landing.getStarted">Get started — from €20</a>
+        </div>
+        <p class="hero-panel-note muted" data-i18n="landing.panelNote">
+          After payment, manage credits, LinkedIn and exports in your private panel — not on this page.
+        </p>
+      </div>
+
+      <div class="hero-visual salesnav-visual" aria-hidden="true">
+        <div class="sn-scene">
+          <div class="sn-input">
+            <span class="enrich-kicker">Input</span>
+            <p class="sn-url">linkedin.com/sales/lists/people/7298…</p>
+          </div>
+          <div class="enrich-bridge">
+            <span class="enrich-bridge-line"></span>
+            <span class="enrich-bridge-core">Export</span>
+            <span class="enrich-bridge-line"></span>
+          </div>
+          <div class="sn-output">
+            <span class="enrich-kicker">CSV · 345 leads</span>
+            <div class="sn-fields-legend" aria-hidden="true">
+              <span class="sn-legend-item sn-legend-basic">Basic</span>
+              <span class="sn-legend-item sn-legend-enriched">Enriched</span>
+              <span class="sn-legend-item sn-legend-mail">Mail</span>
+            </div>
+            <ul class="sn-fields">
+              <li class="sn-field-row tier-basic"><span>first_name</span><span>last_name</span></li>
+              <li class="sn-field-row tier-basic"><span>full_name</span><span>job_title</span></li>
+              <li class="sn-field-row tier-basic"><span>company_name</span><span>location</span></li>
+              <li class="sn-field-row tier-basic"><span>linkedin_url</span><span>sales_nav_id</span></li>
+              <li class="sn-field-row tier-basic"><span>open_profile</span><span>connection_degree</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_linkedin_url</span><span>company_domain</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_industry</span><span>company_size</span></li>
+              <li class="sn-field-row tier-enriched"><span>company_hq</span><span>seniority</span></li>
+              <li class="sn-field-row tier-enriched"><span>tenure_years</span><span>profile_summary</span></li>
+              <li class="sn-field-row tier-enriched"><span>skills</span><span>languages</span></li>
+              <li class="sn-field-row tier-mail"><span>work_email</span><span>email_status</span></li>
+              <li class="sn-field-row tier-mail"><span>email_confidence</span><span>email_source</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="strip strip-featured" id="tiers">
+      <h2 class="strip-title" data-i18n="tiers.title">Modular tiers</h2>
+      <p class="strip-lede" data-i18n="tiers.lede">
+        Start with a simple CSV export. Add enrichment or verified email only when you need it.
+      </p>
+      <div class="tier-grid">
+        <article class="tier-card tier-basic">
+          <span class="sn-legend-item sn-legend-basic" data-i18n="tiers.basic.badge">Basic</span>
+          <p class="tier-price">
+            <span class="tier-price-amount" data-i18n="tiers.basic.price">€0.05</span>
+            <span class="tier-price-unit" data-i18n="tiers.basic.priceUnit">/ lead</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.basic.priceNote">Base export · available now</p>
+          <h3 data-i18n="tiers.basic.title">Basic</h3>
+          <p data-i18n="tiers.basic.body">Sales Navigator list/search export — name, title, company, location, LinkedIn URL and SN metadata.</p>
+        </article>
+        <article class="tier-card tier-enriched">
+          <span class="sn-legend-item sn-legend-enriched" data-i18n="tiers.enriched.badge">Enriched</span>
+          <p class="tier-price">
+            <span class="tier-price-amount tier-price-addon" data-i18n="tiers.enriched.price">+ €0.02</span>
+            <span class="tier-price-unit" data-i18n="tiers.enriched.priceUnit">/ lead</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.enriched.priceNote">Add-on to Basic</p>
+          <h3 data-i18n="tiers.enriched.title">Enriched</h3>
+          <p data-i18n="tiers.enriched.body">Company domain, industry, size, HQ, seniority, tenure, summary, skills and languages.</p>
+        </article>
+        <article class="tier-card tier-mail">
+          <span class="sn-legend-item sn-legend-mail" data-i18n="tiers.mail.badge">Mail</span>
+          <p class="tier-price">
+            <span class="tier-price-amount tier-price-addon" data-i18n="tiers.mail.price">+ €0.09</span>
+            <span class="tier-price-unit" data-i18n="tiers.mail.priceUnit">/ email found</span>
+          </p>
+          <p class="tier-price-note" data-i18n="tiers.mail.priceNote">Add-on · pay only when found</p>
+          <h3 data-i18n="tiers.mail.title">Mail</h3>
+          <p data-i18n="tiers.mail.body">Work email discovery with status, confidence and source — ideal for outbound teams.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="pricing-banner" id="pricing">
+      <div class="pricing-copy">
+        <p class="pricing-kicker" data-i18n="pricing.kicker">Agencies &amp; teams</p>
+        <h2 data-i18n="pricing.title">Need more than one LinkedIn account?</h2>
+        <p class="pricing-lede" data-i18n="pricing.lede">
+          Most users top up credits and export on their own. If you are an agency or manage multiple Sales Navigator seats, contact us for a multi-account setup.
+        </p>
+        <ul class="pricing-bullets">
+          <li data-i18n="pricing.b1">Multiple LinkedIn / Sales Navigator seats</li>
+          <li data-i18n="pricing.b2">Separate wallets per client or team member</li>
+          <li data-i18n="pricing.b3">Agency billing and onboarding support</li>
+        </ul>
+      </div>
+      <form class="contact-form" id="contact-form" novalidate>
+        <div id="contact-fields">
+          <h3 data-i18n="contact.title">Contact us</h3>
+          <label>
+            <span data-i18n="contact.name">Name</span>
+            <input type="text" name="name" id="contact-name" autocomplete="name" required maxlength="120" />
+          </label>
+          <label>
+            <span data-i18n="contact.company">Company / agency</span>
+            <input type="text" name="company" id="contact-company" autocomplete="organization" required maxlength="180" />
+          </label>
+          <label>
+            <span data-i18n="contact.email">Corporate email</span>
+            <input type="email" name="email" id="contact-email" autocomplete="email" required maxlength="180" />
+          </label>
+          <label>
+            <span data-i18n="contact.accounts">LinkedIn / SN accounts needed</span>
+            <select name="accounts" id="contact-accounts" required>
+              <option value="" data-i18n="contact.accountsPlaceholder">Select…</option>
+              <option value="2" data-i18n="contact.accounts2">2 accounts</option>
+              <option value="3-5" data-i18n="contact.accounts3_5">3–5 accounts</option>
+              <option value="6-10" data-i18n="contact.accounts6_10">6–10 accounts</option>
+              <option value="10+" data-i18n="contact.accounts10plus">10+ accounts</option>
+            </select>
+          </label>
+          <label class="captcha-row">
+            <span data-i18n="contact.captcha">Anti-spam</span>
+            <div class="captcha-fields">
+              <span class="captcha-q" id="captcha-question">…</span>
+              <input type="text" name="captcha_answer" id="captcha-answer" inputmode="numeric" autocomplete="off" required maxlength="4" aria-label="Captcha answer" />
+            </div>
+          </label>
+          <input type="hidden" id="captcha-id" name="captcha_id" value="" />
+          <input class="hp" type="text" name="website" id="contact-website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit" id="contact-submit" data-i18n="contact.submit">Send request</button>
+          <p class="contact-note" id="contact-note" hidden></p>
+          <p class="contact-privacy muted" data-i18n="contact.privacy">
+            We will only use these details to reply about multi-account Sales Navigator export.
+            <a href="/privacy.html">Privacy policy</a>.
+          </p>
+        </div>
+        <div class="contact-success" id="contact-success" hidden>
+          <p class="contact-success-kicker" data-i18n="contact.okKicker">Request sent</p>
+          <p class="contact-success-title" data-i18n="contact.okTitle">Thanks — we got your message.</p>
+          <p class="contact-success-body" data-i18n="contact.okBody">We will reply to your corporate email shortly.</p>
+          <button type="button" class="ghost-btn" id="contact-again" data-i18n="contact.again">Send another request</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="strip trust strip-featured">
+      <h2 class="strip-title" data-i18n="trust.title">Usage &amp; compliance</h2>
+      <ul class="trust-points">
+        <li data-i18n="trust.p1">Exports use your LinkedIn Sales Navigator access via a secure integration — you must have rights to the list you export.</li>
+        <li data-i18n="trust.p2">Output is assistive prospecting data. Review before CRM import or outreach; follow LinkedIn terms and applicable privacy rules.</li>
+        <li data-i18n="trust.p3">Demo rate limits apply on this page. Volume customers get dedicated limits aligned with LinkedIn daily export caps (~2,000/day per SN seat).</li>
+      </ul>
+      <p class="trust-legal"><a href="/privacy.html" data-i18n="trust.privacy">Terms &amp; privacy policy</a></p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div>
+      <p><strong>CompanyDataEnrichment</strong></p>
+      <p class="muted" data-i18n="footer.tag">Company enrichment · Sales Navigator export</p>
+    </div>
+    <div class="foot-links">
+      <a href="/">Companies</a>
+      <a href="/salesnav/">Sales Navigator</a>
+      <a href="/salesnav/panel/">My panel</a>
+      <a href="https://www.parvusmedia.com/" target="_blank" rel="noopener noreferrer">Parvus Media</a>
+      <a href="mailto:hello@companydataenrichment.com">hello@companydataenrichment.com</a>
+      <a href="/privacy.html" data-i18n="footer.privacy">Privacy</a>
+      <span class="muted">© <span id="y"></span></span>
+    </div>
+  </footer>
+
+  <script src="/salesnav/salesnav.js?v=22"></script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+/*
+ * Sales Navigator — LinkedIn blue theme (DO NOT MERGE INTO salesnav.css)
+ *
+ * This file is loaded after salesnav.css so layout edits there cannot
+ * accidentally revert the product color palette. Companies (/) stays teal.
+ */
+
+body.product-salesnav {
+  --teal: #0a66c2;
+  --teal-deep: #004182;
+  --ember: #c9a227;
+  --shadow: 0 24px 60px rgba(0, 65, 130, 0.12);
+  --sn-tint: rgba(10, 102, 194, 0.08);
+  --sn-tint-strong: rgba(10, 102, 194, 0.14);
+  /* Basic = LinkedIn blue; Enriched = green; Mail = amber */
+  --sn-tier-basic-bg: #dceaf8;
+  --sn-tier-basic-fg: #0a66c2;
+  --sn-tier-basic-border: #9ec5e8;
+  --sn-tier-enriched-bg: #dff3e4;
+  --sn-tier-enriched-fg: #1b5e20;
+  --sn-tier-enriched-border: #81c784;
+  --sn-tier-mail-bg: #fdebd6;
+  --sn-tier-mail-fg: #bf360c;
+  --sn-tier-mail-border: #ffb74d;
+
+  background:
+    radial-gradient(1200px 700px at 12% -10%, rgba(10, 102, 194, 0.14), transparent 55%),
+    radial-gradient(900px 600px at 92% 8%, rgba(0, 65, 130, 0.1), transparent 50%),
+    linear-gradient(180deg, #f4f7fb 0%, #eef3f8 42%, #e8eef5 100%);
+}
+
+body.product-salesnav .brand {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .lang-btn.is-active {
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .hero-kicker {
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .coverage {
+  color: var(--teal-deep);
+  border-left-color: var(--teal);
+  background: var(--sn-tint);
+}
+
+body.product-salesnav .mode-btn.is-active {
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .resolve input:focus,
+body.product-salesnav .resolve textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.18);
+}
+
+body.product-salesnav .resolve button {
+  border-color: var(--teal-deep);
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .resolve button:hover {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+body.product-salesnav .form-note {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .progress-label {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .progress-fill {
+  background: linear-gradient(90deg, var(--teal-deep), var(--teal) 55%, var(--ember));
+}
+
+body.product-salesnav .progress-steps li.is-active {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .progress-steps li.is-active::before {
+  background: var(--teal);
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.18);
+}
+
+body.product-salesnav .progress-steps li.is-done::before {
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .connect-panel {
+  border-color: var(--teal);
+  background: var(--sn-tint);
+}
+
+body.product-salesnav .connect-badge[data-state="connected"] {
+  border-color: var(--teal);
+  color: var(--teal-deep);
+  background: var(--sn-tint-strong);
+}
+
+body.product-salesnav .connect-btn {
+  border-color: var(--teal-deep);
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .connect-btn:hover {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+body.product-salesnav .preview-table th {
+  background: var(--sn-tint);
+}
+
+body.product-salesnav .site-nav a.is-active {
+  color: var(--teal-deep);
+  border-color: var(--teal);
+  background: var(--sn-tint);
+}
+
+body.product-salesnav .foot-links a {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .ghost-btn {
+  color: var(--teal-deep);
+}
+
+body.product-salesnav .ghost-btn:hover {
+  border-color: var(--teal);
+  background: #f4f8fc;
+}
+
+body.product-salesnav .cta-link {
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+}
+
+body.product-salesnav .cta-link:hover {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+body.product-salesnav .contact-form button[type="submit"] {
+  background: var(--teal-deep);
+}
+
+body.product-salesnav .contact-form button[type="submit"]:hover {
+  background: var(--teal);
+}

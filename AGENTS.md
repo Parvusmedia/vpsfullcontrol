@@ -25,3 +25,35 @@ This confirms whether MCP token, REST API key, or both are available.
 - Prefer `scripts/n8n` over ad-hoc curl or custom n8n API calls.
 - Do not print secret values.
 - If `scripts/n8n` fails, report the failure and only then fall back to direct endpoint debugging.
+
+## Shared VPS secrets (Icypeas / CDE)
+
+Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
+
+- **Icypeas API key:** `/opt/apps/private/cde/icypeas.env` (`ICYPEAS_API_KEY`)
+- **CDE production (Sales Nav):** `/var/www/vhosts/companydataenrichment.com/private/cde/icypeas.env` on `nextconvers-vps`
+- **Mail tier code:** `cde-salesnav/public/api/_icypeas.php` (email-search + poll read)
+
+Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never echo the value in chat, commits, or logs. Example template: `cde-salesnav/deploy/icypeas.env.example`.
+
+## Sales Navigator panel (CDE)
+
+Repo path: `cde-salesnav/`. Production: https://companydataenrichment.com/salesnav/panel/
+
+### LinkedIn reconnect (ops)
+
+When a user reconnects LinkedIn but the panel still shows disconnected:
+
+1. Check `private/cde/salesnav_accounts.json` for their wallet (`em_` + sha256(email)).
+2. If `invalid_at` is set but the Unipile seat is alive, loading the panel or calling `salesnav-status.php` should auto-recover (clears `invalid_at`).
+3. Fallback: `deploy/recover-stale-linkedin.php <email>` on prod (PHP 8.3).
+
+Primary sync path: Unipile webhook `POST /api/salesnav-unipile-notify.php` on `CREATION_SUCCESS` / `RECONNECTED`. Notify secret in `private/cde/unipile.env` (`SALESNAV_NOTIFY_SECRET`). Do not expose secrets or Unipile internals in user-facing copy.
+
+### Deploy
+
+```bash
+cde-salesnav/deploy-salesnav-prod.sh
+```
+
+Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
