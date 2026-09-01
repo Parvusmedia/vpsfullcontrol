@@ -86,6 +86,9 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     $bonus = (int) ($pack['bonus_credits'] ?? 0);
     $total = (int) $pack['credits'];
 
+    $env = cde_credits_read_env();
+    $allowPromo = ($env['STRIPE_ALLOW_PROMOTION_CODES'] ?? '1') !== '0';
+
     $fields = [
         'mode' => 'payment',
         'success_url' => $cfg['origin'] . '/salesnav/?credits=1',
@@ -100,15 +103,18 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
         'line_items[0][quantity]' => '1',
     ];
 
+    if ($allowPromo) {
+        $fields['allow_promotion_codes'] = 'true';
+    }
+
     $priceId = cde_stripe_price_id_for_pack($packId);
     if ($priceId !== '') {
         $fields['line_items[0][price]'] = $priceId;
     } else {
+        // Existing catalog product — do not mix product + product_data (Stripe rejects it).
         $fields['line_items[0][price_data][currency]'] = 'eur';
         $fields['line_items[0][price_data][unit_amount]'] = (string) $pack['amount_cents'];
         $fields['line_items[0][price_data][product]'] = $cfg['product_id'];
-        $fields['line_items[0][price_data][product_data][name]'] = $pack['label'];
-        $fields['line_items[0][price_data][product_data][description]'] = 'Prepaid export credits (NavExport / Sales Navigator).';
     }
 
     $resp = cde_stripe_request('POST', 'checkout/sessions', $fields);
