@@ -65,14 +65,14 @@ echo json_encode([
 
 if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
-} else {
-    if (ob_get_level() > 0) {
-        @ob_end_flush();
-    }
+} elseif (ob_get_level() > 0) {
+    @ob_end_flush();
     @flush();
 }
 
-ignore_user_abort(true);
-set_time_limit(0);
-cde_tasks_run($taskId);
+if (!cde_tasks_spawn_run($taskId)) {
+    ignore_user_abort(true);
+    set_time_limit(0);
+    cde_tasks_run($taskId);
+}
 exit;

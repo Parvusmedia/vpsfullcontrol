@@ -15,7 +15,7 @@ scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-stripe-webhook.php" "$LOCAL/api/salesnav-stripe-complete.php" "$LOCAL/api/salesnav-account.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$LOCAL/api/salesnav-connect-sync.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$LOCAL/api/salesnav-connect-sync.php" "$LOCAL/api/salesnav-task-run.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_customers.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"

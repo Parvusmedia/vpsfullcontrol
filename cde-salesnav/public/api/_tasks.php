@@ -79,6 +79,7 @@ function cde_tasks_get(string $taskId, ?string $userId = null): ?array
 
 function cde_tasks_for_user(string $userId): array
 {
+    cde_tasks_recover_stale();
     $out = [];
     foreach (cde_tasks_load_all() as $id => $task) {
         if (!is_array($task) || (string) ($task['user_id'] ?? '') !== $userId) {
@@ -246,6 +247,63 @@ function cde_tasks_send_mail(string $to, string $subject, string $body): void
         return;
     }
     cde_salesnav_send_export_mail($to, $subject, $body);
+}
+
+/** Detached CLI worker — survives PHP-FPM request end. */
+function cde_tasks_spawn_run(string $taskId): bool
+{
+    $php = '/opt/plesk/php/8.3/bin/php';
+    if (!is_executable($php)) {
+        $php = PHP_BINARY;
+    }
+    $script = __DIR__ . '/salesnav-task-run.php';
+    if (!is_readable($script)) {
+        return false;
+    }
+    $log = cde_salesnav_private_dir() . '/salesnav_task_runner.log';
+    $cmd = sprintf(
+        'nohup %s %s %s >> %s 2>&1 &',
+        escapeshellarg($php),
+        escapeshellarg($script),
+        escapeshellarg($taskId),
+        escapeshellarg($log)
+    );
+    exec($cmd);
+
+    return true;
+}
+
+/** Re-spawn exports stuck in processing after the web worker died. */
+function cde_tasks_recover_stale(int $maxAgeSeconds = 900): void
+{
+    $all = cde_tasks_load_all();
+    $now = time();
+    foreach ($all as $taskId => $task) {
+        if (!is_array($task) || (string) ($task['status'] ?? '') !== 'processing') {
+            continue;
+        }
+        $started = strtotime((string) ($task['started_at'] ?? $task['created_at'] ?? ''));
+        if ($started === false || ($now - $started) < $maxAgeSeconds) {
+            continue;
+        }
+        $retries = (int) ($task['run_retries'] ?? 0);
+        if ($retries >= 2) {
+            $failedTask = array_merge($task, [
+                'status' => 'failed',
+                'error' => 'Export timed out. Please start a new export from the panel.',
+                'completed_at' => gmdate('c'),
+            ]);
+            cde_tasks_update($taskId, [
+                'status' => 'failed',
+                'error' => $failedTask['error'],
+                'completed_at' => $failedTask['completed_at'],
+            ]);
+            cde_tasks_notify_failed($failedTask, $taskId, $failedTask['error']);
+            continue;
+        }
+        cde_tasks_update($taskId, ['run_retries' => $retries + 1]);
+        cde_tasks_spawn_run($taskId);
+    }
 }
 
 function cde_tasks_has_mail_tier(array $task): bool
