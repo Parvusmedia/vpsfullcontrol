@@ -248,6 +248,23 @@ function cde_tasks_send_mail(string $to, string $subject, string $body): void
     cde_salesnav_send_export_mail($to, $subject, $body);
 }
 
+function cde_tasks_has_mail_tier(array $task): bool
+{
+    $tiers = is_array($task['tiers'] ?? null) ? $task['tiers'] : [];
+
+    return !empty($tiers['mail']);
+}
+
+function cde_tasks_mail_tier_delay_notice(array $task): string
+{
+    if (!cde_tasks_has_mail_tier($task)) {
+        return '';
+    }
+
+    return "\nNote: This export includes work email discovery. "
+        . "Finding emails can take a few extra minutes — we'll email you again as soon as the CSV is ready.\n";
+}
+
 function cde_tasks_notify_started(array $task, string $taskId): void
 {
     $email = (string) ($task['email'] ?? '');
@@ -258,7 +275,8 @@ function cde_tasks_notify_started(array $task, string $taskId): void
     $subject = 'Sales Navigator export started — ' . $label;
     $body = "Hello,\n\nYour export task has started.\n\n"
         . "Task: {$label}\n"
-        . "Max leads: " . ($task['limit_label'] === 'all' ? 'All (up to 2,000)' : (string) $task['limit']) . "\n\n"
+        . "Max leads: " . ($task['limit_label'] === 'all' ? 'All (up to 2,000)' : (string) $task['limit']) . "\n"
+        . cde_tasks_mail_tier_delay_notice($task) . "\n"
         . "We will email you again when the CSV is ready.\n"
         . "Panel: " . cde_tasks_panel_url() . "\n";
     cde_tasks_send_mail($email, $subject, $body);
