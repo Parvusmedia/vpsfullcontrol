@@ -179,6 +179,27 @@ function cde_tasks_csv_path(string $taskId): string
     return cde_tasks_exports_dir() . '/' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $taskId) . '.csv';
 }
 
+/** Ensure export CSVs stay readable by the web/PHP user (CLI runs as root otherwise). */
+function cde_tasks_fix_export_file_perms(string $path): void
+{
+    if (!is_file($path)) {
+        return;
+    }
+    $ref = cde_tasks_store_file();
+    if (!is_readable($ref)) {
+        @chmod($path, 0640);
+        return;
+    }
+    $stat = stat($ref);
+    if ($stat === false) {
+        @chmod($path, 0640);
+        return;
+    }
+    @chown($path, $stat['uid']);
+    @chgrp($path, $stat['gid']);
+    @chmod($path, 0600);
+}
+
 /** @param array<int, array<string, mixed>> $rows */
 function cde_tasks_write_csv(string $taskId, array $rows, array $tiers): void
 {
@@ -206,7 +227,7 @@ function cde_tasks_write_csv(string $taskId, array $rows, array $tiers): void
         $lines[] = implode(',', $cells);
     }
     @file_put_contents(cde_tasks_csv_path($taskId), implode("\n", $lines), LOCK_EX);
-    @chmod(cde_tasks_csv_path($taskId), 0600);
+    cde_tasks_fix_export_file_perms(cde_tasks_csv_path($taskId));
 }
 
 function cde_tasks_panel_url(string $taskId = ''): string
