@@ -812,6 +812,19 @@ function cde_salesnav_plan_connect(string $userId, bool $explicitReconnect = fal
     ];
 }
 
+function cde_salesnav_looks_like_wallet_id(string $value): bool
+{
+    $value = trim($value);
+    if ($value === '') {
+        return false;
+    }
+    if (preg_match('/^em_[a-f0-9]{64}$/', $value)) {
+        return true;
+    }
+
+    return (bool) preg_match('/^[a-f0-9]{32}$/', $value);
+}
+
 function cde_salesnav_unipile_account_owner_wallet(string $accountId): ?string
 {
     foreach (cde_salesnav_list_unipile_account_items() as $item) {
@@ -823,11 +836,40 @@ function cde_salesnav_unipile_account_owner_wallet(string $accountId): ?string
             continue;
         }
         $name = trim((string) ($item['name'] ?? ''));
+        if ($name !== '' && cde_salesnav_looks_like_wallet_id($name)) {
+            return $name;
+        }
 
-        return $name !== '' ? $name : null;
+        return null;
     }
 
     return null;
+}
+
+function cde_salesnav_clear_account_from_other_wallets(string $accountId, string $keepUserId): void
+{
+    if ($accountId === '') {
+        return;
+    }
+
+    $all = cde_salesnav_load_accounts();
+    $changed = false;
+    foreach ($all as $uid => $rec) {
+        if ($uid === $keepUserId || !is_array($rec) || (string) ($rec['account_id'] ?? '') !== $accountId) {
+            continue;
+        }
+        if (str_starts_with($uid, 'em_')) {
+            continue;
+        }
+        unset($all[$uid]);
+        $changed = true;
+    }
+    if (!$changed) {
+        return;
+    }
+    $path = cde_salesnav_accounts_file();
+    @file_put_contents($path, json_encode($all, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    @chmod($path, 0600);
 }
 
 function cde_salesnav_assert_account_not_claimed_by_other_wallet(string $accountId, string $userId): void
@@ -839,6 +881,9 @@ function cde_salesnav_assert_account_not_claimed_by_other_wallet(string $account
 
     foreach (cde_salesnav_load_accounts() as $uid => $rec) {
         if ($uid === $userId || !is_array($rec) || (string) ($rec['account_id'] ?? '') !== $accountId) {
+            continue;
+        }
+        if (!str_starts_with($uid, 'em_')) {
             continue;
         }
         if ($claimedWallet === null || $claimedWallet === $uid) {
@@ -940,6 +985,7 @@ function cde_salesnav_apply_unipile_account(string $userId, string $accountId): 
         'validated_at' => gmdate('c'),
         'previous_account_id' => $previous !== '' && $previous !== $accountId ? $previous : ($stored['previous_account_id'] ?? null),
     ]));
+    cde_salesnav_clear_account_from_other_wallets($accountId, $userId);
 
     if (cde_salesnav_user_id() === $userId) {
         cde_salesnav_set_session_account(

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """Extend PHP session GC lifetime for Sales Navigator panel auth."""
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
