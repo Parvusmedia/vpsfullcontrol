@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CompanyDataEnrichment — Companies &amp; Sales Navigator export</title>
+  <meta name="description" content="Two products: resolve Spanish companies into paid-media-ready identities, and export Sales Navigator lists and searches to CSV." />
+  <link rel="canonical" href="https://companydataenrichment.com/" />
+  <link rel="alternate" hreflang="en" href="https://companydataenrichment.com/" />
+  <link rel="alternate" hreflang="es" href="https://companydataenrichment.com/?lang=es" />
+  <link rel="alternate" hreflang="x-default" href="https://companydataenrichment.com/" />
+  <meta property="og:title" content="CompanyDataEnrichment — Companies &amp; Sales Navigator export" />
+  <meta property="og:description" content="Companies (Paid Media Audiences) and Sales Navigator Export (CSV from SN lists and searches)." />
+  <meta property="og:url" content="https://companydataenrichment.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://companydataenrichment.com/og-image.jpg" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="es_ES" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Company Data Enrichment — Spanish company identity resolver" />
+  <meta name="twitter:description" content="Resolve Spanish company legal names into LinkedIn, website, domain and firmographics." />
+  <meta name="twitter:image" content="https://companydataenrichment.com/og-image.jpg" />
+  <meta name="google-site-verification" content="jO52c3iV9wQQcmBD_pqCBUqEfSj-qwPXdd8Hab9vWnU" />
+  <meta name="geo.region" content="ES" />
+  <meta name="geo.placename" content="Spain" />
+  <link rel="icon" href="/favicon.ico" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "name": "CompanyDataEnrichment",
+        "url": "https://companydataenrichment.com/",
+        "email": "hello@parvusmedia.com",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "Parvus Media S.L.U.",
+          "url": "https://www.parvusmedia.com/"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "CompanyDataEnrichment",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://companydataenrichment.com/",
+        "description": "Resolve Spanish company legal names into LinkedIn, website, domain and firmographics with a confidence score.",
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "EUR",
+          "lowPrice": "0",
+          "highPrice": "0.18",
+          "description": "Free demo on the website; volume from €0.18 per enriched record"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does CompanyDataEnrichment do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It turns a Spanish company legal name or brand into one enriched identity record: LinkedIn company page, official website, domain, phone, HQ and firmographics, with a confidence score and evidence."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a free demo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The website offers free single lookups and batches of up to 10 companies. Scores below ~60% usually need a human review."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much does volume pricing cost?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Volume and API pricing start from €0.18 per enriched record. Request a quote on the pricing form for CRM lists, campaigns or API access."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which countries are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Currently optimized for companies incorporated in Spain. Support for other territories is under evaluation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is this a substitute for KYC or legal diligence?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Results are assistive data from public web and LinkedIn company signals. Treat every match as something to review — not a substitute for legal, KYC or compliance diligence."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=28" />
+</head>
+<body class="page-home">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="/">CompanyDataEnrichment</a>
+    <nav class="site-nav" aria-label="Products">
+      <a href="/#companies" class="site-nav-link" data-nav="companies" data-i18n="nav.companies">Companies</a>
+      <a href="/salesnav/" class="site-nav-link" data-nav="salesnav" data-i18n="nav.salesnav">Sales Navigator</a>
+    </nav>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" class="lang-btn" data-lang="es" aria-pressed="false">ES</button>
+    </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="product-hub product-hub--saas" id="home">
+      <div class="product-hub-intro">
+        <div class="hub-badge-row">
+          <span class="hub-badge" data-i18n="hub.badge1">🇪🇸 Spain-first</span>
+          <span class="hub-badge" data-i18n="hub.badge2">Free demo</span>
+          <span class="hub-badge" data-i18n="hub.badge3">No credit card</span>
+        </div>
+        <h1 data-i18n="hub.title">B2B data enrichment for growth teams</h1>
+        <p class="product-hub-lede" data-i18n="hub.lede">
+          Companies for paid media audiences. Sales Navigator for outbound CSVs. Same quality bar, two workflows.
+        </p>
+        <div class="hub-cta-row">
+          <a href="#companies" class="product-card-cta product-card-cta--teal" data-i18n="hub.ctaCompanies">Try Companies</a>
+          <a href="/salesnav/" class="product-card-cta product-card-cta--blue" data-i18n="hub.ctaSalesnav">Try Sales Navigator</a>
+        </div>
+      </div>
+      <p class="hub-logos" data-i18n="hub.logos">Paid media · CRM ops · SDR &amp; outbound</p>
+      <div class="product-grid">
+        <article class="product-card product-card--companies">
+          <p class="product-card-label" data-i18n="hub.companies.label">Companies</p>
+          <h2 class="product-card-title" data-i18n="hub.companies.title">Paid Media Audiences</h2>
+          <p class="product-card-stat">
+            <span data-i18n="hub.companies.stat">~20s</span>
+            <span data-i18n="hub.companies.statLabel">avg. resolve time</span>
+          </p>
+          <p class="product-card-body" data-i18n="hub.companies.body">
+            Turn a Spanish legal or brand name into LinkedIn, website, domain and firmographics for CRM and ad platforms.
+          </p>
+          <ul class="product-card-points">
+            <li data-i18n="hub.companies.p1">Free single lookup &amp; batch demo (up to 10)</li>
+            <li data-i18n="hub.companies.p2">Volume from €0.18 / record</li>
+          </ul>
+          <a href="#companies" class="product-card-cta product-card-cta--teal" data-i18n="hub.companies.cta">Start free demo</a>
+        </article>
+        <article class="product-card product-card--salesnav">
+          <p class="product-card-label" data-i18n="hub.salesnav.label">Sales Navigator Export</p>
+          <h2 class="product-card-title" data-i18n="hub.salesnav.title">CSV export</h2>
+          <p class="product-card-stat">
+            <span data-i18n="hub.salesnav.stat">25</span>
+            <span data-i18n="hub.salesnav.statLabel">free demo leads</span>
+          </p>
+          <p class="product-card-body" data-i18n="hub.salesnav.body">
+            Export saved lead lists and people searches from your Sales Navigator seat.
+          </p>
+          <ul class="product-card-points">
+            <li data-i18n="hub.salesnav.p1">Basic · Enriched · Mail tiers</li>
+            <li data-i18n="hub.salesnav.p2">Credits from €20</li>
+          </ul>
+          <a href="/salesnav/" class="product-card-cta product-card-cta--blue" data-i18n="hub.salesnav.cta">Export CSV</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="product-section product-section--companies" id="companies">
+      <header class="product-section-head">
+        <p class="product-section-kicker" data-i18n="companies.kicker">Companies · Paid Media Audiences</p>
+        <h2 class="product-section-title" data-i18n="companies.sectionTitle">Resolve Spanish companies into audience-ready identities</h2>
+        <p class="product-section-lede" data-i18n="companies.sectionLede">
+          Enrich CRM rows, outreach lists and paid media audiences from a legal name or brand — with LinkedIn, website, domain and firmographics in one record.
+        </p>
+      </header>
+    <section class="hero companies-hero">
+      <div class="hero-copy">
+        <h3 class="hero-kicker" data-i18n="hero.kicker">Enter a company legal or brand name.</h3>
+        <p class="hero-tool-title" data-i18n="hero.title">Enrich CRM, outreach and paid media.</p>
+        <p class="lede" data-i18n="hero.lede">
+          We resolve Spanish company names into one usable identity — LinkedIn, website, domain, phone, HQ and firmographics — ready for enrichment workflows.
+        </p>
+        <p class="coverage" data-i18n="hero.coverage">
+          Currently optimized for companies incorporated in <strong>Spain</strong>.
+          Support for other territories is under evaluation.
+        </p>
+
+        <div class="mode-switch" role="tablist" aria-label="Resolve mode">
+          <button type="button" class="mode-btn is-active" data-mode="single" data-i18n="mode.single">Single</button>
+          <button type="button" class="mode-btn" data-mode="batch" data-i18n="mode.batch">Batch (up to 10)</button>
+        </div>
+
+        <form class="resolve" id="resolve-form" action="#" method="get">
+          <div id="single-wrap">
+            <label class="sr-only" for="company" data-i18n="form.companyLabel">Company legal name or brand</label>
+            <input
+              id="company"
+              name="company"
+              type="text"
+              autocomplete="organization"
+              placeholder="e.g. Albrok Mediacion S.A."
+              data-i18n-placeholder="form.placeholder"
+            />
+          </div>
+          <div id="batch-wrap" hidden>
+            <label class="sr-only" for="companies" data-i18n="form.batchLabel">One company per line</label>
+            <textarea
+              id="companies"
+              name="companies"
+              rows="5"
+              placeholder="One company per line (max 10)"
+              data-i18n-placeholder="form.batchPlaceholder"
+            ></textarea>
+          </div>
+          <button type="submit" data-i18n="form.submit">Resolve company</button>
+          <input
+            class="hp"
+            type="text"
+            name="company_url"
+            id="company_url"
+            tabindex="-1"
+            autocomplete="off"
+            aria-hidden="true"
+          />
+        </form>
+
+        <div class="examples">
+          <span class="examples-label" data-i18n="examples.label">Try:</span>
+          <button type="button" class="chip" data-example="Grupo Pacc Correduria De Seguros Sa">Grupo PACC <em>~18s</em></button>
+          <button type="button" class="chip" data-example="Parvus Media SL">Parvus Media SL</button>
+          <button type="button" class="chip" data-example="Albrok Mediacion S.A.">Albrok Mediacion S.A.</button>
+        </div>
+        <p class="examples-hint" data-i18n="examples.hint">
+          Demo is free for single lookups and batches of up to 10. Scores below ~60% usually need a human review.
+        </p>
+
+        <p class="form-note" id="form-note" hidden></p>
+
+        <div class="progress" id="progress" hidden>
+          <div class="progress-head">
+            <span class="progress-label" id="progress-label">Processing…</span>
+            <span class="progress-pct" id="progress-pct">0%</span>
+          </div>
+          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <ol class="progress-steps" id="progress-steps">
+            <li data-step="1" data-i18n="progress.s1">Normalizing company name</li>
+            <li data-step="2" data-i18n="progress.s2">Searching web &amp; LinkedIn signals</li>
+            <li data-step="3" data-i18n="progress.s3">Enriching top matches</li>
+            <li data-step="4" data-i18n="progress.s4">Scoring confidence</li>
+          </ol>
+        </div>
+
+        <section class="results" id="results" hidden>
+          <div class="results-head">
+            <h2 data-i18n="results.title">Resolved identity</h2>
+            <div class="export-actions" id="export-actions" hidden>
+              <button type="button" class="ghost-btn" id="resolve-another" data-i18n="export.another">Resolve another</button>
+              <button type="button" class="ghost-btn" id="copy-json" data-i18n="export.json">Copy JSON</button>
+              <button type="button" class="ghost-btn" id="download-csv" data-i18n="export.csv">Download CSV</button>
+              <a class="ghost-btn ghost-link" href="#pricing" id="request-volume" data-i18n="export.volume">Request volume pricing</a>
+            </div>
+          </div>
+          <div id="results-body"></div>
+        </section>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="enrich-scene">
+          <div class="enrich-input">
+            <span class="enrich-kicker">Input</span>
+            <p class="enrich-query">Grupo Pacc Correduria De Seguros Sa</p>
+            <ul class="enrich-sparse">
+              <li></li>
+              <li></li>
+              <li></li>
+            </ul>
+          </div>
+          <div class="enrich-bridge">
+            <span class="enrich-bridge-line"></span>
+            <span class="enrich-bridge-core">Enrich</span>
+            <span class="enrich-bridge-line"></span>
+          </div>
+          <div class="enrich-output">
+            <span class="enrich-kicker">Resolved identity · ~18s</span>
+            <div class="enrich-profile">
+              <div class="enrich-mark">GP</div>
+              <div>
+                <p class="enrich-name">GRUPO PACC</p>
+                <p class="enrich-meta">Est. 1991</p>
+              </div>
+              <span class="enrich-score">89%</span>
+            </div>
+            <dl class="enrich-fields">
+              <div class="enrich-field f1"><dt>LinkedIn</dt><dd>linkedin.com/company/grupopacc</dd></div>
+              <div class="enrich-field f2"><dt>Website</dt><dd>grupopacc.es</dd></div>
+              <div class="enrich-field f3"><dt>Industry</dt><dd>Insurance</dd></div>
+              <div class="enrich-field f4"><dt>Phone</dt><dd>900 600 004</dd></div>
+              <div class="enrich-field f5"><dt>Employees</dt><dd>201</dd></div>
+              <div class="enrich-field f6"><dt>Followers</dt><dd>7,850</dd></div>
+              <div class="enrich-field f7"><dt>Headquarters</dt><dd>Plaza de la Constancia 2, Córdoba</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+    </section>
+
+    <section class="pricing-banner" id="pricing">
+      <div class="pricing-copy">
+        <p class="pricing-kicker" data-i18n="pricing.kicker">Volume pricing</p>
+        <h2 data-i18n="pricing.title">From <strong>€0.18</strong> / enriched record</h2>
+        <p class="pricing-lede" data-i18n="pricing.lede">
+          Free demo on this page (single or batch up to 10). For CRM lists, campaigns or API volume, tell us your use case and we will send a quote.
+        </p>
+        <ul class="pricing-bullets">
+          <li data-i18n="pricing.b1">LinkedIn company page, website, domain and firmographics</li>
+          <li data-i18n="pricing.b2">Confidence score + evidence on every delivery</li>
+          <li data-i18n="pricing.b3">Spain first · API and batch exports available</li>
+        </ul>
+      </div>
+      <form class="contact-form" id="contact-form" novalidate>
+        <div id="contact-fields">
+          <h3 data-i18n="contact.title">Request pricing</h3>
+          <label>
+            <span data-i18n="contact.name">Name</span>
+            <input type="text" name="name" id="contact-name" autocomplete="name" required maxlength="120" />
+          </label>
+          <label>
+            <span data-i18n="contact.company">Company</span>
+            <input type="text" name="company" id="contact-company" autocomplete="organization" required maxlength="180" />
+          </label>
+          <label>
+            <span data-i18n="contact.email">Corporate email</span>
+            <input type="email" name="email" id="contact-email" autocomplete="email" required maxlength="180" />
+          </label>
+          <label>
+            <span data-i18n="contact.volume">Enriched records</span>
+            <select name="volume" id="contact-volume" required>
+              <option value="" data-i18n="contact.volumePlaceholder">Select volume…</option>
+              <option value="1-500" data-i18n="contact.volume.1_500">1 – 500</option>
+              <option value="500-1k" data-i18n="contact.volume.500_1k">500 – 1,000</option>
+              <option value="1k-10k" data-i18n="contact.volume.1k_10k">1,000 – 10,000</option>
+              <option value="10k-50k" data-i18n="contact.volume.10k_50k">10,000 – 50,000</option>
+              <option value="50k-200k" data-i18n="contact.volume.50k_200k">50,000 – 200,000</option>
+            </select>
+          </label>
+          <label class="captcha-row">
+            <span data-i18n="contact.captcha">Anti-spam</span>
+            <div class="captcha-fields">
+              <span class="captcha-q" id="captcha-question">…</span>
+              <input type="text" name="captcha_answer" id="captcha-answer" inputmode="numeric" autocomplete="off" required maxlength="4" aria-label="Captcha answer" />
+            </div>
+          </label>
+          <input type="hidden" id="captcha-id" name="captcha_id" value="" />
+          <input
+            class="hp"
+            type="text"
+            name="website"
+            id="contact-website"
+            tabindex="-1"
+            autocomplete="off"
+            aria-hidden="true"
+          />
+          <button type="submit" id="contact-submit" data-i18n="contact.submit">Send request</button>
+          <p class="contact-note" id="contact-note" hidden></p>
+          <p class="contact-privacy muted" data-i18n="contact.privacy">
+            We will only use these details to reply about CompanyDataEnrichment.
+            <a href="/privacy.html">Privacy policy</a>.
+          </p>
+        </div>
+        <div class="contact-success" id="contact-success" hidden>
+          <p class="contact-success-kicker" data-i18n="contact.okKicker">Request sent</p>
+          <p class="contact-success-title" data-i18n="contact.okTitle">Thanks — we got your message.</p>
+          <p class="contact-success-body" data-i18n="contact.okBody">
+            We will reply to your corporate email shortly about pricing and API access.
+          </p>
+          <button type="button" class="ghost-btn" id="contact-again" data-i18n="contact.again">Send another request</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="strip strip-featured">
+      <h2 class="strip-title" data-i18n="usecases.title">Who it's for</h2>
+      <p class="strip-lede" data-i18n="usecases.lede">
+        Built for teams that start from a legal name or incomplete CRM row and need a usable company identity — <strong>LinkedIn, website and firmographics</strong> — without manual Google digging.
+      </p>
+      <div class="use-list">
+        <article class="use-item">
+          <h3 data-i18n="usecases.crm.title">CRM data quality</h3>
+          <p data-i18n="usecases.crm.body">
+            Fill gaps on accounts that only have a razón social: official website, LinkedIn company page, domain, headcount and HQ. Typical CRM lists miss <strong>30–60%</strong> of those fields before enrichment.
+          </p>
+        </article>
+        <article class="use-item">
+          <h3 data-i18n="usecases.outbound.title">Campaigns &amp; LinkedIn prospecting</h3>
+          <p data-i18n="usecases.outbound.body">
+            Turn legal names into <strong>LinkedIn company URLs</strong> and web domains for list building, ABM, nurture and sales outreach — so marketing and SDR teams prospect from a verified firm page, not a guess.
+          </p>
+        </article>
+        <article class="use-item">
+          <h3 data-i18n="usecases.research.title">Research &amp; ops teams</h3>
+          <p data-i18n="usecases.research.body">
+            Accelerate desk research, partner screening and market mapping when analysts need <strong>one consolidated record</strong> per company instead of five open tabs.
+          </p>
+        </article>
+        <article class="use-item">
+          <h3 data-i18n="usecases.compliance.title">Vendor / supplier screening</h3>
+          <p data-i18n="usecases.compliance.body">
+            Cross-check public presence (web + LinkedIn + HQ signals) before onboarding a supplier or account — with an explicit <strong>confidence score</strong> on every delivery.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="strip trust strip-featured">
+      <h2 class="strip-title" data-i18n="trust.title">Public data &amp; compliance</h2>
+      <p class="strip-lede" data-i18n="trust.lede">
+        We enrich from <strong>publicly available company signals</strong> (web + LinkedIn company pages), unify them and return one deliverable record with a confidence score.
+      </p>
+      <ul class="trust-points">
+        <li data-i18n="trust.p1">We resolve firm identity from <strong>public web and LinkedIn company pages</strong>, then unify those signals into one deliverable record.</li>
+        <li data-i18n="trust.p2">Matches can still be wrong. Deterministic scoring plus AI validation produce a <strong>confidence score</strong> so you can accept, review or reject each row.</li>
+        <li data-i18n="trust.p3">One input name → <strong>one unified output record</strong> (LinkedIn, website, domain, firmographics and evidence), ready for CRM or campaign use.</li>
+        <li data-i18n="trust.p4">Not a substitute for legal, KYC or compliance diligence — treat every match as <strong>assistive data</strong> to review.</li>
+      </ul>
+      <p class="trust-legal">
+        <a href="/privacy.html" data-i18n="trust.privacy">Terms &amp; privacy policy</a>
+      </p>
+    </section>
+
+    <section class="strip api-teaser" id="api">
+      <h2 data-i18n="api.title">API access</h2>
+      <p class="strip-lede" data-i18n="api.lede">
+        Wire enrichment into your CRM or pipeline. Spain coverage first. Free demo above · volume from €0.18 / record.
+      </p>
+      <pre class="api-code"><code>POST /v1/enrich
+Content-Type: application/json
+
+{
+  "companies": [
+    { "legal_name": "Grupo Pacc Correduria De Seguros Sa" }
+  ]
+}</code></pre>
+      <a class="cta-link" href="#pricing" data-i18n="api.cta">Request API access</a>
+    </section>
+
+    <aside class="cross-product-teaser">
+      <p data-i18n="cross.sn">
+        Also export leads from Sales Navigator?
+        <a href="/salesnav/">Sales Navigator Export →</a>
+      </p>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <div>
+      <p><strong>CompanyDataEnrichment</strong></p>
+      <p class="muted" data-i18n="footer.tag">Companies · Sales Navigator export · Spain coverage first</p>
+    </div>
+    <div class="foot-links">
+      <a href="/#companies" data-i18n="nav.companies">Companies</a>
+      <a href="/salesnav/" data-i18n="nav.salesnav">Sales Navigator</a>
+      <a href="https://www.parvusmedia.com/" target="_blank" rel="noopener noreferrer">Parvus Media</a>
+      <a href="mailto:hello@parvusmedia.com">hello@parvusmedia.com</a>
+      <a href="/privacy.html" data-i18n="footer.privacy">Privacy</a>
+      <span class="muted">© <span id="y"></span></span>
+    </div>
+  </footer>
+
+  <script src="/app.js?v=24"></script>
+</body>
+</html>
