@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_credits.php';
 require_once __DIR__ . '/_harvest.php';
+require_once __DIR__ . '/_mail.php';
 
 const CDE_TASKS_MAX_LIMIT = 2000;
 
@@ -212,10 +213,10 @@ function cde_tasks_panel_url(string $taskId = ''): string
 
 function cde_tasks_send_mail(string $to, string $subject, string $body): void
 {
-    if ($to === '' || !function_exists('cde_send_contact_mail')) {
+    if ($to === '') {
         return;
     }
-    cde_send_contact_mail($to, $subject, $body, $to);
+    cde_salesnav_send_mail($to, $subject, $body);
 }
 
 function cde_tasks_notify_started(array $task, string $taskId): void
