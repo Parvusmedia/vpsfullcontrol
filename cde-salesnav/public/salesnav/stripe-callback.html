@@ -38,7 +38,7 @@
         if (!window.opener || window.opener.closed) {
           var qs = ok ? "credits=1" : "credits=0";
           if (sessionId) qs += "&session_id=" + encodeURIComponent(sessionId);
-          location.replace("/salesnav/?" + qs);
+          location.replace("/salesnav/panel/?" + qs);
           return;
         }
         msg.textContent = ok ? "Payment complete. Closing window…" : "Payment cancelled. Closing window…";

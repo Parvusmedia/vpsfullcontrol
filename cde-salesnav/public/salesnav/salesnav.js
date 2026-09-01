@@ -1,7 +1,30 @@
+const IS_PANEL = document.body.classList.contains("product-salesnav-panel");
+
+function redirectLegacyAppQueriesToPanel() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("connected") || params.has("credits")) {
+    window.location.replace(`/salesnav/panel/${window.location.search}`);
+  }
+}
+
+function scrollPanelHash() {
+  const hash = window.location.hash.replace("#", "");
+  if (hash === "topup") {
+    document.getElementById("topup")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
 const I18N = {
   en: {
     "nav.companies": "Companies",
     "nav.salesnav": "Sales Navigator",
+    "nav.panel": "My panel",
+    "panel.title": "My panel",
+    "panel.lede": "Manage credits, LinkedIn connection and CSV exports.",
+    "panel.exportTitle": "Export",
+    "landing.openPanel": "Open my panel",
+    "landing.getStarted": "Get started — from €20",
+    "landing.panelNote": "After payment, manage credits, LinkedIn and exports in your private panel — not on this page.",
     "hero.kicker": "Paste a Sales Navigator list or search URL.",
     "hero.title": "Export leads to CSV in minutes.",
     "hero.lede":
@@ -148,6 +171,13 @@ const I18N = {
   es: {
     "nav.companies": "Empresas",
     "nav.salesnav": "Sales Navigator",
+    "nav.panel": "Mi panel",
+    "panel.title": "Mi panel",
+    "panel.lede": "Gestiona créditos, conexión LinkedIn y exports CSV.",
+    "panel.exportTitle": "Exportar",
+    "landing.openPanel": "Abrir mi panel",
+    "landing.getStarted": "Empezar — desde €20",
+    "landing.panelNote": "Tras pagar, gestionas créditos, LinkedIn y exports en tu panel privado — no en esta página.",
     "hero.kicker": "Pega la URL de una lista o búsqueda de Sales Navigator.",
     "hero.title": "Exporta leads a CSV en minutos.",
     "hero.lede":
@@ -458,14 +488,6 @@ function renderAccount() {
 
   if (!billingEnabled) {
     if (dashboard) dashboard.hidden = true;
-    if (connectBtn) {
-      connectBtn.disabled = false;
-      connectBtn.removeAttribute("aria-disabled");
-    }
-    return;
-  }
-
-  if (dashboard) dashboard.hidden = false;
   panel.hidden = false;
 
   const signedIn = !!accountEmail;
@@ -1209,51 +1231,57 @@ function initContactForm() {
 document.getElementById("y").textContent = new Date().getFullYear();
 
 initLang();
-initModeSwitch();
-initContactForm();
-handleConnectQuery();
-handleCreditsQuery();
-fetchCredits();
-fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
 
-document.getElementById("credit-pack")?.addEventListener("change", (e) => {
-  defaultPackId = e.target.value || defaultPackId;
-});
+if (IS_PANEL) {
+  initPanelPage();
+} else {
+  redirectLegacyAppQueriesToPanel();
+  initContactForm();
+}
 
-document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
-document.getElementById("connect-btn-demo")?.addEventListener("click", () => startConnect(false));
-document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
-document.getElementById("buy-credits-btn")?.addEventListener("click", async () => {
-  try {
-    await startStripeCheckout(defaultPackId);
-  } catch (err) {
-    setAccountNote(err.message || t("msg.generic"), "error");
-  }
-});
-document.getElementById("buy-more-btn")?.addEventListener("click", async () => {
-  try {
-    await startStripeCheckout(defaultPackId);
-  } catch (err) {
-    setAccountNote(err.message || t("msg.generic"), "error");
-  }
-});
-document.getElementById("sign-in-btn")?.addEventListener("click", () => signInFromForm());
-document.getElementById("sign-out-btn")?.addEventListener("click", () => signOutAccount());
-document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
-document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
+function initPanelPage() {
+  initModeSwitch();
+  handleConnectQuery();
+  handleCreditsQuery();
+  fetchCredits();
+  fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
+  scrollPanelHash();
 
-document.getElementById("export-form")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  runExport();
-});
-
-document.getElementById("download-csv")?.addEventListener("click", () => {
-  if (lastRows.length) downloadCsv(lastRows);
-});
-
-document.getElementById("export-another")?.addEventListener("click", () => {
-  document.getElementById("results")?.setAttribute("hidden", "");
-  lastRows = [];
-  setNote("", "ok");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
+  document.getElementById("credit-pack")?.addEventListener("change", (e) => {
+    defaultPackId = e.target.value || defaultPackId;
+  });
+  document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
+  document.getElementById("connect-btn-demo")?.addEventListener("click", () => startConnect(false));
+  document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
+  document.getElementById("buy-credits-btn")?.addEventListener("click", async () => {
+    try {
+      await startStripeCheckout(defaultPackId);
+    } catch (err) {
+      setAccountNote(err.message || t("msg.generic"), "error");
+    }
+  });
+  document.getElementById("buy-more-btn")?.addEventListener("click", async () => {
+    try {
+      await startStripeCheckout(defaultPackId);
+    } catch (err) {
+      setAccountNote(err.message || t("msg.generic"), "error");
+    }
+  });
+  document.getElementById("sign-in-btn")?.addEventListener("click", () => signInFromForm());
+  document.getElementById("sign-out-btn")?.addEventListener("click", () => signOutAccount());
+  document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
+  document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
+  document.getElementById("export-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    runExport();
+  });
+  document.getElementById("download-csv")?.addEventListener("click", () => {
+    if (lastRows.length) downloadCsv(lastRows);
+  });
+  document.getElementById("export-another")?.addEventListener("click", () => {
+    document.getElementById("results")?.setAttribute("hidden", "");
+    lastRows = [];
+    setNote("", "ok", "export");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
