@@ -31,33 +31,31 @@ if (!in_array($status, ['CREATION_SUCCESS', 'RECONNECTED'], true)) {
     cde_json_response(200, ['ok' => true, 'ignored' => true, 'status' => $status]);
 }
 
-$config = cde_unipile_api_config();
-$meta = cde_salesnav_fetch_account_meta($config, $accountId);
+if (!cde_salesnav_is_account_alive($accountId)) {
+    cde_json_response(502, [
+        'ok' => false,
+        'error' => 'Unipile account is not ready yet.',
+    ]);
+}
+
 $existing = cde_salesnav_load_accounts()[$userId] ?? [];
 if (!is_array($existing)) {
     $existing = [];
 }
-
-cde_salesnav_save_account($userId, array_merge($existing, [
-    'account_id' => $accountId,
-    'label' => $meta['label'] !== '' ? $meta['label'] : (string) ($existing['label'] ?? ''),
-    'avatar_url' => $meta['avatar_url'] !== '' ? $meta['avatar_url'] : (string) ($existing['avatar_url'] ?? ''),
-    'status' => $status,
-    'linked_at' => gmdate('c'),
-    'disconnected_at' => null,
-    'invalid_at' => null,
-    'invalid_reason' => null,
-    'validated_at' => gmdate('c'),
-]));
-
-// If this browser session initiated the connect flow, attach immediately.
-cde_session_start();
-if (cde_salesnav_user_id() === $userId) {
-    cde_salesnav_set_session_account(
-        $accountId,
-        $meta['label'] !== '' ? $meta['label'] : (string) ($existing['label'] ?? ''),
-        $meta['avatar_url'] !== '' ? $meta['avatar_url'] : (string) ($existing['avatar_url'] ?? '')
-    );
+$previous = trim((string) ($existing['account_id'] ?? ''));
+if ($previous !== '' && $previous !== $accountId) {
+    $meta = cde_salesnav_fetch_account_meta(cde_unipile_api_config($accountId), $accountId);
+    cde_salesnav_propagate_account_id($previous, $accountId, $meta);
 }
 
-cde_json_response(200, ['ok' => true]);
+$meta = cde_salesnav_apply_unipile_account($userId, $accountId);
+cde_salesnav_save_account($userId, array_merge(cde_salesnav_load_accounts()[$userId] ?? [], [
+    'status' => $status,
+]));
+
+cde_json_response(200, [
+    'ok' => true,
+    'account_id' => $accountId,
+    'previous_account_id' => $previous !== '' && $previous !== $accountId ? $previous : null,
+    'label' => $meta['label'] ?? '',
+]);

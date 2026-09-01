@@ -16,41 +16,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $auth = cde_salesnav_require_auth();
 $userId = $auth['user_id'];
-$stored = cde_salesnav_stored_account($userId);
-if ($stored === null || empty($stored['account_id'])) {
+$stored = cde_salesnav_load_accounts()[$userId] ?? null;
+$accountId = cde_salesnav_resolve_linked_account_id($userId);
+
+if ($accountId === null) {
+    if (!is_array($stored)) {
+        cde_json_response(404, [
+            'ok' => false,
+            'error' => 'No LinkedIn account linked to this panel yet.',
+        ]);
+    }
     cde_json_response(404, [
         'ok' => false,
-        'error' => 'No LinkedIn account linked to this panel yet.',
+        'error' => 'LinkedIn connection not ready yet. Try again in a moment.',
+        'retry' => true,
     ]);
 }
 
-if (!empty($stored['invalid_at'])) {
-    cde_json_response(403, [
-        'ok' => false,
-        'error' => cde_salesnav_stale_account_message(),
-        'needs_reconnect' => true,
-        'reconnect_available' => true,
-    ]);
-}
-
-$accountId = (string) $stored['account_id'];
-if (!cde_salesnav_is_account_alive($accountId)) {
-    cde_salesnav_mark_account_stale($userId);
-    cde_json_response(403, [
-        'ok' => false,
-        'error' => cde_salesnav_stale_account_message(),
-        'needs_reconnect' => true,
-        'reconnect_available' => true,
-    ]);
-}
-
-if (!empty($stored['disconnected_at'])) {
-    cde_salesnav_save_account($userId, array_merge($stored, [
-        'disconnected_at' => null,
-    ]));
-}
-$meta = cde_salesnav_refresh_account_meta($userId, $accountId);
-cde_salesnav_touch_account_validated($userId);
+$meta = cde_salesnav_apply_unipile_account($userId, $accountId);
 $account = cde_salesnav_session_account();
 $connected = $account !== null && ($account['account_id'] ?? '') !== '';
 

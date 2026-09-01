@@ -523,28 +523,7 @@ function cde_salesnav_avatar_from_profile(array $profile): string
 
 function cde_salesnav_refresh_account_meta(string $userId, string $accountId): array
 {
-    $config = cde_unipile_api_config();
-    $meta = cde_salesnav_fetch_account_meta($config, $accountId);
-    $stored = cde_salesnav_load_accounts()[$userId] ?? [];
-    if (!is_array($stored)) {
-        $stored = [];
-    }
-    cde_salesnav_save_account($userId, array_merge($stored, [
-        'account_id' => $accountId,
-        'label' => $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
-        'avatar_url' => $meta['avatar_url'],
-        'linked_at' => (string) ($stored['linked_at'] ?? gmdate('c')),
-        'status' => (string) ($stored['status'] ?? 'CONNECTED'),
-        'disconnected_at' => null,
-    ]));
-    if (cde_salesnav_user_id() === $userId) {
-        cde_salesnav_set_session_account(
-            $accountId,
-            $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
-            $meta['avatar_url']
-        );
-    }
-    return $meta;
+    return cde_salesnav_apply_unipile_account($userId, $accountId);
 }
 
 function cde_salesnav_account_label_from_item(array $item): string
@@ -676,6 +655,159 @@ function cde_salesnav_is_account_alive(string $accountId): bool
     $resp = cde_unipile_request($config, 'GET', '/users/me', ['account_id' => $accountId], null, 30);
 
     return $resp['ok'];
+}
+
+/** @return list<array<string, mixed>> */
+function cde_salesnav_list_unipile_account_items(): array
+{
+    $config = cde_unipile_api_config(null);
+    $resp = cde_unipile_request($config, 'GET', '/accounts');
+    if (!$resp['ok']) {
+        return [];
+    }
+    $items = $resp['data']['items'] ?? $resp['data'] ?? [];
+
+    return is_array($items) ? $items : [];
+}
+
+function cde_salesnav_resolve_linked_account_id(string $userId): ?string
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $storedLabel = is_array($stored) ? trim((string) ($stored['label'] ?? '')) : '';
+    $storedAccountId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+
+    if ($storedAccountId !== '' && cde_salesnav_is_account_alive($storedAccountId)) {
+        return $storedAccountId;
+    }
+
+    $candidates = [];
+    foreach (cde_salesnav_list_unipile_account_items() as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
+        if ($id === '' || !cde_salesnav_is_account_alive($id)) {
+            continue;
+        }
+
+        $linkedName = trim((string) ($item['name'] ?? ''));
+        $meta = cde_salesnav_fetch_account_meta(cde_unipile_api_config($id), $id);
+        $label = trim((string) ($meta['label'] ?? ''));
+
+        $score = 0;
+        if ($linkedName !== '' && $linkedName === $userId) {
+            $score += 100;
+        }
+        if ($storedLabel !== '' && $label !== '' && strcasecmp($label, $storedLabel) === 0) {
+            $score += 50;
+        }
+        if ($storedAccountId !== '' && $id === $storedAccountId) {
+            $score += 10;
+        }
+
+        $created = strtotime((string) ($item['created_at'] ?? $item['last_update'] ?? ''));
+        $candidates[] = [
+            'id' => $id,
+            'score' => $score,
+            'created' => $created !== false ? $created : 0,
+        ];
+    }
+
+    if ($candidates === []) {
+        return null;
+    }
+
+    usort($candidates, static function (array $a, array $b): int {
+        if ($a['score'] !== $b['score']) {
+            return $b['score'] <=> $a['score'];
+        }
+
+        return $b['created'] <=> $a['created'];
+    });
+
+    $best = $candidates[0];
+    if ($best['score'] <= 0 && count($candidates) > 1) {
+        return null;
+    }
+
+    return (string) $best['id'];
+}
+
+function cde_salesnav_propagate_account_id(string $fromAccountId, string $toAccountId, array $meta): void
+{
+    if ($fromAccountId === '' || $fromAccountId === $toAccountId) {
+        return;
+    }
+
+    $all = cde_salesnav_load_accounts();
+    $changed = false;
+    foreach ($all as $uid => $rec) {
+        if (!is_array($rec) || (string) ($rec['account_id'] ?? '') !== $fromAccountId) {
+            continue;
+        }
+        $all[$uid] = array_merge($rec, [
+            'account_id' => $toAccountId,
+            'label' => ($meta['label'] ?? '') !== '' ? $meta['label'] : (string) ($rec['label'] ?? ''),
+            'avatar_url' => (string) ($meta['avatar_url'] ?? $rec['avatar_url'] ?? ''),
+            'linked_at' => gmdate('c'),
+            'status' => 'CONNECTED',
+            'disconnected_at' => null,
+            'invalid_at' => null,
+            'invalid_reason' => null,
+            'validated_at' => gmdate('c'),
+            'previous_account_id' => $fromAccountId,
+        ]);
+        $changed = true;
+    }
+    if (!$changed) {
+        return;
+    }
+    $path = cde_salesnav_accounts_file();
+    @file_put_contents($path, json_encode($all, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    @chmod($path, 0600);
+}
+
+/** @return array{label: string, avatar_url: string} */
+function cde_salesnav_apply_unipile_account(string $userId, string $accountId): array
+{
+    $config = cde_unipile_api_config($accountId);
+    $meta = cde_salesnav_fetch_account_meta($config, $accountId);
+    $stored = cde_salesnav_load_accounts()[$userId] ?? [];
+    if (!is_array($stored)) {
+        $stored = [];
+    }
+
+    $previous = trim((string) ($stored['account_id'] ?? ''));
+    if ($previous !== '' && $previous !== $accountId) {
+        cde_salesnav_propagate_account_id($previous, $accountId, $meta);
+        $stored = cde_salesnav_load_accounts()[$userId] ?? $stored;
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+    }
+
+    cde_salesnav_save_account($userId, array_merge($stored, [
+        'account_id' => $accountId,
+        'label' => $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
+        'avatar_url' => $meta['avatar_url'] !== '' ? $meta['avatar_url'] : (string) ($stored['avatar_url'] ?? ''),
+        'linked_at' => gmdate('c'),
+        'status' => 'CONNECTED',
+        'disconnected_at' => null,
+        'invalid_at' => null,
+        'invalid_reason' => null,
+        'validated_at' => gmdate('c'),
+        'previous_account_id' => $previous !== '' && $previous !== $accountId ? $previous : ($stored['previous_account_id'] ?? null),
+    ]));
+
+    if (cde_salesnav_user_id() === $userId) {
+        cde_salesnav_set_session_account(
+            $accountId,
+            $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
+            $meta['avatar_url'] !== '' ? $meta['avatar_url'] : (string) ($stored['avatar_url'] ?? '')
+        );
+    }
+
+    return $meta;
 }
 
 function cde_salesnav_should_revalidate_account(?array $stored): bool

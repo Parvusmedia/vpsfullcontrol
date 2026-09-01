@@ -409,6 +409,13 @@ function cde_tasks_run(string $taskId): void
 
     $userId = (string) ($task['user_id'] ?? '');
     $accountId = trim((string) ($task['account_id'] ?? ''));
+    if ($accountId === '' || !cde_salesnav_is_account_alive($accountId)) {
+        $resolved = cde_salesnav_resolve_linked_account_id($userId);
+        if ($resolved !== null) {
+            $accountId = $resolved;
+            cde_tasks_update($taskId, ['account_id' => $accountId]);
+        }
+    }
     if ($accountId === '') {
         $linked = cde_salesnav_session_account();
         if ($linked === null) {
