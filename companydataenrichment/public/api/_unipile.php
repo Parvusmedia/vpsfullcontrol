@@ -303,6 +303,29 @@ function cde_salesnav_save_account(string $userId, array $record): void
     @chmod($path, 0600);
 }
 
+/** Copy LinkedIn connection from an anonymous wallet to the email-based wallet on login. */
+function cde_salesnav_merge_accounts(string $fromUserId, string $toUserId): void
+{
+    if ($fromUserId === '' || $toUserId === '' || $fromUserId === $toUserId) {
+        return;
+    }
+    $all = cde_salesnav_load_accounts();
+    $from = $all[$fromUserId] ?? null;
+    $to = $all[$toUserId] ?? null;
+    if (!is_array($from) || empty($from['account_id'])) {
+        return;
+    }
+    if (is_array($to) && !empty($to['account_id'])) {
+        return;
+    }
+    $all[$toUserId] = array_merge($from, [
+        'linked_at' => (string) ($from['linked_at'] ?? gmdate('c')),
+    ]);
+    $path = cde_salesnav_accounts_file();
+    @file_put_contents($path, json_encode($all, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    @chmod($path, 0600);
+}
+
 function cde_salesnav_set_session_account(string $accountId, string $label = '', string $avatarUrl = ''): void
 {
     cde_session_start();
@@ -337,6 +360,32 @@ function cde_salesnav_session_account(): ?array
                 (string) ($stored['avatar_url'] ?? '')
             );
             $accountId = (string) $stored['account_id'];
+        }
+    } else {
+        $userId = cde_salesnav_user_id();
+        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+        $sessionAvatar = trim((string) ($_SESSION['salesnav_account_avatar'] ?? ''));
+        if ($sessionAvatar === '' && is_array($stored)) {
+            if (!empty($stored['avatar_url'])) {
+                $_SESSION['salesnav_account_avatar'] = (string) $stored['avatar_url'];
+            }
+            if (trim((string) ($_SESSION['salesnav_account_label'] ?? '')) === '' && !empty($stored['label'])) {
+                $_SESSION['salesnav_account_label'] = (string) $stored['label'];
+            }
+        }
+        if (trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')) === '') {
+            foreach (cde_salesnav_load_accounts() as $row) {
+                if (!is_array($row) || ($row['account_id'] ?? '') !== $accountId) {
+                    continue;
+                }
+                if (!empty($row['avatar_url'])) {
+                    $_SESSION['salesnav_account_avatar'] = (string) $row['avatar_url'];
+                }
+                if (trim((string) ($_SESSION['salesnav_account_label'] ?? '')) === '' && !empty($row['label'])) {
+                    $_SESSION['salesnav_account_label'] = (string) $row['label'];
+                }
+                break;
+            }
         }
     }
     if ($accountId === '') {

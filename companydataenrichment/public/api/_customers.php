@@ -374,8 +374,11 @@ function cde_salesnav_establish_session(string $email): void
     $_SESSION['salesnav_auth_at'] = gmdate('c');
     session_regenerate_id(true);
     $nextId = cde_salesnav_user_id_for_email($email);
-    if ($prevId !== $nextId && function_exists('cde_credits_merge_wallets')) {
-        cde_credits_merge_wallets($prevId, $nextId);
+    if ($prevId !== $nextId) {
+        if (function_exists('cde_credits_merge_wallets')) {
+            cde_credits_merge_wallets($prevId, $nextId);
+        }
+        cde_salesnav_merge_accounts($prevId, $nextId);
     }
 }
 

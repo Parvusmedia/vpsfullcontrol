@@ -575,11 +575,14 @@ function renderConnectionStatus(data) {
 
   if (avatar) {
     if (isConnected && data.avatar_url) {
+      avatar.referrerPolicy = "no-referrer";
       avatar.src = data.avatar_url;
       avatar.alt = data.label ? `${data.label} profile photo` : "LinkedIn profile photo";
       avatar.hidden = false;
+      avatar.style.display = "";
     } else {
       avatar.hidden = true;
+      avatar.style.display = "none";
       avatar.removeAttribute("src");
       avatar.alt = "";
     }
