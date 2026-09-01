@@ -24,6 +24,10 @@ const I18N = {
     "account.title": "Account",
     "account.signedIn": "Signed in",
     "account.emailLabel": "Email",
+    "account.signIn": "Sign in",
+    "account.signOut": "Sign out",
+    "account.guestLead": "Sign in with the email you used at checkout — or enter it below before your first top-up.",
+    "account.signedInOk": "Signed in. Your credits and exports are linked to this email.",
     "credits.balance": "{count} export credits available",
     "credits.load": "Top up (from €20)",
     "credits.loadMore": "Load more credits",
@@ -166,6 +170,10 @@ const I18N = {
     "account.title": "Cuenta",
     "account.signedIn": "Sesión iniciada",
     "account.emailLabel": "Email",
+    "account.signIn": "Iniciar sesión",
+    "account.signOut": "Cerrar sesión",
+    "account.guestLead": "Inicia sesión con el email que usaste al pagar — o introdúcelo antes de tu primera recarga.",
+    "account.signedInOk": "Sesión iniciada. Tus créditos y exports quedan vinculados a este email.",
     "credits.balance": "{count} créditos de export disponibles",
     "credits.load": "Recargar (desde €20)",
     "credits.loadMore": "Cargar más créditos",
@@ -436,22 +444,20 @@ function renderConnectionStatus(data) {
 }
 
 function renderAccount() {
+  const dashboard = document.getElementById("user-dashboard");
   const panel = document.getElementById("account-panel");
+  const guestWrap = document.getElementById("account-guest-wrap");
+  const memberWrap = document.getElementById("account-member-wrap");
   const balanceEl = document.getElementById("account-balance");
   const emailLine = document.getElementById("account-email-line");
-  const badge = document.getElementById("account-badge");
-  const signinWrap = document.getElementById("account-signin-wrap");
-  const emailWrap = document.getElementById("account-email-wrap");
-  const restoreWrap = document.getElementById("account-restore-wrap");
   const packWrap = document.getElementById("account-pack-wrap");
   const buyBtn = document.getElementById("buy-credits-btn");
-  const buyMoreBtn = document.getElementById("buy-more-btn");
   const connectBtn = document.getElementById("connect-btn");
 
   if (!panel || !balanceEl) return;
 
   if (!billingEnabled) {
-    panel.hidden = true;
+    if (dashboard) dashboard.hidden = true;
     if (connectBtn) {
       connectBtn.disabled = false;
       connectBtn.removeAttribute("aria-disabled");
@@ -459,24 +465,24 @@ function renderAccount() {
     return;
   }
 
+  if (dashboard) dashboard.hidden = false;
   panel.hidden = false;
-  balanceEl.textContent = t("credits.balance", { count: creditBalance });
 
   const signedIn = !!accountEmail;
-  if (badge) badge.hidden = !signedIn;
-  if (emailLine) {
-    emailLine.hidden = !signedIn;
-    emailLine.textContent = signedIn ? `${t("account.emailLabel")}: ${accountEmail}` : "";
+  if (guestWrap) guestWrap.hidden = signedIn;
+  if (memberWrap) memberWrap.hidden = !signedIn;
+
+  if (signedIn) {
+    balanceEl.textContent = t("credits.balance", { count: creditBalance });
+    if (emailLine) {
+      emailLine.textContent = `${t("account.emailLabel")}: ${accountEmail}`;
+    }
+    if (packWrap) packWrap.hidden = false;
+    if (buyBtn) {
+      buyBtn.hidden = false;
+      buyBtn.textContent = creditBalance > 0 ? t("credits.loadMore") : t("credits.load");
+    }
   }
-  if (signinWrap) signinWrap.hidden = signedIn;
-  if (emailWrap) emailWrap.hidden = signedIn;
-  if (restoreWrap) restoreWrap.hidden = signedIn;
-  if (packWrap) packWrap.hidden = false;
-  if (buyBtn) {
-    buyBtn.hidden = false;
-    buyBtn.textContent = signedIn && creditBalance > 0 ? t("credits.loadMore") : t("credits.load");
-  }
-  if (buyMoreBtn) buyMoreBtn.hidden = true;
 
   const billingEmail = document.getElementById("billing-email");
   if (billingEmail && accountEmail && !billingEmail.value) {
@@ -488,6 +494,58 @@ function renderAccount() {
     connectBtn.disabled = !hasCredits;
     connectBtn.setAttribute("aria-disabled", hasCredits ? "false" : "true");
   }
+}
+
+function persistAccountEmail(email) {
+  if (!email) return;
+  try {
+    localStorage.setItem("sn_account_email", email);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readStoredAccountEmail() {
+  try {
+    return (localStorage.getItem("sn_account_email") || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function clearStoredAccountEmail() {
+  try {
+    localStorage.removeItem("sn_account_email");
+  } catch {
+    /* ignore */
+  }
+}
+
+async function signInAccount(email, opts = {}) {
+  const silent = !!opts.silent;
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  accountEmail = data.email || email;
+  creditBalance = Number(data.balance) || 0;
+  persistAccountEmail(accountEmail);
+  renderAccount();
+  renderConnectionStatus(lastConnection);
+  if (!silent) {
+    if (creditBalance > 0) {
+      setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
+    } else {
+      setAccountNote(t("account.signedInOk"), "ok");
+    }
+  }
+  return data;
 }
 
 function renderCredits() {
@@ -520,6 +578,18 @@ async function fetchCredits() {
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
     accountEmail = data.account_email || "";
+    if (!accountEmail) {
+      const stored = readStoredAccountEmail();
+      if (stored) {
+        try {
+          await signInAccount(stored, { silent: true });
+        } catch {
+          /* fall through as guest */
+        }
+      }
+    } else {
+      persistAccountEmail(accountEmail);
+    }
     if (Array.isArray(data.packs) && data.packs.length) {
       renderCreditPacks(data.packs);
       const packSelect = document.getElementById("credit-pack");
@@ -615,6 +685,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     throw new Error(data.error || t("msg.generic"));
   }
   accountEmail = email;
+  persistAccountEmail(email);
   renderCredits();
   const result = await openStripePopup(data.url);
   if (result?.ok === true) {
@@ -645,26 +716,41 @@ async function restoreAccount() {
     emailInput?.focus();
     return;
   }
-  const res = await fetch("/api/salesnav-account.php", {
+  try {
+    await signInAccount(email);
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function signInFromForm() {
+  const emailInput = document.getElementById("billing-email");
+  const email = (emailInput?.value || "").trim();
+  if (!email) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    emailInput?.focus();
+    return;
+  }
+  try {
+    await signInAccount(email);
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function signOutAccount() {
+  await fetch("/api/salesnav-account.php", {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ action: "signout", email: accountEmail || "x" }),
   });
-  const data = await res.json();
-  if (!res.ok || !data.ok) {
-    setAccountNote(data.error || t("msg.generic"), "error");
-    return;
-  }
-  accountEmail = data.email || email;
-  creditBalance = Number(data.balance) || 0;
-  renderCredits();
+  accountEmail = "";
+  creditBalance = 0;
+  clearStoredAccountEmail();
+  renderAccount();
   renderConnectionStatus(lastConnection);
-  if (creditBalance > 0) {
-    setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
-  } else {
-    setAccountNote(t("credits.restoreEmpty"), "ok");
-  }
+  setAccountNote("", "ok");
 }
 
 async function fetchConnectionStatus() {
@@ -812,6 +898,7 @@ async function completeStripeReturn(sessionId) {
       return;
     }
     accountEmail = data.email || accountEmail;
+    persistAccountEmail(accountEmail);
     creditBalance = Number(data.balance) || 0;
     renderCredits();
     renderConnectionStatus(lastConnection);
@@ -1150,6 +1237,8 @@ document.getElementById("buy-more-btn")?.addEventListener("click", async () => {
     setAccountNote(err.message || t("msg.generic"), "error");
   }
 });
+document.getElementById("sign-in-btn")?.addEventListener("click", () => signInFromForm());
+document.getElementById("sign-out-btn")?.addEventListener("click", () => signOutAccount());
 document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
 document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 

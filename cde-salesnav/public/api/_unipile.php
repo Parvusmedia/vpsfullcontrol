@@ -269,6 +269,12 @@ function cde_salesnav_bind_customer_email(string $email): string
     return $nextId;
 }
 
+function cde_salesnav_sign_out_customer(): void
+{
+    cde_session_start();
+    unset($_SESSION['salesnav_customer_email']);
+}
+
 function cde_salesnav_load_accounts(): array
 {
     $path = cde_salesnav_accounts_file();

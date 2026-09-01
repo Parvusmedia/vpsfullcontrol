@@ -22,6 +22,18 @@ if (!is_array($payload)) {
 }
 
 $email = strtolower(trim((string) ($payload['email'] ?? '')));
+$action = strtolower(trim((string) ($payload['action'] ?? 'signin')));
+
+if ($action === 'signout') {
+    cde_salesnav_sign_out_customer();
+    cde_json_response(200, [
+        'ok' => true,
+        'signed_out' => true,
+        'balance' => 0,
+        'email' => '',
+    ]);
+}
+
 if ($email === '') {
     cde_json_response(400, ['ok' => false, 'error' => 'Email is required.']);
 }

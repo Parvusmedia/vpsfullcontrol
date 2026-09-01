@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=14" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=15" />
   <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
@@ -55,21 +55,22 @@
           Connect your LinkedIn account with Sales Navigator, then paste a list or search URL. Demo exports up to <strong>25 leads</strong> free.
         </p>
 
+        <div class="user-dashboard" id="user-dashboard" hidden>
         <section class="account-panel" id="account-panel" aria-live="polite">
-          <div class="account-head">
-            <h2 data-i18n="account.title">Account</h2>
-            <span class="account-badge" id="account-badge" hidden data-i18n="account.signedIn">Signed in</span>
-          </div>
-          <p class="account-balance" id="account-balance"></p>
-          <p class="account-email" id="account-email-line" hidden></p>
-          <p class="account-copy muted" id="account-session-note" data-i18n="credits.accountNote">
-            Credits are linked to your email. Sign in with the same email on any device to restore your balance.
-          </p>
-          <div class="account-signin" id="account-signin-wrap">
+          <div class="account-guest" id="account-guest-wrap">
+            <div class="account-head">
+              <h2 data-i18n="account.title">Account</h2>
+            </div>
+            <p class="account-copy" data-i18n="account.guestLead">
+              Sign in with the email you used at checkout — or enter it below before your first top-up.
+            </p>
             <label class="account-field" id="account-email-wrap">
               <span data-i18n="credits.email">Work email</span>
               <input id="billing-email" name="billing_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
             </label>
+            <div class="account-actions account-actions-guest">
+              <button type="button" class="connect-btn" id="sign-in-btn" data-i18n="account.signIn">Sign in</button>
+            </div>
             <details class="account-restore" id="account-restore-wrap">
               <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
               <div class="account-restore-body">
@@ -81,15 +82,25 @@
               </div>
             </details>
           </div>
-          <label class="account-field account-pack" id="account-pack-wrap">
-            <span data-i18n="credits.pack">Credit pack</span>
-            <select id="credit-pack" name="credit_pack"></select>
-          </label>
-          <div class="account-actions">
-            <button type="button" class="connect-btn" id="buy-credits-btn" data-i18n="credits.load">Top up (from €20)</button>
-            <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
+
+          <div class="account-member" id="account-member-wrap" hidden>
+            <div class="account-head">
+              <h2 data-i18n="account.title">Account</h2>
+              <span class="account-badge" id="account-badge" data-i18n="account.signedIn">Signed in</span>
+            </div>
+            <p class="account-balance" id="account-balance"></p>
+            <p class="account-email" id="account-email-line"></p>
+            <label class="account-field account-pack" id="account-pack-wrap">
+              <span data-i18n="credits.pack">Credit pack</span>
+              <select id="credit-pack" name="credit_pack"></select>
+            </label>
+            <div class="account-actions">
+              <button type="button" class="connect-btn" id="buy-credits-btn" data-i18n="credits.load">Top up (from €20)</button>
+              <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
+              <button type="button" class="ghost-btn" id="sign-out-btn" data-i18n="account.signOut">Sign out</button>
+            </div>
+            <p class="account-note" id="account-note" hidden aria-live="polite"></p>
           </div>
-          <p class="account-note" id="account-note" hidden aria-live="polite"></p>
         </section>
 
         <section class="connect-panel" id="connect-panel" aria-live="polite">
@@ -112,6 +123,7 @@
           </div>
           <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
         </section>
+        </div>
 
         <div class="export-gate" id="export-gate" hidden>
         <div class="mode-switch" role="tablist" aria-label="Export mode">
@@ -376,6 +388,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=20"></script>
+  <script src="/salesnav/salesnav.js?v=21"></script>
 </body>
 </html>
