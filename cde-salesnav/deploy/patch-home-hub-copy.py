@@ -8,6 +8,18 @@ DOCROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/var/www/vhosts/comp
 
 INDEX_REPLACEMENTS = [
     (
+        '<span class="hub-badge" data-i18n="hub.badge2">No credit card</span>\n',
+        '<span class="hub-badge" data-i18n="hub.badge2">From €20 · Sales Navigator</span>\n',
+    ),
+    (
+        '<span class="hub-badge" data-i18n="hub.badge2">Sin tarjeta</span>\n',
+        '<span class="hub-badge" data-i18n="hub.badge2">Desde €20 · Sales Navigator</span>\n',
+    ),
+    (
+        'data-i18n="hub.badge1">Free demo</span>\n          <span class="hub-badge" data-i18n="hub.badge2">From €20 · Sales Navigator</span>',
+        'data-i18n="hub.badge1">Free demo · Companies</span>\n          <span class="hub-badge" data-i18n="hub.badge2">From €20 · Sales Navigator</span>',
+    ),
+    (
         '<div class="hub-badge-row">\n          <span class="hub-badge" data-i18n="hub.badge1">Free demo</span>\n        </div>',
         '<div class="hub-badge-row">\n          <span class="hub-badge" data-i18n="hub.badge1">Free demo · Companies</span>\n          <span class="hub-badge" data-i18n="hub.badge2">From €20 · Sales Navigator</span>\n        </div>',
     ),
@@ -51,6 +63,37 @@ JS_REPLACEMENTS = [
 
 BADGE2_EN = '"hub.badge2": "From €20 · Sales Navigator",'
 BADGE2_ES = '"hub.badge2": "Desde €20 · Sales Navigator",'
+STALE_BADGE2 = (
+    '"hub.badge2": "No credit card",',
+    '"hub.badge2": "Sin tarjeta",',
+)
+
+
+def scrub_stale_badge2(js: str) -> str:
+    for stale in STALE_BADGE2:
+        js = js.replace("\n    " + stale, "")
+        js = js.replace(stale + "\n    ", "")
+        js = js.replace(stale, "")
+    return js
+
+
+def ensure_badge2_i18n(js: str) -> str:
+    js = scrub_stale_badge2(js)
+    if BADGE2_EN in js and BADGE2_ES in js:
+        return js
+    if BADGE2_EN not in js:
+        js = js.replace(
+            '"hub.badge1": "Free demo · Companies",',
+            '"hub.badge1": "Free demo · Companies",\n    ' + BADGE2_EN,
+            1,
+        )
+    if BADGE2_ES not in js:
+        js = js.replace(
+            '"hub.badge1": "Demo gratis · Companies",',
+            '"hub.badge1": "Demo gratis · Companies",\n    ' + BADGE2_ES,
+            1,
+        )
+    return js
 
 
 def patch_index(path: Path) -> bool:
@@ -62,22 +105,6 @@ def patch_index(path: Path) -> bool:
         path.write_text(text)
         return True
     return False
-
-
-def ensure_badge2_i18n(js: str) -> str:
-    if BADGE2_EN in js:
-        return js
-    js = js.replace(
-        '"hub.badge1": "Free demo · Companies",',
-        '"hub.badge1": "Free demo · Companies",\n    ' + BADGE2_EN,
-        1,
-    )
-    js = js.replace(
-        '"hub.badge1": "Demo gratis · Companies",',
-        '"hub.badge1": "Demo gratis · Companies",\n    ' + BADGE2_ES,
-        1,
-    )
-    return js
 
 
 def patch_app_js(path: Path) -> bool:
