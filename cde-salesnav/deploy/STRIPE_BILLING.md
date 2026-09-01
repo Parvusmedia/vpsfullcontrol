@@ -63,7 +63,7 @@ Export CSV
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRODUCT_ID=prod_VB9BUSTFvzzBRm
-STRIPE_PRICE_ID=price_1UAmt1L0sc6a4STMnQu6BJcY
+STRIPE_PRICE_ID=price_1UAnliL0sc6a4STMwyYdMPF4
 SALESNAV_SITE_ORIGIN=https://companydataenrichment.com
 # SALESNAV_BILLING_ENABLED=1   # omit or set 1 when ready; set 0 to disable
 ```

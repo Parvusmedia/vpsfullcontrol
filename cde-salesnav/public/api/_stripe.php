@@ -39,7 +39,7 @@ function cde_stripe_price_id_for_pack(string $packId): string
         return $specific;
     }
     if ($packId === '120') {
-        return $env['STRIPE_PRICE_ID'] ?? getenv('STRIPE_PRICE_ID') ?: 'price_1UAmt1L0sc6a4STMnQu6BJcY';
+        return $env['STRIPE_PRICE_ID'] ?? getenv('STRIPE_PRICE_ID') ?: 'price_1UAnliL0sc6a4STMwyYdMPF4';
     }
     return '';
 }
@@ -108,13 +108,10 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     }
 
     $priceId = cde_stripe_price_id_for_pack($packId);
-    // custom_unit_amount Prices cannot use promotion codes — use fixed price_data instead.
-    $useCatalogPrice = $priceId !== '' && !$allowPromo;
-
-    if ($useCatalogPrice) {
+    if ($priceId !== '') {
         $fields['line_items[0][price]'] = $priceId;
     } else {
-        // Existing catalog product — do not mix product + product_data (Stripe rejects it).
+        // Fallback for packs without a catalog Price — product only, no product_data mix.
         $fields['line_items[0][price_data][currency]'] = 'eur';
         $fields['line_items[0][price_data][unit_amount]'] = (string) $pack['amount_cents'];
         $fields['line_items[0][price_data][product]'] = $cfg['product_id'];
