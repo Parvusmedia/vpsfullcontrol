@@ -1110,6 +1110,31 @@ function taskLimitLabel(task) {
   return String(task.limit || "—");
 }
 
+async function refreshPanelCredits() {
+  try {
+    const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return;
+    creditBalance = Number(data.balance) || 0;
+    if (IS_PANEL) {
+      const balanceEl = document.getElementById("toolbar-balance");
+      if (balanceEl) balanceEl.textContent = String(creditBalance);
+    } else {
+      renderAccount();
+    }
+  } catch {
+    /* optional */
+  }
+}
+
+function tasksFinishedProcessing(prevTasks, nextTasks) {
+  if (!prevTasks.length || !nextTasks.length) return false;
+  return nextTasks.some((task) => {
+    const prev = prevTasks.find((item) => item.id === task.id);
+    return prev?.status === "processing" && task.status === "ready";
+  });
+}
+
 function scheduleTasksPoll() {
   if (tasksPollTimer) {
     clearInterval(tasksPollTimer);
@@ -1129,9 +1154,13 @@ async function fetchTasks(opts = {}) {
     const res = await fetch("/api/salesnav-tasks.php", { credentials: "same-origin" });
     const data = await res.json();
     if (!res.ok || !data.ok) return;
+    const prevTasks = panelTasks;
     panelTasks = Array.isArray(data.tasks) ? data.tasks : [];
     renderTasksTable();
     scheduleTasksPoll();
+    if (tasksFinishedProcessing(prevTasks, panelTasks)) {
+      await refreshPanelCredits();
+    }
     if (!opts.silent) {
       highlightTaskFromQuery();
     }
