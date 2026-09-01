@@ -85,6 +85,19 @@ Defined in `cde_credits_packs()` — `_credits.php`:
 
 Edit pack definitions to change retail tiers.
 
+## Promotion codes (Stripe Checkout only)
+
+Codes are entered in Stripe Checkout via **Add promotion code** — not on the website.
+
+| Code | Discount | Pay | Notes |
+|------|----------|-----|-------|
+| `FREE25` | €19.50 off | **€0.50** | Stripe minimum charge (EUR); still grants full 120 credits via webhook |
+| `OX1ENSMN` | same | €0.50 | First-time Stripe customer only |
+
+**Important:** Stripe Checkout `payment` mode cannot total **€0**. A 100% off coupon will show as invalid — use amount-off coupons that leave at least **€0.50** due.
+
+Checkout uses fixed Price `price_1UAnliL0sc6a4STMwyYdMPF4` + `allow_promotion_codes=true`.
+
 ## Until Stripe is live
 
 Without `STRIPE_SECRET_KEY`, `billing_enabled: false` — demo limits (25 leads) and free connect unchanged.
