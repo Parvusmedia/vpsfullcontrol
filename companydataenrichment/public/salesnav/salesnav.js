@@ -520,6 +520,21 @@ function setExportGate(visible) {
   if (gate) gate.hidden = !visible;
 }
 
+async function parseJsonResponse(res) {
+  const text = await res.text();
+  if (!text) {
+    return {
+      ok: false,
+      error: res.ok ? "Empty server response." : `Request failed (${res.status}).`,
+    };
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { ok: false, error: "Invalid server response." };
+  }
+}
+
 function renderConnectionStatus(data) {
   lastConnection = {
     connected: !!data?.connected,
@@ -723,7 +738,7 @@ async function signInAccount(email, password, opts = {}) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "signin", email, password }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     const err = new Error(data.error || t("msg.generic"));
     err.code = data.code;
@@ -760,7 +775,7 @@ async function registerAccount(email, password, passwordConfirm) {
       password_confirm: passwordConfirm,
     }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     const err = new Error(data.error || t("msg.generic"));
     err.code = data.code;
@@ -776,7 +791,7 @@ async function resendVerificationEmail(email) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "resend", email }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     throw new Error(data.error || t("msg.generic"));
   }
@@ -790,7 +805,7 @@ async function verifyAccountToken(token) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "verify", token }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     throw new Error(data.error || t("msg.generic"));
   }
@@ -828,7 +843,7 @@ function renderCreditPacks(packs) {
 async function fetchCredits() {
   try {
     const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) return;
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
@@ -934,7 +949,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pack }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.url) {
     throw new Error(data.error || t("msg.generic"));
   }
@@ -1068,7 +1083,7 @@ async function signOutAccount() {
 
 async function fetchConnectionStatus() {
   const res = await fetch("/api/salesnav-status.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     throw new Error(data.error || t("msg.generic"));
   }
@@ -1104,7 +1119,7 @@ async function startConnect(reconnect = false) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reconnect }),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (res.status === 402 && data.needs_payment) {
       setAccountNote(t("credits.connectNeedsBalance"), "error");
       return;
@@ -1139,14 +1154,15 @@ async function disconnectLinkedIn() {
       method: "POST",
       credentials: "same-origin",
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) {
       throw new Error(data.error || t("msg.generic"));
     }
     renderConnectionStatus({ connected: false });
+    setAccountNote("", "ok");
     setConnectNote("", "ok");
   } catch (err) {
-    setConnectNote(err.message || t("msg.generic"), "error");
+    setAccountNote(err.message || t("msg.generic"), "error");
   }
 }
 
@@ -1205,7 +1221,7 @@ async function completeStripeReturn(sessionId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId }),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) {
       await pollCreditsAfterReturn();
       return;
@@ -1296,7 +1312,7 @@ async function fetchTasks(opts = {}) {
   if (!IS_PANEL || !accountEmail) return;
   try {
     const res = await fetch("/api/salesnav-tasks.php", { credentials: "same-origin" });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) return;
     panelTasks = Array.isArray(data.tasks) ? data.tasks : [];
     renderTasksTable();
@@ -1455,7 +1471,7 @@ async function submitCreateTask(e) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
 
     if (res.status === 402 && data.needs_payment) {
       await startStripeCheckout(defaultPackId);
@@ -1546,7 +1562,7 @@ function escapeHtml(s) {
 
 async function getChallenge() {
   const res = await fetch("/api/challenge.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.challenge) {
     throw new Error(t("msg.challenge"));
   }
@@ -1600,7 +1616,7 @@ async function runExport() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
 
     if (res.status === 429) {
       throw new Error(t("msg.rateLimit"));
@@ -1673,7 +1689,7 @@ function setContactNote(text, tone = "ok") {
 
 async function loadContactChallenge() {
   const res = await fetch("/api/contact-challenge.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.challenge) {
     throw new Error(t("msg.challenge"));
   }
@@ -1721,7 +1737,7 @@ function initContactForm() {
           website: document.getElementById("contact-website").value,
         }),
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (!res.ok || !data.ok) {
         throw new Error(data.error || t("msg.generic"));
       }
