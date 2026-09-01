@@ -219,7 +219,7 @@ function cde_tasks_send_mail(string $to, string $subject, string $body): void
     if ($to === '') {
         return;
     }
-    cde_salesnav_send_mail($to, $subject, $body);
+    cde_salesnav_send_export_mail($to, $subject, $body);
 }
 
 function cde_tasks_notify_started(array $task, string $taskId): void

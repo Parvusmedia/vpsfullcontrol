@@ -1,11 +1,19 @@
 <?php
 declare(strict_types=1);
 
-/** Sales Navigator transactional mail — always from @companydataenrichment.com */
+/** Sales Navigator transactional mail — @companydataenrichment.com senders */
 
-function cde_salesnav_mail_from(): string
+function cde_salesnav_mail_from_for(string $kind = 'general'): string
 {
     $env = cde_salesnav_mail_read_env();
+    if ($kind === 'export') {
+        $from = trim((string) ($env['SALESNAV_MAIL_EXPORT_FROM'] ?? ''));
+        if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL)) {
+            return $from;
+        }
+        return 'export@companydataenrichment.com';
+    }
+
     $from = trim((string) ($env['SALESNAV_MAIL_FROM'] ?? ''));
     if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL)) {
         return $from;
@@ -49,24 +57,41 @@ function cde_salesnav_mail_read_env(): array
     return $cache;
 }
 
-function cde_salesnav_send_mail(string $to, string $subject, string $body): bool
+function cde_salesnav_send_mail(string $to, string $subject, string $body, string $kind = 'general'): bool
 {
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
-    $from = cde_salesnav_mail_from();
+    $from = cde_salesnav_mail_from_for($kind);
     $fromName = cde_salesnav_mail_from_name();
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     $safeBody = str_replace(["\r\n", "\r"], "\n", $body);
 
+    $mailer = $kind === 'export' ? 'CompanyDataEnrichment-Export' : 'CompanyDataEnrichment';
     $headers = [
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: 8bit',
         'From: ' . sprintf('"%s" <%s>', addcslashes($fromName, '"\\'), $from),
-        'X-Mailer: CompanyDataEnrichment-SalesNav',
+        'X-Mailer: ' . $mailer,
     ];
 
     return @mail($to, $encodedSubject, $safeBody, implode("\r\n", $headers));
+}
+
+function cde_salesnav_send_export_mail(string $to, string $subject, string $body): bool
+{
+    return cde_salesnav_send_mail($to, $subject, $body, 'export');
+}
+
+function cde_salesnav_send_general_mail(string $to, string $subject, string $body): bool
+{
+    return cde_salesnav_send_mail($to, $subject, $body, 'general');
+}
+
+/** @deprecated use cde_salesnav_mail_from_for() */
+function cde_salesnav_mail_from(): string
+{
+    return cde_salesnav_mail_from_for('general');
 }
