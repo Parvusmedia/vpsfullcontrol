@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
+require __DIR__ . '/_customers.php';
 require __DIR__ . '/_unipile.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -22,5 +23,6 @@ cde_json_response(200, [
     'ok' => true,
     'connected' => $connected,
     'label' => $connected ? ($account['label'] ?? '') : '',
+    'avatar_url' => $connected ? ($account['avatar_url'] ?? '') : '',
     'connected_at' => $connected ? ($account['connected_at'] ?? '') : '',
 ]);

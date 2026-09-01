@@ -225,10 +225,22 @@ function cde_salesnav_accounts_file(): string
 
 function cde_salesnav_user_id(): string
 {
+    cde_session_start();
+    if (!empty($_SESSION['salesnav_auth_ok'])) {
+        $email = strtolower(trim((string) ($_SESSION['salesnav_customer_email'] ?? '')));
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $verifiedOk = true;
+            if (function_exists('cde_customer_is_verified')) {
+                $verifiedOk = cde_customer_is_verified($email);
+            }
+            if ($verifiedOk) {
+                return cde_salesnav_user_id_for_email($email);
+            }
+        }
+    }
     if (function_exists('cde_salesnav_anonymous_user_id')) {
         return cde_salesnav_anonymous_user_id();
     }
-    cde_session_start();
     if (empty($_SESSION['salesnav_user_id']) || !is_string($_SESSION['salesnav_user_id'])) {
         $_SESSION['salesnav_user_id'] = bin2hex(random_bytes(16));
     }
