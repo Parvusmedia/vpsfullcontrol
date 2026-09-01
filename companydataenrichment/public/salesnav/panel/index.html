@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My panel — Sales Navigator Export</title>
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=25" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=21" />
+  <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
+</head>
+<body class="product-salesnav product-salesnav-panel">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="/">CompanyDataEnrichment</a>
+    <nav class="site-nav" aria-label="Products">
+      <a href="/" data-i18n="nav.companies">Companies</a>
+      <a href="/salesnav/" data-i18n="nav.salesnav">Sales Navigator</a>
+      <a href="/salesnav/panel/" class="is-active" aria-current="page" data-i18n="nav.panel">My panel</a>
+    </nav>
+    <div class="top-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" class="lang-btn" data-lang="es" aria-pressed="false">ES</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="panel-main">
+    <section class="panel-guest" id="panel-guest-wrap">
+      <article class="panel-card panel-card-guest">
+        <h1 data-i18n="panel.title">My panel</h1>
+        <p class="panel-guest-lede" data-i18n="account.guestLead">Sign in or create an account to manage credits and exports.</p>
+        <div class="account-auth-tabs" role="tablist" aria-label="Account">
+          <button type="button" class="mode-btn is-active" data-auth-tab="signin" data-i18n="account.signIn">Sign in</button>
+          <button type="button" class="mode-btn" data-auth-tab="register" data-i18n="account.register">Create account</button>
+        </div>
+        <form id="sign-in-form" class="account-auth-form" autocomplete="on">
+          <label class="account-field">
+            <span data-i18n="credits.email">Work email</span>
+            <input id="sign-in-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" required />
+          </label>
+          <label class="account-field">
+            <span data-i18n="account.password">Password</span>
+            <input id="sign-in-password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <div class="account-actions">
+            <button type="submit" class="connect-btn" id="sign-in-btn" data-i18n="account.signIn">Sign in</button>
+          </div>
+          <p class="account-inline-help">
+            <button type="button" class="linkish-btn" id="resend-verify-btn" data-i18n="account.resendVerify">Resend confirmation email</button>
+          </p>
+        </form>
+        <form id="register-form" class="account-auth-form" hidden autocomplete="on">
+          <label class="account-field">
+            <span data-i18n="credits.email">Work email</span>
+            <input id="register-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" required />
+          </label>
+          <label class="account-field">
+            <span data-i18n="account.password">Password</span>
+            <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <label class="account-field">
+            <span data-i18n="account.passwordConfirm">Confirm password</span>
+            <input id="register-password-confirm" name="password_confirm" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <p class="account-inline-help" data-i18n="account.registerNote">We will email you a confirmation link before you can sign in.</p>
+          <div class="account-actions">
+            <button type="submit" class="connect-btn" id="register-btn" data-i18n="account.register">Create account</button>
+          </div>
+        </form>
+        <p class="account-note" id="account-note-guest" hidden aria-live="polite"></p>
+      </article>
+    </section>
+
+    <section class="panel-app" id="panel-app-wrap" hidden>
+      <header class="panel-page-header">
+        <div class="panel-page-title">
+          <h1 data-i18n="panel.title">My panel</h1>
+          <p class="panel-page-lede" data-i18n="panel.lede">Manage credits, LinkedIn connection and CSV exports.</p>
+        </div>
+        <button type="button" class="ghost-btn panel-signout-btn" id="sign-out-btn" data-i18n="account.signOut">Sign out</button>
+      </header>
+
+      <div class="panel-overview">
+        <article class="panel-card panel-card-balance">
+          <header class="panel-card-head">
+            <h2 data-i18n="account.title">Account</h2>
+            <span class="account-badge" data-i18n="account.signedIn">Signed in</span>
+          </header>
+          <p class="panel-email" id="toolbar-email"></p>
+          <dl class="panel-metric">
+            <dt data-i18n="panel.creditsLabel">Export credits</dt>
+            <dd id="toolbar-balance">0</dd>
+          </dl>
+          <div class="panel-card-foot panel-topup-row">
+            <label class="panel-pack-field" for="credit-pack">
+              <span data-i18n="credits.pack">Credit pack</span>
+              <select id="credit-pack" class="panel-pack-select"></select>
+            </label>
+            <button type="button" class="connect-btn panel-topup-btn" id="buy-credits-btn" data-i18n="panel.topup">Top up</button>
+          </div>
+        </article>
+
+        <article class="panel-card panel-card-linkedin" data-connected="false">
+          <header class="panel-card-head">
+            <h2 data-i18n="connect.title">LinkedIn connection</h2>
+            <span class="connect-badge panel-li-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
+          </header>
+          <p class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</p>
+          <div class="panel-card-foot panel-li-actions-wrap">
+            <div class="panel-li-actions" id="connect-actions-billing">
+              <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
+            </div>
+            <div class="panel-li-actions" id="connect-actions-connected" hidden>
+              <button type="button" class="ghost-btn" id="disconnect-btn" data-i18n="connect.disconnect">Disconnect</button>
+              <button type="button" class="ghost-btn" id="reconnect-btn" data-i18n="connect.reconnect">Reconnect</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="account-note" id="account-note" hidden aria-live="polite"></p>
+      <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
+      <p class="panel-flash" id="panel-flash" hidden aria-live="polite"></p>
+
+      <article class="panel-card panel-card-tasks">
+        <header class="panel-tasks-head">
+          <div>
+            <h2 data-i18n="panel.tasksTitle">Export tasks</h2>
+            <p class="panel-tasks-lede" data-i18n="panel.tasksLede">Paste a Sales Navigator list or search URL — we process it in the background and email you when ready.</p>
+          </div>
+          <button type="button" class="connect-btn" id="create-task-btn" data-i18n="panel.newTask">New export</button>
+        </header>
+
+        <div class="tasks-compose" id="tasks-compose" hidden>
+          <form id="create-task-form" class="tasks-compose-form">
+            <h3 class="tasks-compose-title" data-i18n="panel.newTask">New export</h3>
+            <div class="mode-switch" role="tablist">
+              <button type="button" class="mode-btn is-active" data-mode="list" data-i18n="mode.list">Lead list</button>
+              <button type="button" class="mode-btn" data-mode="search" data-i18n="mode.search">People search</button>
+            </div>
+            <div id="list-wrap">
+              <label class="account-field" for="list-url">
+                <span data-i18n="form.listLabel">Sales Navigator list URL</span>
+                <input id="list-url" type="url" placeholder="https://www.linkedin.com/sales/lists/people/…" />
+              </label>
+            </div>
+            <div id="search-wrap" hidden>
+              <label class="account-field" for="search-url">
+                <span data-i18n="form.searchLabel">Sales Navigator search URL</span>
+                <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
+              </label>
+            </div>
+            <label class="account-field" for="export-limit">
+              <span data-i18n="form.limit">Max leads</span>
+              <select id="export-limit" name="limit">
+                <option value="50" data-i18n="form.limit50">50</option>
+                <option value="100" data-i18n="form.limit100">100</option>
+                <option value="200" data-i18n="form.limit200">200</option>
+                <option value="500" data-i18n="form.limit500">500</option>
+                <option value="1000" data-i18n="form.limit1000">1,000</option>
+                <option value="all" data-i18n="form.limitAll">All (up to 2,000)</option>
+              </select>
+            </label>
+            <fieldset class="export-tiers">
+              <legend data-i18n="form.tiers">Export options</legend>
+              <label class="export-tier-option tier-enriched">
+                <input type="checkbox" id="tier-enriched" value="1" />
+                <span data-i18n="form.tierEnriched">Enriched (+€0.02/lead)</span>
+              </label>
+            </fieldset>
+            <input class="hp" type="text" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="tasks-compose-actions">
+              <button type="button" class="ghost-btn" id="create-task-cancel" data-i18n="panel.composeCancel">Cancel</button>
+              <button type="submit" class="connect-btn" id="create-task-submit" data-i18n="panel.startTask">Start export</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="tasks-table-wrap">
+          <table class="tasks-table" id="tasks-table">
+            <thead>
+              <tr>
+                <th data-i18n="tasks.colSource">Source</th>
+                <th data-i18n="tasks.colStatus">Status</th>
+                <th data-i18n="tasks.colLeads">Leads</th>
+                <th data-i18n="tasks.colCredits">Credits</th>
+                <th data-i18n="tasks.colCreated">Created</th>
+                <th data-i18n="tasks.colAction">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-body">
+              <tr class="tasks-empty" id="tasks-empty-row">
+                <td colspan="6" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div>
+      <p><strong>CompanyDataEnrichment</strong></p>
+      <p class="muted" data-i18n="footer.tag">Company enrichment · Sales Navigator export</p>
+    </div>
+    <div class="foot-links">
+      <a href="/salesnav/">Sales Navigator</a>
+      <a href="/privacy.html" data-i18n="footer.privacy">Privacy</a>
+      <span class="muted">© <span id="y"></span></span>
+    </div>
+  </footer>
+
+  <script src="/salesnav/salesnav.js?v=28"></script>
+</body>
+</html>
