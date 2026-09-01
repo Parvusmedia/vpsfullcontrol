@@ -12,7 +12,7 @@ STAGING="/opt/apps/companydataenrichment/public"
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-stripe-webhook.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$REMOTE:$STAGING/api/"
@@ -41,7 +41,7 @@ echo "==> Ensure notify secret + writable private dir on production"
 ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl && chmod 660 $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl && chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl 2>/dev/null || true; if ! grep -q ^SALESNAV_NOTIFY_SECRET= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_NOTIFY_SECRET=\$(openssl rand -hex 24) >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_SITE_ORIGIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_SITE_ORIGIN=https://companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_HOSTED_AUTH_DOMAIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_HOSTED_AUTH_DOMAIN=connect.companydataenrichment.com >> $PRIVATE/unipile.env; fi; touch $PRIVATE/stripe.env; chmod 640 $PRIVATE/stripe.env; chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/stripe.env 2>/dev/null || true; if ! grep -q ^STRIPE_PRODUCT_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRODUCT_ID=prod_VB9BUSTFvzzBRm >> $PRIVATE/stripe.env; fi; if ! grep -q ^STRIPE_PRICE_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRICE_ID=price_1UAnliL0sc6a4STMwyYdMPF4 >> $PRIVATE/stripe.env; fi'"
 
 echo "==> Rsync public site to production httpdocs"
-ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' \
+ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' --exclude 'harvest.env' --exclude 'stripe.env' \
   $STAGING/ $PROD:$DOCROOT/"
 
 echo "==> Patch production contact.php volume labels"
@@ -171,6 +171,6 @@ print('sitemap/app.js ok')
 PY"
 
 echo "==> Set ownership on production"
-ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php 2>/dev/null || true\""
+ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php 2>/dev/null || true\""
 
 echo "==> Done — production deploy complete"

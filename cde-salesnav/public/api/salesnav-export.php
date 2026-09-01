@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_unipile.php';
 require __DIR__ . '/_credits.php';
+require __DIR__ . '/_harvest.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -69,8 +70,18 @@ if ($rows === []) {
     ]);
 }
 
-$exportCount = count($rows);
 $tiers = cde_credits_parse_tiers($payload);
+if (!empty($tiers['enriched'])) {
+    if (!cde_harvest_enabled()) {
+        cde_json_response(503, [
+            'ok' => false,
+            'error' => 'Enriched export is temporarily unavailable. Try Basic export or contact support.',
+        ]);
+    }
+    $rows = cde_harvest_enrich_rows($rows);
+}
+
+$exportCount = count($rows);
 $creditCost = cde_credits_export_cost($rows, $tiers);
 $userId = cde_salesnav_user_id();
 

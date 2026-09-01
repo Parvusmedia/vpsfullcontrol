@@ -18,7 +18,7 @@
 | **+ Enriched** | + €0.02 / lead | +0.4 / lead |
 | **+ Mail** | + €0.09 / email found | +1.8 / work email found |
 
-Enriched/Mail columns are billing flags today; pipeline enrichment (Harvest/Icypeas) is phase 2.
+Enriched tier uses HarvestAPI profile + company enrichment. Mail tier is phase 2.
 
 ## User flow
 

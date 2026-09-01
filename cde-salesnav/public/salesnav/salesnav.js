@@ -112,7 +112,7 @@ const I18N = {
     "trust.p2":
       "Output is assistive prospecting data. Review before CRM import or outreach; follow LinkedIn terms and applicable privacy rules.",
     "trust.p3":
-      "Demo rate limits apply on this page. Volume customers get dedicated limits aligned with LinkedIn daily export caps (~2,000/day per SN seat).",
+      "Credits are consumed per export. LinkedIn daily export caps apply (~2,000/day per SN seat). Agencies with multiple accounts can contact us below.",
     "trust.privacy": "Terms & privacy policy",
     "footer.tag": "Company enrichment · Sales Navigator export",
     "footer.privacy": "Privacy",
@@ -251,6 +251,33 @@ const I18N = {
 
 let lang = "en";
 let lastRows = [];
+let lastExportTiers = { enriched: false, mail: false };
+
+const BASIC_CSV_COLS = [
+  "first_name",
+  "last_name",
+  "full_name",
+  "job_title",
+  "company_name",
+  "location",
+  "linkedin_url",
+  "sales_nav_id",
+  "open_profile",
+  "connection_degree",
+];
+
+const ENRICHED_CSV_COLS = [
+  "company_linkedin_url",
+  "company_domain",
+  "company_industry",
+  "company_size",
+  "company_hq",
+  "seniority",
+  "tenure_years",
+  "profile_summary",
+  "skills",
+  "languages",
+];
 let contactChallengeToken = "";
 let isConnected = false;
 let lastConnection = { connected: false, label: "" };
@@ -572,19 +599,16 @@ function csvEscape(value) {
   return s;
 }
 
+function csvColumnsForExport() {
+  const cols = [...BASIC_CSV_COLS];
+  if (lastExportTiers.enriched) {
+    cols.push(...ENRICHED_CSV_COLS);
+  }
+  return cols;
+}
+
 function downloadCsv(rows) {
-  const cols = [
-    "first_name",
-    "last_name",
-    "full_name",
-    "job_title",
-    "company_name",
-    "location",
-    "linkedin_url",
-    "sales_nav_id",
-    "open_profile",
-    "connection_degree",
-  ];
+  const cols = csvColumnsForExport();
   const lines = [cols.join(",")];
   rows.forEach((row) => {
     lines.push(cols.map((c) => csvEscape(row[c])).join(","));
@@ -694,6 +718,10 @@ async function runExport() {
     }
 
     lastRows = data.rows || [];
+    lastExportTiers = {
+      enriched: !!data.tiers?.enriched,
+      mail: !!data.tiers?.mail,
+    };
     if (!lastRows.length) {
       throw new Error(t("msg.empty"));
     }
