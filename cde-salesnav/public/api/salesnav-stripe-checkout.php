@@ -28,7 +28,7 @@ if (!is_array($payload)) {
     $payload = [];
 }
 
-$packId = (string) ($payload['pack'] ?? '120');
+$packId = (string) ($payload['pack'] ?? '240');
 $userId = cde_salesnav_user_id();
 $result = cde_stripe_create_checkout_session($userId, $packId);
 

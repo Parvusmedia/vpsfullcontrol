@@ -1,7 +1,7 @@
 <?php
 /**
- * Prepaid export credits — modular Basic / Enriched / Mail pricing.
- * 1 credit ≈ €0.05 (Basic lead). Minimum recharge €20. +20% bonus from 100 base credits.
+ * Prepaid export credits — Evaboot-style tiers (1 credit ≈ 1 Basic export).
+ * Minimum top-up €20. +20% bonus from 100 base credits paid.
  */
 
 declare(strict_types=1);
@@ -72,11 +72,12 @@ function cde_credits_grant_for_base(int $paidBase): int
  */
 function cde_credits_packs(): array
 {
+    // Evaboot-aligned prepaid tiers (EUR ≈ USD): 500@€29, 1500@€49, 4000@€99; min €20 starter.
     $defs = [
-        '120' => ['paid_base' => 100, 'amount_cents' => 2000, 'label' => '120 credits (100 + 20% bonus)'],
-        '300' => ['paid_base' => 250, 'amount_cents' => 5000, 'label' => '300 credits (250 + 20% bonus)'],
-        '600' => ['paid_base' => 500, 'amount_cents' => 10000, 'label' => '600 credits (500 + 20% bonus)'],
-        '1200' => ['paid_base' => 1000, 'amount_cents' => 20000, 'label' => '1,200 credits (1,000 + 20% bonus)'],
+        '240' => ['paid_base' => 200, 'amount_cents' => 2000, 'label' => '240 credits (200 + 20% bonus) · ~€0.083/export'],
+        '600' => ['paid_base' => 500, 'amount_cents' => 2900, 'label' => '600 credits (500 + 20% bonus) · Evaboot 500 tier'],
+        '1800' => ['paid_base' => 1500, 'amount_cents' => 4900, 'label' => '1,800 credits (1,500 + 20% bonus) · Evaboot 1.5K tier'],
+        '4800' => ['paid_base' => 4000, 'amount_cents' => 9900, 'label' => '4,800 credits (4,000 + 20% bonus) · Evaboot 4K tier'],
     ];
     $packs = [];
     foreach ($defs as $id => $def) {
@@ -258,7 +259,7 @@ function cde_credits_export_cost(array $rows, array $tiers): int
                 $emails++;
             }
         }
-        $total += (int) ceil($emails * 1.8);
+        $total += (int) ceil($emails * 1.0);
     }
 
     return max(1, $total);

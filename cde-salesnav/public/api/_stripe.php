@@ -38,7 +38,7 @@ function cde_stripe_price_id_for_pack(string $packId): string
     if ($specific !== '') {
         return $specific;
     }
-    if ($packId === '120') {
+    if ($packId === '240') {
         return $env['STRIPE_PRICE_ID'] ?? getenv('STRIPE_PRICE_ID') ?: 'price_1UAnliL0sc6a4STMwyYdMPF4';
     }
     return '';

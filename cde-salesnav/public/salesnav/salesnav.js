@@ -32,8 +32,8 @@ const I18N = {
     "credits.pack": "Credit pack",
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
-    "credits.insufficient": "Not enough credits for this export. Buy more credits (min €20).",
-    "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 120 credits).",
+    "credits.insufficient": "Not enough credits for this export. Top up from €20 (240 credits).",
+    "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 240 credits).",
     "mode.list": "Lead list",
     "mode.search": "People search",
     "form.listLabel": "Sales Navigator list URL",
@@ -163,7 +163,7 @@ const I18N = {
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
-    "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 120 créditos).",
+    "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 240 créditos).",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
     "form.listLabel": "URL de lista Sales Navigator",
@@ -295,7 +295,7 @@ let isConnected = false;
 let lastConnection = { connected: false, label: "" };
 let billingEnabled = false;
 let creditBalance = 0;
-let defaultPackId = "120";
+let defaultPackId = "240";
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;

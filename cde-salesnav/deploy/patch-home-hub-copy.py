@@ -33,7 +33,7 @@ INDEX_REPLACEMENTS = [
     ),
     (
         '<span data-i18n="hub.salesnav.stat">25</span>\n            <span data-i18n="hub.salesnav.statLabel">free demo leads</span>',
-        '<span data-i18n="hub.salesnav.stat">120</span>\n            <span data-i18n="hub.salesnav.statLabel">credits · €20 top-up</span>',
+        '<span data-i18n="hub.salesnav.stat">240</span>\n            <span data-i18n="hub.salesnav.statLabel">credits · €20 top-up</span>',
     ),
     (
         '<li data-i18n="hub.salesnav.p2">Credits from €20</li>',
@@ -52,7 +52,8 @@ JS_REPLACEMENTS = [
     ('"hub.ctaCompanies": "Probar Companies",', '"hub.ctaCompanies": "Enriquecer empresas",'),
     ('"hub.ctaSalesnav": "Try Sales Navigator",', '"hub.ctaSalesnav": "Export SN lists",'),
     ('"hub.ctaSalesnav": "Probar Sales Navigator",', '"hub.ctaSalesnav": "Exportar listas SN",'),
-    ('"hub.salesnav.stat": "25",', '"hub.salesnav.stat": "120",'),
+    ('"hub.salesnav.stat": "120",', '"hub.salesnav.stat": "240",'),
+    ('"hub.salesnav.stat": "25",', '"hub.salesnav.stat": "240",'),
     ('"hub.salesnav.statLabel": "free demo leads",', '"hub.salesnav.statLabel": "credits · €20 top-up",'),
     ('"hub.salesnav.statLabel": "leads gratis en demo",', '"hub.salesnav.statLabel": "créditos · recarga €20",'),
     ('"hub.salesnav.p2": "Credits from €20",', '"hub.salesnav.p2": "€0.05 / lead · Basic tier",'),
