@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """Migrate site contact mail + public email refs to @companydataenrichment.com."""
 
-from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path
 
 DOCROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/var/www/vhosts/companydataenrichment.com/httpdocs')
-PRIVATE = DOCROOT.parent.parent / 'private' / 'cde'
+PRIVATE = DOCROOT.parent / 'private' / 'cde'
 OLD = 'hello@parvusmedia.com'
 NEW = 'hello@companydataenrichment.com'
 
-NEW_SEND_CONTACT = '''/**
+NEW_SEND_CONTACT = r'''/**
  * Site contact notifications — local Postfix (Plesk) by default.
  */
 function cde_send_contact_mail(string $to, string $subject, string $body, string $replyTo = ''): array
@@ -34,27 +32,11 @@ function cde_send_contact_mail(string $to, string $subject, string $body, string
         ];
     }
 
-    if (is_readable(__DIR__ . '/_mail.php')) {
-        require_once __DIR__ . '/_mail.php';
-        $ok = cde_salesnav_send_general_mail($to, $subject, $body, $replyTo);
-        return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'Mail delivery failed'];
+    if (!is_readable(__DIR__ . '/_mail.php')) {
+        return ['ok' => false, 'error' => 'Mail transport not configured'];
     }
-
-    $from = (string) ($cfg['from'] ?? 'hello@companydataenrichment.com');
-    $fromName = (string) ($cfg['from_name'] ?? 'CompanyDataEnrichment');
-    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
-    $safeBody = str_replace(["\\r\\n", "\\r"], "\\n", $body);
-    $headers = [
-        'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
-        'From: ' . sprintf('"%s" <%s>', addcslashes($fromName, '"\\\\'), $from),
-        'X-Mailer: CompanyDataEnrichment',
-    ];
-    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
-        $headers[] = 'Reply-To: <' . $replyTo . '>';
-    }
-    $ok = @mail($to, $encodedSubject, $safeBody, implode("\\r\\n", $headers));
+    require_once __DIR__ . '/_mail.php';
+    $ok = cde_salesnav_send_general_mail($to, $subject, $body, $replyTo);
     return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'Mail delivery failed'];
 }'''
 
@@ -76,11 +58,17 @@ def patch_bootstrap(path: Path) -> bool:
         )
 
     pattern = re.compile(
+        r"/\*\*\s*\n \* Site contact notifications.*?\nfunction cde_send_contact_mail\(string \$to, string \$subject, string \$body, string \$replyTo = ''\): array\s*\{.*?\n\}",
+        re.S,
+    )
+    pattern_legacy = re.compile(
         r"/\*\*\s*\n \* Prefer Zoho SMTP;.*?\nfunction cde_send_contact_mail\(string \$to, string \$subject, string \$body, string \$replyTo = ''\): array\s*\{.*?\n\}",
         re.S,
     )
     if pattern.search(text):
         text = pattern.sub(NEW_SEND_CONTACT, text, count=1)
+    elif pattern_legacy.search(text):
+        text = pattern_legacy.sub(NEW_SEND_CONTACT, text, count=1)
     elif 'cde_salesnav_send_general_mail' not in text:
         anchor = "function cde_client_ip(): string"
         if anchor in text:
