@@ -531,6 +531,11 @@ function renderConnectionStatus(data) {
   if (disconnectBtn) disconnectBtn.hidden = !isConnected;
   if (reconnectBtn) reconnectBtn.hidden = !isConnected;
 
+  const liCard = document.querySelector(".panel-card-linkedin");
+  if (liCard) {
+    liCard.dataset.connected = isConnected ? "true" : "false";
+  }
+
   setExportGate(isConnected);
   renderAccount();
 }

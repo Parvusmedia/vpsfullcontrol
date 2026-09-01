@@ -985,6 +985,18 @@
   gap: 0.55rem;
 }
 
+.panel-card-linkedin[data-connected="true"] #connect-actions-billing {
+  display: none !important;
+}
+
+.panel-card-linkedin[data-connected="false"] #connect-actions-connected {
+  display: none !important;
+}
+
+.panel-li-actions[hidden] {
+  display: none !important;
+}
+
 .panel-card-balance,
 .panel-card-linkedin {
   display: flex;
