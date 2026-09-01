@@ -44,11 +44,19 @@ if (!is_array($existing)) {
 }
 $previous = trim((string) ($existing['account_id'] ?? ''));
 if ($previous !== '' && $previous !== $accountId) {
-    $meta = cde_salesnav_fetch_account_meta(cde_unipile_api_config($accountId), $accountId);
-    cde_salesnav_propagate_account_id($previous, $accountId, $meta);
+    $metaPreview = cde_salesnav_fetch_account_meta(cde_unipile_api_config($accountId), $accountId);
+    cde_salesnav_propagate_account_id($previous, $accountId, $metaPreview);
 }
 
-$meta = cde_salesnav_apply_unipile_account($userId, $accountId);
+try {
+    $meta = cde_salesnav_apply_unipile_account($userId, $accountId);
+} catch (RuntimeException $e) {
+    cde_json_response(409, [
+        'ok' => false,
+        'error' => $e->getMessage(),
+        'account_id' => $accountId,
+    ]);
+}
 cde_salesnav_save_account($userId, array_merge(cde_salesnav_load_accounts()[$userId] ?? [], [
     'status' => $status,
 ]));

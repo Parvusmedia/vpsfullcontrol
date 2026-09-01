@@ -55,11 +55,17 @@ if ($storedAlive) {
         $reconnectId = null;
     }
 } else {
-    if (!$hadPriorLink && !$explicitReconnect) {
-        cde_credits_require_positive_balance();
+    $resolved = cde_salesnav_resolve_linked_account_id($userId);
+    if ($resolved !== null && cde_salesnav_is_account_alive($resolved)) {
+        $type = 'reconnect';
+        $reconnectId = $resolved;
+    } else {
+        if (!$hadPriorLink && !$explicitReconnect) {
+            cde_credits_require_positive_balance();
+        }
+        $type = 'create';
+        $reconnectId = null;
     }
-    $type = 'create';
-    $reconnectId = null;
 }
 
 $result = cde_salesnav_create_hosted_link($type, $reconnectId);

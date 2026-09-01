@@ -33,7 +33,15 @@ if ($accountId === null) {
     ]);
 }
 
-$meta = cde_salesnav_apply_unipile_account($userId, $accountId);
+try {
+    $meta = cde_salesnav_apply_unipile_account($userId, $accountId);
+} catch (RuntimeException $e) {
+    cde_json_response(409, [
+        'ok' => false,
+        'error' => $e->getMessage(),
+        'account_id' => $accountId,
+    ]);
+}
 $account = cde_salesnav_session_account();
 $connected = $account !== null && ($account['account_id'] ?? '') !== '';
 

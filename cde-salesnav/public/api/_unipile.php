@@ -733,6 +733,68 @@ function cde_salesnav_resolve_linked_account_id(string $userId): ?string
     return (string) $best['id'];
 }
 
+function cde_salesnav_unipile_account_owner_wallet(string $accountId): ?string
+{
+    foreach (cde_salesnav_list_unipile_account_items() as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
+        if ($id !== $accountId) {
+            continue;
+        }
+        $name = trim((string) ($item['name'] ?? ''));
+
+        return $name !== '' ? $name : null;
+    }
+
+    return null;
+}
+
+function cde_salesnav_assert_account_not_claimed_by_other_wallet(string $accountId, string $userId): void
+{
+    $claimedWallet = cde_salesnav_unipile_account_owner_wallet($accountId);
+    if ($claimedWallet !== null && $claimedWallet !== $userId) {
+        throw new RuntimeException('This LinkedIn seat is already linked to another panel account.');
+    }
+
+    foreach (cde_salesnav_load_accounts() as $uid => $rec) {
+        if ($uid === $userId || !is_array($rec) || (string) ($rec['account_id'] ?? '') !== $accountId) {
+            continue;
+        }
+        if ($claimedWallet === null || $claimedWallet === $uid) {
+            continue;
+        }
+        throw new RuntimeException('This LinkedIn seat is already linked to another panel account.');
+    }
+}
+
+/** @param array{label: string, avatar_url: string} $meta */
+function cde_salesnav_assert_profile_continuity(string $userId, array $meta): void
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (!is_array($stored) || !empty($stored['invalid_at'])) {
+        return;
+    }
+    $prevLabel = trim((string) ($stored['label'] ?? ''));
+    $newLabel = trim((string) ($meta['label'] ?? ''));
+    if ($prevLabel === '' || $newLabel === '' || strcasecmp($prevLabel, $newLabel) === 0) {
+        return;
+    }
+
+    throw new RuntimeException(
+        'The LinkedIn profile connected (' . $newLabel . ') does not match your previous link ('
+        . $prevLabel . '). Use the same LinkedIn account or contact support.'
+    );
+}
+
+/** @param array{label: string, avatar_url: string} $meta */
+function cde_salesnav_assert_account_link_allowed(string $userId, string $accountId, array $meta): void
+{
+    cde_salesnav_assert_account_not_claimed_by_other_wallet($accountId, $userId);
+    cde_salesnav_assert_profile_continuity($userId, $meta);
+}
+
 function cde_salesnav_propagate_account_id(string $fromAccountId, string $toAccountId, array $meta): void
 {
     if ($fromAccountId === '' || $fromAccountId === $toAccountId) {
@@ -772,6 +834,7 @@ function cde_salesnav_apply_unipile_account(string $userId, string $accountId): 
 {
     $config = cde_unipile_api_config($accountId);
     $meta = cde_salesnav_fetch_account_meta($config, $accountId);
+    cde_salesnav_assert_account_link_allowed($userId, $accountId, $meta);
     $stored = cde_salesnav_load_accounts()[$userId] ?? [];
     if (!is_array($stored)) {
         $stored = [];
