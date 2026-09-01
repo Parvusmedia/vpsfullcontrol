@@ -25,6 +25,7 @@ const I18N = {
     "panel.creditsLabel": "Credits",
     "panel.topup": "Top up",
     "panel.tasksTitle": "Export tasks",
+    "panel.tasksLede": "Paste a Sales Navigator list or search URL — we process it in the background and email you when ready.",
     "panel.newTask": "New export",
     "panel.startTask": "Start export",
     "tasks.colSource": "Source",
@@ -197,6 +198,7 @@ const I18N = {
     "panel.creditsLabel": "Créditos",
     "panel.topup": "Recargar",
     "panel.tasksTitle": "Tareas de export",
+    "panel.tasksLede": "Pega la URL de una lista o búsqueda de Sales Navigator — la procesamos en segundo plano y te avisamos por email.",
     "panel.newTask": "Nuevo export",
     "panel.startTask": "Iniciar export",
     "tasks.colSource": "Origen",
@@ -521,7 +523,9 @@ function renderConnectionStatus(data) {
     copy.innerHTML = t("connect.body");
   }
 
-  if (billingActions) billingActions.hidden = !billingEnabled || isConnected;
+  if (billingActions) {
+    billingActions.hidden = IS_PANEL ? isConnected : !billingEnabled || isConnected;
+  }
   if (demoActions) demoActions.hidden = billingEnabled || isConnected;
   if (connectedActions) connectedActions.hidden = !isConnected;
   if (disconnectBtn) disconnectBtn.hidden = !isConnected;

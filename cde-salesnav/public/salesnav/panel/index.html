@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=18" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=19" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -34,64 +34,86 @@
 
   <main class="panel-main">
     <section class="panel-guest" id="panel-guest-wrap">
-      <h1 data-i18n="panel.title">My panel</h1>
-      <p data-i18n="account.guestLead">Sign in with the email you used at checkout.</p>
-      <label class="account-field">
-        <span data-i18n="credits.email">Work email</span>
-        <input id="billing-email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
-      </label>
-      <div class="account-actions">
-        <button type="button" class="connect-btn" id="sign-in-btn" data-i18n="account.signIn">Sign in</button>
-      </div>
-      <details class="account-restore">
-        <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
-        <div class="account-restore-body">
-          <label class="account-field">
-            <span data-i18n="credits.email">Work email</span>
-            <input id="restore-email" type="email" autocomplete="email" placeholder="you@company.com" />
-          </label>
-          <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
+      <article class="panel-card panel-card-guest">
+        <h1 data-i18n="panel.title">My panel</h1>
+        <p class="panel-guest-lede" data-i18n="account.guestLead">Sign in with the email you used at checkout.</p>
+        <label class="account-field">
+          <span data-i18n="credits.email">Work email</span>
+          <input id="billing-email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
+        </label>
+        <div class="account-actions">
+          <button type="button" class="connect-btn" id="sign-in-btn" data-i18n="account.signIn">Sign in</button>
         </div>
-      </details>
-      <p class="account-note" id="account-note-guest" hidden aria-live="polite"></p>
+        <details class="account-restore">
+          <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
+          <div class="account-restore-body">
+            <label class="account-field">
+              <span data-i18n="credits.email">Work email</span>
+              <input id="restore-email" type="email" autocomplete="email" placeholder="you@company.com" />
+            </label>
+            <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
+          </div>
+        </details>
+        <p class="account-note" id="account-note-guest" hidden aria-live="polite"></p>
+      </article>
     </section>
 
     <section class="panel-app" id="panel-app-wrap" hidden>
-      <header class="panel-toolbar">
-        <div class="panel-toolbar-left">
-          <div class="panel-stat">
-            <span class="panel-stat-label" data-i18n="panel.creditsLabel">Credits</span>
-            <strong class="panel-stat-value" id="toolbar-balance">0</strong>
-          </div>
-          <button type="button" class="connect-btn panel-topup-btn" id="buy-credits-btn" data-i18n="credits.load">Top up</button>
-          <select id="credit-pack" class="panel-pack-select" hidden aria-hidden="true"></select>
-          <span class="panel-user-email" id="toolbar-email"></span>
-          <button type="button" class="ghost-btn panel-signout-btn" id="sign-out-btn" data-i18n="account.signOut">Sign out</button>
+      <header class="panel-page-header">
+        <div class="panel-page-title">
+          <h1 data-i18n="panel.title">My panel</h1>
+          <p class="panel-page-lede" data-i18n="panel.lede">Manage credits, LinkedIn connection and CSV exports.</p>
         </div>
-        <div class="panel-toolbar-right">
-          <div class="panel-li">
-            <span class="panel-li-label" data-i18n="connect.title">LinkedIn</span>
-            <span class="connect-badge panel-li-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
-          </div>
-          <div class="panel-li-actions" id="connect-actions-billing">
-            <button type="button" class="ghost-btn" id="connect-btn" data-i18n="connect.cta">Connect</button>
-          </div>
-          <div class="panel-li-actions" id="connect-actions-connected" hidden>
-            <button type="button" class="ghost-btn" id="disconnect-btn" data-i18n="connect.disconnect">Disconnect</button>
-            <button type="button" class="ghost-btn" id="reconnect-btn" data-i18n="connect.reconnect">Reconnect</button>
-          </div>
-        </div>
+        <button type="button" class="ghost-btn panel-signout-btn" id="sign-out-btn" data-i18n="account.signOut">Sign out</button>
       </header>
+
+      <div class="panel-overview">
+        <article class="panel-card panel-card-balance">
+          <header class="panel-card-head">
+            <h2 data-i18n="account.title">Account</h2>
+            <span class="account-badge" data-i18n="account.signedIn">Signed in</span>
+          </header>
+          <p class="panel-email" id="toolbar-email"></p>
+          <dl class="panel-metric">
+            <dt data-i18n="panel.creditsLabel">Export credits</dt>
+            <dd id="toolbar-balance">0</dd>
+          </dl>
+          <div class="panel-card-foot">
+            <button type="button" class="connect-btn panel-topup-btn" id="buy-credits-btn" data-i18n="panel.topup">Top up</button>
+            <select id="credit-pack" class="panel-pack-select" hidden aria-hidden="true"></select>
+          </div>
+        </article>
+
+        <article class="panel-card panel-card-linkedin">
+          <header class="panel-card-head">
+            <h2 data-i18n="connect.title">LinkedIn connection</h2>
+            <span class="connect-badge panel-li-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
+          </header>
+          <p class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</p>
+          <div class="panel-card-foot panel-li-actions-wrap">
+            <div class="panel-li-actions" id="connect-actions-billing" hidden>
+              <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
+            </div>
+            <div class="panel-li-actions" id="connect-actions-connected" hidden>
+              <button type="button" class="ghost-btn" id="disconnect-btn" data-i18n="connect.disconnect">Disconnect</button>
+              <button type="button" class="ghost-btn" id="reconnect-btn" data-i18n="connect.reconnect">Reconnect</button>
+            </div>
+          </div>
+        </article>
+      </div>
 
       <p class="account-note" id="account-note" hidden aria-live="polite"></p>
       <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
       <p class="panel-flash" id="panel-flash" hidden aria-live="polite"></p>
 
-      <section class="panel-tasks-section">
-        <div class="panel-tasks-head">
-          <h2 data-i18n="panel.tasksTitle">Export tasks</h2>
+      <article class="panel-card panel-card-tasks">
+        <header class="panel-tasks-head">
+          <div>
+            <h2 data-i18n="panel.tasksTitle">Export tasks</h2>
+            <p class="panel-tasks-lede" data-i18n="panel.tasksLede">Paste a Sales Navigator list or search URL — we process it in the background and email you when ready.</p>
+          </div>
           <button type="button" class="connect-btn" id="create-task-btn" data-i18n="panel.newTask">New export</button>
-        </div>
+        </header>
         <div class="tasks-table-wrap">
           <table class="tasks-table" id="tasks-table">
             <thead>
@@ -111,7 +133,7 @@
             </tbody>
           </table>
         </div>
-      </section>
+      </article>
     </section>
   </main>
 
@@ -173,6 +195,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=24"></script>
+  <script src="/salesnav/salesnav.js?v=25"></script>
 </body>
 </html>
