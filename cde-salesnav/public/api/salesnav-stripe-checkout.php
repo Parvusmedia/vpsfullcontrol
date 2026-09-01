@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_stripe.php';
+require_once __DIR__ . '/_customers.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -31,10 +32,23 @@ if (!is_array($payload)) {
 $packId = (string) ($payload['pack'] ?? '240');
 $email = strtolower(trim((string) ($payload['email'] ?? '')));
 if ($email === '') {
-    cde_json_response(400, ['ok' => false, 'error' => 'Email is required before checkout.']);
+    $email = cde_salesnav_session_email() ?? '';
+}
+if ($email === '') {
+    cde_json_response(401, [
+        'ok' => false,
+        'needs_auth' => true,
+        'error' => 'Sign in before topping up credits.',
+    ]);
 }
 
-$userId = cde_salesnav_bind_customer_email($email);
+if (cde_salesnav_session_is_authenticated()) {
+    $auth = cde_salesnav_require_auth();
+    $email = $auth['email'];
+    $userId = $auth['user_id'];
+} else {
+    $userId = cde_salesnav_user_id_for_email($email);
+}
 $result = cde_stripe_create_checkout_session($userId, $packId, $email);
 
 cde_json_response(200, [

@@ -1383,7 +1383,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pack }),
+    body: JSON.stringify({ pack, email: accountEmail }),
   });
   const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.url) {
