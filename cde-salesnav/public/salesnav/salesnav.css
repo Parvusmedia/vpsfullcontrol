@@ -56,43 +56,6 @@
   color: var(--teal-deep);
 }
 
-.connect-promo {
-  margin: 0 0 0.85rem;
-}
-
-.connect-promo-label {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.connect-promo-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-}
-
-.connect-promo-row input {
-  flex: 1 1 8rem;
-  min-width: 0;
-  border: 1.5px solid var(--ink);
-  background: rgba(255, 255, 255, 0.72);
-  padding: 0.65rem 0.75rem;
-  font: 500 0.95rem/1.2 var(--font-body);
-}
-
-.connect-promo-hint {
-  margin: 0.45rem 0 0;
-  font-size: 0.82rem;
-  color: var(--ink-soft);
-  line-height: 1.45;
-}
-
 .connect-actions {
   display: flex;
   flex-wrap: wrap;

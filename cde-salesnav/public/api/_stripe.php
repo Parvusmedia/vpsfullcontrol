@@ -73,99 +73,6 @@ function cde_stripe_request(string $method, string $path, array $fields): array
     return ['ok' => true, 'status' => $code, 'data' => $data];
 }
 
-function cde_stripe_get(string $path, array $query = []): array
-{
-    $cfg = cde_stripe_config();
-    $url = 'https://api.stripe.com/v1/' . ltrim($path, '/');
-    if ($query !== []) {
-        $url .= '?' . http_build_query($query);
-    }
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . $cfg['secret_key'],
-        ],
-        CURLOPT_TIMEOUT => 30,
-    ]);
-    $raw = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    $data = json_decode((string) $raw, true);
-    if (!is_array($data)) {
-        $data = [];
-    }
-    if ($code >= 400) {
-        $msg = $data['error']['message'] ?? 'Stripe API error';
-        return ['ok' => false, 'status' => $code, 'error' => (string) $msg];
-    }
-    return ['ok' => true, 'status' => $code, 'data' => $data];
-}
-
-/** @return array{ok: bool, error?: string, promo?: array, coupon?: array} */
-function cde_stripe_lookup_promotion_code(string $code): array
-{
-    $code = trim($code);
-    if ($code === '') {
-        return ['ok' => false, 'error' => 'Enter a promotion code.'];
-    }
-
-    $resp = cde_stripe_get('promotion_codes', [
-        'code' => $code,
-        'limit' => 1,
-        'expand' => ['data.coupon.applies_to'],
-    ]);
-    if (!$resp['ok']) {
-        return ['ok' => false, 'error' => $resp['error'] ?? 'Could not validate promotion code.'];
-    }
-
-    $promo = ($resp['data']['data'][0] ?? null);
-    if (!is_array($promo)) {
-        return ['ok' => false, 'error' => 'This promotion code is invalid.'];
-    }
-    if (empty($promo['active'])) {
-        return ['ok' => false, 'error' => 'This promotion code is no longer active.'];
-    }
-
-    $coupon = $promo['coupon'] ?? [];
-    if (!is_array($coupon) || empty($coupon['valid'])) {
-        return ['ok' => false, 'error' => 'This promotion code is invalid.'];
-    }
-
-    $max = $promo['max_redemptions'] ?? null;
-    $used = (int) ($promo['times_redeemed'] ?? 0);
-    if ($max !== null && $used >= (int) $max) {
-        return ['ok' => false, 'error' => 'This promotion code has reached its redemption limit.'];
-    }
-
-    $expires = (int) ($promo['expires_at'] ?? 0);
-    if ($expires > 0 && $expires < time()) {
-        return ['ok' => false, 'error' => 'This promotion code has expired.'];
-    }
-
-    return ['ok' => true, 'promo' => $promo, 'coupon' => $coupon];
-}
-
-function cde_stripe_coupon_applies_to_product(array $coupon, string $productId): bool
-{
-    $applies = $coupon['applies_to']['products'] ?? null;
-    if (!is_array($applies) || $applies === []) {
-        return true;
-    }
-    return in_array($productId, $applies, true);
-}
-
-/** True when Stripe Checkout payment mode cannot accept this coupon (100% off → €0 total). */
-function cde_stripe_coupon_is_full_discount(array $coupon, int $amountCents): bool
-{
-    $percent = (float) ($coupon['percent_off'] ?? 0);
-    if ($percent >= 100) {
-        return true;
-    }
-    $amountOff = (int) ($coupon['amount_off'] ?? 0);
-    return $amountOff >= $amountCents && $amountCents > 0;
-}
-
 function cde_stripe_create_checkout_session(string $userId, string $packId): array
 {
     $packs = cde_credits_packs();
@@ -180,8 +87,7 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     $total = (int) $pack['credits'];
 
     $env = cde_credits_read_env();
-    // Stripe Checkout payment mode rejects 100% off (€0 total). Partial codes only.
-    $allowPromo = ($env['STRIPE_ALLOW_PROMOTION_CODES'] ?? '0') === '1';
+    $allowPromo = ($env['STRIPE_ALLOW_PROMOTION_CODES'] ?? '1') !== '0';
 
     $fields = [
         'mode' => 'payment',
