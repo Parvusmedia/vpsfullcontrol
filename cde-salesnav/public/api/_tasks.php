@@ -250,17 +250,46 @@ function cde_tasks_send_mail(string $to, string $subject, string $body): void
 }
 
 /** Detached CLI worker — survives PHP-FPM request end. */
+function cde_tasks_php_cli_bin(): ?string
+{
+    foreach (['/opt/plesk/php/8.3/bin/php', '/usr/bin/php8.3', '/usr/bin/php'] as $path) {
+        if (@is_executable($path)) {
+            return $path;
+        }
+    }
+    $bin = PHP_BINARY;
+    if ($bin !== '' && stripos($bin, 'fpm') === false && @is_executable($bin)) {
+        return $bin;
+    }
+
+    return null;
+}
+
 function cde_tasks_spawn_run(string $taskId): bool
 {
-    $php = '/opt/plesk/php/8.3/bin/php';
-    if (!is_executable($php)) {
-        $php = PHP_BINARY;
-    }
     $script = __DIR__ . '/salesnav-task-run.php';
     if (!is_readable($script)) {
         return false;
     }
     $log = cde_salesnav_private_dir() . '/salesnav_task_runner.log';
+    $wrapper = cde_salesnav_private_dir() . '/run-export-task.sh';
+    if (is_readable($wrapper)) {
+        $cmd = sprintf(
+            'nohup /bin/bash %s %s >> %s 2>&1 &',
+            escapeshellarg($wrapper),
+            escapeshellarg($taskId),
+            escapeshellarg($log)
+        );
+        exec($cmd);
+
+        return true;
+    }
+
+    $php = cde_tasks_php_cli_bin();
+    if ($php === null) {
+        return false;
+    }
+
     $cmd = sprintf(
         'nohup %s %s %s >> %s 2>&1 &',
         escapeshellarg($php),
@@ -302,7 +331,9 @@ function cde_tasks_recover_stale(int $maxAgeSeconds = 900): void
             continue;
         }
         cde_tasks_update($taskId, ['run_retries' => $retries + 1]);
-        cde_tasks_spawn_run($taskId);
+        if (!cde_tasks_spawn_run($taskId)) {
+            cde_tasks_run($taskId);
+        }
     }
 }
 
