@@ -33,6 +33,7 @@ const I18N = {
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Credits",
+    "tasks.colAddons": "Add-ons",
     "tasks.colCreated": "Created",
     "tasks.colAction": "Action",
     "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
@@ -41,6 +42,12 @@ const I18N = {
     "tasks.status.ready": "Ready",
     "tasks.status.failed": "Failed",
     "tasks.download": "Download CSV",
+    "tasks.addonBasic": "Basic",
+    "tasks.addonEnriched": "Enriched",
+    "tasks.addonMail": "Mail",
+    "tasks.addonMailFound": "Mail ({count})",
+    "tasks.addonNo": "No",
+    "tasks.addonYes": "Yes",
     "tasks.limitAll": "All",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
@@ -208,6 +215,7 @@ const I18N = {
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Créditos",
+    "tasks.colAddons": "Extras",
     "tasks.colCreated": "Creado",
     "tasks.colAction": "Acción",
     "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
@@ -216,6 +224,12 @@ const I18N = {
     "tasks.status.ready": "Listo",
     "tasks.status.failed": "Fallido",
     "tasks.download": "Descargar CSV",
+    "tasks.addonBasic": "Basic",
+    "tasks.addonEnriched": "Enriched",
+    "tasks.addonMail": "Mail",
+    "tasks.addonMailFound": "Mail ({count})",
+    "tasks.addonNo": "No",
+    "tasks.addonYes": "Sí",
     "tasks.limitAll": "Todos",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
@@ -1110,6 +1124,49 @@ function taskLimitLabel(task) {
   return String(task.limit || "—");
 }
 
+function taskHasEnriched(task) {
+  return !!(task.tier_enriched ?? task.tiers?.enriched);
+}
+
+function taskHasMail(task) {
+  return !!(task.tier_mail ?? task.tiers?.mail);
+}
+
+function buildTaskAddonsCell(task) {
+  const td = document.createElement("td");
+  td.className = "tasks-addons-cell";
+
+  const wrap = document.createElement("div");
+  wrap.className = "task-addon-list";
+
+  const enrichedRow = document.createElement("div");
+  enrichedRow.className = "task-addon-row";
+  enrichedRow.innerHTML = `<span class="task-addon-name">${t("tasks.addonEnriched")}</span>`;
+  const enrichedVal = document.createElement("span");
+  enrichedVal.className = `task-addon-val${taskHasEnriched(task) ? " is-on" : ""}`;
+  enrichedVal.textContent = taskHasEnriched(task) ? t("tasks.addonYes") : t("tasks.addonNo");
+  enrichedRow.appendChild(enrichedVal);
+  wrap.appendChild(enrichedRow);
+
+  const mailRow = document.createElement("div");
+  mailRow.className = "task-addon-row";
+  mailRow.innerHTML = `<span class="task-addon-name">${t("tasks.addonMail")}</span>`;
+  const mailVal = document.createElement("span");
+  mailVal.className = `task-addon-val task-addon-val-mail${taskHasMail(task) ? " is-on" : ""}`;
+  if (taskHasMail(task)) {
+    const found = task.status === "ready" ? Number(task.emails_found) || 0 : null;
+    mailVal.textContent =
+      found !== null ? t("tasks.addonMailFound", { count: found }) : t("tasks.addonYes");
+  } else {
+    mailVal.textContent = t("tasks.addonNo");
+  }
+  mailRow.appendChild(mailVal);
+  wrap.appendChild(mailRow);
+
+  td.appendChild(wrap);
+  return td;
+}
+
 async function refreshPanelCredits() {
   try {
     const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
@@ -1190,7 +1247,7 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -1222,6 +1279,8 @@ function renderTasksTable() {
     const credits = document.createElement("td");
     credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
 
+    const addons = buildTaskAddonsCell(task);
+
     const created = document.createElement("td");
     created.textContent = formatTaskDate(task.created_at);
 
@@ -1239,7 +1298,7 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, created, action);
+    tr.append(source, status, leads, credits, addons, created, action);
     tbody.appendChild(tr);
   });
 }

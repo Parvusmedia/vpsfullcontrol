@@ -1215,6 +1215,44 @@
   line-height: 1.45;
 }
 
+.tasks-addons-cell {
+  min-width: 7.5rem;
+}
+
+.task-addon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.task-addon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.task-addon-name {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.task-addon-val {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.task-addon-val.is-on {
+  color: var(--teal-deep);
+}
+
+.task-addon-val-mail.is-on {
+  color: var(--sn-tier-mail-fg, #bf360c);
+}
+
 .panel-modal {
   width: min(34rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);

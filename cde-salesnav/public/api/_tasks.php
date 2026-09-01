@@ -102,6 +102,9 @@ function cde_tasks_public_view(array $task): array
         'limit_label' => (string) ($task['limit_label'] ?? ''),
         'lead_count' => (int) ($task['lead_count'] ?? 0),
         'credits_used' => (int) ($task['credits_used'] ?? 0),
+        'tier_enriched' => !empty($task['tiers']['enriched']),
+        'tier_mail' => !empty($task['tiers']['mail']),
+        'emails_found' => (int) ($task['emails_found'] ?? 0),
         'created_at' => (string) ($task['created_at'] ?? ''),
         'completed_at' => (string) ($task['completed_at'] ?? ''),
         'error' => (string) ($task['error'] ?? ''),
@@ -331,10 +334,19 @@ function cde_tasks_run(string $taskId): void
         }
 
         cde_tasks_write_csv($taskId, $rows, $tiers);
+        $emailsFound = 0;
+        if (!empty($tiers['mail'])) {
+            foreach ($rows as $row) {
+                if (trim((string) ($row['work_email'] ?? '')) !== '') {
+                    $emailsFound++;
+                }
+            }
+        }
         $done = [
             'status' => 'ready',
             'lead_count' => count($rows),
             'credits_used' => $creditCost,
+            'emails_found' => $emailsFound,
             'completed_at' => gmdate('c'),
             'error' => '',
         ];
