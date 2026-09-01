@@ -22,11 +22,10 @@ const I18N = {
     "connect.failed": "Connection failed or was cancelled. Try again.",
     "connect.required": "Connect LinkedIn before exporting.",
     "credits.balance": "{count} export credits available",
-    "credits.required": "Minimum top-up €20 — Basic 1 credit/lead; Enriched +0.4; Mail +1.8 per email found.",
-    "credits.buy": "Buy credits (from €20)",
-    "credits.buyMore": "Buy more credits",
-    "credits.payFirst": "Buy export credits first (min. €20), then connect LinkedIn to export your lists.",
-    "credits.checkoutOpened": "Stripe checkout opened. Use Add promotion code in checkout if you have one.",
+    "credits.load": "Load credits (from €20)",
+    "credits.loadMore": "Load more credits",
+    "credits.connectNeedsBalance": "Load credits first, then connect LinkedIn.",
+    "credits.checkoutOpened": "Stripe checkout opened in a new window. Return here after payment.",
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
     "credits.insufficient": "Not enough credits for this export. Buy more credits (min €20).",
@@ -151,11 +150,10 @@ const I18N = {
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
     "connect.required": "Conecta LinkedIn antes de exportar.",
     "credits.balance": "{count} créditos de export disponibles",
-    "credits.required": "Recarga mínima €20 — Basic 1 crédito/lead; Enriched +0,4; Mail +1,8 por email encontrado.",
-    "credits.buy": "Comprar créditos (desde €20)",
-    "credits.buyMore": "Comprar más créditos",
-    "credits.payFirst": "Compra créditos de export primero (mín. €20) y después conecta LinkedIn para exportar tus listas.",
-    "credits.checkoutOpened": "Checkout de Stripe abierto. Usa Add promotion code en el checkout si tienes código.",
+    "credits.load": "Cargar saldo (desde €20)",
+    "credits.loadMore": "Cargar más créditos",
+    "credits.connectNeedsBalance": "Carga saldo primero y después conecta LinkedIn.",
+    "credits.checkoutOpened": "Checkout de Stripe abierto. Vuelve aquí tras pagar.",
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
@@ -329,8 +327,12 @@ function renderConnectionStatus(data) {
   const badge = document.getElementById("connect-badge");
   const copy = document.getElementById("connect-copy");
   const connectBtn = document.getElementById("connect-btn");
+  const connectBtnDemo = document.getElementById("connect-btn-demo");
   const disconnectBtn = document.getElementById("disconnect-btn");
   const reconnectBtn = document.getElementById("reconnect-btn");
+  const billingActions = document.getElementById("connect-actions-billing");
+  const demoActions = document.getElementById("connect-actions-demo");
+  const connectedActions = document.getElementById("connect-actions-connected");
 
   if (badge) {
     badge.dataset.state = isConnected ? "connected" : "disconnected";
@@ -343,13 +345,15 @@ function renderConnectionStatus(data) {
 
   if (copy && isConnected && data.label) {
     copy.textContent = t("connect.connectedAs", { label: data.label });
-  } else if (copy && billingEnabled && creditBalance <= 0) {
-    copy.textContent = t("credits.payFirst");
+  } else if (copy && billingEnabled && !isConnected) {
+    copy.textContent = creditBalance > 0 ? t("connect.body") : t("credits.connectNeedsBalance");
   } else if (copy) {
     copy.innerHTML = t("connect.body");
   }
 
-  if (connectBtn) connectBtn.hidden = isConnected;
+  if (billingActions) billingActions.hidden = !billingEnabled || isConnected;
+  if (demoActions) demoActions.hidden = billingEnabled || isConnected;
+  if (connectedActions) connectedActions.hidden = !isConnected;
   if (disconnectBtn) disconnectBtn.hidden = !isConnected;
   if (reconnectBtn) reconnectBtn.hidden = !isConnected;
 
@@ -359,23 +363,26 @@ function renderConnectionStatus(data) {
 
 function renderCredits() {
   const el = document.getElementById("connect-credits");
-  const buyBtn = document.getElementById("buy-credits-btn");
   const connectBtn = document.getElementById("connect-btn");
+  const buyMoreBtn = document.getElementById("buy-more-btn");
   if (!el) return;
   if (!billingEnabled) {
     el.hidden = true;
-    if (buyBtn) buyBtn.hidden = true;
-    if (connectBtn) connectBtn.textContent = t("connect.cta");
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.removeAttribute("aria-disabled");
+    }
     return;
   }
   el.hidden = false;
   el.textContent = t("credits.balance", { count: creditBalance });
 
-  const needsPayment = creditBalance <= 0;
+  const hasCredits = creditBalance > 0;
   if (connectBtn && !isConnected) {
-    connectBtn.textContent = needsPayment ? t("credits.buy") : t("connect.cta");
+    connectBtn.disabled = !hasCredits;
+    connectBtn.setAttribute("aria-disabled", hasCredits ? "false" : "true");
   }
-  if (buyBtn) buyBtn.hidden = true;
+  if (buyMoreBtn) buyMoreBtn.hidden = !isConnected;
 }
 
 async function fetchCredits() {
@@ -461,15 +468,12 @@ async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
 }
 
 async function startConnect(reconnect = false) {
-  const btn = document.getElementById("connect-btn");
-  const reconnectBtn = document.getElementById("reconnect-btn");
-  const active = reconnect ? reconnectBtn : btn;
-  if (active) active.disabled = true;
+  const btn = reconnect ? document.getElementById("reconnect-btn") : document.getElementById("connect-btn") || document.getElementById("connect-btn-demo");
+  if (btn) btn.disabled = true;
   setNote(t("connect.starting"), "ok");
   try {
     if (!reconnect && billingEnabled && creditBalance <= 0) {
-      setNote(t("credits.required"), "ok");
-      await startStripeCheckout(defaultPackId);
+      setNote(t("credits.connectNeedsBalance"), "error");
       return;
     }
     const res = await fetch("/api/salesnav-connect.php", {
@@ -480,7 +484,7 @@ async function startConnect(reconnect = false) {
     });
     const data = await res.json();
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout(defaultPackId);
+      setNote(t("credits.connectNeedsBalance"), "error");
       return;
     }
     if (!res.ok || !data.ok || !data.url) {
@@ -498,7 +502,12 @@ async function startConnect(reconnect = false) {
   } catch (err) {
     setNote(err.message || t("msg.generic"), "error");
   } finally {
-    if (active) active.disabled = false;
+    if (btn) {
+      btn.disabled = billingEnabled && !reconnect && creditBalance <= 0;
+      if (btn.id === "connect-btn") {
+        btn.setAttribute("aria-disabled", btn.disabled ? "true" : "false");
+      }
+    }
   }
 }
 
@@ -831,8 +840,10 @@ fetchCredits();
 fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false }));
 
 document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
+document.getElementById("connect-btn-demo")?.addEventListener("click", () => startConnect(false));
 document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
 document.getElementById("buy-credits-btn")?.addEventListener("click", () => startStripeCheckout(defaultPackId));
+document.getElementById("buy-more-btn")?.addEventListener("click", () => startStripeCheckout(defaultPackId));
 document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 
 document.getElementById("export-form")?.addEventListener("submit", (e) => {

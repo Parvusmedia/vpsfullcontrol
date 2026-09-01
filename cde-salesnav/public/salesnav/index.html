@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=10" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=11" />
   <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
@@ -61,11 +61,17 @@
             Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.
           </p>
           <p class="connect-credits" id="connect-credits" hidden></p>
-          <div class="connect-actions">
-            <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
-            <button type="button" class="ghost-btn" id="buy-credits-btn" hidden data-i18n="credits.buy">Buy credits</button>
+          <div class="connect-actions" id="connect-actions-billing" hidden>
+            <button type="button" class="connect-btn" id="buy-credits-btn" data-i18n="credits.load">Load credits (from €20)</button>
+            <button type="button" class="ghost-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
+          </div>
+          <div class="connect-actions" id="connect-actions-demo">
+            <button type="button" class="connect-btn" id="connect-btn-demo" data-i18n="connect.cta">Connect LinkedIn</button>
+          </div>
+          <div class="connect-actions connect-actions-connected" id="connect-actions-connected" hidden>
             <button type="button" class="ghost-btn" id="disconnect-btn" hidden data-i18n="connect.disconnect">Disconnect</button>
             <button type="button" class="ghost-btn" id="reconnect-btn" hidden data-i18n="connect.reconnect">Reconnect</button>
+            <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
           </div>
         </section>
 
@@ -340,6 +346,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=9"></script>
+  <script src="/salesnav/salesnav.js?v=10"></script>
 </body>
 </html>
