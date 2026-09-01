@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=22" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=33" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -36,24 +36,96 @@
     <section class="panel-guest" id="panel-guest-wrap">
       <article class="panel-card panel-card-guest">
         <h1 data-i18n="panel.title">My panel</h1>
-        <p class="panel-guest-lede" data-i18n="account.guestLead">Sign in with the email you used at checkout.</p>
-        <label class="account-field">
-          <span data-i18n="credits.email">Work email</span>
-          <input id="billing-email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
-        </label>
-        <div class="account-actions">
-          <button type="button" class="connect-btn" id="sign-in-btn" data-i18n="account.signIn">Sign in</button>
-        </div>
-        <details class="account-restore">
-          <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
-          <div class="account-restore-body">
+        <p class="panel-guest-lede" data-i18n="account.guestLead">Enter your work email to manage credits and exports.</p>
+        <div class="auth-flow">
+          <p class="auth-step-label" id="auth-step-label" aria-live="polite" data-i18n="account.stepEmail">Step 1 · Work email</p>
+
+          <form id="auth-email-form" class="account-auth-form" autocomplete="on">
             <label class="account-field">
               <span data-i18n="credits.email">Work email</span>
-              <input id="restore-email" type="email" autocomplete="email" placeholder="you@company.com" />
+              <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" required />
             </label>
-            <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
+            <div class="account-actions">
+              <button type="submit" class="connect-btn" id="auth-continue-btn" data-i18n="account.continue">Continue</button>
+            </div>
+          </form>
+
+          <div id="auth-step-password" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-password-copy"></p>
+            <form id="auth-password-form" class="account-auth-form" autocomplete="on">
+              <label class="account-field">
+                <span data-i18n="account.password">Password</span>
+                <input id="auth-password" name="password" type="password" autocomplete="current-password" />
+              </label>
+              <div class="account-actions">
+                <button type="submit" class="connect-btn" data-i18n="account.signIn">Sign in</button>
+              </div>
+              <p class="account-inline-help">
+                <button type="button" class="linkish-btn" id="auth-forgot-btn" data-i18n="account.forgotPassword">Forgot password?</button>
+              </p>
+            </form>
           </div>
-        </details>
+
+          <div id="auth-step-legacy" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-legacy-copy"></p>
+            <div class="account-actions">
+              <button type="button" class="connect-btn" id="auth-legacy-btn" data-i18n="account.continuePanel">Continue to panel</button>
+            </div>
+          </div>
+
+          <div id="auth-step-setup" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-setup-copy"></p>
+            <form id="auth-setup-form" class="account-auth-form" autocomplete="on">
+              <label class="account-field">
+                <span data-i18n="account.password">Password</span>
+                <input id="auth-setup-password" name="password" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <label class="account-field">
+                <span data-i18n="account.passwordConfirm">Confirm password</span>
+                <input id="auth-setup-password-confirm" name="password_confirm" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <p class="account-inline-help" data-i18n="account.registerNote">We will email you a confirmation link before you can sign in.</p>
+              <div class="account-actions">
+                <button type="submit" class="connect-btn" data-i18n="account.register">Create account</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="auth-step-verify" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-verify-copy"></p>
+            <div class="account-actions">
+              <button type="button" class="connect-btn" id="auth-resend-btn" data-i18n="account.resendVerify">Resend confirmation email</button>
+            </div>
+          </div>
+
+          <div id="auth-step-forgot-sent" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-forgot-copy"></p>
+            <div class="account-actions">
+              <button type="button" class="ghost-btn" id="auth-back-to-password-btn" data-i18n="account.backToSignIn">Back to sign in</button>
+            </div>
+          </div>
+
+          <div id="auth-step-reset" class="auth-step-panel" hidden>
+            <p class="auth-step-copy" id="auth-reset-copy" data-i18n="account.resetCopy">Choose a new password for your account.</p>
+            <form id="auth-reset-form" class="account-auth-form" autocomplete="on">
+              <label class="account-field">
+                <span data-i18n="account.password">Password</span>
+                <input id="auth-reset-password" name="password" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <label class="account-field">
+                <span data-i18n="account.passwordConfirm">Confirm password</span>
+                <input id="auth-reset-password-confirm" name="password_confirm" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <div class="account-actions">
+                <button type="submit" class="connect-btn" data-i18n="account.savePassword">Save password &amp; sign in</button>
+              </div>
+            </form>
+          </div>
+
+          <p class="account-inline-help auth-back-wrap" id="auth-back-wrap" hidden>
+            <button type="button" class="linkish-btn" id="auth-back-btn" data-i18n="account.useAnotherEmail">Use another email</button>
+          </p>
+        </div>
         <p class="account-note" id="account-note-guest" hidden aria-live="polite"></p>
       </article>
     </section>
@@ -92,7 +164,10 @@
             <h2 data-i18n="connect.title">LinkedIn connection</h2>
             <span class="connect-badge panel-li-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
           </header>
-          <p class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</p>
+          <div class="panel-li-identity" id="connect-identity">
+            <img id="connect-avatar" class="panel-li-avatar" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer" hidden />
+            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</span>
+          </div>
           <div class="panel-card-foot panel-li-actions-wrap">
             <div class="panel-li-actions" id="connect-actions-billing">
               <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
@@ -154,6 +229,10 @@
                 <input type="checkbox" id="tier-enriched" value="1" />
                 <span data-i18n="form.tierEnriched">Enriched (+€0.02/lead)</span>
               </label>
+              <label class="export-tier-option tier-mail">
+                <input type="checkbox" id="tier-mail" value="1" />
+                <span data-i18n="form.tierMail">Mail (+€0.09/email found)</span>
+              </label>
             </fieldset>
             <input class="hp" type="text" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <div class="tasks-compose-actions">
@@ -171,14 +250,13 @@
                 <th data-i18n="tasks.colStatus">Status</th>
                 <th data-i18n="tasks.colLeads">Leads</th>
                 <th data-i18n="tasks.colCredits">Credits</th>
-                <th data-i18n="tasks.colAddons">Add-ons</th>
                 <th data-i18n="tasks.colCreated">Created</th>
                 <th data-i18n="tasks.colAction">Action</th>
               </tr>
             </thead>
             <tbody id="tasks-body">
               <tr class="tasks-empty" id="tasks-empty-row">
-                <td colspan="7" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
+                <td colspan="6" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
               </tr>
             </tbody>
           </table>
@@ -199,6 +277,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=29"></script>
+  <script src="/salesnav/salesnav.js?v=33"></script>
 </body>
 </html>

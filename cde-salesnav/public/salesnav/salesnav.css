@@ -867,6 +867,52 @@
   line-height: 1.55;
 }
 
+.auth-step-label {
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+}
+
+.auth-step-copy {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.auth-step-panel {
+  margin-top: 0.25rem;
+}
+
+.account-inline-help {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.linkish-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--teal-deep);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linkish-btn:hover {
+  color: var(--teal);
+}
+
+.auth-back-wrap {
+  margin-top: 1rem;
+}
+
 .panel-page-header {
   display: flex;
   align-items: flex-start;

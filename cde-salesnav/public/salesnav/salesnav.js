@@ -33,7 +33,6 @@ const I18N = {
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Credits",
-    "tasks.colAddons": "Add-ons",
     "tasks.colCreated": "Created",
     "tasks.colAction": "Action",
     "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
@@ -42,12 +41,6 @@ const I18N = {
     "tasks.status.ready": "Ready",
     "tasks.status.failed": "Failed",
     "tasks.download": "Download CSV",
-    "tasks.addonBasic": "Basic",
-    "tasks.addonEnriched": "Enriched",
-    "tasks.addonMail": "Mail",
-    "tasks.addonMailFound": "Mail ({count})",
-    "tasks.addonNo": "No",
-    "tasks.addonYes": "Yes",
     "tasks.limitAll": "All",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
@@ -77,8 +70,40 @@ const I18N = {
     "account.emailLabel": "Email",
     "account.signIn": "Sign in",
     "account.signOut": "Sign out",
-    "account.guestLead": "Sign in with the email you used at checkout — or enter it below before your first top-up.",
+    "account.register": "Create account",
+    "account.password": "Password",
+    "account.passwordConfirm": "Confirm password",
+    "account.registerNote": "We will email you a confirmation link before you can sign in.",
+    "account.resendVerify": "Resend confirmation email",
+    "account.verifySent": "Check your inbox to confirm your email before signing in.",
+    "account.verifyOk": "Email confirmed. You are signed in.",
+    "account.verifyFail": "Could not confirm your email. Request a new link.",
+    "account.registerOk": "Account created. Check your inbox to confirm your email.",
+    "account.registerReady": "Account created. You can sign in now.",
+    "account.resendOk": "If an unconfirmed account exists for this email, we sent a new confirmation link.",
+    "account.guestLead": "Enter your work email to manage credits and exports.",
+    "account.stepEmail": "Step 1 · Work email",
+    "account.stepPassword": "Step 2 · Sign in",
+    "account.stepPasswordCopy": "Enter the password for {email}.",
+    "account.stepLegacy": "Step 2 · Access your account",
+    "account.stepLegacyCopy": "We found {count} credits linked to {email}. Continue without a password, or set one later from your panel.",
+    "account.stepSetup": "Step 2 · Create account",
+    "account.stepSetupCopy": "Create a password for {email} to save your credits and exports.",
+    "account.stepVerify": "Step 2 · Confirm your email",
+    "account.stepVerifyCopy": "We sent a confirmation link to {email}. Open it, then return here to sign in.",
+    "account.continue": "Continue",
+    "account.continuePanel": "Continue to panel",
+    "account.forgotPassword": "Forgot password?",
+    "account.forgotSent": "If an account exists for {email}, we sent reset instructions.",
+    "account.stepForgot": "Password reset",
+    "account.stepReset": "Step 2 · New password",
+    "account.resetCopy": "Choose a new password for your account.",
+    "account.resetOk": "Password updated. You are signed in.",
+    "account.useAnotherEmail": "Use another email",
+    "account.backToSignIn": "Back to sign in",
+    "account.savePassword": "Save password & sign in",
     "account.signedInOk": "Signed in. Your credits and exports are linked to this email.",
+    "account.signInRequired": "Sign in before topping up credits.",
     "credits.balance": "{count} export credits available",
     "credits.load": "Top up (from €20)",
     "credits.loadMore": "Load more credits",
@@ -215,7 +240,6 @@ const I18N = {
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Créditos",
-    "tasks.colAddons": "Extras",
     "tasks.colCreated": "Creado",
     "tasks.colAction": "Acción",
     "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
@@ -224,12 +248,6 @@ const I18N = {
     "tasks.status.ready": "Listo",
     "tasks.status.failed": "Fallido",
     "tasks.download": "Descargar CSV",
-    "tasks.addonBasic": "Basic",
-    "tasks.addonEnriched": "Enriched",
-    "tasks.addonMail": "Mail",
-    "tasks.addonMailFound": "Mail ({count})",
-    "tasks.addonNo": "No",
-    "tasks.addonYes": "Sí",
     "tasks.limitAll": "Todos",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
@@ -259,8 +277,40 @@ const I18N = {
     "account.emailLabel": "Email",
     "account.signIn": "Iniciar sesión",
     "account.signOut": "Cerrar sesión",
-    "account.guestLead": "Inicia sesión con el email que usaste al pagar — o introdúcelo antes de tu primera recarga.",
+    "account.register": "Crear cuenta",
+    "account.password": "Contraseña",
+    "account.passwordConfirm": "Confirmar contraseña",
+    "account.registerNote": "Te enviaremos un enlace de confirmación antes de poder iniciar sesión.",
+    "account.resendVerify": "Reenviar email de confirmación",
+    "account.verifySent": "Revisa tu bandeja de entrada y confirma tu email antes de iniciar sesión.",
+    "account.verifyOk": "Email confirmado. Sesión iniciada.",
+    "account.verifyFail": "No se pudo confirmar tu email. Solicita un enlace nuevo.",
+    "account.registerOk": "Cuenta creada. Revisa tu email para confirmarla.",
+    "account.registerReady": "Cuenta creada. Ya puedes iniciar sesión.",
+    "account.resendOk": "Si existe una cuenta sin confirmar con este email, enviamos un enlace nuevo.",
+    "account.guestLead": "Introduce tu email de trabajo para gestionar créditos y exports.",
+    "account.stepEmail": "Paso 1 · Email de trabajo",
+    "account.stepPassword": "Paso 2 · Iniciar sesión",
+    "account.stepPasswordCopy": "Introduce la contraseña de {email}.",
+    "account.stepLegacy": "Paso 2 · Acceder a tu cuenta",
+    "account.stepLegacyCopy": "Encontramos {count} créditos vinculados a {email}. Puedes continuar sin contraseña o crear una después desde el panel.",
+    "account.stepSetup": "Paso 2 · Crear cuenta",
+    "account.stepSetupCopy": "Crea una contraseña para {email} y guarda tus créditos y exports.",
+    "account.stepVerify": "Paso 2 · Confirma tu email",
+    "account.stepVerifyCopy": "Enviamos un enlace de confirmación a {email}. Ábrelo y vuelve aquí para iniciar sesión.",
+    "account.continue": "Continuar",
+    "account.continuePanel": "Continuar al panel",
+    "account.forgotPassword": "¿Olvidaste la contraseña?",
+    "account.forgotSent": "Si existe una cuenta para {email}, enviamos instrucciones para restablecerla.",
+    "account.stepForgot": "Restablecer contraseña",
+    "account.stepReset": "Paso 2 · Nueva contraseña",
+    "account.resetCopy": "Elige una contraseña nueva para tu cuenta.",
+    "account.resetOk": "Contraseña actualizada. Sesión iniciada.",
+    "account.useAnotherEmail": "Usar otro email",
+    "account.backToSignIn": "Volver a iniciar sesión",
+    "account.savePassword": "Guardar contraseña e iniciar sesión",
     "account.signedInOk": "Sesión iniciada. Tus créditos y exports quedan vinculados a este email.",
+    "account.signInRequired": "Inicia sesión antes de recargar créditos.",
     "credits.balance": "{count} créditos de export disponibles",
     "credits.load": "Recargar (desde €20)",
     "credits.loadMore": "Cargar más créditos",
@@ -412,7 +462,7 @@ const ENRICHED_CSV_COLS = [
 ];
 let contactChallengeToken = "";
 let isConnected = false;
-let lastConnection = { connected: false, label: "" };
+let lastConnection = { connected: false, label: "", avatar_url: "", connected_at: "" };
 let billingEnabled = false;
 let creditBalance = 0;
 let accountEmail = "";
@@ -510,15 +560,32 @@ function setExportGate(visible) {
   if (gate) gate.hidden = !visible;
 }
 
+async function parseJsonResponse(res) {
+  const text = await res.text();
+  if (!text) {
+    return {
+      ok: false,
+      error: res.ok ? "Empty server response." : `Request failed (${res.status}).`,
+    };
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { ok: false, error: "Invalid server response." };
+  }
+}
+
 function renderConnectionStatus(data) {
   lastConnection = {
     connected: !!data?.connected,
     label: data?.label || "",
+    avatar_url: data?.avatar_url || "",
     connected_at: data?.connected_at || "",
   };
   isConnected = lastConnection.connected;
   const badge = document.getElementById("connect-badge");
   const copy = document.getElementById("connect-copy");
+  const avatar = document.getElementById("connect-avatar");
   const connectBtn = document.getElementById("connect-btn");
   const connectBtnDemo = document.getElementById("connect-btn-demo");
   const disconnectBtn = document.getElementById("disconnect-btn");
@@ -539,7 +606,26 @@ function renderConnectionStatus(data) {
   if (copy && isConnected && data.label) {
     copy.textContent = t("connect.connectedAs", { label: data.label });
   } else if (copy) {
-    copy.innerHTML = t("connect.body");
+    if (copy.hasAttribute("data-i18n")) {
+      copy.innerHTML = t("connect.body");
+    } else {
+      copy.textContent = t("connect.body");
+    }
+  }
+
+  if (avatar) {
+    if (isConnected && data.avatar_url) {
+      avatar.referrerPolicy = "no-referrer";
+      avatar.src = data.avatar_url;
+      avatar.alt = data.label ? `${data.label} profile photo` : "LinkedIn profile photo";
+      avatar.hidden = false;
+      avatar.style.display = "";
+    } else {
+      avatar.hidden = true;
+      avatar.style.display = "none";
+      avatar.removeAttribute("src");
+      avatar.alt = "";
+    }
   }
 
   if (billingActions) {
@@ -605,8 +691,10 @@ function renderAccount() {
   }
 
   const billingEmail = document.getElementById("billing-email");
-  if (billingEmail && accountEmail && !billingEmail.value) {
-    billingEmail.value = accountEmail;
+  if (accountEmail) prefillAuthEmail(accountEmail);
+  else if (billingEmail && !billingEmail.value) {
+    const stored = readStoredAccountEmail();
+    if (stored) billingEmail.value = stored;
   }
 
   const hasCredits = creditBalance > 0;
@@ -637,8 +725,10 @@ function renderPanelAccount() {
   }
 
   const billingEmail = document.getElementById("billing-email");
-  if (billingEmail && accountEmail && !billingEmail.value) {
-    billingEmail.value = accountEmail;
+  if (accountEmail) prefillAuthEmail(accountEmail);
+  else if (billingEmail && !billingEmail.value) {
+    const stored = readStoredAccountEmail();
+    if (stored) billingEmail.value = stored;
   }
 
   const hasCredits = creditBalance > 0;
@@ -646,6 +736,339 @@ function renderPanelAccount() {
     connectBtn.disabled = billingEnabled && !hasCredits;
     connectBtn.setAttribute("aria-disabled", connectBtn.disabled ? "true" : "false");
   }
+}
+
+function prefillAuthEmail(email) {
+  if (!email) return;
+  const authEmail = document.getElementById("auth-email");
+  const billingEmail = document.getElementById("billing-email");
+  if (authEmail && !authEmail.value) authEmail.value = email;
+  if (billingEmail && !billingEmail.value) billingEmail.value = email;
+}
+
+let authPendingEmail = "";
+let authPendingBalance = 0;
+let authResetToken = "";
+
+const AUTH_STEP_PANELS = ["password", "legacy", "setup", "verify", "forgot_sent", "reset"];
+
+function setAuthStepLabel(key) {
+  const label = document.getElementById("auth-step-label");
+  if (label) label.textContent = t(key);
+}
+
+function hideAllAuthStepPanels() {
+  AUTH_STEP_PANELS.forEach((name) => {
+    const panel = document.getElementById(`auth-step-${name}`);
+    if (panel) panel.hidden = true;
+  });
+}
+
+function setAuthStep(step, email, balance = authPendingBalance) {
+  authPendingEmail = email || authPendingEmail;
+  authPendingBalance = balance;
+
+  const emailForm = document.getElementById("auth-email-form");
+  const backWrap = document.getElementById("auth-back-wrap");
+  hideAllAuthStepPanels();
+
+  if (step === "email") {
+    if (emailForm) emailForm.hidden = false;
+    if (backWrap) backWrap.hidden = true;
+    setAuthStepLabel("account.stepEmail");
+    return;
+  }
+
+  if (emailForm) emailForm.hidden = true;
+  if (backWrap) backWrap.hidden = step === "reset";
+
+  const panel = document.getElementById(`auth-step-${step}`);
+  if (panel) panel.hidden = false;
+
+  if (step === "password") {
+    setAuthStepLabel("account.stepPassword");
+    const copy = document.getElementById("auth-password-copy");
+    if (copy) copy.textContent = t("account.stepPasswordCopy", { email: authPendingEmail });
+    document.getElementById("auth-password")?.focus();
+  } else if (step === "legacy") {
+    setAuthStepLabel("account.stepLegacy");
+    const copy = document.getElementById("auth-legacy-copy");
+    if (copy) {
+      copy.textContent = t("account.stepLegacyCopy", {
+        email: authPendingEmail,
+        count: authPendingBalance,
+      });
+    }
+  } else if (step === "setup") {
+    setAuthStepLabel("account.stepSetup");
+    const copy = document.getElementById("auth-setup-copy");
+    if (copy) copy.textContent = t("account.stepSetupCopy", { email: authPendingEmail });
+    document.getElementById("auth-setup-password")?.focus();
+  } else if (step === "verify") {
+    setAuthStepLabel("account.stepVerify");
+    const copy = document.getElementById("auth-verify-copy");
+    if (copy) copy.textContent = t("account.stepVerifyCopy", { email: authPendingEmail });
+  } else if (step === "forgot_sent") {
+    setAuthStepLabel("account.stepForgot");
+    const copy = document.getElementById("auth-forgot-copy");
+    if (copy) copy.textContent = t("account.forgotSent", { email: authPendingEmail });
+  } else if (step === "reset") {
+    setAuthStepLabel("account.stepReset");
+    document.getElementById("auth-reset-password")?.focus();
+  }
+}
+
+async function continueAccount(email) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "continue", email }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  return data;
+}
+
+async function legacySignInAccount(email) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "legacy_signin", email }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  accountEmail = data.email || email;
+  creditBalance = Number(data.balance) || 0;
+  persistAccountEmail(accountEmail);
+  renderAccount();
+  renderConnectionStatus(lastConnection);
+  if (IS_PANEL) fetchTasks();
+  if (creditBalance > 0) {
+    setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
+  } else {
+    setAccountNote(t("account.signedInOk"), "ok");
+  }
+  return data;
+}
+
+async function forgotPasswordAccount(email) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "forgot", email }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  return data;
+}
+
+async function resetPasswordAccount(token, password, passwordConfirm) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "reset",
+      token,
+      password,
+      password_confirm: passwordConfirm,
+    }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  accountEmail = data.email || accountEmail;
+  creditBalance = Number(data.balance) || 0;
+  if (accountEmail) persistAccountEmail(accountEmail);
+  renderAccount();
+  renderConnectionStatus(lastConnection);
+  if (IS_PANEL) fetchTasks();
+  setAccountNote(t("account.resetOk"), "ok");
+  return data;
+}
+
+function applyAuthContinueResult(data) {
+  const step = data.next_step || "setup";
+  const email = data.email || authPendingEmail;
+  const balance = Number(data.balance) || 0;
+  if (step === "password") setAuthStep("password", email, balance);
+  else if (step === "legacy") setAuthStep("legacy", email, balance);
+  else if (step === "verify_pending") setAuthStep("verify", email, balance);
+  else setAuthStep("setup", email, balance);
+}
+
+async function continueFromEmailForm(ev) {
+  if (ev?.preventDefault) ev.preventDefault();
+  const email = (document.getElementById("auth-email")?.value || "").trim();
+  if (!email) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    document.getElementById("auth-email")?.focus();
+    return;
+  }
+  const btn = document.getElementById("auth-continue-btn");
+  if (btn) btn.disabled = true;
+  try {
+    const data = await continueAccount(email);
+    applyAuthContinueResult(data);
+    setAccountNote("", "ok");
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function signInFromPasswordForm(ev) {
+  if (ev?.preventDefault) ev.preventDefault();
+  const email = authPendingEmail || (document.getElementById("auth-email")?.value || "").trim();
+  const password = document.getElementById("auth-password")?.value || "";
+  if (!email) {
+    setAuthStep("email");
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  if (!password) {
+    setAccountNote(t("account.password") + " required.", "error");
+    document.getElementById("auth-password")?.focus();
+    return;
+  }
+  try {
+    await signInAccount(email, password);
+  } catch (err) {
+    if (err.needsVerification) {
+      setAuthStep("verify", email);
+    }
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function registerFromSetupForm(ev) {
+  if (ev?.preventDefault) ev.preventDefault();
+  const email = authPendingEmail || (document.getElementById("auth-email")?.value || "").trim();
+  const password = document.getElementById("auth-setup-password")?.value || "";
+  const passwordConfirm = document.getElementById("auth-setup-password-confirm")?.value || "";
+  if (!email) {
+    setAuthStep("email");
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  try {
+    const data = await registerAccount(email, password, passwordConfirm);
+    if (data.needs_verification) {
+      setAuthStep("verify", email);
+      setAccountNote(t("account.registerOk"), "ok");
+    } else {
+      await signInAccount(email, password, { silent: false });
+    }
+  } catch (err) {
+    if (err.code === "email_exists") {
+      setAuthStep("password", email);
+    }
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function legacySignInFromPanel() {
+  const email = authPendingEmail || (document.getElementById("auth-email")?.value || "").trim();
+  if (!email) {
+    setAuthStep("email");
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  try {
+    await legacySignInAccount(email);
+  } catch (err) {
+    if (err.message && err.message.includes("password")) {
+      setAuthStep("password", email);
+    }
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function forgotPasswordFromPanel() {
+  const email = authPendingEmail || (document.getElementById("auth-email")?.value || "").trim();
+  if (!email) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  try {
+    await forgotPasswordAccount(email);
+    setAuthStep("forgot_sent", email);
+    setAccountNote("", "ok");
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function resendVerificationFromPanel() {
+  const email = authPendingEmail || (document.getElementById("auth-email")?.value || "").trim();
+  if (!email) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  try {
+    await resendVerificationEmail(email);
+    setAccountNote(t("account.resendOk"), "ok");
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+async function resetPasswordFromForm(ev) {
+  if (ev?.preventDefault) ev.preventDefault();
+  const password = document.getElementById("auth-reset-password")?.value || "";
+  const passwordConfirm = document.getElementById("auth-reset-password-confirm")?.value || "";
+  if (!authResetToken) {
+    setAccountNote(t("msg.generic"), "error");
+    return;
+  }
+  try {
+    await resetPasswordAccount(authResetToken, password, passwordConfirm);
+    authResetToken = "";
+  } catch (err) {
+    setAccountNote(err.message || t("msg.generic"), "error");
+  }
+}
+
+function resetAuthFlow() {
+  authPendingEmail = "";
+  authPendingBalance = 0;
+  setAuthStep("email");
+  const pwd = document.getElementById("auth-password");
+  const setupPwd = document.getElementById("auth-setup-password");
+  const setupConfirm = document.getElementById("auth-setup-password-confirm");
+  if (pwd) pwd.value = "";
+  if (setupPwd) setupPwd.value = "";
+  if (setupConfirm) setupConfirm.value = "";
+}
+
+function initAuthFlow() {
+  setAuthStep("email");
+}
+
+async function handleResetQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("reset");
+  if (!token) return;
+  params.delete("reset");
+  const next = params.toString();
+  const nextUrl = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+  authResetToken = token;
+  const emailForm = document.getElementById("auth-email-form");
+  if (emailForm) emailForm.hidden = true;
+  hideAllAuthStepPanels();
+  setAuthStep("reset");
 }
 
 function persistAccountEmail(email) {
@@ -673,17 +1096,20 @@ function clearStoredAccountEmail() {
   }
 }
 
-async function signInAccount(email, opts = {}) {
+async function signInAccount(email, password, opts = {}) {
   const silent = !!opts.silent;
   const res = await fetch("/api/salesnav-account.php", {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ action: "signin", email, password }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
-    throw new Error(data.error || t("msg.generic"));
+    const err = new Error(data.error || t("msg.generic"));
+    err.code = data.code;
+    err.needsVerification = !!data.needs_verification;
+    throw err;
   }
   accountEmail = data.email || email;
   creditBalance = Number(data.balance) || 0;
@@ -700,6 +1126,61 @@ async function signInAccount(email, opts = {}) {
       setAccountNote(t("account.signedInOk"), "ok");
     }
   }
+  return data;
+}
+
+async function registerAccount(email, password, passwordConfirm) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "register",
+      email,
+      password,
+      password_confirm: passwordConfirm,
+    }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    const err = new Error(data.error || t("msg.generic"));
+    err.code = data.code;
+    throw err;
+  }
+  return data;
+}
+
+async function resendVerificationEmail(email) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "resend", email }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  return data;
+}
+
+async function verifyAccountToken(token) {
+  const res = await fetch("/api/salesnav-account.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "verify", token }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || t("msg.generic"));
+  }
+  accountEmail = data.email || "";
+  creditBalance = Number(data.balance) || 0;
+  if (accountEmail) persistAccountEmail(accountEmail);
+  renderAccount();
+  renderConnectionStatus(lastConnection);
+  if (IS_PANEL) fetchTasks();
   return data;
 }
 
@@ -728,7 +1209,7 @@ function renderCreditPacks(packs) {
 async function fetchCredits() {
   try {
     const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) return;
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
@@ -736,11 +1217,7 @@ async function fetchCredits() {
     if (!accountEmail) {
       const stored = readStoredAccountEmail();
       if (stored) {
-        try {
-          await signInAccount(stored, { silent: true });
-        } catch {
-          /* fall through as guest */
-        }
+        prefillAuthEmail(stored);
       }
     } else {
       persistAccountEmail(accountEmail);
@@ -819,16 +1296,16 @@ async function openStripePopup(url) {
 async function startStripeCheckout(pack = defaultPackId) {
   const packSelect = document.getElementById("credit-pack");
   if (packSelect?.value) pack = packSelect.value;
-  const emailInput = document.getElementById("billing-email");
-  const email = (emailInput?.value || accountEmail || "").trim();
-  if (!email) {
-    setAccountNote(t("credits.emailRequired"), "error");
-    emailInput?.focus();
+  if (!accountEmail) {
+    setAccountNote(t("account.signInRequired"), "error");
+    if (IS_PANEL) {
+      document.getElementById("panel-guest-wrap")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     return;
   }
   try {
     sessionStorage.setItem("sn_pre_balance", String(creditBalance));
-    sessionStorage.setItem("sn_checkout_email", email);
+    sessionStorage.setItem("sn_checkout_email", accountEmail);
   } catch {
     /* ignore */
   }
@@ -836,14 +1313,13 @@ async function startStripeCheckout(pack = defaultPackId) {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pack, email }),
+    body: JSON.stringify({ pack }),
   });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.url) {
     throw new Error(data.error || t("msg.generic"));
   }
-  accountEmail = email;
-  persistAccountEmail(email);
+  persistAccountEmail(accountEmail);
   renderCredits();
   const result = await openStripePopup(data.url);
   if (result?.ok === true) {
@@ -866,33 +1342,19 @@ async function startStripeCheckout(pack = defaultPackId) {
   await pollCreditsAfterReturn();
 }
 
-async function restoreAccount() {
-  const emailInput = document.getElementById("restore-email");
-  const email = (emailInput?.value || "").trim();
-  if (!email) {
-    setAccountNote(t("credits.emailRequired"), "error");
-    emailInput?.focus();
-    return;
-  }
+async function handleVerifyQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("verify");
+  if (!token) return;
+  params.delete("verify");
+  const next = params.toString();
+  const nextUrl = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
   try {
-    await signInAccount(email);
+    await verifyAccountToken(token);
+    setAccountNote(t("account.verifyOk"), "ok");
   } catch (err) {
-    setAccountNote(err.message || t("msg.generic"), "error");
-  }
-}
-
-async function signInFromForm() {
-  const emailInput = document.getElementById("billing-email");
-  const email = (emailInput?.value || "").trim();
-  if (!email) {
-    setAccountNote(t("credits.emailRequired"), "error");
-    emailInput?.focus();
-    return;
-  }
-  try {
-    await signInAccount(email);
-  } catch (err) {
-    setAccountNote(err.message || t("msg.generic"), "error");
+    setAccountNote(err.message || t("account.verifyFail"), "error");
   }
 }
 
@@ -913,7 +1375,7 @@ async function signOutAccount() {
 
 async function fetchConnectionStatus() {
   const res = await fetch("/api/salesnav-status.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     throw new Error(data.error || t("msg.generic"));
   }
@@ -949,7 +1411,7 @@ async function startConnect(reconnect = false) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reconnect }),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (res.status === 402 && data.needs_payment) {
       setAccountNote(t("credits.connectNeedsBalance"), "error");
       return;
@@ -984,14 +1446,15 @@ async function disconnectLinkedIn() {
       method: "POST",
       credentials: "same-origin",
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) {
       throw new Error(data.error || t("msg.generic"));
     }
     renderConnectionStatus({ connected: false });
+    setAccountNote("", "ok");
     setConnectNote("", "ok");
   } catch (err) {
-    setConnectNote(err.message || t("msg.generic"), "error");
+    setAccountNote(err.message || t("msg.generic"), "error");
   }
 }
 
@@ -1050,7 +1513,7 @@ async function completeStripeReturn(sessionId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId }),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) {
       await pollCreditsAfterReturn();
       return;
@@ -1124,74 +1587,6 @@ function taskLimitLabel(task) {
   return String(task.limit || "—");
 }
 
-function taskHasEnriched(task) {
-  return !!(task.tier_enriched ?? task.tiers?.enriched);
-}
-
-function taskHasMail(task) {
-  return !!(task.tier_mail ?? task.tiers?.mail);
-}
-
-function buildTaskAddonsCell(task) {
-  const td = document.createElement("td");
-  td.className = "tasks-addons-cell";
-
-  const wrap = document.createElement("div");
-  wrap.className = "task-addon-list";
-
-  const enrichedRow = document.createElement("div");
-  enrichedRow.className = "task-addon-row";
-  enrichedRow.innerHTML = `<span class="task-addon-name">${t("tasks.addonEnriched")}</span>`;
-  const enrichedVal = document.createElement("span");
-  enrichedVal.className = `task-addon-val${taskHasEnriched(task) ? " is-on" : ""}`;
-  enrichedVal.textContent = taskHasEnriched(task) ? t("tasks.addonYes") : t("tasks.addonNo");
-  enrichedRow.appendChild(enrichedVal);
-  wrap.appendChild(enrichedRow);
-
-  const mailRow = document.createElement("div");
-  mailRow.className = "task-addon-row";
-  mailRow.innerHTML = `<span class="task-addon-name">${t("tasks.addonMail")}</span>`;
-  const mailVal = document.createElement("span");
-  mailVal.className = `task-addon-val task-addon-val-mail${taskHasMail(task) ? " is-on" : ""}`;
-  if (taskHasMail(task)) {
-    const found = task.status === "ready" ? Number(task.emails_found) || 0 : null;
-    mailVal.textContent =
-      found !== null ? t("tasks.addonMailFound", { count: found }) : t("tasks.addonYes");
-  } else {
-    mailVal.textContent = t("tasks.addonNo");
-  }
-  mailRow.appendChild(mailVal);
-  wrap.appendChild(mailRow);
-
-  td.appendChild(wrap);
-  return td;
-}
-
-async function refreshPanelCredits() {
-  try {
-    const res = await fetch("/api/salesnav-credits.php", { credentials: "same-origin" });
-    const data = await res.json();
-    if (!res.ok || !data.ok) return;
-    creditBalance = Number(data.balance) || 0;
-    if (IS_PANEL) {
-      const balanceEl = document.getElementById("toolbar-balance");
-      if (balanceEl) balanceEl.textContent = String(creditBalance);
-    } else {
-      renderAccount();
-    }
-  } catch {
-    /* optional */
-  }
-}
-
-function tasksFinishedProcessing(prevTasks, nextTasks) {
-  if (!prevTasks.length || !nextTasks.length) return false;
-  return nextTasks.some((task) => {
-    const prev = prevTasks.find((item) => item.id === task.id);
-    return prev?.status === "processing" && task.status === "ready";
-  });
-}
-
 function scheduleTasksPoll() {
   if (tasksPollTimer) {
     clearInterval(tasksPollTimer);
@@ -1209,15 +1604,11 @@ async function fetchTasks(opts = {}) {
   if (!IS_PANEL || !accountEmail) return;
   try {
     const res = await fetch("/api/salesnav-tasks.php", { credentials: "same-origin" });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (!res.ok || !data.ok) return;
-    const prevTasks = panelTasks;
     panelTasks = Array.isArray(data.tasks) ? data.tasks : [];
     renderTasksTable();
     scheduleTasksPoll();
-    if (tasksFinishedProcessing(prevTasks, panelTasks)) {
-      await refreshPanelCredits();
-    }
     if (!opts.silent) {
       highlightTaskFromQuery();
     }
@@ -1247,7 +1638,7 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 7;
+    td.colSpan = 6;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -1279,8 +1670,6 @@ function renderTasksTable() {
     const credits = document.createElement("td");
     credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
 
-    const addons = buildTaskAddonsCell(task);
-
     const created = document.createElement("td");
     created.textContent = formatTaskDate(task.created_at);
 
@@ -1298,7 +1687,7 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, addons, created, action);
+    tr.append(source, status, leads, credits, created, action);
     tbody.appendChild(tr);
   });
 }
@@ -1374,7 +1763,7 @@ async function submitCreateTask(e) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
 
     if (res.status === 402 && data.needs_payment) {
       await startStripeCheckout(defaultPackId);
@@ -1465,7 +1854,7 @@ function escapeHtml(s) {
 
 async function getChallenge() {
   const res = await fetch("/api/challenge.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.challenge) {
     throw new Error(t("msg.challenge"));
   }
@@ -1519,7 +1908,7 @@ async function runExport() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
 
     if (res.status === 429) {
       throw new Error(t("msg.rateLimit"));
@@ -1592,7 +1981,7 @@ function setContactNote(text, tone = "ok") {
 
 async function loadContactChallenge() {
   const res = await fetch("/api/contact-challenge.php", { credentials: "same-origin" });
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok || !data.challenge) {
     throw new Error(t("msg.challenge"));
   }
@@ -1640,7 +2029,7 @@ function initContactForm() {
           website: document.getElementById("contact-website").value,
         }),
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (!res.ok || !data.ok) {
         throw new Error(data.error || t("msg.generic"));
       }
@@ -1682,6 +2071,9 @@ if (IS_PANEL) {
 
 function initPanelPage() {
   initModeSwitch();
+  initAuthFlow();
+  handleVerifyQuery();
+  handleResetQuery();
   handleConnectQuery();
   handleCreditsQuery();
   fetchCredits();
@@ -1702,7 +2094,15 @@ function initPanelPage() {
       setAccountNote(err.message || t("msg.generic"), "error");
     }
   });
-  document.getElementById("sign-in-btn")?.addEventListener("click", () => signInFromForm());
+  document.getElementById("auth-email-form")?.addEventListener("submit", (e) => continueFromEmailForm(e));
+  document.getElementById("auth-password-form")?.addEventListener("submit", (e) => signInFromPasswordForm(e));
+  document.getElementById("auth-setup-form")?.addEventListener("submit", (e) => registerFromSetupForm(e));
+  document.getElementById("auth-reset-form")?.addEventListener("submit", (e) => resetPasswordFromForm(e));
+  document.getElementById("auth-legacy-btn")?.addEventListener("click", () => legacySignInFromPanel());
+  document.getElementById("auth-forgot-btn")?.addEventListener("click", () => forgotPasswordFromPanel());
+  document.getElementById("auth-resend-btn")?.addEventListener("click", () => resendVerificationFromPanel());
+  document.getElementById("auth-back-btn")?.addEventListener("click", () => resetAuthFlow());
+  document.getElementById("auth-back-to-password-btn")?.addEventListener("click", () => setAuthStep("password", authPendingEmail));
   document.getElementById("sign-out-btn")?.addEventListener("click", () => {
     panelTasks = [];
     if (tasksPollTimer) {
@@ -1711,7 +2111,6 @@ function initPanelPage() {
     }
     signOutAccount();
   });
-  document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
   document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
   document.getElementById("create-task-btn")?.addEventListener("click", () => {
     if (composeOpen) {
