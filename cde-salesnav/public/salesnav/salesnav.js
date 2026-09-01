@@ -31,6 +31,11 @@ const I18N = {
     "credits.cancelled": "Payment cancelled.",
     "credits.insufficient": "Not enough credits for this export. Buy more credits (min €20).",
     "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 120 credits).",
+    "credits.promoLabel": "Promo code (100% off)",
+    "credits.promoApply": "Apply",
+    "credits.promoHint": "100% discount codes must be applied here — Stripe checkout cannot process €0 payments.",
+    "credits.promoApplied": "Promotion applied — {count} credits added. You can connect LinkedIn now.",
+    "credits.promoInvalid": "This promotion code is invalid.",
     "mode.list": "Lead list",
     "mode.search": "People search",
     "form.listLabel": "Sales Navigator list URL",
@@ -160,6 +165,11 @@ const I18N = {
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
     "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 120 créditos).",
+    "credits.promoLabel": "Código promo (100% dto.)",
+    "credits.promoApply": "Aplicar",
+    "credits.promoHint": "Los códigos del 100% se aplican aquí — el checkout de Stripe no admite pagos de €0.",
+    "credits.promoApplied": "Promoción aplicada — {count} créditos añadidos. Ya puedes conectar LinkedIn.",
+    "credits.promoInvalid": "Este código promocional no es válido.",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
     "form.listLabel": "URL de lista Sales Navigator",
@@ -361,10 +371,12 @@ function renderCredits() {
   const el = document.getElementById("connect-credits");
   const buyBtn = document.getElementById("buy-credits-btn");
   const connectBtn = document.getElementById("connect-btn");
+  const promoWrap = document.getElementById("connect-promo-wrap");
   if (!el) return;
   if (!billingEnabled) {
     el.hidden = true;
     if (buyBtn) buyBtn.hidden = true;
+    if (promoWrap) promoWrap.hidden = true;
     if (connectBtn) connectBtn.textContent = t("connect.cta");
     return;
   }
@@ -375,8 +387,43 @@ function renderCredits() {
   if (connectBtn && !isConnected) {
     connectBtn.textContent = needsPayment ? t("credits.buy") : t("connect.cta");
   }
-  // Single CTA: connect-btn opens Stripe (0 credits) or Unipile (>0 credits).
+  if (promoWrap) promoWrap.hidden = !needsPayment || isConnected;
   if (buyBtn) buyBtn.hidden = true;
+}
+
+async function redeemPromoCode() {
+  const input = document.getElementById("promo-code");
+  const btn = document.getElementById("apply-promo-btn");
+  const code = input?.value.trim() || "";
+  if (!code) {
+    setNote(t("credits.promoInvalid"), "error");
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch("/api/salesnav-redeem-promo.php", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, pack: defaultPackId }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      if (data.use_checkout) {
+        await startStripeCheckout(defaultPackId);
+      }
+      throw new Error(data.error || t("credits.promoInvalid"));
+    }
+    creditBalance = Number(data.balance) || creditBalance;
+    renderCredits();
+    renderConnectionStatus(lastConnection);
+    if (input) input.value = "";
+    setNote(t("credits.promoApplied", { count: data.credits_added || creditBalance }), "ok");
+  } catch (err) {
+    setNote(err.message || t("credits.promoInvalid"), "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function fetchCredits() {
@@ -834,6 +881,13 @@ fetchConnectionStatus().catch(() => renderConnectionStatus({ connected: false })
 document.getElementById("connect-btn")?.addEventListener("click", () => startConnect(false));
 document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
 document.getElementById("buy-credits-btn")?.addEventListener("click", () => startStripeCheckout(defaultPackId));
+document.getElementById("apply-promo-btn")?.addEventListener("click", () => redeemPromoCode());
+document.getElementById("promo-code")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    redeemPromoCode();
+  }
+});
 document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
 
 document.getElementById("export-form")?.addEventListener("submit", (e) => {

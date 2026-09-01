@@ -14,7 +14,7 @@ scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/salesnav-stripe-webhook.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/salesnav-stripe-webhook.php" "$LOCAL/api/salesnav-redeem-promo.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
 
