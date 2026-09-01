@@ -422,7 +422,7 @@ const ENRICHED_CSV_COLS = [
 ];
 let contactChallengeToken = "";
 let isConnected = false;
-let lastConnection = { connected: false, label: "" };
+let lastConnection = { connected: false, label: "", avatar_url: "", connected_at: "" };
 let billingEnabled = false;
 let creditBalance = 0;
 let accountEmail = "";
@@ -524,11 +524,13 @@ function renderConnectionStatus(data) {
   lastConnection = {
     connected: !!data?.connected,
     label: data?.label || "",
+    avatar_url: data?.avatar_url || "",
     connected_at: data?.connected_at || "",
   };
   isConnected = lastConnection.connected;
   const badge = document.getElementById("connect-badge");
   const copy = document.getElementById("connect-copy");
+  const avatar = document.getElementById("connect-avatar");
   const connectBtn = document.getElementById("connect-btn");
   const connectBtnDemo = document.getElementById("connect-btn-demo");
   const disconnectBtn = document.getElementById("disconnect-btn");
@@ -549,7 +551,23 @@ function renderConnectionStatus(data) {
   if (copy && isConnected && data.label) {
     copy.textContent = t("connect.connectedAs", { label: data.label });
   } else if (copy) {
-    copy.innerHTML = t("connect.body");
+    if (copy.hasAttribute("data-i18n")) {
+      copy.innerHTML = t("connect.body");
+    } else {
+      copy.textContent = t("connect.body");
+    }
+  }
+
+  if (avatar) {
+    if (isConnected && data.avatar_url) {
+      avatar.src = data.avatar_url;
+      avatar.alt = data.label ? `${data.label} profile photo` : "LinkedIn profile photo";
+      avatar.hidden = false;
+    } else {
+      avatar.hidden = true;
+      avatar.removeAttribute("src");
+      avatar.alt = "";
+    }
   }
 
   if (billingActions) {

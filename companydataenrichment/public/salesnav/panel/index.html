@@ -113,7 +113,10 @@
             <h2 data-i18n="connect.title">LinkedIn connection</h2>
             <span class="connect-badge panel-li-badge" id="connect-badge" data-state="disconnected" data-i18n="connect.disconnected">Not connected</span>
           </header>
-          <p class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</p>
+          <div class="panel-li-identity" id="connect-identity">
+            <img id="connect-avatar" class="panel-li-avatar" alt="" width="48" height="48" loading="lazy" hidden />
+            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</span>
+          </div>
           <div class="panel-card-foot panel-li-actions-wrap">
             <div class="panel-li-actions" id="connect-actions-billing">
               <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
@@ -219,6 +222,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=28"></script>
+  <script src="/salesnav/salesnav.js?v=29"></script>
 </body>
 </html>

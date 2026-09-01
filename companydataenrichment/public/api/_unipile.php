@@ -303,11 +303,12 @@ function cde_salesnav_save_account(string $userId, array $record): void
     @chmod($path, 0600);
 }
 
-function cde_salesnav_set_session_account(string $accountId, string $label = ''): void
+function cde_salesnav_set_session_account(string $accountId, string $label = '', string $avatarUrl = ''): void
 {
     cde_session_start();
     $_SESSION['salesnav_account_id'] = $accountId;
     $_SESSION['salesnav_account_label'] = $label;
+    $_SESSION['salesnav_account_avatar'] = $avatarUrl;
     $_SESSION['salesnav_connected_at'] = gmdate('c');
 }
 
@@ -317,6 +318,7 @@ function cde_salesnav_clear_session_account(): void
     unset(
         $_SESSION['salesnav_account_id'],
         $_SESSION['salesnav_account_label'],
+        $_SESSION['salesnav_account_avatar'],
         $_SESSION['salesnav_connected_at']
     );
 }
@@ -331,7 +333,8 @@ function cde_salesnav_session_account(): ?array
         if (is_array($stored) && !empty($stored['account_id'])) {
             cde_salesnav_set_session_account(
                 (string) $stored['account_id'],
-                (string) ($stored['label'] ?? '')
+                (string) ($stored['label'] ?? ''),
+                (string) ($stored['avatar_url'] ?? '')
             );
             $accountId = (string) $stored['account_id'];
         }
@@ -342,6 +345,7 @@ function cde_salesnav_session_account(): ?array
     return [
         'account_id' => $accountId,
         'label' => trim((string) ($_SESSION['salesnav_account_label'] ?? '')),
+        'avatar_url' => trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')),
         'connected_at' => (string) ($_SESSION['salesnav_connected_at'] ?? ''),
     ];
 }
@@ -376,32 +380,83 @@ function cde_salesnav_site_origin(): string
 
 function cde_salesnav_fetch_account_label(array $config, string $accountId): string
 {
-    $resp = cde_unipile_request($config, 'GET', '/accounts/' . rawurlencode($accountId));
-    if (!$resp['ok']) {
-        $resp = cde_unipile_request($config, 'GET', '/accounts');
-        if ($resp['ok']) {
-            $items = $resp['data'];
-            if (isset($items['items']) && is_array($items['items'])) {
-                $items = $items['items'];
-            }
-            if (is_array($items)) {
-                foreach ($items as $item) {
-                    if (!is_array($item)) {
-                        continue;
-                    }
-                    if (($item['id'] ?? '') === $accountId) {
-                        return cde_salesnav_account_label_from_item($item);
-                    }
-                }
+    return cde_salesnav_fetch_account_meta($config, $accountId)['label'];
+}
+
+/** @return array{label: string, avatar_url: string} */
+function cde_salesnav_fetch_account_meta(array $config, string $accountId): array
+{
+    $meta = ['label' => '', 'avatar_url' => ''];
+
+    $resp = cde_unipile_request($config, 'GET', '/users/me', ['account_id' => $accountId]);
+    if ($resp['ok']) {
+        $profile = $resp['data'];
+        if (isset($profile['data']) && is_array($profile['data'])) {
+            $profile = $profile['data'];
+        }
+        if (is_array($profile)) {
+            $meta['avatar_url'] = cde_salesnav_avatar_from_profile($profile);
+            $first = trim((string) ($profile['first_name'] ?? ''));
+            $last = trim((string) ($profile['last_name'] ?? ''));
+            $full = trim($first . ' ' . $last);
+            if ($full !== '') {
+                $meta['label'] = $full;
+            } elseif (!empty($profile['name'])) {
+                $meta['label'] = trim((string) $profile['name']);
             }
         }
-        return '';
     }
-    $item = $resp['data'];
-    if (isset($item['data']) && is_array($item['data'])) {
-        $item = $item['data'];
+
+    if ($meta['label'] === '') {
+        $resp = cde_unipile_request($config, 'GET', '/accounts/' . rawurlencode($accountId));
+        if ($resp['ok']) {
+            $item = $resp['data'];
+            if (isset($item['data']) && is_array($item['data'])) {
+                $item = $item['data'];
+            }
+            if (is_array($item)) {
+                $meta['label'] = cde_salesnav_account_label_from_item($item);
+            }
+        }
     }
-    return is_array($item) ? cde_salesnav_account_label_from_item($item) : '';
+
+    return $meta;
+}
+
+function cde_salesnav_avatar_from_profile(array $profile): string
+{
+    foreach (['profile_picture_url_large', 'profile_picture_url', 'public_picture_url'] as $key) {
+        $url = trim((string) ($profile[$key] ?? ''));
+        if ($url !== '' && preg_match('#^https?://#i', $url)) {
+            return $url;
+        }
+    }
+    return '';
+}
+
+function cde_salesnav_refresh_account_meta(string $userId, string $accountId): array
+{
+    $config = cde_unipile_api_config();
+    $meta = cde_salesnav_fetch_account_meta($config, $accountId);
+    $stored = cde_salesnav_load_accounts()[$userId] ?? [];
+    if (!is_array($stored)) {
+        $stored = [];
+    }
+    cde_salesnav_save_account($userId, array_merge($stored, [
+        'account_id' => $accountId,
+        'label' => $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
+        'avatar_url' => $meta['avatar_url'],
+        'linked_at' => (string) ($stored['linked_at'] ?? gmdate('c')),
+        'status' => (string) ($stored['status'] ?? 'CONNECTED'),
+    ]));
+    if (cde_salesnav_user_id() === $userId) {
+        cde_salesnav_set_session_account(
+            $accountId,
+            $meta['label'] !== '' ? $meta['label'] : (string) ($stored['label'] ?? ''),
+            $meta['avatar_url']
+        );
+    }
+    return $meta;
 }
 
 function cde_salesnav_account_label_from_item(array $item): string
