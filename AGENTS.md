@@ -32,5 +32,6 @@ Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
 
 - **Icypeas API key:** `/opt/apps/private/cde/icypeas.env` (`ICYPEAS_API_KEY`)
 - **CDE production (Sales Nav):** `/var/www/vhosts/companydataenrichment.com/private/cde/icypeas.env` on `nextconvers-vps`
+- **Mail tier code:** `cde-salesnav/public/api/_icypeas.php` (email-search + poll read)
 
 Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never echo the value in chat, commits, or logs. Example template: `cde-salesnav/deploy/icypeas.env.example`.
