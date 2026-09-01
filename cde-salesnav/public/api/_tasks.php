@@ -49,7 +49,7 @@ function cde_tasks_normalize_limit($raw): int
     }
     $limit = (int) $raw;
     if ($limit < 1) {
-        return 25;
+        return 50;
     }
     return min($limit, CDE_TASKS_MAX_LIMIT);
 }
@@ -113,7 +113,7 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
 {
     $listUrl = trim((string) ($payload['list_url'] ?? ''));
     $searchUrl = trim((string) ($payload['search_url'] ?? ''));
-    $limitRaw = $payload['limit'] ?? 25;
+    $limitRaw = $payload['limit'] ?? 50;
     $limit = cde_tasks_normalize_limit($limitRaw);
     $limitLabel = cde_tasks_limit_label($limit, $limitRaw);
 

@@ -985,12 +985,74 @@
   gap: 0.55rem;
 }
 
-.panel-card-linkedin[data-connected="true"] #connect-actions-billing {
+.panel-topup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  width: 100%;
+}
+
+.panel-pack-field {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.panel-pack-field span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.panel-pack-select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(26, 43, 60, 0.14);
+  border-radius: 8px;
+  font: inherit;
+  background: #fff;
+}
+
+.panel-card-linkedin[data-connected="true"] #connect-actions-billing,
+.panel-card-linkedin[data-connected="true"] #connect-btn {
   display: none !important;
 }
 
 .panel-card-linkedin[data-connected="false"] #connect-actions-connected {
   display: none !important;
+}
+
+.tasks-compose {
+  border-bottom: 1px solid rgba(26, 43, 60, 0.08);
+  background: rgba(10, 102, 194, 0.03);
+}
+
+.tasks-compose-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.35rem 1.85rem 1.5rem;
+}
+
+.tasks-compose-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.tasks-compose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+#connect-actions-billing:not([hidden]),
+#connect-actions-connected:not([hidden]) {
+  display: flex;
 }
 
 .panel-li-actions[hidden] {

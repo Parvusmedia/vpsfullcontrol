@@ -28,6 +28,7 @@ const I18N = {
     "panel.tasksLede": "Paste a Sales Navigator list or search URL — we process it in the background and email you when ready.",
     "panel.newTask": "New export",
     "panel.startTask": "Start export",
+    "panel.composeCancel": "Hide form",
     "tasks.colSource": "Source",
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
@@ -100,10 +101,11 @@ const I18N = {
     "form.searchLabel": "Sales Navigator search URL",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
     "form.limit": "Max leads",
-    "form.limit25": "25 (demo)",
+    "form.limit50": "50",
     "form.limit100": "100",
+    "form.limit200": "200",
     "form.limit500": "500",
-    "form.limit2000": "2,000 (max)",
+    "form.limit1000": "1,000",
     "form.tiers": "Export options",
     "form.tierEnriched": "Enriched (+€0.02/lead)",
     "form.tierMail": "Mail (+€0.09/email found)",
@@ -201,6 +203,7 @@ const I18N = {
     "panel.tasksLede": "Pega la URL de una lista o búsqueda de Sales Navigator — la procesamos en segundo plano y te avisamos por email.",
     "panel.newTask": "Nuevo export",
     "panel.startTask": "Iniciar export",
+    "panel.composeCancel": "Ocultar formulario",
     "tasks.colSource": "Origen",
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
@@ -273,10 +276,11 @@ const I18N = {
     "form.searchLabel": "URL de búsqueda Sales Navigator",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
     "form.limit": "Máx. leads",
-    "form.limit25": "25 (demo)",
+    "form.limit50": "50",
     "form.limit100": "100",
+    "form.limit200": "200",
     "form.limit500": "500",
-    "form.limit2000": "2.000 (máx.)",
+    "form.limit1000": "1.000",
     "form.tiers": "Opciones de export",
     "form.tierEnriched": "Enriched (+€0,02/lead)",
     "form.tierMail": "Mail (+€0,09/email encontrado)",
@@ -401,6 +405,7 @@ let accountEmail = "";
 let defaultPackId = "240";
 let panelTasks = [];
 let tasksPollTimer = null;
+let composeOpen = false;
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -528,8 +533,7 @@ function renderConnectionStatus(data) {
   }
   if (demoActions) demoActions.hidden = billingEnabled || isConnected;
   if (connectedActions) connectedActions.hidden = !isConnected;
-  if (disconnectBtn) disconnectBtn.hidden = !isConnected;
-  if (reconnectBtn) reconnectBtn.hidden = !isConnected;
+  if (connectBtn) connectBtn.hidden = isConnected;
 
   const liCard = document.querySelector(".panel-card-linkedin");
   if (liCard) {
@@ -617,7 +621,6 @@ function renderPanelAccount() {
     buyBtn.hidden = !billingEnabled;
     buyBtn.textContent = t("panel.topup");
   }
-  if (packWrap) packWrap.hidden = true;
 
   const billingEmail = document.getElementById("billing-email");
   if (billingEmail && accountEmail && !billingEmail.value) {
@@ -1212,7 +1215,7 @@ function renderTasksTable() {
   });
 }
 
-function openCreateTaskModal() {
+function openCreateTaskCompose() {
   if (!accountEmail) {
     setAccountNote(t("credits.emailRequired"), "error");
     return;
@@ -1221,22 +1224,22 @@ function openCreateTaskModal() {
     setConnectNote(t("connect.required"), "error");
     return;
   }
-  const modal = document.getElementById("create-task-modal");
-  if (!modal) return;
-  if (typeof modal.showModal === "function") {
-    modal.showModal();
-  } else {
-    modal.setAttribute("open", "");
-  }
+  const compose = document.getElementById("tasks-compose");
+  if (!compose) return;
+  compose.hidden = false;
+  composeOpen = true;
+  compose.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  document.getElementById("list-url")?.focus();
 }
 
-function closeCreateTaskModal() {
-  const modal = document.getElementById("create-task-modal");
-  if (!modal) return;
-  if (typeof modal.close === "function") {
-    modal.close();
-  } else {
-    modal.removeAttribute("open");
+function closeCreateTaskCompose(clearForm = false) {
+  const compose = document.getElementById("tasks-compose");
+  if (!compose) return;
+  compose.hidden = true;
+  composeOpen = false;
+  if (clearForm) {
+    document.getElementById("create-task-form")?.reset();
+    document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
   }
 }
 
@@ -1250,7 +1253,7 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "25";
+  const limitRaw = document.getElementById("export-limit")?.value || "50";
   const honeypot = document.getElementById("company_url")?.value || "";
   const tierEnriched = document.getElementById("tier-enriched")?.checked;
 
@@ -1297,7 +1300,7 @@ async function submitCreateTask(e) {
       throw new Error(data.error || t("msg.generic"));
     }
 
-    closeCreateTaskModal();
+    closeCreateTaskCompose(true);
     setPanelFlash(t("tasks.processing"), "ok");
     if (data.task) {
       panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
@@ -1306,8 +1309,6 @@ async function submitCreateTask(e) {
     } else {
       await fetchTasks();
     }
-    document.getElementById("create-task-form")?.reset();
-    document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
   } catch (err) {
     setPanelFlash(err.message || t("msg.generic"), "error");
   } finally {
@@ -1481,9 +1482,10 @@ async function runExport() {
 function initModeSwitch() {
   const listWrap = document.getElementById("list-wrap");
   const searchWrap = document.getElementById("search-wrap");
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
+  const root = document.getElementById("create-task-form") || document;
+  root.querySelectorAll(".mode-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("is-active"));
+      root.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
       const mode = btn.dataset.mode;
       if (listWrap) listWrap.hidden = mode !== "list";
@@ -1605,7 +1607,9 @@ function initPanelPage() {
   document.getElementById("reconnect-btn")?.addEventListener("click", () => startConnect(true));
   document.getElementById("buy-credits-btn")?.addEventListener("click", async () => {
     try {
-      await startStripeCheckout(defaultPackId);
+      const packSelect = document.getElementById("credit-pack");
+      const pack = packSelect?.value || defaultPackId;
+      await startStripeCheckout(pack);
     } catch (err) {
       setAccountNote(err.message || t("msg.generic"), "error");
     }
@@ -1621,10 +1625,13 @@ function initPanelPage() {
   });
   document.getElementById("restore-account-btn")?.addEventListener("click", () => restoreAccount());
   document.getElementById("disconnect-btn")?.addEventListener("click", () => disconnectLinkedIn());
-  document.getElementById("create-task-btn")?.addEventListener("click", () => openCreateTaskModal());
-  document.getElementById("create-task-cancel")?.addEventListener("click", () => closeCreateTaskModal());
-  document.getElementById("create-task-form")?.addEventListener("submit", (e) => submitCreateTask(e));
-  document.getElementById("create-task-modal")?.addEventListener("click", (e) => {
-    if (e.target?.id === "create-task-modal") closeCreateTaskModal();
+  document.getElementById("create-task-btn")?.addEventListener("click", () => {
+    if (composeOpen) {
+      document.getElementById("tasks-compose")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+    openCreateTaskCompose();
   });
+  document.getElementById("create-task-cancel")?.addEventListener("click", () => closeCreateTaskCompose(false));
+  document.getElementById("create-task-form")?.addEventListener("submit", (e) => submitCreateTask(e));
 }

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=20" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=21" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -78,9 +78,12 @@
             <dt data-i18n="panel.creditsLabel">Export credits</dt>
             <dd id="toolbar-balance">0</dd>
           </dl>
-          <div class="panel-card-foot">
+          <div class="panel-card-foot panel-topup-row">
+            <label class="panel-pack-field" for="credit-pack">
+              <span data-i18n="credits.pack">Credit pack</span>
+              <select id="credit-pack" class="panel-pack-select"></select>
+            </label>
             <button type="button" class="connect-btn panel-topup-btn" id="buy-credits-btn" data-i18n="panel.topup">Top up</button>
-            <select id="credit-pack" class="panel-pack-select" hidden aria-hidden="true"></select>
           </div>
         </article>
 
@@ -91,7 +94,7 @@
           </header>
           <p class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</p>
           <div class="panel-card-foot panel-li-actions-wrap">
-            <div class="panel-li-actions" id="connect-actions-billing" hidden>
+            <div class="panel-li-actions" id="connect-actions-billing">
               <button type="button" class="connect-btn" id="connect-btn" data-i18n="connect.cta">Connect LinkedIn</button>
             </div>
             <div class="panel-li-actions" id="connect-actions-connected" hidden>
@@ -114,6 +117,52 @@
           </div>
           <button type="button" class="connect-btn" id="create-task-btn" data-i18n="panel.newTask">New export</button>
         </header>
+
+        <div class="tasks-compose" id="tasks-compose" hidden>
+          <form id="create-task-form" class="tasks-compose-form">
+            <h3 class="tasks-compose-title" data-i18n="panel.newTask">New export</h3>
+            <div class="mode-switch" role="tablist">
+              <button type="button" class="mode-btn is-active" data-mode="list" data-i18n="mode.list">Lead list</button>
+              <button type="button" class="mode-btn" data-mode="search" data-i18n="mode.search">People search</button>
+            </div>
+            <div id="list-wrap">
+              <label class="account-field" for="list-url">
+                <span data-i18n="form.listLabel">Sales Navigator list URL</span>
+                <input id="list-url" type="url" placeholder="https://www.linkedin.com/sales/lists/people/…" />
+              </label>
+            </div>
+            <div id="search-wrap" hidden>
+              <label class="account-field" for="search-url">
+                <span data-i18n="form.searchLabel">Sales Navigator search URL</span>
+                <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
+              </label>
+            </div>
+            <label class="account-field" for="export-limit">
+              <span data-i18n="form.limit">Max leads</span>
+              <select id="export-limit" name="limit">
+                <option value="50" data-i18n="form.limit50">50</option>
+                <option value="100" data-i18n="form.limit100">100</option>
+                <option value="200" data-i18n="form.limit200">200</option>
+                <option value="500" data-i18n="form.limit500">500</option>
+                <option value="1000" data-i18n="form.limit1000">1,000</option>
+                <option value="all" data-i18n="form.limitAll">All (up to 2,000)</option>
+              </select>
+            </label>
+            <fieldset class="export-tiers">
+              <legend data-i18n="form.tiers">Export options</legend>
+              <label class="export-tier-option tier-enriched">
+                <input type="checkbox" id="tier-enriched" value="1" />
+                <span data-i18n="form.tierEnriched">Enriched (+€0.02/lead)</span>
+              </label>
+            </fieldset>
+            <input class="hp" type="text" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="tasks-compose-actions">
+              <button type="button" class="ghost-btn" id="create-task-cancel" data-i18n="panel.composeCancel">Cancel</button>
+              <button type="submit" class="connect-btn" id="create-task-submit" data-i18n="panel.startTask">Start export</button>
+            </div>
+          </form>
+        </div>
+
         <div class="tasks-table-wrap">
           <table class="tasks-table" id="tasks-table">
             <thead>
@@ -137,52 +186,6 @@
     </section>
   </main>
 
-  <dialog class="panel-modal" id="create-task-modal">
-    <form id="create-task-form" method="dialog">
-      <header class="panel-modal-head">
-        <h2 data-i18n="panel.newTask">New export</h2>
-        <button type="button" class="ghost-btn panel-modal-close" id="create-task-cancel" aria-label="Close">×</button>
-      </header>
-      <div class="mode-switch" role="tablist">
-        <button type="button" class="mode-btn is-active" data-mode="list" data-i18n="mode.list">Lead list</button>
-        <button type="button" class="mode-btn" data-mode="search" data-i18n="mode.search">People search</button>
-      </div>
-      <div id="list-wrap">
-        <label class="account-field" for="list-url">
-          <span data-i18n="form.listLabel">Sales Navigator list URL</span>
-          <input id="list-url" type="url" placeholder="https://www.linkedin.com/sales/lists/people/…" />
-        </label>
-      </div>
-      <div id="search-wrap" hidden>
-        <label class="account-field" for="search-url">
-          <span data-i18n="form.searchLabel">Sales Navigator search URL</span>
-          <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
-        </label>
-      </div>
-      <label class="account-field" for="export-limit">
-        <span data-i18n="form.limit">Max leads</span>
-        <select id="export-limit" name="limit">
-          <option value="25" data-i18n="form.limit25">25 (demo)</option>
-          <option value="100" data-i18n="form.limit100">100</option>
-          <option value="500" data-i18n="form.limit500">500</option>
-          <option value="2000" data-i18n="form.limit2000">2,000 (max)</option>
-          <option value="all" data-i18n="form.limitAll">All (up to 2,000)</option>
-        </select>
-      </label>
-      <fieldset class="export-tiers">
-        <legend data-i18n="form.tiers">Export options</legend>
-        <label class="export-tier-option tier-enriched">
-          <input type="checkbox" id="tier-enriched" value="1" />
-          <span data-i18n="form.tierEnriched">Enriched (+€0.02/lead)</span>
-        </label>
-      </fieldset>
-      <input class="hp" type="text" id="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" />
-      <footer class="panel-modal-foot">
-        <button type="submit" class="connect-btn" id="create-task-submit" data-i18n="panel.startTask">Start export</button>
-      </footer>
-    </form>
-  </dialog>
-
   <footer class="foot">
     <div>
       <p><strong>CompanyDataEnrichment</strong></p>
@@ -195,6 +198,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=26"></script>
+  <script src="/salesnav/salesnav.js?v=27"></script>
 </body>
 </html>
