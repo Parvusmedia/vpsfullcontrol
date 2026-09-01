@@ -12,8 +12,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.services.telegram_client import telegram_client
 
 BOT_NAME = "Movistar Para Ti"
-BOT_DESCRIPTION = "Concept demo: móviles, ofertas y avisos si baja la cuota. /start"
-BOT_SHORT_DESCRIPTION = "Móviles, ofertas y avisos de cuota en Telegram."
+BOT_DESCRIPTION = (
+    "Te ayudo a ver móviles, ofertas y novedades, encontrar el que mejor encaja contigo, "
+    "comparar compra libre y cuotas para clientes Movistar, y crear avisos si baja el precio. "
+    "Demo conceptual — datos de ejemplo. Pulsa /start."
+)
+BOT_SHORT_DESCRIPTION = "Móviles, recomendaciones personalizadas y avisos de precio."
 
 
 async def main() -> None:

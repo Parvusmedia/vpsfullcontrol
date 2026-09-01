@@ -55,6 +55,8 @@ def test_welcome_text_mentions_precio_and_demo_disclaimer():
     assert "concept demo" in WELCOME_TEXT.lower()
     assert "☰" not in WELCOME_TEXT
     assert "Movistar Para Ti" in WELCOME_TEXT
+    assert "Te ayudo a:" in WELCOME_TEXT
+    assert "compra libre" in WELCOME_TEXT.lower()
     assert WELCOME_TEXT.index("¡Hola!") < WELCOME_TEXT.index("Bienvenido")
 
 

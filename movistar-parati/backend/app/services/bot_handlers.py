@@ -28,10 +28,12 @@ BTN_PARAMI = "💙 Para mí"
 BTN_MENU = "🏠 Menú"
 
 WELCOME_TEXT = (
-    "👋 <b>¡Hola!</b>\n"
-    "<b>Bienvenido a Movistar Para Ti</b>\n\n"
-    "Encuentra móviles y ofertas a tu medida y crea avisos "
-    "para que te avisemos si baja el precio.\n\n"
+    "👋 <b>¡Hola!</b> <b>Bienvenido a Movistar Para Ti</b>\n\n"
+    "Te ayudo a:\n"
+    "• Ver móviles, ofertas y novedades\n"
+    "• Encontrar el que mejor encaja contigo (cámara, batería, presupuesto…)\n"
+    "• Comparar compra libre y cuotas para clientes Movistar\n"
+    "• Crear avisos si baja el precio\n\n"
     "👇 Elige una opción:\n\n"
     "<i>Concept demo — datos de ejemplo, no ofertas reales de Movistar.</i>"
 )
