@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     cde_json_response(405, ['ok' => false, 'error' => 'Method not allowed']);
 }
 
+cde_salesnav_refresh_auth_cookie();
+
 $billing = cde_credits_billing_enabled();
 $balance = $billing ? cde_credits_get_balance() : 0;
 $packs = cde_credits_packs();

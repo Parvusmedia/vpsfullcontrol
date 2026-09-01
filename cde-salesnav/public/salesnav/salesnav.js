@@ -108,6 +108,7 @@ const I18N = {
     "account.backToSignIn": "Back to sign in",
     "account.savePassword": "Save password & sign in",
     "account.signedInOk": "Signed in. Your credits and exports are linked to this email.",
+    "account.sessionExpired": "Your session expired. Sign in again to continue.",
     "account.signInRequired": "Sign in before topping up credits.",
     "credits.balance": "{count} export credits available",
     "credits.load": "Top up (from €20)",
@@ -320,6 +321,7 @@ const I18N = {
     "account.backToSignIn": "Volver a iniciar sesión",
     "account.savePassword": "Guardar contraseña e iniciar sesión",
     "account.signedInOk": "Sesión iniciada. Tus créditos y exports quedan vinculados a este email.",
+    "account.sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión para continuar.",
     "account.signInRequired": "Inicia sesión antes de recargar créditos.",
     "credits.balance": "{count} créditos de export disponibles",
     "credits.load": "Recargar (desde €20)",
@@ -1279,10 +1281,13 @@ async function fetchCredits() {
     billingEnabled = !!data.billing_enabled;
     creditBalance = Number(data.balance) || 0;
     accountEmail = data.account_email || "";
+    const storedEmail = readStoredAccountEmail();
     if (!accountEmail) {
-      const stored = readStoredAccountEmail();
-      if (stored) {
-        prefillAuthEmail(stored);
+      if (storedEmail) {
+        prefillAuthEmail(storedEmail);
+        if (IS_PANEL && billingEnabled) {
+          setAccountNote(t("account.sessionExpired"), "error");
+        }
       }
     } else {
       persistAccountEmail(accountEmail);

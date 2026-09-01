@@ -1006,17 +1006,55 @@ function cde_salesnav_handle_stale_unipile_response(array $resp, ?string $userId
     return true;
 }
 
+/**
+ * If the wallet was marked stale but Unipile already has a live seat, clear invalid_at and re-link.
+ */
+function cde_salesnav_try_recover_stale_account(string $userId): bool
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    if (!is_array($stored) || empty($stored['invalid_at'])) {
+        return false;
+    }
+
+    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($seat === null || !cde_salesnav_is_account_alive($seat)) {
+        return false;
+    }
+
+    try {
+        cde_salesnav_apply_unipile_account($userId, $seat);
+    } catch (RuntimeException) {
+        return false;
+    }
+
+    return true;
+}
+
 /** @return array{account_id: string, label: string, avatar_url: string, connected_at: string}|null */
 function cde_salesnav_ensure_account_valid(?string $userId = null): ?array
 {
     $userId = $userId ?? cde_salesnav_user_id();
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     if (is_array($stored) && !empty($stored['invalid_at'])) {
-        cde_salesnav_clear_session_account();
-        return null;
+        if (!cde_salesnav_try_recover_stale_account($userId)) {
+            cde_salesnav_clear_session_account();
+            return null;
+        }
+        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     }
 
     $account = cde_salesnav_session_account();
+    if ($account === null || ($account['account_id'] ?? '') === '') {
+        if (is_array($stored) && !empty($stored['account_id']) && empty($stored['invalid_at'])) {
+            cde_salesnav_set_session_account(
+                (string) $stored['account_id'],
+                (string) ($stored['label'] ?? ''),
+                (string) ($stored['avatar_url'] ?? '')
+            );
+            $account = cde_salesnav_session_account();
+        }
+    }
+
     if ($account === null || ($account['account_id'] ?? '') === '') {
         return null;
     }

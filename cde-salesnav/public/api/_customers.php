@@ -615,6 +615,25 @@ function cde_salesnav_establish_session(string $email): void
         }
         cde_salesnav_merge_accounts($prevId, $nextId);
     }
+    cde_salesnav_refresh_auth_cookie();
+}
+
+/** Keep authenticated panel sessions alive across idle tabs (30 days). */
+function cde_salesnav_refresh_auth_cookie(): void
+{
+    if (!cde_salesnav_session_is_authenticated()) {
+        return;
+    }
+    cde_session_start();
+    $params = session_get_cookie_params();
+    setcookie(session_name(), session_id(), [
+        'expires' => time() + 86400 * 30,
+        'path' => $params['path'] !== '' ? $params['path'] : '/',
+        'domain' => $params['domain'] ?? '',
+        'secure' => (bool) ($params['secure'] ?? false),
+        'httponly' => (bool) ($params['httponly'] ?? true),
+        'samesite' => $params['samesite'] ?? 'Lax',
+    ]);
 }
 
 /** Anonymous browser wallet id (before email login). */

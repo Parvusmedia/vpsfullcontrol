@@ -32,6 +32,10 @@ if (!is_array($payload)) {
 }
 
 $userId = cde_salesnav_user_id();
+if (cde_credits_billing_enabled()) {
+    $auth = cde_salesnav_require_auth();
+    $userId = $auth['user_id'];
+}
 $explicitReconnect = !empty($payload['reconnect']);
 $plan = cde_salesnav_plan_connect($userId, $explicitReconnect);
 

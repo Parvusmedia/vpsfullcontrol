@@ -14,6 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     cde_json_response(405, ['ok' => false, 'error' => 'Method not allowed']);
 }
 
+cde_salesnav_refresh_auth_cookie();
+
 $userId = cde_salesnav_user_id();
 $stored = cde_salesnav_load_accounts()[$userId] ?? null;
 $account = cde_salesnav_ensure_account_valid($userId);
