@@ -57,7 +57,7 @@ function cde_salesnav_mail_read_env(): array
     return $cache;
 }
 
-function cde_salesnav_send_mail(string $to, string $subject, string $body, string $kind = 'general'): bool
+function cde_salesnav_send_mail(string $to, string $subject, string $body, string $kind = 'general', string $replyTo = ''): bool
 {
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
         return false;
@@ -76,18 +76,21 @@ function cde_salesnav_send_mail(string $to, string $subject, string $body, strin
         'From: ' . sprintf('"%s" <%s>', addcslashes($fromName, '"\\'), $from),
         'X-Mailer: ' . $mailer,
     ];
+    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+        $headers[] = 'Reply-To: <' . $replyTo . '>';
+    }
 
     return @mail($to, $encodedSubject, $safeBody, implode("\r\n", $headers));
 }
 
-function cde_salesnav_send_export_mail(string $to, string $subject, string $body): bool
+function cde_salesnav_send_export_mail(string $to, string $subject, string $body, string $replyTo = ''): bool
 {
-    return cde_salesnav_send_mail($to, $subject, $body, 'export');
+    return cde_salesnav_send_mail($to, $subject, $body, 'export', $replyTo);
 }
 
-function cde_salesnav_send_general_mail(string $to, string $subject, string $body): bool
+function cde_salesnav_send_general_mail(string $to, string $subject, string $body, string $replyTo = ''): bool
 {
-    return cde_salesnav_send_mail($to, $subject, $body, 'general');
+    return cde_salesnav_send_mail($to, $subject, $body, 'general', $replyTo);
 }
 
 /** @deprecated use cde_salesnav_mail_from_for() */

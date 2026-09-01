@@ -63,6 +63,10 @@ else:
     print('contact.php ok')
 PY"
 
+echo "==> Migrate site mail to @companydataenrichment.com (staging + production)"
+scp "/workspace/cde-salesnav/deploy/patch-mail-domain.py" "$REMOTE:/tmp/patch-mail-domain.py"
+ssh "$REMOTE" "python3 /tmp/patch-mail-domain.py $STAGING && ssh $PROD python3 /tmp/patch-mail-domain.py $DOCROOT"
+
 echo "==> Patch production index.html nav + footer"
 ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
 from pathlib import Path
