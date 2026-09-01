@@ -396,6 +396,7 @@ async function fetchCredits() {
       defaultPackId = String(data.packs[0].id);
     }
     renderCredits();
+    renderConnectionStatus(lastConnection);
   } catch {
     /* optional */
   }
