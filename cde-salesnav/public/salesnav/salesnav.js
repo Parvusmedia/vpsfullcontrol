@@ -24,6 +24,8 @@ const I18N = {
     "credits.balance": "{count} export credits available",
     "credits.required": "Minimum top-up €20 — Basic 1 credit/lead; Enriched +0.4; Mail +1.8 per email found.",
     "credits.buy": "Buy credits (from €20)",
+    "credits.buyMore": "Buy more credits",
+    "credits.payFirst": "Buy export credits first (min. €20), then connect LinkedIn to export your lists.",
     "credits.checkoutOpened": "Stripe checkout opened in a new window. Return here after payment.",
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
@@ -151,6 +153,8 @@ const I18N = {
     "credits.balance": "{count} créditos de export disponibles",
     "credits.required": "Recarga mínima €20 — Basic 1 crédito/lead; Enriched +0,4; Mail +1,8 por email encontrado.",
     "credits.buy": "Comprar créditos (desde €20)",
+    "credits.buyMore": "Comprar más créditos",
+    "credits.payFirst": "Compra créditos de export primero (mín. €20) y después conecta LinkedIn para exportar tus listas.",
     "credits.checkoutOpened": "Checkout de Stripe abierto en ventana nueva. Vuelve aquí tras pagar.",
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
@@ -339,6 +343,8 @@ function renderConnectionStatus(data) {
 
   if (copy && isConnected && data.label) {
     copy.textContent = t("connect.connectedAs", { label: data.label });
+  } else if (copy && billingEnabled && creditBalance <= 0) {
+    copy.textContent = t("credits.payFirst");
   } else if (copy) {
     copy.innerHTML = t("connect.body");
   }
@@ -354,15 +360,23 @@ function renderConnectionStatus(data) {
 function renderCredits() {
   const el = document.getElementById("connect-credits");
   const buyBtn = document.getElementById("buy-credits-btn");
+  const connectBtn = document.getElementById("connect-btn");
   if (!el) return;
   if (!billingEnabled) {
     el.hidden = true;
     if (buyBtn) buyBtn.hidden = true;
+    if (connectBtn) connectBtn.textContent = t("connect.cta");
     return;
   }
   el.hidden = false;
   el.textContent = t("credits.balance", { count: creditBalance });
-  if (buyBtn) buyBtn.hidden = creditBalance > 0;
+
+  const needsPayment = creditBalance <= 0;
+  if (connectBtn && !isConnected) {
+    connectBtn.textContent = needsPayment ? t("credits.buy") : t("connect.cta");
+  }
+  // Single CTA: connect-btn opens Stripe (0 credits) or Unipile (>0 credits).
+  if (buyBtn) buyBtn.hidden = true;
 }
 
 async function fetchCredits() {
