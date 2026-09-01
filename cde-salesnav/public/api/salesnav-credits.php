@@ -41,6 +41,7 @@ cde_json_response(200, [
     'ok' => true,
     'billing_enabled' => $billing,
     'balance' => $balance,
+    'account_email' => cde_salesnav_session_email(),
     'packs' => $out,
     'min_eur' => CDE_CREDITS_MIN_EUR_CENTS / 100,
     'bonus_rule' => [

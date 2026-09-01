@@ -63,6 +63,66 @@
   color: var(--ink-soft);
 }
 
+.connect-account {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.connect-email {
+  display: block;
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+
+.connect-email span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.connect-email input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.connect-restore {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+
+.connect-restore summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--teal-deep);
+}
+
+.connect-restore-body {
+  margin-top: 0.65rem;
+}
+
+.connect-note {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  border: 1.5px solid var(--teal);
+  background: rgba(31, 111, 106, 0.1);
+  color: var(--teal-deep);
+}
+
+.connect-note[data-tone="error"] {
+  border-color: #c0392b;
+  background: rgba(192, 57, 43, 0.08);
+  color: #922b21;
+}
+
 .connect-pack {
   display: block;
   margin: 0 0 0.75rem;

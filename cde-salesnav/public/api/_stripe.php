@@ -47,18 +47,21 @@ function cde_stripe_price_id_for_pack(string $packId): string
 function cde_stripe_request(string $method, string $path, array $fields): array
 {
     $cfg = cde_stripe_config();
-    $body = http_build_query($fields);
+    $method = strtoupper($method);
     $ch = curl_init('https://api.stripe.com/v1/' . ltrim($path, '/'));
-    curl_setopt_array($ch, [
+    $opts = [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST => strtoupper($method),
+        CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_HTTPHEADER => [
             'Authorization: Bearer ' . $cfg['secret_key'],
-            'Content-Type: application/x-www-form-urlencoded',
         ],
-        CURLOPT_POSTFIELDS => $body,
         CURLOPT_TIMEOUT => 30,
-    ]);
+    ];
+    if ($method !== 'GET' && $fields !== []) {
+        $opts[CURLOPT_HTTPHEADER][] = 'Content-Type: application/x-www-form-urlencoded';
+        $opts[CURLOPT_POSTFIELDS] = http_build_query($fields);
+    }
+    curl_setopt_array($ch, $opts);
     $raw = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
@@ -73,7 +76,7 @@ function cde_stripe_request(string $method, string $path, array $fields): array
     return ['ok' => true, 'status' => $code, 'data' => $data];
 }
 
-function cde_stripe_create_checkout_session(string $userId, string $packId): array
+function cde_stripe_create_checkout_session(string $userId, string $packId, string $customerEmail = ''): array
 {
     $packs = cde_credits_packs();
     if (!isset($packs[$packId])) {
@@ -89,10 +92,15 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
     $env = cde_credits_read_env();
     $allowPromo = ($env['STRIPE_ALLOW_PROMOTION_CODES'] ?? '1') !== '0';
 
+    $customerEmail = strtolower(trim($customerEmail));
+    if ($customerEmail !== '' && !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+        cde_json_response(400, ['ok' => false, 'error' => 'Invalid email address.']);
+    }
+
     $fields = [
         'mode' => 'payment',
-        'success_url' => $cfg['origin'] . '/salesnav/?credits=1',
-        'cancel_url' => $cfg['origin'] . '/salesnav/?credits=0',
+        'success_url' => $cfg['origin'] . '/salesnav/stripe-callback.html?credits=1&session_id={CHECKOUT_SESSION_ID}',
+        'cancel_url' => $cfg['origin'] . '/salesnav/stripe-callback.html?credits=0',
         'client_reference_id' => $userId,
         'metadata[user_id]' => $userId,
         'metadata[pack_id]' => $packId,
@@ -102,6 +110,11 @@ function cde_stripe_create_checkout_session(string $userId, string $packId): arr
         'metadata[stripe_product_id]' => $cfg['product_id'],
         'line_items[0][quantity]' => '1',
     ];
+
+    if ($customerEmail !== '') {
+        $fields['customer_email'] = $customerEmail;
+        $fields['metadata[customer_email]'] = $customerEmail;
+    }
 
     if ($allowPromo) {
         $fields['allow_promotion_codes'] = 'true';
@@ -178,4 +191,73 @@ function cde_stripe_verify_webhook(string $payload, string $sigHeader): array
 
     $data = json_decode($payload, true);
     return is_array($data) ? ['ok' => true, 'data' => $data] : ['ok' => false, 'error' => 'Invalid JSON'];
+}
+
+function cde_stripe_checkout_email(array $session): string
+{
+    return strtolower(trim((string) (
+        $session['customer_details']['email']
+        ?? $session['customer_email']
+        ?? $session['metadata']['customer_email']
+        ?? ''
+    )));
+}
+
+function cde_stripe_retrieve_checkout_session(string $sessionId): array
+{
+    $sessionId = trim($sessionId);
+    if ($sessionId === '' || !preg_match('/^cs_/', $sessionId)) {
+        return ['ok' => false, 'error' => 'Invalid checkout session.'];
+    }
+    return cde_stripe_request('GET', 'checkout/sessions/' . rawurlencode($sessionId), []);
+}
+
+/**
+ * Credit wallet for a paid checkout session (idempotent). Optionally bind browser session to email.
+ *
+ * @return array{ok: bool, balance?: int, credits?: int, email?: string, user_id?: string, error?: string}
+ */
+function cde_stripe_apply_checkout_credits(array $session, bool $bindBrowserSession = false): array
+{
+    $sessionId = (string) ($session['id'] ?? '');
+    $credits = (int) ($session['metadata']['credits'] ?? 0);
+    $paymentStatus = (string) ($session['payment_status'] ?? '');
+    if ($sessionId === '' || $credits <= 0) {
+        return ['ok' => false, 'error' => 'Invalid checkout session.'];
+    }
+    if ($paymentStatus !== 'paid') {
+        return ['ok' => false, 'error' => 'Payment not completed yet.'];
+    }
+
+    $email = cde_stripe_checkout_email($session);
+    $metaUserId = (string) ($session['metadata']['user_id'] ?? $session['client_reference_id'] ?? '');
+
+    if ($email !== '') {
+        $userId = cde_salesnav_user_id_for_email($email);
+        if ($bindBrowserSession) {
+            cde_salesnav_bind_customer_email($email);
+            $userId = cde_salesnav_user_id();
+        }
+        if ($metaUserId !== '' && $metaUserId !== $userId) {
+            cde_credits_merge_wallets($metaUserId, $userId);
+        }
+    } else {
+        $userId = $metaUserId !== '' ? $metaUserId : cde_salesnav_user_id();
+    }
+
+    $balance = cde_credits_add($userId, $credits, 'stripe:' . $sessionId, [
+        'pack_id' => (string) ($session['metadata']['pack_id'] ?? ''),
+        'paid_base' => (int) ($session['metadata']['paid_base'] ?? 0),
+        'bonus_credits' => (int) ($session['metadata']['bonus_credits'] ?? 0),
+        'amount_total' => (int) ($session['amount_total'] ?? 0),
+        'email' => $email,
+    ]);
+
+    return [
+        'ok' => true,
+        'balance' => $balance,
+        'credits' => $credits,
+        'email' => $email,
+        'user_id' => $userId,
+    ];
 }

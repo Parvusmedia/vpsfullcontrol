@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1.5rem;
+      text-align: center;
+      color: #1a2b3c;
+      background: #f4f7fb;
+    }
+  </style>
+</head>
+<body>
+  <p id="msg">Finishing payment…</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var ok = params.get("credits") === "1";
+      var sessionId = params.get("session_id") || "";
+      var msg = document.getElementById("msg");
+
+      function notifyParent(payload) {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(payload, location.origin);
+        }
+      }
+
+      function finish(payload) {
+        notifyParent(payload);
+        if (!window.opener || window.opener.closed) {
+          var qs = ok ? "credits=1" : "credits=0";
+          if (sessionId) qs += "&session_id=" + encodeURIComponent(sessionId);
+          location.replace("/salesnav/?" + qs);
+          return;
+        }
+        msg.textContent = ok ? "Payment complete. Closing window…" : "Payment cancelled. Closing window…";
+        setTimeout(function () { window.close(); }, 800);
+      }
+
+      if (!ok) {
+        finish({ type: "salesnav-stripe", ok: false });
+        return;
+      }
+
+      if (!sessionId) {
+        finish({ type: "salesnav-stripe", ok: false, error: "missing_session" });
+        return;
+      }
+
+      fetch("/api/salesnav-stripe-complete.php", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      })
+        .then(function (res) { return res.json().then(function (data) { return { res: res, data: data }; }); })
+        .then(function (out) {
+          if (!out.res.ok || !out.data.ok) {
+            finish({ type: "salesnav-stripe", ok: false, error: out.data.error || "complete_failed" });
+            return;
+          }
+          finish({
+            type: "salesnav-stripe",
+            ok: true,
+            balance: out.data.balance,
+            credits_added: out.data.credits_added,
+            email: out.data.email,
+          });
+        })
+        .catch(function () {
+          finish({ type: "salesnav-stripe", ok: false, error: "network" });
+        });
+    })();
+  </script>
+</body>
+</html>

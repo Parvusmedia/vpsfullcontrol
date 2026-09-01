@@ -61,9 +61,24 @@
             Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.
           </p>
           <p class="connect-credits" id="connect-credits" hidden></p>
-          <p class="connect-session-note muted" id="connect-session-note" hidden data-i18n="credits.sessionNote">
-            Credits stay in this browser session — use the same device and do not clear cookies after topping up.
+          <p class="connect-account" id="connect-account" hidden></p>
+          <p class="connect-session-note muted" id="connect-session-note" hidden data-i18n="credits.accountNote">
+            Credits are linked to your email. Sign in with the same email on any device to restore your balance.
           </p>
+          <label class="connect-email" id="connect-email-wrap" hidden>
+            <span data-i18n="credits.email">Work email</span>
+            <input id="billing-email" name="billing_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
+          </label>
+          <details class="connect-restore" id="connect-restore-wrap" hidden>
+            <summary data-i18n="credits.restoreToggle">Already paid? Restore credits</summary>
+            <div class="connect-restore-body">
+              <label class="connect-email">
+                <span data-i18n="credits.email">Work email</span>
+                <input id="restore-email" name="restore_email" type="email" autocomplete="email" placeholder="you@company.com" data-i18n-placeholder="credits.emailPlaceholder" />
+              </label>
+              <button type="button" class="ghost-btn" id="restore-account-btn" data-i18n="credits.restoreBtn">Restore account</button>
+            </div>
+          </details>
           <label class="connect-pack" id="connect-pack-wrap" hidden>
             <span data-i18n="credits.pack">Credit pack</span>
             <select id="credit-pack" name="credit_pack"></select>
@@ -80,6 +95,7 @@
             <button type="button" class="ghost-btn" id="reconnect-btn" hidden data-i18n="connect.reconnect">Reconnect</button>
             <button type="button" class="ghost-btn" id="buy-more-btn" hidden data-i18n="credits.loadMore">Load more credits</button>
           </div>
+          <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
         </section>
 
         <div class="export-gate" id="export-gate" hidden>
@@ -345,6 +361,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=17"></script>
+  <script src="/salesnav/salesnav.js?v=18"></script>
 </body>
 </html>

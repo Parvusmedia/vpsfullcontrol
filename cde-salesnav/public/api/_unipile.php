@@ -226,10 +226,47 @@ function cde_salesnav_accounts_file(): string
 function cde_salesnav_user_id(): string
 {
     cde_session_start();
+    $email = cde_salesnav_session_email();
+    if ($email !== null) {
+        return cde_salesnav_user_id_for_email($email);
+    }
     if (empty($_SESSION['salesnav_user_id']) || !is_string($_SESSION['salesnav_user_id'])) {
         $_SESSION['salesnav_user_id'] = bin2hex(random_bytes(16));
     }
     return (string) $_SESSION['salesnav_user_id'];
+}
+
+function cde_salesnav_session_email(): ?string
+{
+    cde_session_start();
+    $email = strtolower(trim((string) ($_SESSION['salesnav_customer_email'] ?? '')));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return null;
+    }
+    return $email;
+}
+
+function cde_salesnav_user_id_for_email(string $email): string
+{
+    $email = strtolower(trim($email));
+    return 'em_' . hash('sha256', $email);
+}
+
+/** Bind prepaid credits to an email account (merges anonymous wallet if needed). */
+function cde_salesnav_bind_customer_email(string $email): string
+{
+    $email = strtolower(trim($email));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        cde_json_response(400, ['ok' => false, 'error' => 'Invalid email address.']);
+    }
+    cde_session_start();
+    $prevId = cde_salesnav_user_id();
+    $_SESSION['salesnav_customer_email'] = $email;
+    $nextId = cde_salesnav_user_id();
+    if ($prevId !== $nextId && function_exists('cde_credits_merge_wallets')) {
+        cde_credits_merge_wallets($prevId, $nextId);
+    }
+    return $nextId;
 }
 
 function cde_salesnav_load_accounts(): array

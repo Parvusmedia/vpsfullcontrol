@@ -168,6 +168,37 @@ function cde_credits_ledger_has_ref(string $ref): bool
     return false;
 }
 
+function cde_credits_merge_wallets(string $fromUserId, string $toUserId): void
+{
+    $fromUserId = trim($fromUserId);
+    $toUserId = trim($toUserId);
+    if ($fromUserId === '' || $toUserId === '' || $fromUserId === $toUserId) {
+        return;
+    }
+    $wallets = cde_credits_load_wallets();
+    $fromBal = max(0, (int) ($wallets[$fromUserId]['balance'] ?? 0));
+    if ($fromBal <= 0) {
+        return;
+    }
+    $toBal = max(0, (int) ($wallets[$toUserId]['balance'] ?? 0));
+    $wallets[$toUserId] = [
+        'balance' => $toBal + $fromBal,
+        'updated_at' => gmdate('c'),
+    ];
+    $wallets[$fromUserId] = [
+        'balance' => 0,
+        'updated_at' => gmdate('c'),
+    ];
+    cde_credits_save_wallets($wallets);
+    cde_credits_append_ledger([
+        'user_id' => $toUserId,
+        'delta' => $fromBal,
+        'balance' => $toBal + $fromBal,
+        'ref' => 'merge:' . $fromUserId,
+        'meta' => ['from_user_id' => $fromUserId],
+    ]);
+}
+
 function cde_credits_add(string $userId, int $amount, string $ref, array $meta = []): int
 {
     if ($amount <= 0) {

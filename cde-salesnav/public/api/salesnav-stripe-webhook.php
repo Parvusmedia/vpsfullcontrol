@@ -25,21 +25,8 @@ $type = (string) ($event['type'] ?? '');
 
 if ($type === 'checkout.session.completed') {
     $session = $event['data']['object'] ?? [];
-    if (!is_array($session)) {
-        http_response_code(200);
-        echo 'ok';
-        exit;
-    }
-    $userId = (string) ($session['metadata']['user_id'] ?? $session['client_reference_id'] ?? '');
-    $credits = (int) ($session['metadata']['credits'] ?? 0);
-    $sessionId = (string) ($session['id'] ?? '');
-    if ($userId !== '' && $credits > 0 && $sessionId !== '') {
-        cde_credits_add($userId, $credits, 'stripe:' . $sessionId, [
-            'pack_id' => (string) ($session['metadata']['pack_id'] ?? ''),
-            'paid_base' => (int) ($session['metadata']['paid_base'] ?? 0),
-            'bonus_credits' => (int) ($session['metadata']['bonus_credits'] ?? 0),
-            'amount_total' => (int) ($session['amount_total'] ?? 0),
-        ]);
+    if (is_array($session)) {
+        cde_stripe_apply_checkout_credits($session, false);
     }
 }
 
