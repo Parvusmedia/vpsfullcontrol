@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_credits.php';
 require_once __DIR__ . '/_harvest.php';
+require_once __DIR__ . '/_icypeas.php';
 require_once __DIR__ . '/_mail.php';
 
 const CDE_TASKS_MAX_LIMIT = 2000;
@@ -183,9 +184,13 @@ function cde_tasks_write_csv(string $taskId, array $rows, array $tiers): void
 {
     $basic = ['first_name', 'last_name', 'full_name', 'job_title', 'company_name', 'location', 'linkedin_url', 'sales_nav_id', 'open_profile', 'connection_degree'];
     $enriched = ['company_linkedin_url', 'company_domain', 'company_industry', 'company_size', 'company_hq', 'seniority', 'tenure_years', 'profile_summary', 'skills', 'languages'];
+    $mail = cde_icypeas_csv_columns();
     $cols = $basic;
     if (!empty($tiers['enriched'])) {
         $cols = array_merge($cols, $enriched);
+    }
+    if (!empty($tiers['mail'])) {
+        $cols = array_merge($cols, $mail);
     }
 
     $lines = [implode(',', $cols)];
@@ -318,6 +323,13 @@ function cde_tasks_run(string $taskId): void
                 throw new RuntimeException('Enriched export is temporarily unavailable.');
             }
             $rows = cde_harvest_enrich_rows($rows);
+        }
+
+        if (!empty($tiers['mail'])) {
+            if (!cde_icypeas_enabled()) {
+                throw new RuntimeException('Mail export is temporarily unavailable.');
+            }
+            $rows = cde_icypeas_enrich_rows($rows);
         }
 
         $creditCost = cde_credits_export_cost($rows, $tiers);

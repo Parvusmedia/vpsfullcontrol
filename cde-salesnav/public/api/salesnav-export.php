@@ -5,6 +5,7 @@ require __DIR__ . '/_bootstrap.php';
 require __DIR__ . '/_unipile.php';
 require __DIR__ . '/_credits.php';
 require __DIR__ . '/_harvest.php';
+require __DIR__ . '/_icypeas.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -81,6 +82,16 @@ if (!empty($tiers['enriched'])) {
     $rows = cde_harvest_enrich_rows($rows);
 }
 
+if (!empty($tiers['mail'])) {
+    if (!cde_icypeas_enabled()) {
+        cde_json_response(503, [
+            'ok' => false,
+            'error' => 'Mail export is temporarily unavailable. Try Basic export or contact support.',
+        ]);
+    }
+    $rows = cde_icypeas_enrich_rows($rows);
+}
+
 $exportCount = count($rows);
 $creditCost = cde_credits_export_cost($rows, $tiers);
 $userId = cde_salesnav_user_id();
@@ -126,6 +137,15 @@ if (!empty($tiers['enriched'])) {
     }
 }
 
+$emailsFound = 0;
+if (!empty($tiers['mail'])) {
+    foreach ($rows as $row) {
+        if (trim((string) ($row['work_email'] ?? '')) !== '') {
+            $emailsFound++;
+        }
+    }
+}
+
 cde_json_response(200, [
     'ok' => true,
     'count' => count($rows),
@@ -138,4 +158,5 @@ cde_json_response(200, [
     'tiers' => $tiers,
     'balance' => cde_credits_get_balance($userId),
     'enriched_count' => $enrichedCount,
+    'emails_found' => $emailsFound,
 ]);
