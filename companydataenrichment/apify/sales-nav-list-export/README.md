@@ -67,8 +67,8 @@ apify push
 
 Luego en Apify Console:
 
-1. Configura **secrets** del Actor (`UNIPILE_API_KEY` si no quieres que el usuario los pase).
-2. Añade descripción, pricing (pay-per-result recomendado: ~$0.01–0.05/lead según mercado).
+1. Configura **secrets** del Actor (`UNIPILE_API_KEY` si ofreces modo managed).
+2. Pricing: ver **[PRICING.md](./PRICING.md)** — modelo **fijo (seat Unipile) + uso (por lead)**. En Store usa PPE (`export-run` + `lead-exported`); en CDE usa Stripe subscription + créditos.
 3. Opcional: webhook a tu backend CDE para sustituir el worker PHP async.
 
 ## Integración con CompanyDataEnrichment
