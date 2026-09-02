@@ -1435,6 +1435,43 @@
   line-height: 1.55;
 }
 
+.tasks-col-select {
+  width: 2.75rem;
+  padding-left: 1.25rem !important;
+  padding-right: 0.5rem !important;
+  text-align: center;
+}
+
+.tasks-col-select input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--teal-deep);
+  cursor: pointer;
+}
+
+.tasks-table-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 0.95rem 1.85rem 1.35rem;
+  border-top: 1px solid rgba(26, 43, 60, 0.08);
+}
+
+.tasks-retention-note {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.tasks-delete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .tasks-row-processing {
   background: rgba(10, 102, 194, 0.03);
 }

@@ -5,7 +5,7 @@ require_once __DIR__ . '/_customers.php';
 require_once __DIR__ . '/_tasks.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type');
     http_response_code(204);
     exit;
@@ -17,6 +17,32 @@ $email = cde_salesnav_session_email() ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     cde_json_response(200, [
         'ok' => true,
+        'tasks' => cde_tasks_for_user($userId),
+        'retention_days' => CDE_TASKS_RETENTION_DAYS,
+    ]);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    if ($email === '') {
+        cde_json_response(401, ['ok' => false, 'error' => 'Sign in with your work email first.']);
+    }
+
+    $raw = file_get_contents('php://input') ?: '';
+    $payload = json_decode($raw, true);
+    if (!is_array($payload)) {
+        cde_json_response(400, ['ok' => false, 'error' => 'Invalid JSON body']);
+    }
+
+    $taskIds = $payload['task_ids'] ?? null;
+    if (!is_array($taskIds) || $taskIds === []) {
+        cde_json_response(400, ['ok' => false, 'error' => 'Provide a non-empty task_ids array.']);
+    }
+
+    $result = cde_tasks_delete_for_user($userId, $taskIds);
+    cde_json_response(200, [
+        'ok' => true,
+        'deleted' => $result['deleted'],
+        'skipped' => $result['skipped'],
         'tasks' => cde_tasks_for_user($userId),
     ]);
 }

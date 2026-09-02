@@ -81,6 +81,11 @@ const I18N = {
     "tasks.breakdownEnriched": "{n} enriched",
     "tasks.breakdownEmails": "{n} verified emails",
     "tasks.limitAll": "All",
+    "tasks.retentionNote": "Completed and failed exports are kept for 90 days, then removed automatically.",
+    "tasks.deleteSelected": "Delete selected",
+    "tasks.deleteConfirm": "Delete {n} selected export(s)? This cannot be undone.",
+    "tasks.deleteDone": "Deleted {n} export task(s).",
+    "tasks.deleteNone": "Select completed or failed exports to delete.",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
     "landing.getStarted": "Get started — from €20",
@@ -342,6 +347,11 @@ const I18N = {
     "tasks.breakdownEnriched": "{n} enriquecidos",
     "tasks.breakdownEmails": "{n} emails verificados",
     "tasks.limitAll": "Todos",
+    "tasks.retentionNote": "Los exports completados y fallidos se conservan 90 días; después se eliminan automáticamente.",
+    "tasks.deleteSelected": "Eliminar seleccionadas",
+    "tasks.deleteConfirm": "¿Eliminar {n} export(s) seleccionado(s)? No se puede deshacer.",
+    "tasks.deleteDone": "Se eliminaron {n} tarea(s) de export.",
+    "tasks.deleteNone": "Selecciona exports completados o fallidos para eliminar.",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
     "landing.getStarted": "Empezar — desde €20",
@@ -2090,6 +2100,30 @@ function formatCreditsBreakdown(task) {
   return parts.length ? parts.join(" + ") : "—";
 }
 
+function taskIsDeletable(task) {
+  const status = task?.status || "";
+  return status === "ready" || status === "failed";
+}
+
+function getSelectedTaskIds() {
+  return [...document.querySelectorAll(".tasks-row-check:checked")].map((el) => el.value);
+}
+
+function updateTasksDeleteControls() {
+  const deleteBtn = document.getElementById("tasks-delete-btn");
+  const selectAll = document.getElementById("tasks-select-all");
+  const checks = [...document.querySelectorAll(".tasks-row-check")];
+  const selected = getSelectedTaskIds();
+  if (deleteBtn) {
+    deleteBtn.disabled = selected.length === 0;
+  }
+  if (selectAll) {
+    selectAll.disabled = checks.length === 0;
+    selectAll.indeterminate = selected.length > 0 && selected.length < checks.length;
+    selectAll.checked = checks.length > 0 && selected.length === checks.length;
+  }
+}
+
 function renderTasksTable() {
   const tbody = document.getElementById("tasks-body");
   if (!tbody) return;
@@ -2100,10 +2134,11 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 7;
+    td.colSpan = 8;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
+    updateTasksDeleteControls();
     return;
   }
 
@@ -2112,6 +2147,18 @@ function renderTasksTable() {
     tr.dataset.taskId = task.id;
     if (task.status === "processing") tr.classList.add("tasks-row-processing");
     if (task.status === "failed") tr.classList.add("tasks-row-failed");
+
+    const select = document.createElement("td");
+    select.className = "tasks-col-select";
+    if (taskIsDeletable(task)) {
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "tasks-row-check";
+      check.value = task.id;
+      check.setAttribute("aria-label", task.source_label || task.id);
+      check.addEventListener("change", updateTasksDeleteControls);
+      select.appendChild(check);
+    }
 
     const source = document.createElement("td");
     source.textContent = task.source_label || task.mode || "—";
@@ -2153,9 +2200,44 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, creditsDetail, created, action);
+    tr.append(select, source, status, leads, credits, creditsDetail, created, action);
     tbody.appendChild(tr);
   });
+
+  updateTasksDeleteControls();
+}
+
+async function deleteSelectedTasks() {
+  const ids = getSelectedTaskIds();
+  if (!ids.length) {
+    setPanelFlash(t("tasks.deleteNone"), "warn");
+    return;
+  }
+  const confirmMsg = t("tasks.deleteConfirm").replace("{n}", String(ids.length));
+  if (!window.confirm(confirmMsg)) return;
+
+  const deleteBtn = document.getElementById("tasks-delete-btn");
+  if (deleteBtn) deleteBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/salesnav-tasks.php", {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task_ids: ids }),
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Delete failed");
+    }
+    panelTasks = Array.isArray(data.tasks) ? data.tasks : panelTasks.filter((task) => !ids.includes(task.id));
+    renderTasksTable();
+    const deletedCount = Array.isArray(data.deleted) ? data.deleted.length : ids.length;
+    setPanelFlash(t("tasks.deleteDone").replace("{n}", String(deletedCount)), "ok");
+  } catch (err) {
+    setPanelFlash(err.message || "Delete failed", "err");
+    updateTasksDeleteControls();
+  }
 }
 
 function setExportNameHint(text = "", loading = false) {
@@ -2794,4 +2876,12 @@ function initPanelPage() {
   });
   document.getElementById("create-task-cancel")?.addEventListener("click", () => closeCreateTaskCompose(false));
   document.getElementById("create-task-form")?.addEventListener("submit", (e) => submitCreateTask(e));
+  document.getElementById("tasks-delete-btn")?.addEventListener("click", () => deleteSelectedTasks());
+  document.getElementById("tasks-select-all")?.addEventListener("change", (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll(".tasks-row-check").forEach((el) => {
+      el.checked = checked;
+    });
+    updateTasksDeleteControls();
+  });
 }

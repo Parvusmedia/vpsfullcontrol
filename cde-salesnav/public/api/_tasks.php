@@ -7,6 +7,7 @@ require_once __DIR__ . '/_icypeas.php';
 require_once __DIR__ . '/_mail.php';
 
 const CDE_TASKS_MAX_LIMIT = 2000;
+const CDE_TASKS_RETENTION_DAYS = 90;
 
 function cde_tasks_store_file(): string
 {
@@ -722,4 +723,91 @@ function cde_tasks_run(string $taskId): void
         $task['error'] = $msg;
         cde_tasks_notify_failed($task, $taskId, $msg);
     }
+}
+
+/** @param array<string, mixed> $task */
+function cde_tasks_is_deletable(array $task): bool
+{
+    $status = (string) ($task['status'] ?? '');
+
+    return $status === 'ready' || $status === 'failed';
+}
+
+/** @param array<string, mixed> $task */
+function cde_tasks_reference_timestamp(array $task): int
+{
+    $raw = (string) ($task['completed_at'] ?? $task['created_at'] ?? '');
+    $ts = strtotime($raw);
+
+    return $ts !== false ? $ts : 0;
+}
+
+function cde_tasks_remove_export_file(string $taskId): void
+{
+    $path = cde_tasks_csv_path($taskId);
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+/** @param list<string> $taskIds
+ *  @return array{deleted: list<string>, skipped: list<array{id: string, reason: string}>}
+ */
+function cde_tasks_delete_for_user(string $userId, array $taskIds): array
+{
+    $taskIds = array_values(array_unique(array_filter(array_map('strval', $taskIds))));
+    $all = cde_tasks_load_all();
+    $deleted = [];
+    $skipped = [];
+
+    foreach ($taskIds as $taskId) {
+        $task = $all[$taskId] ?? null;
+        if (!is_array($task)) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'not_found'];
+            continue;
+        }
+        if ((string) ($task['user_id'] ?? '') !== $userId) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'forbidden'];
+            continue;
+        }
+        if (!cde_tasks_is_deletable($task)) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'not_deletable'];
+            continue;
+        }
+        unset($all[$taskId]);
+        cde_tasks_remove_export_file($taskId);
+        $deleted[] = $taskId;
+    }
+
+    if ($deleted !== []) {
+        cde_tasks_save_all($all);
+    }
+
+    return ['deleted' => $deleted, 'skipped' => $skipped];
+}
+
+function cde_tasks_purge_expired(int $days = CDE_TASKS_RETENTION_DAYS): int
+{
+    $days = max(1, $days);
+    $cutoff = time() - ($days * 86400);
+    $all = cde_tasks_load_all();
+    $removed = 0;
+
+    foreach ($all as $taskId => $task) {
+        if (!is_array($task) || !cde_tasks_is_deletable($task)) {
+            continue;
+        }
+        if (cde_tasks_reference_timestamp($task) >= $cutoff) {
+            continue;
+        }
+        unset($all[$taskId]);
+        cde_tasks_remove_export_file($taskId);
+        $removed++;
+    }
+
+    if ($removed > 0) {
+        cde_tasks_save_all($all);
+    }
+
+    return $removed;
 }
