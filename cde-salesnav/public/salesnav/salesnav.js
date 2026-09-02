@@ -1987,8 +1987,8 @@ async function submitCreateTask(e) {
     const data = await parseJsonResponse(res);
 
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout(defaultPackId);
-      throw new Error(t("credits.insufficient"));
+      const detail = data.error || t("credits.insufficient");
+      throw new Error(detail);
     }
     if (data.needs_connect || data.needs_reconnect) {
       renderConnectionStatus({
