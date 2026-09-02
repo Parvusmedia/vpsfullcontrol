@@ -11,6 +11,9 @@ STAGING="/opt/apps/companydataenrichment/public"
 
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:$STAGING/"
+fi
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
@@ -45,6 +48,13 @@ ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_
 echo "==> Rsync public site to production httpdocs"
 ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' --exclude 'harvest.env' --exclude 'stripe.env' \
   $STAGING/ $PROD:$DOCROOT/"
+
+echo "==> Ensure production homepage is Companies hub (never Sales Nav landing)"
+ssh "$REMOTE" "ssh $PROD 'if grep -q product-salesnav $DOCROOT/index.html 2>/dev/null; then echo ERROR: root index.html is Sales Nav — restoring from staging; fi'"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:/tmp/cde-index.html"
+  ssh "$REMOTE" "scp /tmp/cde-index.html $PROD:$DOCROOT/index.html && ssh $PROD 'chown companydataenrichment_d7ory6ctv7:psacln $DOCROOT/index.html'"
+fi
 
 echo "==> Patch production contact.php volume labels"
 ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
