@@ -630,11 +630,18 @@ function setAccountNote(text, tone = "ok") {
 }
 
 function setPanelFlash(text, tone = "ok") {
-  const el = document.getElementById("panel-flash");
+  setComposeFlash(text, tone);
+}
+
+function setComposeFlash(text, tone = "ok") {
+  const el = document.getElementById("compose-flash");
   if (!el) return;
   el.hidden = !text;
   el.dataset.tone = tone;
   el.textContent = text || "";
+  if (text && tone === "error") {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 function setConnectNote(text, tone = "ok") {
@@ -2074,6 +2081,7 @@ function openCreateTaskCompose() {
   if (!compose) return;
   compose.hidden = false;
   composeOpen = true;
+  setComposeFlash("");
   compose.scrollIntoView({ behavior: "smooth", block: "nearest" });
   document.getElementById("list-url")?.focus();
 }
@@ -2083,6 +2091,7 @@ function closeCreateTaskCompose(clearForm = false) {
   if (!compose) return;
   compose.hidden = true;
   composeOpen = false;
+  setComposeFlash("");
   if (clearForm) {
     document.getElementById("create-task-form")?.reset();
     document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
