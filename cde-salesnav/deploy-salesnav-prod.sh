@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy Sales Navigator section to production (82.223.3.205 via nextconvers-vps)
+# Deploy from a branch that includes all pending SalesNav UI/API changes (e.g. cursor/salesnav-prod-sync-8bb3).
+# Stale branches can overwrite prod features (FAQ, export name, default limit=all, usage column).
 set -euo pipefail
 
 REMOTE="parvus-vps"
