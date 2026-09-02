@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=47" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=50" />
   <!-- Sales Nav: layout in salesnav.css; LinkedIn blue palette in salesnav-theme.css (do not merge) -->
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
@@ -58,11 +58,12 @@
         </p>
 
         <div class="hero-cta">
-          <a class="connect-btn" href="/salesnav/panel/" data-i18n="landing.openPanel">Open my panel</a>
+          <a class="connect-btn" id="landing-panel-cta" href="/salesnav/panel/" data-i18n="landing.createAccount">Create account</a>
+          <a class="ghost-btn" id="landing-signin-cta" href="/salesnav/panel/?signin=1" data-i18n="landing.signIn">Sign in</a>
           <a class="ghost-btn" href="/salesnav/panel/#topup" data-i18n="landing.getStarted">Get started — from €20</a>
         </div>
-        <p class="hero-panel-note muted" data-i18n="landing.panelNote">
-          After payment, manage credits, LinkedIn and exports in your private panel — not on this page.
+        <p class="hero-panel-note muted" id="landing-panel-note" data-i18n="landing.createAccountNote">
+          Free to sign up — enter your work email, then top up credits when you're ready to export.
         </p>
       </div>
 
@@ -279,6 +280,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=47"></script>
+  <script src="/salesnav/salesnav.js?v=50"></script>
 </body>
 </html>

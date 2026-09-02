@@ -95,6 +95,10 @@ const I18N = {
     "tasks.sortDesc": "descending",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
+    "landing.createAccount": "Create account",
+    "landing.signIn": "Sign in",
+    "landing.signInPrompt": "Already have an account?",
+    "landing.createAccountNote": "Free to sign up — enter your work email, then top up credits when you're ready to export.",
     "landing.getStarted": "Get started — from €20",
     "landing.panelNote": "After payment, manage credits, LinkedIn and exports in your private panel — not on this page.",
     "hero.kicker": "Paste a Sales Navigator list or search URL.",
@@ -140,6 +144,9 @@ const I18N = {
     "account.registerReady": "Account created. You can sign in now.",
     "account.resendOk": "If an unconfirmed account exists for this email, we sent a new confirmation link.",
     "account.guestLead": "Enter your work email to manage credits and exports.",
+    "account.createLead": "Create your free account with your work email — then top up credits and start exporting.",
+    "account.signInLead": "Welcome back — enter your work email to sign in.",
+    "account.newUserPrompt": "New here?",
     "account.stepEmail": "Step 1 · Work email",
     "account.stepPassword": "Step 2 · Sign in",
     "account.stepPasswordCopy": "Enter the password for {email}.",
@@ -368,6 +375,10 @@ const I18N = {
     "tasks.sortDesc": "descendente",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
+    "landing.createAccount": "Crear cuenta",
+    "landing.signIn": "Iniciar sesión",
+    "landing.signInPrompt": "¿Ya tienes cuenta?",
+    "landing.createAccountNote": "Registro gratis — introduce tu email de trabajo y recarga créditos cuando quieras exportar.",
     "landing.getStarted": "Empezar — desde €20",
     "landing.panelNote": "Tras pagar, gestionas créditos, LinkedIn y exports en tu panel privado — no en esta página.",
     "hero.kicker": "Pega la URL de una lista o búsqueda de Sales Navigator.",
@@ -413,6 +424,9 @@ const I18N = {
     "account.registerReady": "Cuenta creada. Ya puedes iniciar sesión.",
     "account.resendOk": "Si existe una cuenta sin confirmar con este email, enviamos un enlace nuevo.",
     "account.guestLead": "Introduce tu email de trabajo para gestionar créditos y exports.",
+    "account.createLead": "Crea tu cuenta gratis con tu email de trabajo — después recarga créditos y empieza a exportar.",
+    "account.signInLead": "Bienvenido de nuevo — introduce tu email de trabajo para iniciar sesión.",
+    "account.newUserPrompt": "¿Primera vez?",
     "account.stepEmail": "Paso 1 · Email de trabajo",
     "account.stepPassword": "Paso 2 · Iniciar sesión",
     "account.stepPasswordCopy": "Introduce la contraseña de {email}.",
@@ -606,6 +620,7 @@ let panelTasks = [];
 let tasksStatusFilter = "all";
 let tasksSortKey = "created_at";
 let tasksSortDir = "desc";
+let guestAuthMode = "create";
 let tasksPollTimer = null;
 let composeOpen = false;
 const SN_PENDING_EXPORT_KEY = "sn_pending_export";
@@ -698,6 +713,8 @@ function initLang() {
       applyI18n();
       renderConnectionStatus(lastConnection);
       renderTasksTable();
+      updateLandingPanelCta();
+      updateGuestAuthCopy();
     });
   });
 }
@@ -1422,8 +1439,84 @@ function resetAuthFlow() {
   if (setupConfirm) setupConfirm.value = "";
 }
 
+function updateLandingPanelCta() {
+  const cta = document.getElementById("landing-panel-cta");
+  const signin = document.getElementById("landing-signin-cta");
+  const note = document.getElementById("landing-panel-note");
+  if (!cta) return;
+
+  if (accountEmail) {
+    cta.textContent = t("landing.openPanel");
+    cta.setAttribute("data-i18n", "landing.openPanel");
+    if (signin) signin.hidden = true;
+    if (note) {
+      note.textContent = t("landing.panelNote");
+      note.setAttribute("data-i18n", "landing.panelNote");
+    }
+    return;
+  }
+
+  cta.textContent = t("landing.createAccount");
+  cta.setAttribute("data-i18n", "landing.createAccount");
+  if (signin) {
+    signin.hidden = false;
+    signin.textContent = t("landing.signIn");
+    signin.setAttribute("data-i18n", "landing.signIn");
+  }
+  if (note) {
+    note.textContent = t("landing.createAccountNote");
+    note.setAttribute("data-i18n", "landing.createAccountNote");
+  }
+}
+
+function updateGuestAuthCopy() {
+  if (!IS_PANEL || accountEmail) return;
+  const lede = document.querySelector(".panel-guest-lede");
+  if (!lede) return;
+  const key = guestAuthMode === "signin" ? "account.signInLead" : "account.createLead";
+  lede.textContent = t(key);
+  lede.setAttribute("data-i18n", key);
+
+  const switchLabel = document.getElementById("auth-mode-switch-label");
+  const switchBtn = document.getElementById("auth-mode-switch-btn");
+  if (switchLabel && switchBtn) {
+    if (guestAuthMode === "signin") {
+      switchLabel.textContent = t("account.newUserPrompt");
+      switchBtn.textContent = t("landing.createAccount");
+      switchBtn.setAttribute("data-i18n", "landing.createAccount");
+    } else {
+      switchLabel.textContent = t("landing.signInPrompt");
+      switchBtn.textContent = t("landing.signIn");
+      switchBtn.setAttribute("data-i18n", "landing.signIn");
+    }
+  }
+}
+
+function setGuestAuthMode(mode) {
+  guestAuthMode = mode === "signin" ? "signin" : "create";
+  updateGuestAuthCopy();
+  resetAuthFlow();
+}
+
+function handleSigninQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("signin") === "1") {
+    guestAuthMode = "signin";
+  }
+  updateGuestAuthCopy();
+}
+
+function initLandingPage() {
+  updateLandingPanelCta();
+  fetchCredits().then(() => updateLandingPanelCta()).catch(() => {});
+}
+
 function initAuthFlow() {
+  handleSigninQuery();
   setAuthStep("email");
+  document.getElementById("auth-mode-switch-btn")?.addEventListener("click", () => {
+    setGuestAuthMode(guestAuthMode === "signin" ? "create" : "signin");
+  });
 }
 
 async function handleResetQuery() {
@@ -2966,6 +3059,7 @@ if (IS_PANEL) {
 } else {
   redirectLegacyAppQueriesToPanel();
   initContactForm();
+  initLandingPage();
 }
 
 function initPanelPage() {

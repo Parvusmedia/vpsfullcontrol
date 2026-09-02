@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=49" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=50" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -37,7 +37,7 @@
     <section class="panel-guest" id="panel-guest-wrap">
       <article class="panel-card panel-card-guest">
         <h1 data-i18n="panel.title">My panel</h1>
-        <p class="panel-guest-lede" data-i18n="account.guestLead">Enter your work email to manage credits and exports.</p>
+        <p class="panel-guest-lede" data-i18n="account.createLead">Create your free account with your work email — then top up credits and start exporting.</p>
         <div class="auth-flow">
           <p class="auth-step-label" id="auth-step-label" aria-live="polite" data-i18n="account.stepEmail">Step 1 · Work email</p>
 
@@ -49,6 +49,10 @@
             <div class="account-actions">
               <button type="submit" class="connect-btn" id="auth-continue-btn" data-i18n="account.continue">Continue</button>
             </div>
+            <p class="account-inline-help auth-mode-switch" id="auth-mode-switch">
+              <span id="auth-mode-switch-label" data-i18n="landing.signInPrompt">Already have an account?</span>
+              <button type="button" class="linkish-btn" id="auth-mode-switch-btn" data-i18n="landing.signIn">Sign in</button>
+            </p>
           </form>
 
           <div id="auth-step-password" class="auth-step-panel" hidden>
@@ -382,6 +386,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=49"></script>
+  <script src="/salesnav/salesnav.js?v=50"></script>
 </body>
 </html>
