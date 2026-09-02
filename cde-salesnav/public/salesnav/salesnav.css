@@ -1274,6 +1274,14 @@
   border-bottom: none;
 }
 
+.tasks-credits-detail {
+  max-width: 14rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  white-space: normal;
+}
+
 .tasks-empty td {
   text-align: center;
   color: var(--ink-soft);

@@ -283,32 +283,64 @@ function cde_credits_parse_tiers(array $payload): array
  * Cost in credits for an export (Basic=1, +Enriched=0.4/lead, +Mail=1/email found).
  *
  * @param list<array<string, mixed>> $rows
+ * @return array{
+ *   profiles: int,
+ *   profile_credits: int,
+ *   enriched_credits: int,
+ *   emails_found: int,
+ *   email_credits: int,
+ *   total: int
+ * }
  */
-function cde_credits_export_cost(array $rows, array $tiers): int
+function cde_credits_export_breakdown(array $rows, array $tiers): array
 {
     $count = count($rows);
     if ($count === 0) {
-        return 0;
+        return [
+            'profiles' => 0,
+            'profile_credits' => 0,
+            'enriched_credits' => 0,
+            'emails_found' => 0,
+            'email_credits' => 0,
+            'total' => 0,
+        ];
     }
 
-    $perRow = 1.0;
+    $profileCredits = $count;
+    $enrichedCredits = 0;
     if (!empty($tiers['enriched'])) {
-        $perRow += 0.4;
+        $enrichedCredits = (int) ceil($count * 0.4);
     }
-    $total = (int) ceil($count * $perRow);
 
+    $emailsFound = 0;
+    $emailCredits = 0;
     if (!empty($tiers['mail'])) {
-        $emails = 0;
         foreach ($rows as $row) {
-            $email = trim((string) ($row['work_email'] ?? ''));
-            if ($email !== '') {
-                $emails++;
+            if (trim((string) ($row['work_email'] ?? '')) !== '') {
+                $emailsFound++;
             }
         }
-        $total += (int) ceil($emails * 1.0);
+        $emailCredits = $emailsFound;
     }
 
-    return max(1, $total);
+    $total = max(1, $profileCredits + $enrichedCredits + $emailCredits);
+
+    return [
+        'profiles' => $count,
+        'profile_credits' => $profileCredits,
+        'enriched_credits' => $enrichedCredits,
+        'emails_found' => $emailsFound,
+        'email_credits' => $emailCredits,
+        'total' => $total,
+    ];
+}
+
+/**
+ * @param list<array<string, mixed>> $rows
+ */
+function cde_credits_export_cost(array $rows, array $tiers): int
+{
+    return cde_credits_export_breakdown($rows, $tiers)['total'];
 }
 
 /** Upper-bound credits for a queued export (before lead count is known). */
