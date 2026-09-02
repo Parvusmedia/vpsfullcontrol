@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=34" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=38" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -23,6 +23,7 @@
       <a href="/" data-i18n="nav.companies">Companies</a>
       <a href="/salesnav/" data-i18n="nav.salesnav">Sales Navigator</a>
       <a href="/salesnav/panel/" class="is-active" aria-current="page" data-i18n="nav.panel">My panel</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
     </nav>
     <div class="top-actions">
       <div class="lang-switch" role="group" aria-label="Language">
@@ -269,6 +270,53 @@
         </div>
       </article>
     </section>
+
+    <section class="strip faq-section panel-faq" id="faq">
+      <h2 class="strip-title" data-i18n="faq.title">FAQ</h2>
+      <p class="strip-lede" data-i18n="faq.lede">Step-by-step guide: panel, LinkedIn connection, credits and exports.</p>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary data-i18n="faq.qSteps">How does it work, step by step?</summary>
+          <div class="faq-answer" data-i18n="faq.aSteps"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qConnect">How do I connect my LinkedIn / Sales Navigator account?</summary>
+          <div class="faq-answer" data-i18n="faq.aConnect"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qCredits">How are credits consumed?</summary>
+          <div class="faq-answer" data-i18n="faq.aCredits"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qUrls">Which URLs can I export?</summary>
+          <div class="faq-answer" data-i18n="faq.aUrls"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qWhenCharged">When am I charged?</summary>
+          <div class="faq-answer" data-i18n="faq.aWhenCharged"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qDuration">How long does an export take?</summary>
+          <div class="faq-answer" data-i18n="faq.aDuration"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qTopup">How do top-ups and bonuses work?</summary>
+          <div class="faq-answer" data-i18n="faq.aTopup"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qDisconnect">LinkedIn shows as disconnected — what now?</summary>
+          <div class="faq-answer" data-i18n="faq.aDisconnect"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qMultiDevice">Can I use the same credits on another computer?</summary>
+          <div class="faq-answer" data-i18n="faq.aMultiDevice"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qLimits">Are there export limits?</summary>
+          <div class="faq-answer" data-i18n="faq.aLimits"></div>
+        </details>
+      </div>
+    </section>
   </main>
 
   <footer class="foot">
@@ -283,6 +331,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=36"></script>
+  <script src="/salesnav/salesnav.js?v=41"></script>
 </body>
 </html>

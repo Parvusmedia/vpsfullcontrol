@@ -11,6 +11,8 @@ function scrollPanelHash() {
   const hash = window.location.hash.replace("#", "");
   if (hash === "topup") {
     document.getElementById("topup")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  } else if (hash === "faq") {
+    document.getElementById("faq")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -19,6 +21,39 @@ const I18N = {
     "nav.companies": "Companies",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "My panel",
+    "nav.faq": "FAQ",
+    "faq.title": "FAQ — how it works",
+    "faq.lede": "Step-by-step guide: panel, LinkedIn connection, credits and exports.",
+    "faq.qSteps": "How does it work, step by step?",
+    "faq.aSteps":
+      '<ol><li><strong>Create your account</strong> — open <a href="/salesnav/panel/">My panel</a>, enter your work email and sign in (or create a password).</li><li><strong>Top up credits</strong> — from €20 (240 credits with the +20% bonus). Credits stay linked to your email.</li><li><strong>Connect LinkedIn</strong> — click <em>Connect LinkedIn</em> in the panel. We use secure hosted authentication; we never store your password. You need an active Sales Navigator seat on that account.</li><li><strong>Start an export</strong> — paste a Sales Navigator saved list or people-search URL, set max leads and pick options: Basic (always), Enriched and/or Mail.</li><li><strong>Download the CSV</strong> — we process in the background and email you when ready. Download from the tasks table in your panel.</li></ol>',
+    "faq.qConnect": "How do I connect my LinkedIn / Sales Navigator account?",
+    "faq.aConnect":
+      "<p>You need export credits before the first connection. In your panel, click <strong>Connect LinkedIn</strong>.</p><p>You are redirected to our secure sign-in page. Log in with the LinkedIn account that has Sales Navigator. When it succeeds, the panel shows <strong>Connected</strong> with your name.</p><p>We never see or store your LinkedIn password. If the badge later shows <strong>Not connected</strong>, click <strong>Reconnect</strong> — we reuse your existing seat.</p>",
+    "faq.qCredits": "How are credits consumed?",
+    "faq.aCredits":
+      '<p>Credits are prepaid. You are charged only when an export <strong>completes successfully</strong>. The tasks table shows total credits and a usage breakdown per export.</p><ul><li><strong>Basic</strong> — 1 credit per profile exported.</li><li><strong>Enriched</strong> (optional) — +0.4 credits per profile (rounded up for the whole export).</li><li><strong>Mail</strong> (optional) — +1 credit per work email actually found — you only pay for hits.</li></ul><div class="faq-examples"><p><strong>Examples</strong></p><ul><li>50 profiles, Basic only → <strong>50 credits</strong></li><li>50 profiles + Enriched → 50 + 20 = <strong>70 credits</strong></li><li>50 profiles + 25 verified emails → 50 + 25 = <strong>75 credits</strong></li><li>100 profiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 credits</strong></li></ul></div><p>If your balance is too low, the export is rejected <em>before</em> processing starts — top up and try again.</p>',
+    "faq.qUrls": "Which URLs can I export?",
+    "faq.aUrls":
+      "<p>Paste the full browser URL while you are viewing the list or search in Sales Navigator:</p><ul><li><strong>Saved lead lists</strong> — <code>linkedin.com/sales/lists/people/…</code></li><li><strong>People searches</strong> — <code>linkedin.com/sales/search/people?…</code></li></ul><p>You must have access to that list or search on the LinkedIn account you connected. Copy the URL from the address bar — do not use a public LinkedIn profile URL.</p>",
+    "faq.qWhenCharged": "When am I charged?",
+    "faq.aWhenCharged":
+      "<p>Credits are deducted when the export <strong>finishes successfully</strong> and the CSV is ready — not when you click <em>Start export</em>.</p><p>If an export fails (LinkedIn disconnected, invalid URL, insufficient credits, etc.), you are not charged for that run. Failed tasks show the reason in the panel.</p>",
+    "faq.qDuration": "How long does an export take?",
+    "faq.aDuration":
+      "<p>Small lists (25–100 leads) with Basic only often finish in under a minute. Enriched adds company and profile data — large lists can take several minutes. Mail runs email discovery on top and may take longer still.</p><p>You can close the tab: we email you when the CSV is ready. Refresh the tasks table or follow the link in the email to download.</p>",
+    "faq.qTopup": "How do top-ups and bonuses work?",
+    "faq.aTopup":
+      "<p>Minimum top-up is <strong>€20</strong>. Packs from 100 base credits include a <strong>+20% bonus</strong> (e.g. pay €20 → 240 credits).</p><p>Payment is via Stripe. Credits are linked to your work email — sign in with the same email on any device to see your balance. Top-ups do not expire while your account exists.</p>",
+    "faq.qDisconnect": "LinkedIn shows as disconnected — what now?",
+    "faq.aDisconnect":
+      "<p>Sessions can expire after LinkedIn security checks or password changes. Click <strong>Reconnect</strong> in the panel and sign in again through the secure flow.</p><p>Exports in progress may fail if LinkedIn disconnects mid-run; reconnect and start a new export. Your credit balance is unchanged for failed runs.</p>",
+    "faq.qMultiDevice": "Can I use the same credits on another computer?",
+    "faq.aMultiDevice":
+      "<p>Yes. Sign in to <a href=\"/salesnav/panel/\">My panel</a> with the same work email. Credits, LinkedIn connection and export history follow your account.</p><p>Only one active browser session is needed to start exports — you do not need to keep the tab open until completion.</p>",
+    "faq.qLimits": "Are there export limits?",
+    "faq.aLimits":
+      "<p>Each export can request up to <strong>2,000 leads</strong>. LinkedIn also applies daily export caps per Sales Navigator seat (~2,000/day).</p><p>Enriched and Mail options increase processing time and credit cost but do not change the lead cap. For agencies with multiple SN seats, <a href=\"/salesnav/#pricing\">contact us</a> for multi-account setup.</p>",
     "panel.title": "My panel",
     "panel.lede": "Manage credits, LinkedIn connection and CSV exports.",
     "panel.exportTitle": "Export",
@@ -235,6 +270,39 @@ const I18N = {
     "nav.companies": "Empresas",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "Mi panel",
+    "nav.faq": "FAQ",
+    "faq.title": "FAQ — cómo funciona",
+    "faq.lede": "Guía paso a paso: panel, conexión LinkedIn, créditos y exports.",
+    "faq.qSteps": "¿Cómo funciona, paso a paso?",
+    "faq.aSteps":
+      '<ol><li><strong>Crea tu cuenta</strong> — abre <a href="/salesnav/panel/">Mi panel</a>, introduce tu email de trabajo e inicia sesión (o crea una contraseña).</li><li><strong>Recarga créditos</strong> — desde €20 (240 créditos con el bonus +20%). Los créditos quedan vinculados a tu email.</li><li><strong>Conecta LinkedIn</strong> — pulsa <em>Conectar LinkedIn</em> en el panel. Usamos autenticación segura alojada; no guardamos tu contraseña. Necesitas un seat activo de Sales Navigator.</li><li><strong>Inicia un export</strong> — pega la URL de una lista guardada o búsqueda de personas en Sales Navigator, elige el máximo de leads y las opciones: Basic (siempre), Enriched y/o Mail.</li><li><strong>Descarga el CSV</strong> — lo procesamos en segundo plano y te avisamos por email. Descarga desde la tabla de tareas en tu panel.</li></ol>',
+    "faq.qConnect": "¿Cómo conecto mi cuenta LinkedIn / Sales Navigator?",
+    "faq.aConnect":
+      "<p>Necesitas créditos de export antes de la primera conexión. En el panel, pulsa <strong>Conectar LinkedIn</strong>.</p><p>Te redirigimos a nuestra página de inicio de sesión segura. Entra con la cuenta LinkedIn que tiene Sales Navigator. Al completarse, el panel muestra <strong>Conectado</strong> con tu nombre.</p><p>No vemos ni guardamos tu contraseña de LinkedIn. Si más tarde aparece <strong>Sin conectar</strong>, pulsa <strong>Reconectar</strong> — reutilizamos tu seat existente.</p>",
+    "faq.qCredits": "¿Cómo se consumen los créditos?",
+    "faq.aCredits":
+      '<p>Los créditos son prepago. Solo se cobran cuando un export <strong>termina correctamente</strong>. La tabla de tareas muestra el total y el desglose de uso por export.</p><ul><li><strong>Basic</strong> — 1 crédito por perfil exportado.</li><li><strong>Enriched</strong> (opcional) — +0,4 créditos por perfil (redondeado al alza en el export).</li><li><strong>Mail</strong> (opcional) — +1 crédito por email de trabajo encontrado — solo pagas los aciertos.</li></ul><div class="faq-examples"><p><strong>Ejemplos</strong></p><ul><li>50 perfiles, solo Basic → <strong>50 créditos</strong></li><li>50 perfiles + Enriched → 50 + 20 = <strong>70 créditos</strong></li><li>50 perfiles + 25 emails verificados → 50 + 25 = <strong>75 créditos</strong></li><li>100 perfiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 créditos</strong></li></ul></div><p>Si el saldo es insuficiente, el export se rechaza <em>antes</em> de procesar — recarga e inténtalo de nuevo.</p>',
+    "faq.qUrls": "¿Qué URLs puedo exportar?",
+    "faq.aUrls":
+      "<p>Pega la URL completa del navegador mientras ves la lista o búsqueda en Sales Navigator:</p><ul><li><strong>Listas guardadas</strong> — <code>linkedin.com/sales/lists/people/…</code></li><li><strong>Búsquedas de personas</strong> — <code>linkedin.com/sales/search/people?…</code></li></ul><p>Debes tener acceso a esa lista o búsqueda en la cuenta LinkedIn conectada. Copia la URL de la barra de direcciones — no uses una URL pública de perfil.</p>",
+    "faq.qWhenCharged": "¿Cuándo se me cobran los créditos?",
+    "faq.aWhenCharged":
+      "<p>Los créditos se descuentan cuando el export <strong>termina con éxito</strong> y el CSV está listo — no al pulsar <em>Iniciar export</em>.</p><p>Si falla (LinkedIn desconectado, URL inválida, créditos insuficientes, etc.), no se cobra esa ejecución. Las tareas fallidas muestran el motivo en el panel.</p>",
+    "faq.qDuration": "¿Cuánto tarda un export?",
+    "faq.aDuration":
+      "<p>Listas pequeñas (25–100 leads) solo con Basic suelen tardar menos de un minuto. Enriched añade datos de empresa y perfil — listas grandes pueden tardar varios minutos. Mail busca emails encima y puede tardar más.</p><p>Puedes cerrar la pestaña: te avisamos por email cuando el CSV esté listo. Recarga la tabla de tareas o usa el enlace del email para descargar.</p>",
+    "faq.qTopup": "¿Cómo funcionan las recargas y el bonus?",
+    "faq.aTopup":
+      "<p>La recarga mínima es <strong>€20</strong>. Los packs desde 100 créditos base incluyen <strong>+20% bonus</strong> (ej. pagas €20 → 240 créditos).</p><p>El pago es con Stripe. Los créditos van con tu email de trabajo — inicia sesión con el mismo email en cualquier dispositivo. No caducan mientras exista tu cuenta.</p>",
+    "faq.qDisconnect": "LinkedIn aparece como desconectado — ¿qué hago?",
+    "faq.aDisconnect":
+      "<p>La sesión puede caducar tras controles de seguridad de LinkedIn o cambios de contraseña. Pulsa <strong>Reconectar</strong> en el panel y vuelve a iniciar sesión en el flujo seguro.</p><p>Los exports en curso pueden fallar si LinkedIn se desconecta a mitad — reconecta e inicia uno nuevo. El saldo no cambia en ejecuciones fallidas.</p>",
+    "faq.qMultiDevice": "¿Puedo usar los mismos créditos en otro ordenador?",
+    "faq.aMultiDevice":
+      "<p>Sí. Inicia sesión en <a href=\"/salesnav/panel/\">Mi panel</a> con el mismo email de trabajo. Créditos, conexión LinkedIn e historial de exports siguen tu cuenta.</p><p>No hace falta mantener la pestaña abierta hasta que termine — solo para iniciar el export.</p>",
+    "faq.qLimits": "¿Hay límites de export?",
+    "faq.aLimits":
+      "<p>Cada export puede pedir hasta <strong>2.000 leads</strong>. LinkedIn también aplica límites diarios por seat de Sales Navigator (~2.000/día).</p><p>Enriched y Mail aumentan tiempo y coste en créditos pero no el tope de leads. Para agencias con varios seats SN, <a href=\"/salesnav/#pricing\">contáctanos</a> para multi-cuenta.</p>",
     "panel.title": "Mi panel",
     "panel.lede": "Gestiona créditos, conexión LinkedIn y exports CSV.",
     "panel.exportTitle": "Exportar",
