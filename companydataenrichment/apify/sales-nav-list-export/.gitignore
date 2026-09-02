@@ -1,7 +1,0 @@
-node_modules/
-storage/
-apify_storage/
-.DS_Store
-*.log
-.env
-.env.*
