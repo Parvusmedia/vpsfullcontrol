@@ -2,39 +2,82 @@
 
 Objetivo: usar un único comando local y que el script elija automáticamente MCP o REST según el token disponible.
 
-## Secrets recomendados
+## Configuración local (recomendada)
+
+1. Copia la plantilla:
+
+```bash
+cp config/n8n.local.env.example config/n8n.local.env
+```
+
+2. Rellena `N8N_API_KEY` en `config/n8n.local.env` (archivo **gitignored**).
+
+Los scripts cargan ese archivo automáticamente si las variables no están ya en el entorno.
+
+## Cursor Cloud Agent / otro entorno
+
+Añade estos secrets en el dashboard del Cloud Agent (o exporta las mismas variables):
+
+- `N8N_URL` = `https://pmedia.app.n8n.cloud`
+- `N8N_API_KEY` = tu JWT `public-api` o clave `n8n_api_...`
+- `N8N_MCP_TOKEN` = opcional, JWT `mcp-server-api` para MCP
+
+## Cursor MCP (proyecto)
+
+- [`.cursor/mcp.json`](../.cursor/mcp.json) — URL MCP (OAuth al conectar en Cursor IDE).
+- Con token MCP en `config/n8n.local.env`:
+
+```bash
+python3 scripts/sync_cursor_mcp.py
+```
+
+## Dos tokens distintos
+
+| Uso | Dónde obtenerlo | Variable |
+|-----|-----------------|----------|
+| REST API / deploy scripts | API o JWT `public-api` | `N8N_API_KEY` |
+| MCP (Cursor, agentes) | Settings → Instance-level MCP → **Access token** | `N8N_MCP_TOKEN` |
+
+Server URL MCP: `https://pmedia.app.n8n.cloud/mcp-server/http` → `N8N_MCP_ENDPOINT`
+
+En Cursor: **Settings → MCP → N8N_** con esa URL y el Access token de la pantalla MCP (no el de REST).
+
+Además, en n8n hay que **habilitar MCP en al menos un workflow** (Settings del workflow → Available in MCP).
+
+## Secrets soportados
 
 - `N8N_URL` (ej: `https://pmedia.app.n8n.cloud`)
-- `N8N_MCP_TOKEN` (JWT con `aud: mcp-server-api`)
-- `N8N_REST_API_KEY` (API key REST de n8n, normalmente prefijo `n8n_api_`)
+- `N8N_API_KEY` — JWT `public-api` o clave REST (`n8n_api_...`)
+- `N8N_REST_API_KEY` — opcional si difiere de `N8N_API_KEY`
+- `N8N_MCP_TOKEN` — JWT con `aud: mcp-server-api` (solo para MCP)
 
-Compatibilidad legacy:
+Compatibilidad legacy en `scripts/n8n_unified.py`:
 
-- Si solo existe `N8N_API_KEY`, el script intenta inferir el tipo:
-  - JWT (`a.b.c`) => MCP
-  - `n8n_api_...` => REST
+- Si solo existe `N8N_API_KEY`, el script intenta usarlo para REST y MCP según el formato.
 
 ## Comando único
 
 ```bash
-python3 scripts/n8n_unified.py <comando>
+scripts/n8n status
+scripts/n8n list --limit 20
+scripts/n8n details --workflow-id sFefLQ6Js3pPV3oB
 ```
 
-Comandos disponibles:
+## Deploy de workflows
 
-- `status`: valida conectividad y tipo de token disponible.
-- `list [--limit 50] [--query texto]`: lista workflows.
-- `details --workflow-id <id>`: muestra detalle.
-- `export [--out ruta]`: exporta workflows a JSON.
-
-## Ejemplos
+Registro: [`config/n8n-deploy.json`](../config/n8n-deploy.json)
 
 ```bash
-python3 scripts/n8n_unified.py status
-python3 scripts/n8n_unified.py list --limit 20
-python3 scripts/n8n_unified.py details --workflow-id m1eDecjWiX7Ml7J6
-python3 scripts/n8n_unified.py export --out /workspace/n8n_export_latest
+python3 scripts/deploy_n8n_workflows.py
+# o solo LinkedIn hiring:
+python3 scripts/deploy_linkedin_applicants_workflow.py
 ```
+
+## Workflows en este repo
+
+| Nombre | ID n8n | Archivo |
+|--------|--------|---------|
+| LinkedIn Hiring Applicants AI | `sFefLQ6Js3pPV3oB` | `n8n/workflows/linkedin-hiring-applicants-ai.json` |
 
 ## Comportamiento de export
 
