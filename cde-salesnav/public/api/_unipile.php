@@ -632,8 +632,8 @@ function cde_unipile_account_error_is_stale(array $resp): bool
     }
     $err = strtolower((string) ($resp['error'] ?? ''));
     return str_contains($err, 'resource not found')
-        || str_contains($err, 'not found')
-        || str_contains($err, 'expired credentials');
+        || str_contains($err, 'expired credentials')
+        || str_contains($err, 'disconnected account');
 }
 
 function cde_salesnav_stale_account_message(): string
