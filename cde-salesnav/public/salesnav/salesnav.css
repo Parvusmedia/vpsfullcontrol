@@ -239,6 +239,32 @@
   background: rgba(31, 111, 106, 0.12);
 }
 
+.connect-badge[data-state="loading"] {
+  border-color: rgba(10, 102, 194, 0.35);
+  color: var(--ink-soft);
+  background: rgba(10, 102, 194, 0.08);
+  animation: connect-badge-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes connect-badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.panel-card-linkedin[data-connected="loading"] .panel-li-copy {
+  color: var(--ink-soft);
+}
+
+.panel-card-linkedin[data-connected="loading"] .panel-li-actions-wrap {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .connect-copy {
   margin: 0 0 0.85rem;
   font-size: 0.92rem;

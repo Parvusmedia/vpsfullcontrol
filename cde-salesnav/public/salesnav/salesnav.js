@@ -70,6 +70,8 @@ const I18N = {
     "connect.success": "LinkedIn connected. You can export now.",
     "connect.failed": "Connection failed or was cancelled. Try again.",
     "connect.required": "Connect LinkedIn before exporting.",
+    "connect.checking": "Checking…",
+    "connect.checkingHint": "Verifying your LinkedIn link. This usually takes a few seconds.",
     "account.title": "Account",
     "account.signedIn": "Signed in",
     "account.emailLabel": "Email",
@@ -108,6 +110,7 @@ const I18N = {
     "account.backToSignIn": "Back to sign in",
     "account.savePassword": "Save password & sign in",
     "account.signedInOk": "Signed in. Your credits and exports are linked to this email.",
+    "account.signingIn": "Signing in…",
     "account.sessionExpired": "Your session expired. Sign in again to continue.",
     "account.signInRequired": "Sign in before topping up credits.",
     "credits.balance": "{count} export credits available",
@@ -283,6 +286,8 @@ const I18N = {
     "connect.success": "LinkedIn conectado. Ya puedes exportar.",
     "connect.failed": "Conexión fallida o cancelada. Inténtalo de nuevo.",
     "connect.required": "Conecta LinkedIn antes de exportar.",
+    "connect.checking": "Comprobando…",
+    "connect.checkingHint": "Verificando tu enlace de LinkedIn. Suele tardar unos segundos.",
     "account.title": "Cuenta",
     "account.signedIn": "Sesión iniciada",
     "account.emailLabel": "Email",
@@ -321,6 +326,7 @@ const I18N = {
     "account.backToSignIn": "Volver a iniciar sesión",
     "account.savePassword": "Guardar contraseña e iniciar sesión",
     "account.signedInOk": "Sesión iniciada. Tus créditos y exports quedan vinculados a este email.",
+    "account.signingIn": "Iniciando sesión…",
     "account.sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión para continuar.",
     "account.signInRequired": "Inicia sesión antes de recargar créditos.",
     "credits.balance": "{count} créditos de export disponibles",
@@ -483,6 +489,54 @@ let defaultPackId = "240";
 let panelTasks = [];
 let tasksPollTimer = null;
 let composeOpen = false;
+let connectionStatusLoading = false;
+
+function setAuthSubmitLoading(loading, btn, idleKey = "") {
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    if (!btn.dataset.idleLabel) btn.dataset.idleLabel = btn.textContent;
+    btn.textContent = t("account.signingIn");
+    return;
+  }
+  btn.textContent = btn.dataset.idleLabel || (idleKey ? t(idleKey) : btn.textContent);
+  delete btn.dataset.idleLabel;
+}
+
+function setConnectionStatusLoading(loading) {
+  connectionStatusLoading = loading;
+  if (!IS_PANEL || !loading) return;
+
+  const badge = document.getElementById("connect-badge");
+  const copy = document.getElementById("connect-copy");
+  const liCard = document.querySelector(".panel-card-linkedin");
+  const billingActions = document.getElementById("connect-actions-billing");
+  const connectedActions = document.getElementById("connect-actions-connected");
+  const connectBtn = document.getElementById("connect-btn");
+  const reconnectBtn = document.getElementById("reconnect-btn");
+  const disconnectBtn = document.getElementById("disconnect-btn");
+  const avatar = document.getElementById("connect-avatar");
+
+  if (badge) {
+    badge.dataset.state = "loading";
+    badge.textContent = t("connect.checking");
+  }
+  if (copy) copy.textContent = t("connect.checkingHint");
+  if (liCard) liCard.dataset.connected = "loading";
+  if (billingActions) billingActions.hidden = true;
+  if (connectedActions) connectedActions.hidden = true;
+  if (connectBtn) {
+    connectBtn.disabled = true;
+    connectBtn.hidden = false;
+  }
+  if (reconnectBtn) reconnectBtn.disabled = true;
+  if (disconnectBtn) disconnectBtn.disabled = true;
+  if (avatar) {
+    avatar.hidden = true;
+    avatar.style.display = "none";
+  }
+  setExportGate(false);
+}
 
 function t(key, vars = {}) {
   const str = I18N[lang][key] ?? I18N.en[key] ?? key;
@@ -614,6 +668,10 @@ function renderConnectionStatus(data) {
   const billingActions = document.getElementById("connect-actions-billing");
   const demoActions = document.getElementById("connect-actions-demo");
   const connectedActions = document.getElementById("connect-actions-connected");
+
+  if (connectBtn) connectBtn.disabled = false;
+  if (reconnectBtn) reconnectBtn.disabled = false;
+  if (disconnectBtn) disconnectBtn.disabled = false;
 
   if (badge) {
     badge.dataset.state = isConnected ? "connected" : "disconnected";
@@ -914,8 +972,12 @@ async function legacySignInAccount(email) {
   creditBalance = Number(data.balance) || 0;
   persistAccountEmail(accountEmail);
   renderAccount();
-  renderConnectionStatus(lastConnection);
-  if (IS_PANEL) fetchTasks();
+  if (IS_PANEL) {
+    await refreshConnectionStatus();
+    fetchTasks();
+  } else {
+    renderConnectionStatus(lastConnection);
+  }
   if (creditBalance > 0) {
     setAccountNote(t("credits.restored", { count: creditBalance }), "ok");
   } else {
@@ -958,8 +1020,12 @@ async function resetPasswordAccount(token, password, passwordConfirm) {
   creditBalance = Number(data.balance) || 0;
   if (accountEmail) persistAccountEmail(accountEmail);
   renderAccount();
-  renderConnectionStatus(lastConnection);
-  if (IS_PANEL) fetchTasks();
+  if (IS_PANEL) {
+    await refreshConnectionStatus();
+    fetchTasks();
+  } else {
+    renderConnectionStatus(lastConnection);
+  }
   setAccountNote(t("account.resetOk"), "ok");
   return data;
 }
@@ -1009,6 +1075,8 @@ async function signInFromPasswordForm(ev) {
     document.getElementById("auth-password")?.focus();
     return;
   }
+  const btn = document.querySelector("#auth-password-form button[type=submit]");
+  setAuthSubmitLoading(true, btn, "account.signIn");
   try {
     await signInAccount(email, password);
   } catch (err) {
@@ -1016,6 +1084,8 @@ async function signInFromPasswordForm(ev) {
       setAuthStep("verify", email);
     }
     setAccountNote(err.message || t("msg.generic"), "error");
+  } finally {
+    setAuthSubmitLoading(false, btn, "account.signIn");
   }
 }
 
@@ -1052,6 +1122,8 @@ async function legacySignInFromPanel() {
     setAccountNote(t("credits.emailRequired"), "error");
     return;
   }
+  const btn = document.getElementById("auth-legacy-btn");
+  setAuthSubmitLoading(true, btn, "account.continuePanel");
   try {
     await legacySignInAccount(email);
   } catch (err) {
@@ -1059,6 +1131,8 @@ async function legacySignInFromPanel() {
       setAuthStep("password", email);
     }
     setAccountNote(err.message || t("msg.generic"), "error");
+  } finally {
+    setAuthSubmitLoading(false, btn, "account.continuePanel");
   }
 }
 
@@ -1182,9 +1256,11 @@ async function signInAccount(email, password, opts = {}) {
   creditBalance = Number(data.balance) || 0;
   persistAccountEmail(accountEmail);
   renderAccount();
-  renderConnectionStatus(lastConnection);
   if (IS_PANEL) {
+    await refreshConnectionStatus();
     fetchTasks();
+  } else {
+    renderConnectionStatus(lastConnection);
   }
   if (!silent) {
     if (creditBalance > 0) {
@@ -1246,8 +1322,12 @@ async function verifyAccountToken(token) {
   creditBalance = Number(data.balance) || 0;
   if (accountEmail) persistAccountEmail(accountEmail);
   renderAccount();
-  renderConnectionStatus(lastConnection);
-  if (IS_PANEL) fetchTasks();
+  if (IS_PANEL) {
+    await refreshConnectionStatus();
+    fetchTasks();
+  } else {
+    renderConnectionStatus(lastConnection);
+  }
   return data;
 }
 
@@ -1298,7 +1378,9 @@ async function fetchCredits() {
       if (packSelect?.value) defaultPackId = packSelect.value;
     }
     renderCredits();
-    renderConnectionStatus(lastConnection);
+    if (!connectionStatusLoading) {
+      renderConnectionStatus(lastConnection);
+    }
     if (IS_PANEL && accountEmail) {
       fetchTasks();
     }
@@ -1443,17 +1525,19 @@ async function signOutAccount() {
   setAccountNote("", "ok");
 }
 
-async function fetchConnectionStatus() {
+async function fetchConnectionStatus(options = {}) {
+  const render = options.render !== false;
   const res = await fetch("/api/salesnav-status.php", { credentials: "same-origin" });
   const data = await parseJsonResponse(res);
   if (!res.ok || !data.ok) {
     throw new Error(data.error || t("msg.generic"));
   }
-  renderConnectionStatus(data);
+  if (render) renderConnectionStatus(data);
   return data;
 }
 
-async function syncConnectionFromStored() {
+async function syncConnectionFromStored(options = {}) {
+  const render = options.render !== false;
   try {
     const res = await fetch("/api/salesnav-connect-sync.php", {
       method: "POST",
@@ -1463,7 +1547,7 @@ async function syncConnectionFromStored() {
     });
     const data = await parseJsonResponse(res);
     if (res.ok && data.ok && data.connected) {
-      return fetchConnectionStatus();
+      return fetchConnectionStatus({ render });
     }
   } catch {
     /* fall through to status poll */
@@ -1471,21 +1555,58 @@ async function syncConnectionFromStored() {
   return null;
 }
 
-async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
-  for (let i = 0; i < attempts; i += 1) {
-    try {
-      if (i === 0 || i === 2 || i === 4) {
-        const synced = await syncConnectionFromStored();
-        if (synced?.connected) return synced;
-      }
-      const data = await fetchConnectionStatus();
-      if (data.connected) return data;
-    } catch {
-      /* retry */
+async function refreshConnectionStatus() {
+  setConnectionStatusLoading(true);
+  try {
+    let data = await fetchConnectionStatus({ render: false });
+    if (!data.connected) {
+      await syncConnectionFromStored({ render: false });
+      data = await fetchConnectionStatus({ render: false });
     }
-    await new Promise((r) => setTimeout(r, delayMs));
+    renderConnectionStatus(data);
+    return data;
+  } catch {
+    try {
+      await syncConnectionFromStored({ render: false });
+      const data = await fetchConnectionStatus({ render: false });
+      renderConnectionStatus(data);
+      return data;
+    } catch {
+      renderConnectionStatus({ connected: false });
+      return lastConnection;
+    }
+  } finally {
+    connectionStatusLoading = false;
   }
-  return { connected: false };
+}
+
+async function pollConnectionStatus(attempts = 8, delayMs = 1500) {
+  setConnectionStatusLoading(true);
+  try {
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        if (i === 0 || i === 2 || i === 4) {
+          const synced = await syncConnectionFromStored({ render: false });
+          if (synced?.connected) {
+            renderConnectionStatus(synced);
+            return synced;
+          }
+        }
+        const data = await fetchConnectionStatus({ render: false });
+        if (data.connected) {
+          renderConnectionStatus(data);
+          return data;
+        }
+      } catch {
+        /* retry */
+      }
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    renderConnectionStatus({ connected: false });
+    return { connected: false };
+  } finally {
+    connectionStatusLoading = false;
+  }
 }
 
 async function startConnect(reconnect = false) {
@@ -2188,17 +2309,9 @@ function initPanelPage() {
   handleResetQuery();
   handleConnectQuery();
   handleCreditsQuery();
+  if (IS_PANEL) setConnectionStatusLoading(true);
   fetchCredits();
-  fetchConnectionStatus()
-    .then(async (data) => {
-      if (!data.connected) {
-        await syncConnectionFromStored();
-      }
-    })
-    .catch(async () => {
-      renderConnectionStatus({ connected: false });
-      await syncConnectionFromStored();
-    });
+  refreshConnectionStatus().catch(() => {});
   scrollPanelHash();
 
   document.getElementById("credit-pack")?.addEventListener("change", (e) => {
