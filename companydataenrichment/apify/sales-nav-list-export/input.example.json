@@ -1,0 +1,8 @@
+{
+  "mode": "list",
+  "listUrl": "https://www.linkedin.com/sales/lists/people/REPLACE_ME",
+  "maxLeads": 25,
+  "unipileApiKey": "REPLACE_WITH_UNIPILE_API_KEY",
+  "unipileAccountId": "REPLACE_WITH_UNIPILE_ACCOUNT_ID",
+  "pageDelayMs": 1500
+}

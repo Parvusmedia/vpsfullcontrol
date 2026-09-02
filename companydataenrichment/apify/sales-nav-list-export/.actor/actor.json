@@ -1,0 +1,20 @@
+{
+  "actorSpecification": 1,
+  "name": "sales-nav-list-export",
+  "title": "Sales Navigator List Export (Unipile)",
+  "description": "Export leads from a LinkedIn Sales Navigator saved list or people search URL using the Unipile API. Outputs clean CSV-ready rows (name, title, company, LinkedIn URL, etc.).",
+  "version": "0.1",
+  "buildTag": "latest",
+  "meta": {
+    "templateId": "js-empty"
+  },
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  },
+  "dockerfile": "../Dockerfile",
+  "readme": "../README.md",
+  "defaultMemoryMbytes": 512,
+  "minMemoryMbytes": 256,
+  "maxMemoryMbytes": 1024
+}
