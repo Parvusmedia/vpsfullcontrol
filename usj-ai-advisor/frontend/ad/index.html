@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Anuncio interactivo — USJ</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+  <link rel="stylesheet" href="/ad/ad.css">
+</head>
+<body>
+  <div class="wrap ad-wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Universidad San Jorge</span>
+        <strong>Anuncio interactivo</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+
+    <header class="hero hero-step hero-compact">
+      <h1>Orientador dentro del creativo display</h1>
+      <p class="lede">Interactúa con los formatos IAB a tamaño real. Completa las tres preguntas, obtén tu recomendación y cierra por WhatsApp o dejando tus datos.</p>
+    </header>
+  </div>
+
+  <main class="stage" id="creativos">
+    <figure class="slot">
+      <figcaption><b>300 × 600</b> · half-page</figcaption>
+      <div class="frame" style="width:300px;height:600px">
+        <iframe title="USJ 300x600" src="/ad/unit.html?size=300x600" width="300" height="600" scrolling="no"></iframe>
+      </div>
+    </figure>
+    <figure class="slot wide">
+      <figcaption><b>970 × 250</b> · billboard</figcaption>
+      <div class="scroller">
+        <div class="frame" style="width:970px;height:250px">
+          <iframe title="USJ 970x250" src="/ad/unit.html?size=970x250" width="970" height="250" scrolling="no"></iframe>
+        </div>
+      </div>
+    </figure>
+  </main>
+
+  <div class="wrap ad-wrap">
+    <div id="demo-linear-mount"></div>
+  </div>
+
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>USJ.mountDemoChrome();</script>
+</body>
+</html>

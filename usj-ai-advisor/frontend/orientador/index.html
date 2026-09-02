@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Orientador de másteres — Universidad San Jorge</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Universidad San Jorge</span>
+        <strong>Orientador de másteres</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+    <div id="demo-here-mount"></div>
+
+    <header class="hero hero-step">
+      <p class="kicker">Mismo motor · referencia web</p>
+      <h1>Encuentra el máster que encaja contigo</h1>
+      <p class="lede">Versión ampliada del orientador embebido en el anuncio. Las tres preguntas y la lógica de encaje son las mismas.</p>
+    </header>
+
+    <section class="wizard-card" id="wizard">
+      <div id="intro-panel"></div>
+      <div id="flow-panel" hidden>
+        <div class="step-progress" id="step-progress" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p class="progress" id="progress">Pregunta 1 de 3</p>
+        <div class="remaining" id="remaining"></div>
+        <h2 id="qtitle" class="qtitle"></h2>
+        <p class="lede" id="qsub"></p>
+        <div class="choices" id="choices"></div>
+        <button class="btn ghost" id="back" hidden>Volver</button>
+      </div>
+    </section>
+
+    <section class="panel" id="results"></section>
+    <pre class="debug" id="debug" hidden></pre>
+    <div id="demo-linear-mount"></div>
+    <p class="footnote">Orientación informativa basada en el catálogo de másteres. No constituye oferta de plaza ni compromiso de admisión.</p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script src="/app.js"></script>
+  <script>USJ.mountDemoChrome();</script>
+</body>
+</html>
