@@ -27,7 +27,7 @@ const I18N = {
       '<ol><li><strong>Create your account</strong> — open <a href="/salesnav/panel/">My panel</a>, enter your work email and sign in (or create a password).</li><li><strong>Top up credits</strong> — from €20 (240 credits with the +20% bonus). Credits stay linked to your email.</li><li><strong>Connect LinkedIn</strong> — click <em>Connect LinkedIn</em> in the panel. We use secure hosted authentication; we never store your password. You need an active Sales Navigator seat on that account.</li><li><strong>Start an export</strong> — paste a Sales Navigator saved list or people-search URL, set max leads and pick options: Basic (always), Enriched and/or Mail.</li><li><strong>Download the CSV</strong> — we process in the background and email you when ready. Download from the tasks table in your panel.</li></ol>',
     "faq.qConnect": "How do I connect my LinkedIn / Sales Navigator account?",
     "faq.aConnect":
-      "<p>You need export credits before the first connection. In your panel, click <strong>Connect LinkedIn</strong>.</p><p>You are redirected to a secure sign-in page (Unipile). Log in with the LinkedIn account that has Sales Navigator. When it succeeds, the panel shows <strong>Connected</strong> with your name.</p><p>We never see or store your LinkedIn password. If the badge later shows <strong>Not connected</strong>, click <strong>Reconnect</strong> — we reuse your existing seat.</p>",
+      "<p>You need export credits before the first connection. In your panel, click <strong>Connect LinkedIn</strong>.</p><p>You are redirected to our secure sign-in page. Log in with the LinkedIn account that has Sales Navigator. When it succeeds, the panel shows <strong>Connected</strong> with your name.</p><p>We never see or store your LinkedIn password. If the badge later shows <strong>Not connected</strong>, click <strong>Reconnect</strong> — we reuse your existing seat.</p>",
     "faq.qCredits": "How are credits consumed?",
     "faq.aCredits":
       '<p>Credits are prepaid. You are charged only when an export <strong>completes successfully</strong>. The tasks table shows total credits and a usage breakdown per export.</p><ul><li><strong>Basic</strong> — 1 credit per profile exported.</li><li><strong>Enriched</strong> (optional) — +0.4 credits per profile (rounded up for the whole export).</li><li><strong>Mail</strong> (optional) — +1 credit per work email actually found — you only pay for hits.</li></ul><div class="faq-examples"><p><strong>Examples</strong></p><ul><li>50 profiles, Basic only → <strong>50 credits</strong></li><li>50 profiles + Enriched → 50 + 20 = <strong>70 credits</strong></li><li>50 profiles + 25 verified emails → 50 + 25 = <strong>75 credits</strong></li><li>100 profiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 credits</strong></li></ul></div><p>If your balance is too low, the export is rejected <em>before</em> processing starts — top up and try again.</p>',
@@ -90,9 +90,9 @@ const I18N = {
     "connect.connected": "Connected",
     "connect.connectedAs": "Connected as {label}",
     "connect.body":
-      "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
+      "Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.",
     "connect.cta": "Connect LinkedIn",
-    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
+    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — we do not create a duplicate connection.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
     "connect.expired":
@@ -276,7 +276,7 @@ const I18N = {
       '<ol><li><strong>Crea tu cuenta</strong> — abre <a href="/salesnav/panel/">Mi panel</a>, introduce tu email de trabajo e inicia sesión (o crea una contraseña).</li><li><strong>Recarga créditos</strong> — desde €20 (240 créditos con el bonus +20%). Los créditos quedan vinculados a tu email.</li><li><strong>Conecta LinkedIn</strong> — pulsa <em>Conectar LinkedIn</em> en el panel. Usamos autenticación segura alojada; no guardamos tu contraseña. Necesitas un seat activo de Sales Navigator.</li><li><strong>Inicia un export</strong> — pega la URL de una lista guardada o búsqueda de personas en Sales Navigator, elige el máximo de leads y las opciones: Basic (siempre), Enriched y/o Mail.</li><li><strong>Descarga el CSV</strong> — lo procesamos en segundo plano y te avisamos por email. Descarga desde la tabla de tareas en tu panel.</li></ol>',
     "faq.qConnect": "¿Cómo conecto mi cuenta LinkedIn / Sales Navigator?",
     "faq.aConnect":
-      "<p>Necesitas créditos de export antes de la primera conexión. En el panel, pulsa <strong>Conectar LinkedIn</strong>.</p><p>Te redirigimos a una página de inicio de sesión segura (Unipile). Entra con la cuenta LinkedIn que tiene Sales Navigator. Al completarse, el panel muestra <strong>Conectado</strong> con tu nombre.</p><p>No vemos ni guardamos tu contraseña de LinkedIn. Si más tarde aparece <strong>Sin conectar</strong>, pulsa <strong>Reconectar</strong> — reutilizamos tu seat existente.</p>",
+      "<p>Necesitas créditos de export antes de la primera conexión. En el panel, pulsa <strong>Conectar LinkedIn</strong>.</p><p>Te redirigimos a nuestra página de inicio de sesión segura. Entra con la cuenta LinkedIn que tiene Sales Navigator. Al completarse, el panel muestra <strong>Conectado</strong> con tu nombre.</p><p>No vemos ni guardamos tu contraseña de LinkedIn. Si más tarde aparece <strong>Sin conectar</strong>, pulsa <strong>Reconectar</strong> — reutilizamos tu seat existente.</p>",
     "faq.qCredits": "¿Cómo se consumen los créditos?",
     "faq.aCredits":
       '<p>Los créditos son prepago. Solo se cobran cuando un export <strong>termina correctamente</strong>. La tabla de tareas muestra el total y el desglose de uso por export.</p><ul><li><strong>Basic</strong> — 1 crédito por perfil exportado.</li><li><strong>Enriched</strong> (opcional) — +0,4 créditos por perfil (redondeado al alza en el export).</li><li><strong>Mail</strong> (opcional) — +1 crédito por email de trabajo encontrado — solo pagas los aciertos.</li></ul><div class="faq-examples"><p><strong>Ejemplos</strong></p><ul><li>50 perfiles, solo Basic → <strong>50 créditos</strong></li><li>50 perfiles + Enriched → 50 + 20 = <strong>70 créditos</strong></li><li>50 perfiles + 25 emails verificados → 50 + 25 = <strong>75 créditos</strong></li><li>100 perfiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 créditos</strong></li></ul></div><p>Si el saldo es insuficiente, el export se rechaza <em>antes</em> de procesar — recarga e inténtalo de nuevo.</p>',
@@ -339,9 +339,9 @@ const I18N = {
     "connect.connected": "Conectado",
     "connect.connectedAs": "Conectado como {label}",
     "connect.body":
-      "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
+      "Conecta tu cuenta LinkedIn / Sales Navigator con nuestro flujo de conexión seguro. No guardamos tu contraseña.",
     "connect.cta": "Conectar LinkedIn",
-    "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
+    "connect.reconnectHint": "Reutilizaremos tu seat de LinkedIn existente — no creamos otra conexión.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
     "connect.expired":
