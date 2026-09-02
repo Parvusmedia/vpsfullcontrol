@@ -1446,6 +1446,151 @@ function cde_salesnav_probe_source_profile_count(array $config, string $sourceUr
     return $total > 0 ? $total : null;
 }
 
+/** @return list<array<string, mixed>> */
+function cde_salesnav_collect_lead_list_catalog_items(mixed $data): array
+{
+    if (!is_array($data)) {
+        return [];
+    }
+    if (isset($data['data']) && is_array($data['data'])) {
+        return array_values(array_filter($data['data'], 'is_array'));
+    }
+    if (isset($data['items']) && is_array($data['items'])) {
+        return array_values(array_filter($data['items'], 'is_array'));
+    }
+
+    return [];
+}
+
+function cde_salesnav_lead_list_name_from_item(array $item): string
+{
+    $name = trim((string) ($item['name'] ?? $item['title'] ?? $item['label'] ?? ''));
+
+    return $name;
+}
+
+function cde_salesnav_lead_list_id_from_item(array $item): string
+{
+    return trim((string) ($item['id'] ?? $item['list_id'] ?? ''));
+}
+
+/**
+ * Resolve a Sales Navigator lead list display name from Unipile.
+ */
+function cde_salesnav_fetch_lead_list_name(array $config, string $listId): ?string
+{
+    $listId = trim($listId);
+    if ($listId === '') {
+        return null;
+    }
+
+    if ($config['is_v1']) {
+        $offset = 0;
+        $limit = 100;
+        for ($page = 0; $page < 30; $page++) {
+            $query = [
+                'account_id' => $config['account_id'],
+                'type' => 'LEAD_LISTS',
+                'limit' => $limit,
+            ];
+            if ($offset > 0) {
+                $query['offset'] = $offset;
+            }
+
+            $resp = cde_unipile_request($config, 'GET', '/linkedin/search/parameters', $query);
+            if (!$resp['ok']) {
+                return null;
+            }
+
+            $items = cde_salesnav_collect_lead_list_catalog_items($resp['data']);
+            if ($items === []) {
+                break;
+            }
+
+            foreach ($items as $item) {
+                if (cde_salesnav_lead_list_id_from_item($item) === $listId) {
+                    $name = cde_salesnav_lead_list_name_from_item($item);
+
+                    return $name !== '' ? $name : null;
+                }
+            }
+
+            if (count($items) < $limit) {
+                break;
+            }
+            $offset += count($items);
+        }
+
+        return null;
+    }
+
+    $offset = 0;
+    $limit = 100;
+    $cursor = null;
+    for ($page = 0; $page < 30; $page++) {
+        $query = ['limit' => $limit];
+        if ($cursor !== null && $cursor !== '') {
+            $query['cursor'] = $cursor;
+        } elseif ($offset > 0) {
+            $query['offset'] = $offset;
+        }
+
+        $resp = cde_unipile_request(
+            $config,
+            'GET',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/lead-lists',
+            $query
+        );
+        if (!$resp['ok']) {
+            return null;
+        }
+
+        $items = cde_salesnav_collect_lead_list_catalog_items($resp['data']);
+        if ($items === []) {
+            break;
+        }
+
+        foreach ($items as $item) {
+            if (cde_salesnav_lead_list_id_from_item($item) === $listId) {
+                $name = cde_salesnav_lead_list_name_from_item($item);
+
+                return $name !== '' ? $name : null;
+            }
+        }
+
+        $data = is_array($resp['data'] ?? null) ? $resp['data'] : [];
+        $nextCursor = trim((string) ($data['next_cursor'] ?? ''));
+        if ($nextCursor !== '') {
+            $cursor = $nextCursor;
+            continue;
+        }
+        if (count($items) < $limit) {
+            break;
+        }
+        $offset += count($items);
+    }
+
+    return null;
+}
+
+/**
+ * @return array{profile_count: ?int, source_name: ?string}
+ */
+function cde_salesnav_probe_source_meta(array $config, string $sourceUrl, string $mode): array
+{
+    $profileCount = cde_salesnav_probe_source_profile_count($config, $sourceUrl, $mode);
+    $sourceName = null;
+
+    if ($mode === 'list' && preg_match('#/lists/people/(?P<id>\d+)#', $sourceUrl, $m)) {
+        $sourceName = cde_salesnav_fetch_lead_list_name($config, $m['id']);
+    }
+
+    return [
+        'profile_count' => $profileCount,
+        'source_name' => $sourceName,
+    ];
+}
+
 function cde_salesnav_export(array $config, string $sourceUrl, string $mode, int $maxLeads): array
 {
     if ($config['is_v1']) {

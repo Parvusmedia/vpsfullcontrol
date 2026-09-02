@@ -141,6 +141,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "Sales Navigator search URL",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Export name",
+    "form.exportNamePlaceholder": "e.g. Q1 prospects — auto-filled from list name",
+    "form.exportNameLoading": "Looking up list name…",
+    "form.exportNameProfiles": "{count} profiles in this list",
     "form.limit": "Max leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -357,6 +361,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "URL de búsqueda Sales Navigator",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Nombre del export",
+    "form.exportNamePlaceholder": "p. ej. Prospects Q1 — se rellena con el nombre de la lista",
+    "form.exportNameLoading": "Buscando nombre de la lista…",
+    "form.exportNameProfiles": "{count} perfiles en esta lista",
     "form.limit": "Máx. leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -489,6 +497,9 @@ let defaultPackId = "240";
 let panelTasks = [];
 let tasksPollTimer = null;
 let composeOpen = false;
+let exportNameTouched = false;
+let sourceMetaTimer = null;
+let sourceMetaRequest = 0;
 let connectionStatusLoading = false;
 
 function setAuthSubmitLoading(loading, btn, idleKey = "") {
@@ -1913,6 +1924,114 @@ function renderTasksTable() {
   });
 }
 
+function setExportNameHint(text = "", loading = false) {
+  const hint = document.getElementById("export-name-hint");
+  if (!hint) return;
+  hint.hidden = !text;
+  hint.textContent = text || "";
+  hint.dataset.loading = loading ? "1" : "0";
+}
+
+function resetExportNameState() {
+  exportNameTouched = false;
+  setExportNameHint("");
+  const exportName = document.getElementById("export-name");
+  if (exportName) {
+    exportName.dataset.auto = "0";
+  }
+}
+
+function applyExportNameMeta(data) {
+  const exportName = document.getElementById("export-name");
+  if (!exportName || exportNameTouched) return;
+
+  const resolved = (data?.source_name || "").trim();
+  if (resolved) {
+    exportName.value = resolved;
+    exportName.dataset.auto = "1";
+  }
+
+  const count = Number(data?.profile_count || 0);
+  if (count > 0) {
+    setExportNameHint(t("form.exportNameProfiles").replace("{count}", count.toLocaleString(lang === "es" ? "es-ES" : "en-US")));
+  } else {
+    setExportNameHint("");
+  }
+}
+
+async function fetchSourceMeta(mode) {
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const sourceUrl = mode === "list" ? listUrl : searchUrl;
+  if (!sourceUrl) {
+    setExportNameHint("");
+    return;
+  }
+
+  const requestId = ++sourceMetaRequest;
+  setExportNameHint(t("form.exportNameLoading"), true);
+
+  try {
+    const params = new URLSearchParams({ mode });
+    if (mode === "list") params.set("list_url", listUrl);
+    else params.set("search_url", searchUrl);
+
+    const res = await fetch(`/api/salesnav-source-meta.php?${params.toString()}`, {
+      credentials: "same-origin",
+    });
+    const data = await parseJsonResponse(res);
+    if (requestId !== sourceMetaRequest) return;
+    if (!res.ok || !data.ok) {
+      setExportNameHint("");
+      return;
+    }
+    applyExportNameMeta(data);
+  } catch {
+    if (requestId === sourceMetaRequest) {
+      setExportNameHint("");
+    }
+  }
+}
+
+function scheduleSourceMetaLookup(mode) {
+  if (sourceMetaTimer) {
+    clearTimeout(sourceMetaTimer);
+  }
+  sourceMetaTimer = setTimeout(() => {
+    sourceMetaTimer = null;
+    fetchSourceMeta(mode);
+  }, 450);
+}
+
+function initExportNameLookup() {
+  const exportName = document.getElementById("export-name");
+  const listUrl = document.getElementById("list-url");
+  const searchUrl = document.getElementById("search-url");
+
+  exportName?.addEventListener("input", () => {
+    exportNameTouched = true;
+    exportName.dataset.auto = "0";
+  });
+
+  listUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("list");
+  });
+  listUrl?.addEventListener("blur", () => fetchSourceMeta("list"));
+
+  searchUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("search");
+  });
+  searchUrl?.addEventListener("blur", () => fetchSourceMeta("search"));
+}
+
 function openCreateTaskCompose() {
   if (!accountEmail) {
     setAccountNote(t("credits.emailRequired"), "error");
@@ -1938,6 +2057,7 @@ function closeCreateTaskCompose(clearForm = false) {
   if (clearForm) {
     document.getElementById("create-task-form")?.reset();
     document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
+    resetExportNameState();
   }
 }
 
@@ -1954,6 +2074,7 @@ async function submitCreateTask(e) {
   const limitRaw = document.getElementById("export-limit")?.value || "all";
   const honeypot = document.getElementById("company_url")?.value || "";
   const tierEnriched = document.getElementById("tier-enriched")?.checked;
+  const exportName = document.getElementById("export-name")?.value.trim() || "";
 
   if (mode === "list" && !listUrl) {
     setPanelFlash(lang === "es" ? "Pega la URL de la lista." : "Paste a list URL.", "error");
@@ -1975,6 +2096,7 @@ async function submitCreateTask(e) {
       limit: limitRaw,
       tier_enriched: tierEnriched ? 1 : 0,
     };
+    if (exportName) body.export_name = exportName;
     if (mode === "list") body.list_url = listUrl;
     else body.search_url = searchUrl;
 
@@ -2200,6 +2322,10 @@ function initModeSwitch() {
       const mode = btn.dataset.mode;
       if (listWrap) listWrap.hidden = mode !== "list";
       if (searchWrap) searchWrap.hidden = mode !== "search";
+      if (!exportNameTouched) {
+        resetExportNameState();
+        scheduleSourceMetaLookup(mode);
+      }
     });
   });
 }
@@ -2304,6 +2430,7 @@ if (IS_PANEL) {
 
 function initPanelPage() {
   initModeSwitch();
+  initExportNameLookup();
   initAuthFlow();
   handleVerifyQuery();
   handleResetQuery();

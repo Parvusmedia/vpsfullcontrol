@@ -169,6 +169,18 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.field-hint[data-loading="1"] {
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .account-restore {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
@@ -346,9 +358,11 @@
 }
 
 .connect-note[data-tone="error"] {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.08);
-  color: #922b21;
+  border-color: #991b1b;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 600;
 }
 
 .connect-pack {

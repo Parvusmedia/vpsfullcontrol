@@ -18,7 +18,7 @@ scp "$LOCAL/api/salesnav-stripe-webhook.php" "$LOCAL/api/salesnav-stripe-complet
 scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$LOCAL/api/salesnav-connect-sync.php" "$LOCAL/api/salesnav-task-run.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_customers.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/salesnav-source-meta.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
 
 echo "==> Apply patches on parvus-vps staging (if not already)"
 ssh "$REMOTE" "bash /opt/apps/companydataenrichment/../..//workspace/cde-salesnav/deploy-salesnav.sh 2>/dev/null || true"
@@ -184,6 +184,6 @@ scp "/workspace/cde-salesnav/deploy/run-export-task.sh" "$REMOTE:/tmp/run-export
 ssh "$REMOTE" "scp /tmp/run-export-task.sh $PROD:/var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && ssh $PROD 'chmod 750 /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && chown companydataenrichment_d7ory6ctv7:psacln /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh'"
 
 echo "==> Set ownership on production"
-ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php 2>/dev/null || true\""
+ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php $DOCROOT/api/salesnav-source-meta.php 2>/dev/null || true\""
 
 echo "==> Done — production deploy complete"

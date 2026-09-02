@@ -138,6 +138,29 @@ function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = 
     ];
 }
 
+function cde_tasks_normalize_export_name(string $name): string
+{
+    $name = trim(preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '');
+    if ($name === '') {
+        return '';
+    }
+
+    if (function_exists('mb_substr')) {
+        return mb_substr($name, 0, 120);
+    }
+
+    return substr($name, 0, 120);
+}
+
+function cde_tasks_default_source_label(string $sourceUrl, string $mode): string
+{
+    if ($mode === 'list') {
+        return preg_match('#/lists/people/(\d+)#', $sourceUrl, $m) ? 'List ' . $m[1] : 'Lead list';
+    }
+
+    return 'People search';
+}
+
 /** @param array<string, mixed> $payload */
 function cde_tasks_create(string $userId, string $email, array $payload): array
 {
@@ -146,18 +169,19 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
     $limitRaw = $payload['limit'] ?? 'all';
     $limit = cde_tasks_normalize_limit($limitRaw);
     $limitLabel = cde_tasks_limit_label($limit, $limitRaw);
+    $exportName = cde_tasks_normalize_export_name((string) ($payload['export_name'] ?? $payload['source_name'] ?? ''));
 
     if ($listUrl !== '') {
         $sourceUrl = cde_salesnav_normalize_list_url($listUrl);
         $mode = 'list';
-        $sourceLabel = preg_match('#/lists/people/(\d+)#', $sourceUrl, $m) ? 'List ' . $m[1] : 'Lead list';
     } elseif ($searchUrl !== '') {
         $sourceUrl = cde_salesnav_normalize_search_url($searchUrl);
         $mode = 'search';
-        $sourceLabel = 'People search';
     } else {
         cde_json_response(400, ['ok' => false, 'error' => 'Provide a Sales Navigator list URL or search URL.']);
     }
+
+    $sourceLabel = cde_tasks_default_source_label($sourceUrl, $mode);
 
     $tiers = cde_credits_parse_tiers($payload);
 
@@ -165,11 +189,21 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
     $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
     $sourceProfileCount = null;
     if ($accountId !== '') {
-        $sourceProfileCount = cde_salesnav_probe_source_profile_count(
-            cde_unipile_api_config($accountId),
-            $sourceUrl,
-            $mode
-        );
+        $config = cde_unipile_api_config($accountId);
+        if ($exportName === '' && $mode === 'list') {
+            $meta = cde_salesnav_probe_source_meta($config, $sourceUrl, $mode);
+            $sourceProfileCount = $meta['profile_count'];
+            $resolvedName = cde_tasks_normalize_export_name((string) ($meta['source_name'] ?? ''));
+            if ($resolvedName !== '') {
+                $exportName = $resolvedName;
+            }
+        } else {
+            $sourceProfileCount = cde_salesnav_probe_source_profile_count($config, $sourceUrl, $mode);
+        }
+    }
+
+    if ($exportName !== '') {
+        $sourceLabel = $exportName;
     }
 
     $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId, $sourceProfileCount);

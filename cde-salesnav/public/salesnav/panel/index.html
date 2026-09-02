@@ -218,6 +218,11 @@
                 <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
               </label>
             </div>
+            <label class="account-field" for="export-name">
+              <span data-i18n="form.exportName">Export name</span>
+              <input id="export-name" type="text" maxlength="120" autocomplete="off" data-i18n-placeholder="form.exportNamePlaceholder" placeholder="e.g. Q1 prospects — auto-filled from list name" />
+              <span class="field-hint" id="export-name-hint" hidden></span>
+            </label>
             <label class="account-field" for="export-limit">
               <span data-i18n="form.limit">Max leads</span>
               <select id="export-limit" name="limit">
@@ -283,6 +288,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=36"></script>
+  <script src="/salesnav/salesnav.js?v=43"></script>
 </body>
 </html>
