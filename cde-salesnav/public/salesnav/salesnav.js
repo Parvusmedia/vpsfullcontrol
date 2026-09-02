@@ -33,6 +33,7 @@ const I18N = {
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Credits",
+    "tasks.colCreditsDetail": "Usage",
     "tasks.colCreated": "Created",
     "tasks.colAction": "Action",
     "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
@@ -41,6 +42,9 @@ const I18N = {
     "tasks.status.ready": "Ready",
     "tasks.status.failed": "Failed",
     "tasks.download": "Download CSV",
+    "tasks.breakdownProfiles": "{n} profiles",
+    "tasks.breakdownEnriched": "{n} enriched",
+    "tasks.breakdownEmails": "{n} verified emails",
     "tasks.limitAll": "All",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
@@ -57,9 +61,9 @@ const I18N = {
     "connect.connected": "Connected",
     "connect.connectedAs": "Connected as {label}",
     "connect.body":
-      "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
+      "Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.",
     "connect.cta": "Connect LinkedIn",
-    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
+    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — we do not create a duplicate connection.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
     "connect.expired":
@@ -141,6 +145,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "Sales Navigator search URL",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Export name",
+    "form.exportNamePlaceholder": "e.g. Q1 prospects — auto-filled from list name",
+    "form.exportNameLoading": "Looking up list name…",
+    "form.exportNameProfiles": "{count} profiles in this list",
     "form.limit": "Max leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -249,6 +257,7 @@ const I18N = {
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Créditos",
+    "tasks.colCreditsDetail": "Uso",
     "tasks.colCreated": "Creado",
     "tasks.colAction": "Acción",
     "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
@@ -257,6 +266,9 @@ const I18N = {
     "tasks.status.ready": "Listo",
     "tasks.status.failed": "Fallido",
     "tasks.download": "Descargar CSV",
+    "tasks.breakdownProfiles": "{n} perfiles",
+    "tasks.breakdownEnriched": "{n} enriquecidos",
+    "tasks.breakdownEmails": "{n} emails verificados",
     "tasks.limitAll": "Todos",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
@@ -273,9 +285,9 @@ const I18N = {
     "connect.connected": "Conectado",
     "connect.connectedAs": "Conectado como {label}",
     "connect.body":
-      "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
+      "Conecta tu cuenta LinkedIn / Sales Navigator con nuestro flujo de conexión seguro. No guardamos tu contraseña.",
     "connect.cta": "Conectar LinkedIn",
-    "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
+    "connect.reconnectHint": "Reutilizaremos tu seat de LinkedIn existente — no creamos otra conexión.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
     "connect.expired":
@@ -357,6 +369,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "URL de búsqueda Sales Navigator",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Nombre del export",
+    "form.exportNamePlaceholder": "p. ej. Prospects Q1 — se rellena con el nombre de la lista",
+    "form.exportNameLoading": "Buscando nombre de la lista…",
+    "form.exportNameProfiles": "{count} perfiles en esta lista",
     "form.limit": "Máx. leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -489,6 +505,9 @@ let defaultPackId = "240";
 let panelTasks = [];
 let tasksPollTimer = null;
 let composeOpen = false;
+let exportNameTouched = false;
+let sourceMetaTimer = null;
+let sourceMetaRequest = 0;
 let connectionStatusLoading = false;
 
 function setAuthSubmitLoading(loading, btn, idleKey = "") {
@@ -611,11 +630,18 @@ function setAccountNote(text, tone = "ok") {
 }
 
 function setPanelFlash(text, tone = "ok") {
-  const el = document.getElementById("panel-flash");
+  setComposeFlash(text, tone);
+}
+
+function setComposeFlash(text, tone = "ok") {
+  const el = document.getElementById("compose-flash");
   if (!el) return;
   el.hidden = !text;
   el.dataset.tone = tone;
   el.textContent = text || "";
+  if (text && tone === "error") {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 function setConnectNote(text, tone = "ok") {
@@ -1849,6 +1875,23 @@ function highlightTaskFromQuery() {
   }
 }
 
+function formatCreditsBreakdown(task) {
+  const breakdown = task?.credits_breakdown;
+  if (!breakdown || task.status !== "ready") return "—";
+
+  const parts = [];
+  if (breakdown.profiles > 0) {
+    parts.push(t("tasks.breakdownProfiles", { n: breakdown.profiles }));
+  }
+  if (breakdown.enriched_credits > 0) {
+    parts.push(t("tasks.breakdownEnriched", { n: breakdown.profiles }));
+  }
+  if (breakdown.email_credits > 0) {
+    parts.push(t("tasks.breakdownEmails", { n: breakdown.emails_found }));
+  }
+  return parts.length ? parts.join(" + ") : "—";
+}
+
 function renderTasksTable() {
   const tbody = document.getElementById("tasks-body");
   if (!tbody) return;
@@ -1859,7 +1902,7 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -1891,6 +1934,10 @@ function renderTasksTable() {
     const credits = document.createElement("td");
     credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
 
+    const creditsDetail = document.createElement("td");
+    creditsDetail.className = "tasks-credits-detail";
+    creditsDetail.textContent = formatCreditsBreakdown(task);
+
     const created = document.createElement("td");
     created.textContent = formatTaskDate(task.created_at);
 
@@ -1908,9 +1955,117 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, created, action);
+    tr.append(source, status, leads, credits, creditsDetail, created, action);
     tbody.appendChild(tr);
   });
+}
+
+function setExportNameHint(text = "", loading = false) {
+  const hint = document.getElementById("export-name-hint");
+  if (!hint) return;
+  hint.hidden = !text;
+  hint.textContent = text || "";
+  hint.dataset.loading = loading ? "1" : "0";
+}
+
+function resetExportNameState() {
+  exportNameTouched = false;
+  setExportNameHint("");
+  const exportName = document.getElementById("export-name");
+  if (exportName) {
+    exportName.dataset.auto = "0";
+  }
+}
+
+function applyExportNameMeta(data) {
+  const exportName = document.getElementById("export-name");
+  if (!exportName || exportNameTouched) return;
+
+  const resolved = (data?.source_name || "").trim();
+  if (resolved) {
+    exportName.value = resolved;
+    exportName.dataset.auto = "1";
+  }
+
+  const count = Number(data?.profile_count || 0);
+  if (count > 0) {
+    setExportNameHint(t("form.exportNameProfiles").replace("{count}", count.toLocaleString(lang === "es" ? "es-ES" : "en-US")));
+  } else {
+    setExportNameHint("");
+  }
+}
+
+async function fetchSourceMeta(mode) {
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const sourceUrl = mode === "list" ? listUrl : searchUrl;
+  if (!sourceUrl) {
+    setExportNameHint("");
+    return;
+  }
+
+  const requestId = ++sourceMetaRequest;
+  setExportNameHint(t("form.exportNameLoading"), true);
+
+  try {
+    const params = new URLSearchParams({ mode });
+    if (mode === "list") params.set("list_url", listUrl);
+    else params.set("search_url", searchUrl);
+
+    const res = await fetch(`/api/salesnav-source-meta.php?${params.toString()}`, {
+      credentials: "same-origin",
+    });
+    const data = await parseJsonResponse(res);
+    if (requestId !== sourceMetaRequest) return;
+    if (!res.ok || !data.ok) {
+      setExportNameHint("");
+      return;
+    }
+    applyExportNameMeta(data);
+  } catch {
+    if (requestId === sourceMetaRequest) {
+      setExportNameHint("");
+    }
+  }
+}
+
+function scheduleSourceMetaLookup(mode) {
+  if (sourceMetaTimer) {
+    clearTimeout(sourceMetaTimer);
+  }
+  sourceMetaTimer = setTimeout(() => {
+    sourceMetaTimer = null;
+    fetchSourceMeta(mode);
+  }, 450);
+}
+
+function initExportNameLookup() {
+  const exportName = document.getElementById("export-name");
+  const listUrl = document.getElementById("list-url");
+  const searchUrl = document.getElementById("search-url");
+
+  exportName?.addEventListener("input", () => {
+    exportNameTouched = true;
+    exportName.dataset.auto = "0";
+  });
+
+  listUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("list");
+  });
+  listUrl?.addEventListener("blur", () => fetchSourceMeta("list"));
+
+  searchUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("search");
+  });
+  searchUrl?.addEventListener("blur", () => fetchSourceMeta("search"));
 }
 
 function openCreateTaskCompose() {
@@ -1926,6 +2081,7 @@ function openCreateTaskCompose() {
   if (!compose) return;
   compose.hidden = false;
   composeOpen = true;
+  setComposeFlash("");
   compose.scrollIntoView({ behavior: "smooth", block: "nearest" });
   document.getElementById("list-url")?.focus();
 }
@@ -1935,9 +2091,11 @@ function closeCreateTaskCompose(clearForm = false) {
   if (!compose) return;
   compose.hidden = true;
   composeOpen = false;
+  setComposeFlash("");
   if (clearForm) {
     document.getElementById("create-task-form")?.reset();
     document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
+    resetExportNameState();
   }
 }
 
@@ -1951,9 +2109,10 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "50";
+  const limitRaw = document.getElementById("export-limit")?.value || "all";
   const honeypot = document.getElementById("company_url")?.value || "";
   const tierEnriched = document.getElementById("tier-enriched")?.checked;
+  const exportName = document.getElementById("export-name")?.value.trim() || "";
 
   if (mode === "list" && !listUrl) {
     setPanelFlash(lang === "es" ? "Pega la URL de la lista." : "Paste a list URL.", "error");
@@ -1975,6 +2134,7 @@ async function submitCreateTask(e) {
       limit: limitRaw,
       tier_enriched: tierEnriched ? 1 : 0,
     };
+    if (exportName) body.export_name = exportName;
     if (mode === "list") body.list_url = listUrl;
     else body.search_url = searchUrl;
 
@@ -1987,8 +2147,8 @@ async function submitCreateTask(e) {
     const data = await parseJsonResponse(res);
 
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout(defaultPackId);
-      throw new Error(t("credits.insufficient"));
+      const detail = data.error || t("credits.insufficient");
+      throw new Error(detail);
     }
     if (data.needs_connect || data.needs_reconnect) {
       renderConnectionStatus({
@@ -2200,6 +2360,10 @@ function initModeSwitch() {
       const mode = btn.dataset.mode;
       if (listWrap) listWrap.hidden = mode !== "list";
       if (searchWrap) searchWrap.hidden = mode !== "search";
+      if (!exportNameTouched) {
+        resetExportNameState();
+        scheduleSourceMetaLookup(mode);
+      }
     });
   });
 }
@@ -2304,6 +2468,7 @@ if (IS_PANEL) {
 
 function initPanelPage() {
   initModeSwitch();
+  initExportNameLookup();
   initAuthFlow();
   handleVerifyQuery();
   handleResetQuery();

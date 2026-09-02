@@ -169,6 +169,18 @@
   background: rgba(255, 255, 255, 0.85);
 }
 
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.field-hint[data-loading="1"] {
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .account-restore {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
@@ -201,9 +213,13 @@
 }
 
 .account-note[data-tone="error"] {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.08);
-  color: #922b21;
+  border-color: #b91c1c;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0.9rem 1rem;
 }
 
 .connect-head {
@@ -342,9 +358,11 @@
 }
 
 .connect-note[data-tone="error"] {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.08);
-  color: #922b21;
+  border-color: #991b1b;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 600;
 }
 
 .connect-pack {
@@ -1170,19 +1188,39 @@
 
 .panel-flash {
   margin: 0 0 1.25rem;
-  padding: 0.85rem 1rem;
-  font-size: 0.88rem;
+  padding: 1rem 1.15rem;
+  font-size: 0.95rem;
   line-height: 1.5;
-  border-radius: 10px;
-  border: 1px solid var(--teal);
+  border-radius: 2px;
+  border: 1.5px solid var(--teal);
   background: rgba(10, 102, 194, 0.08);
   color: var(--teal-deep);
 }
 
+.compose-flash {
+  margin: 0.85rem 0 0;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.5;
+  border-radius: 2px;
+  border: 1px solid rgba(10, 102, 194, 0.25);
+  background: rgba(10, 102, 194, 0.06);
+  color: var(--teal-deep);
+}
+
+.compose-flash[data-tone="error"],
 .panel-flash[data-tone="error"] {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.08);
-  color: #922b21;
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 400;
+}
+
+.compose-flash[data-tone="ok"] {
+  border-color: rgba(31, 111, 106, 0.35);
+  background: rgba(31, 111, 106, 0.08);
+  color: var(--teal-deep);
 }
 
 .panel-card-tasks {
@@ -1250,6 +1288,14 @@
 
 .tasks-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.tasks-credits-detail {
+  max-width: 14rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  white-space: normal;
 }
 
 .tasks-empty td {

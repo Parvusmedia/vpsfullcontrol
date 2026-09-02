@@ -11,6 +11,12 @@ STAGING="/opt/apps/companydataenrichment/public"
 
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:$STAGING/"
+fi
+if [[ -f "$LOCAL/styles.css" ]]; then
+  scp "$LOCAL/styles.css" "$REMOTE:$STAGING/"
+fi
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
@@ -18,7 +24,7 @@ scp "$LOCAL/api/salesnav-stripe-webhook.php" "$LOCAL/api/salesnav-stripe-complet
 scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$LOCAL/api/salesnav-connect-sync.php" "$LOCAL/api/salesnav-task-run.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_customers.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/salesnav-source-meta.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
 
 echo "==> Apply patches on parvus-vps staging (if not already)"
 ssh "$REMOTE" "bash /opt/apps/companydataenrichment/../..//workspace/cde-salesnav/deploy-salesnav.sh 2>/dev/null || true"
@@ -45,6 +51,13 @@ ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_
 echo "==> Rsync public site to production httpdocs"
 ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' --exclude 'harvest.env' --exclude 'stripe.env' \
   $STAGING/ $PROD:$DOCROOT/"
+
+echo "==> Ensure production homepage is Companies hub (never Sales Nav landing)"
+ssh "$REMOTE" "ssh $PROD 'if grep -q product-salesnav $DOCROOT/index.html 2>/dev/null; then echo ERROR: root index.html is Sales Nav — restoring from staging; fi'"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:/tmp/cde-index.html"
+  ssh "$REMOTE" "scp /tmp/cde-index.html $PROD:$DOCROOT/index.html && ssh $PROD 'chown companydataenrichment_d7ory6ctv7:psacln $DOCROOT/index.html'"
+fi
 
 echo "==> Patch production contact.php volume labels"
 ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
@@ -184,6 +197,6 @@ scp "/workspace/cde-salesnav/deploy/run-export-task.sh" "$REMOTE:/tmp/run-export
 ssh "$REMOTE" "scp /tmp/run-export-task.sh $PROD:/var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && ssh $PROD 'chmod 750 /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && chown companydataenrichment_d7ory6ctv7:psacln /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh'"
 
 echo "==> Set ownership on production"
-ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php 2>/dev/null || true\""
+ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php $DOCROOT/api/salesnav-source-meta.php 2>/dev/null || true\""
 
 echo "==> Done — production deploy complete"

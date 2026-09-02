@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=34" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=45" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
@@ -166,7 +166,7 @@
           </header>
           <div class="panel-li-identity" id="connect-identity">
             <img id="connect-avatar" class="panel-li-avatar" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer" hidden />
-            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</span>
+            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.</span>
           </div>
           <div class="panel-card-foot panel-li-actions-wrap">
             <div class="panel-li-actions" id="connect-actions-billing">
@@ -188,7 +188,6 @@
 
       <p class="account-note" id="account-note" hidden aria-live="polite"></p>
       <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
-      <p class="panel-flash" id="panel-flash" hidden aria-live="polite"></p>
 
       <article class="panel-card panel-card-tasks">
         <header class="panel-tasks-head">
@@ -218,6 +217,11 @@
                 <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
               </label>
             </div>
+            <label class="account-field" for="export-name">
+              <span data-i18n="form.exportName">Export name</span>
+              <input id="export-name" type="text" maxlength="120" autocomplete="off" data-i18n-placeholder="form.exportNamePlaceholder" placeholder="e.g. Q1 prospects — auto-filled from list name" />
+              <span class="field-hint" id="export-name-hint" hidden></span>
+            </label>
             <label class="account-field" for="export-limit">
               <span data-i18n="form.limit">Max leads</span>
               <select id="export-limit" name="limit">
@@ -226,7 +230,7 @@
                 <option value="200" data-i18n="form.limit200">200</option>
                 <option value="500" data-i18n="form.limit500">500</option>
                 <option value="1000" data-i18n="form.limit1000">1,000</option>
-                <option value="all" data-i18n="form.limitAll">All (up to 2,000)</option>
+                <option value="all" data-i18n="form.limitAll" selected>All (up to 2,000)</option>
               </select>
             </label>
             <fieldset class="export-tiers">
@@ -245,6 +249,7 @@
               <button type="button" class="ghost-btn" id="create-task-cancel" data-i18n="panel.composeCancel">Cancel</button>
               <button type="submit" class="connect-btn" id="create-task-submit" data-i18n="panel.startTask">Start export</button>
             </div>
+            <p class="compose-flash" id="compose-flash" hidden aria-live="polite"></p>
           </form>
         </div>
 
@@ -256,13 +261,14 @@
                 <th data-i18n="tasks.colStatus">Status</th>
                 <th data-i18n="tasks.colLeads">Leads</th>
                 <th data-i18n="tasks.colCredits">Credits</th>
+                <th data-i18n="tasks.colCreditsDetail">Usage</th>
                 <th data-i18n="tasks.colCreated">Created</th>
                 <th data-i18n="tasks.colAction">Action</th>
               </tr>
             </thead>
             <tbody id="tasks-body">
               <tr class="tasks-empty" id="tasks-empty-row">
-                <td colspan="6" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
+                <td colspan="7" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
               </tr>
             </tbody>
           </table>
@@ -283,6 +289,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=36"></script>
+  <script src="/salesnav/salesnav.js?v=45"></script>
 </body>
 </html>
