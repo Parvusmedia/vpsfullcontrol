@@ -34,7 +34,7 @@ if (!in_array($status, ['CREATION_SUCCESS', 'RECONNECTED'], true)) {
 if (!cde_salesnav_is_account_alive($accountId)) {
     cde_json_response(502, [
         'ok' => false,
-        'error' => 'Unipile account is not ready yet.',
+        'error' => 'LinkedIn account is not ready yet.',
     ]);
 }
 
