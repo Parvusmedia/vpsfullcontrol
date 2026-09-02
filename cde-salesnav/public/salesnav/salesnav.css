@@ -1168,6 +1168,44 @@
   background: rgba(10, 102, 194, 0.1);
 }
 
+.compose-flash {
+  margin: 0.85rem 0 0;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.5;
+  border-radius: 2px;
+  border: 1px solid rgba(10, 102, 194, 0.25);
+  background: rgba(10, 102, 194, 0.06);
+  color: var(--teal-deep);
+}
+
+.compose-flash-text {
+  margin: 0 0 0.75rem;
+}
+
+.compose-flash-text:last-child {
+  margin-bottom: 0;
+}
+
+.compose-flash-topup-btn {
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.compose-flash[data-tone="error"] {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 400;
+}
+
+.compose-flash[data-tone="ok"] {
+  border-color: rgba(31, 111, 106, 0.35);
+  background: rgba(31, 111, 106, 0.08);
+  color: var(--teal-deep);
+}
+
 .panel-flash {
   margin: 0 0 1.25rem;
   padding: 0.85rem 1rem;

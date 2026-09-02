@@ -104,13 +104,18 @@ $creditCost = cde_credits_export_cost($rows, $tiers);
 $userId = cde_salesnav_user_id();
 
 if (cde_credits_billing_enabled() && cde_credits_get_balance($userId) < $creditCost) {
+    $balance = cde_credits_get_balance($userId);
+    $topupOffer = cde_credits_export_topup_offer($creditCost, $balance);
     cde_json_response(402, [
         'ok' => false,
         'needs_payment' => true,
         'error' => 'Insufficient export credits for this download.',
-        'balance' => cde_credits_get_balance($userId),
+        'balance' => $balance,
         'required' => $creditCost,
+        'estimated_cost' => $creditCost,
         'lead_count' => $exportCount,
+        'credits_shortfall' => $topupOffer['credits_shortfall'],
+        'topup' => $topupOffer['topup'],
         'tiers' => $tiers,
     ]);
 }

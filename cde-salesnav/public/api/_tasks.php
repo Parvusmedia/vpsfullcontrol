@@ -114,6 +114,30 @@ function cde_tasks_public_view(array $task): array
     ];
 }
 
+/**
+ * @return array{error: string, estimated_cost: int, balance: int, profile_count: int}|null
+ */
+function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = null): ?array
+{
+    if (!cde_credits_billing_enabled()) {
+        return null;
+    }
+    $userId = $userId ?? cde_salesnav_user_id();
+    $profiles = max(0, $limit);
+    $estimated = cde_credits_estimate_max_export_cost($profiles, $tiers);
+    $balance = cde_credits_get_balance($userId);
+    if ($balance >= $estimated) {
+        return null;
+    }
+
+    return [
+        'estimated_cost' => $estimated,
+        'balance' => $balance,
+        'profile_count' => $profiles,
+        'error' => cde_credits_insufficient_export_message($profiles, $estimated, $balance),
+    ];
+}
+
 /** @param array<string, mixed> $payload */
 function cde_tasks_create(string $userId, string $email, array $payload): array
 {
@@ -136,6 +160,25 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
     }
 
     $tiers = cde_credits_parse_tiers($payload);
+
+    $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId);
+    if ($preflight !== null) {
+        $topupOffer = cde_credits_export_topup_offer(
+            (int) $preflight['estimated_cost'],
+            (int) $preflight['balance']
+        );
+        cde_json_response(402, [
+            'ok' => false,
+            'needs_payment' => true,
+            'estimated_cost' => $preflight['estimated_cost'],
+            'balance' => $preflight['balance'],
+            'profile_count' => $preflight['profile_count'],
+            'credits_shortfall' => $topupOffer['credits_shortfall'],
+            'topup' => $topupOffer['topup'],
+            'error' => $preflight['error'],
+        ]);
+    }
+
     $linked = cde_salesnav_session_account();
     $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
     $taskId = cde_tasks_new_id();
