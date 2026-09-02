@@ -57,9 +57,9 @@ const I18N = {
     "connect.connected": "Connected",
     "connect.connectedAs": "Connected as {label}",
     "connect.body":
-      "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
+      "Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.",
     "connect.cta": "Connect LinkedIn",
-    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
+    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — we do not create a duplicate connection.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
     "connect.expired":
@@ -273,9 +273,9 @@ const I18N = {
     "connect.connected": "Conectado",
     "connect.connectedAs": "Conectado como {label}",
     "connect.body":
-      "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
+      "Conecta tu cuenta LinkedIn / Sales Navigator con nuestro flujo de conexión seguro. No guardamos tu contraseña.",
     "connect.cta": "Conectar LinkedIn",
-    "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
+    "connect.reconnectHint": "Reutilizaremos tu seat de LinkedIn existente — no creamos otra conexión.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
     "connect.expired":
@@ -1951,7 +1951,7 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "50";
+  const limitRaw = document.getElementById("export-limit")?.value || "all";
   const honeypot = document.getElementById("company_url")?.value || "";
   const tierEnriched = document.getElementById("tier-enriched")?.checked;
 
@@ -1987,8 +1987,8 @@ async function submitCreateTask(e) {
     const data = await parseJsonResponse(res);
 
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout(defaultPackId);
-      throw new Error(t("credits.insufficient"));
+      const detail = data.error || t("credits.insufficient");
+      throw new Error(detail);
     }
     if (data.needs_connect || data.needs_reconnect) {
       renderConnectionStatus({

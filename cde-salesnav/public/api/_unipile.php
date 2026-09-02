@@ -43,7 +43,7 @@ function cde_unipile_api_config(?string $accountId = null): array
     if ($apiKey === '') {
         cde_json_response(500, [
             'ok' => false,
-            'error' => 'Server misconfigured: Unipile API key missing.',
+            'error' => 'Server misconfigured: connection service unavailable.',
         ]);
     }
 
@@ -588,7 +588,7 @@ function cde_salesnav_create_hosted_link(string $type = 'create', ?string $recon
     if ($url === '') {
         cde_json_response(502, [
             'ok' => false,
-            'error' => 'Unipile did not return a connection URL.',
+            'error' => 'Could not start secure connection. Please try again.',
         ]);
     }
 
@@ -632,8 +632,8 @@ function cde_unipile_account_error_is_stale(array $resp): bool
     }
     $err = strtolower((string) ($resp['error'] ?? ''));
     return str_contains($err, 'resource not found')
-        || str_contains($err, 'not found')
-        || str_contains($err, 'expired credentials');
+        || str_contains($err, 'expired credentials')
+        || str_contains($err, 'disconnected account');
 }
 
 function cde_salesnav_stale_account_message(): string
@@ -799,7 +799,7 @@ function cde_salesnav_plan_connect(string $userId, bool $explicitReconnect = fal
     if ($hadPriorLink || $explicitReconnect) {
         cde_json_response(409, [
             'ok' => false,
-            'error' => 'No existing LinkedIn seat was found in Unipile to reconnect. '
+            'error' => 'No existing LinkedIn seat was found to reconnect. '
                 . 'Creating a new seat would duplicate billing — contact support.',
             'needs_support' => true,
         ]);
@@ -1036,7 +1036,7 @@ function cde_salesnav_mark_account_stale(?string $userId = null, string $reason 
     cde_salesnav_save_account($userId, array_merge($stored, [
         'disconnected_at' => gmdate('c'),
         'invalid_at' => gmdate('c'),
-        'invalid_reason' => $reason !== '' ? $reason : 'LinkedIn connection is no longer valid in Unipile.',
+        'invalid_reason' => $reason !== '' ? $reason : 'LinkedIn connection is no longer valid.',
         'status' => 'INVALID',
     ]));
     cde_salesnav_clear_session_account();
@@ -1193,7 +1193,7 @@ function cde_unipile_request(
     curl_close($ch);
 
     if ($raw === false) {
-        return ['ok' => false, 'status' => 0, 'error' => $err ?: 'Unipile request failed'];
+        return ['ok' => false, 'status' => 0, 'error' => $err ?: 'Connection service request failed'];
     }
 
     $data = json_decode((string) $raw, true);
@@ -1202,7 +1202,7 @@ function cde_unipile_request(
     }
 
     if ($code >= 400) {
-        $msg = $data['title'] ?? $data['error'] ?? $data['message'] ?? 'Unipile API error';
+        $msg = $data['title'] ?? $data['error'] ?? $data['message'] ?? 'Connection service error';
         return ['ok' => false, 'status' => $code, 'error' => (string) $msg, 'data' => $data];
     }
 
@@ -1389,6 +1389,61 @@ function cde_salesnav_paginate_v2_list(array $config, string $listId, int $maxLe
     }
 
     return array_slice($collected, 0, $maxLeads);
+}
+
+/**
+ * Lightweight probe: how many profiles are in a list/search (Unipile paging.total_count).
+ * Returns null when the count cannot be determined.
+ */
+function cde_salesnav_probe_source_profile_count(array $config, string $sourceUrl, string $mode): ?int
+{
+    $sourceUrl = trim($sourceUrl);
+    if ($sourceUrl === '') {
+        return null;
+    }
+
+    if ($config['is_v1']) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/linkedin/search',
+            ['account_id' => $config['account_id'], 'limit' => 1],
+            ['url' => $sourceUrl]
+        );
+        if (!$resp['ok']) {
+            return null;
+        }
+        $total = (int) ($resp['data']['paging']['total_count'] ?? 0);
+
+        return $total > 0 ? $total : null;
+    }
+
+    if ($mode === 'list' && preg_match('#linkedin\.com/sales/lists/people/(?P<id>\d+)#i', $sourceUrl, $m)) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/lead-lists/' . rawurlencode($m['id']),
+            ['limit' => 1, 'offset' => 0],
+            []
+        );
+    } else {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/search',
+            ['limit' => 1],
+            ['url' => $sourceUrl]
+        );
+    }
+
+    if (!$resp['ok']) {
+        return null;
+    }
+
+    $data = is_array($resp['data'] ?? null) ? $resp['data'] : [];
+    $total = (int) ($data['paging']['total_count'] ?? $data['total_count'] ?? $data['total'] ?? 0);
+
+    return $total > 0 ? $total : null;
 }
 
 function cde_salesnav_export(array $config, string $sourceUrl, string $mode, int $maxLeads): array

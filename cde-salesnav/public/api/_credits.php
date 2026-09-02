@@ -311,6 +311,45 @@ function cde_credits_export_cost(array $rows, array $tiers): int
     return max(1, $total);
 }
 
+/** Upper-bound credits for a queued export (before lead count is known). */
+function cde_credits_estimate_max_export_cost(int $limit, array $tiers): int
+{
+    if ($limit <= 0) {
+        return 0;
+    }
+
+    $perRow = 1.0;
+    if (!empty($tiers['enriched'])) {
+        $perRow += 0.4;
+    }
+    $total = (int) ceil($limit * $perRow);
+    if (!empty($tiers['mail'])) {
+        $total += $limit;
+    }
+
+    return max(1, $total);
+}
+
+function cde_credits_effective_export_profiles(int $limit, ?int $sourceProfileCount): int
+{
+    if ($sourceProfileCount !== null && $sourceProfileCount > 0) {
+        return min($sourceProfileCount, $limit);
+    }
+
+    return max(0, $limit);
+}
+
+function cde_credits_insufficient_export_message(int $profiles, int $creditsRequired, int $balance): string
+{
+    return 'Insufficient export credits. This export has '
+        . $profiles
+        . ' profiles. Complete export will require '
+        . $creditsRequired
+        . ' credits; your balance is '
+        . $balance
+        . '.';
+}
+
 function cde_credits_require_positive_balance(): void
 {
     if (!cde_credits_billing_enabled()) {
