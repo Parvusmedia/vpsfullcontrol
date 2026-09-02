@@ -442,6 +442,17 @@ function cde_tasks_run(string $taskId): void
 
         cde_enforce_salesnav_rate_limits($limit);
 
+        if (cde_credits_billing_enabled()) {
+            $estimatedCost = cde_credits_estimate_max_export_cost($limit, $tiers);
+            $balance = cde_credits_get_balance($userId);
+            if ($balance < $estimatedCost) {
+                throw new RuntimeException(
+                    'Insufficient export credits. This export needs up to '
+                    . $estimatedCost . ' credits; your balance is ' . $balance . '.'
+                );
+            }
+        }
+
         $rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
         $rows = [];
         foreach ($rawRows as $item) {
@@ -507,7 +518,7 @@ function cde_tasks_run(string $taskId): void
         $msg = $e->getMessage();
         if (
             $msg === cde_salesnav_stale_account_message()
-            || cde_unipile_account_error_is_stale(['status' => 404, 'error' => $msg])
+            || cde_unipile_account_error_is_stale(['status' => 0, 'error' => $msg])
         ) {
             cde_salesnav_mark_account_stale($userId, $msg);
             $msg = cde_salesnav_stale_account_message();
