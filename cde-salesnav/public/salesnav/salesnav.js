@@ -86,6 +86,13 @@ const I18N = {
     "tasks.deleteConfirm": "Delete {n} selected export(s)? This cannot be undone.",
     "tasks.deleteDone": "Deleted {n} export task(s).",
     "tasks.deleteNone": "Select completed or failed exports to delete.",
+    "tasks.filterStatus": "Status",
+    "tasks.filterAll": "All statuses",
+    "tasks.filterCount": "Showing {shown} of {total}",
+    "tasks.emptyFiltered": "No tasks match this filter.",
+    "tasks.sortLabel": "Sort by {column}",
+    "tasks.sortAsc": "ascending",
+    "tasks.sortDesc": "descending",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
     "landing.getStarted": "Get started — from €20",
@@ -352,6 +359,13 @@ const I18N = {
     "tasks.deleteConfirm": "¿Eliminar {n} export(s) seleccionado(s)? No se puede deshacer.",
     "tasks.deleteDone": "Se eliminaron {n} tarea(s) de export.",
     "tasks.deleteNone": "Selecciona exports completados o fallidos para eliminar.",
+    "tasks.filterStatus": "Estado",
+    "tasks.filterAll": "Todos los estados",
+    "tasks.filterCount": "Mostrando {shown} de {total}",
+    "tasks.emptyFiltered": "Ninguna tarea coincide con el filtro.",
+    "tasks.sortLabel": "Ordenar por {column}",
+    "tasks.sortAsc": "ascendente",
+    "tasks.sortDesc": "descendente",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
     "landing.getStarted": "Empezar — desde €20",
@@ -589,6 +603,9 @@ let creditBalance = 0;
 let accountEmail = "";
 let defaultPackId = "240";
 let panelTasks = [];
+let tasksStatusFilter = "all";
+let tasksSortKey = "created_at";
+let tasksSortDir = "desc";
 let tasksPollTimer = null;
 let composeOpen = false;
 const SN_PENDING_EXPORT_KEY = "sn_pending_export";
@@ -680,6 +697,7 @@ function initLang() {
       lang = btn.dataset.lang === "es" ? "es" : "en";
       applyI18n();
       renderConnectionStatus(lastConnection);
+      renderTasksTable();
     });
   });
 }
@@ -2124,9 +2142,126 @@ function updateTasksDeleteControls() {
   }
 }
 
+function taskStatusSortRank(status) {
+  if (status === "processing") return 0;
+  if (status === "ready") return 1;
+  if (status === "failed") return 2;
+  return 3;
+}
+
+function taskSortValue(task, key) {
+  switch (key) {
+    case "source_label":
+      return (task.source_label || task.mode || "").toLowerCase();
+    case "status":
+      return taskStatusSortRank(task.status);
+    case "lead_count":
+      return task.status === "ready" ? Number(task.lead_count || 0) : -1;
+    case "credits_used":
+      return task.status === "ready" ? Number(task.credits_used || 0) : -1;
+    case "created_at": {
+      const ts = Date.parse(task.created_at || "");
+      return Number.isFinite(ts) ? ts : 0;
+    }
+    default:
+      return 0;
+  }
+}
+
+function compareTasks(a, b) {
+  const av = taskSortValue(a, tasksSortKey);
+  const bv = taskSortValue(b, tasksSortKey);
+  let cmp = 0;
+  if (typeof av === "string" || typeof bv === "string") {
+    cmp = String(av).localeCompare(String(bv), lang === "es" ? "es" : "en", { sensitivity: "base" });
+  } else {
+    cmp = av === bv ? 0 : av < bv ? -1 : 1;
+  }
+  if (cmp === 0) {
+    const at = Date.parse(a.created_at || "") || 0;
+    const bt = Date.parse(b.created_at || "") || 0;
+    cmp = bt === at ? 0 : bt < at ? 1 : -1;
+  }
+  return tasksSortDir === "asc" ? cmp : -cmp;
+}
+
+function getVisibleTasks() {
+  let tasks = [...panelTasks];
+  if (tasksStatusFilter !== "all") {
+    tasks = tasks.filter((task) => (task.status || "processing") === tasksStatusFilter);
+  }
+  tasks.sort(compareTasks);
+  return tasks;
+}
+
+function tasksSortColumnLabel(key) {
+  const labels = {
+    source_label: t("tasks.colSource"),
+    status: t("tasks.colStatus"),
+    lead_count: t("tasks.colLeads"),
+    credits_used: t("tasks.colCredits"),
+    created_at: t("tasks.colCreated"),
+  };
+  return labels[key] || key;
+}
+
+function updateTasksFilterCount(shown, total) {
+  const el = document.getElementById("tasks-filter-count");
+  if (!el) return;
+  if (total === 0 || (tasksStatusFilter === "all" && shown === total)) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = t("tasks.filterCount")
+    .replace("{shown}", String(shown))
+    .replace("{total}", String(total));
+}
+
+function updateTasksSortHeaders() {
+  document.querySelectorAll(".tasks-sort-btn").forEach((btn) => {
+    const key = btn.dataset.sort || "";
+    const active = key === tasksSortKey;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-sort", active ? (tasksSortDir === "asc" ? "ascending" : "descending") : "none");
+    const column = tasksSortColumnLabel(key);
+    const dirLabel = tasksSortDir === "asc" ? t("tasks.sortAsc") : t("tasks.sortDesc");
+    btn.setAttribute(
+      "aria-label",
+      active
+        ? `${column}, ${dirLabel}`
+        : t("tasks.sortLabel").replace("{column}", column)
+    );
+    const indicator = btn.querySelector(".tasks-sort-indicator");
+    if (indicator) {
+      indicator.textContent = active ? (tasksSortDir === "asc" ? "▲" : "▼") : "";
+    }
+  });
+}
+
+function setTasksSort(key) {
+  if (tasksSortKey === key) {
+    tasksSortDir = tasksSortDir === "asc" ? "desc" : "asc";
+  } else {
+    tasksSortKey = key;
+    tasksSortDir = key === "source_label" || key === "status" ? "asc" : "desc";
+  }
+  renderTasksTable();
+}
+
 function renderTasksTable() {
   const tbody = document.getElementById("tasks-body");
   if (!tbody) return;
+
+  const filterEl = document.getElementById("tasks-status-filter");
+  if (filterEl && filterEl.value !== tasksStatusFilter) {
+    filterEl.value = tasksStatusFilter;
+  }
+
+  const visibleTasks = getVisibleTasks();
+  updateTasksFilterCount(visibleTasks.length, panelTasks.length);
+  updateTasksSortHeaders();
 
   tbody.innerHTML = "";
   if (!panelTasks.length) {
@@ -2142,7 +2277,19 @@ function renderTasksTable() {
     return;
   }
 
-  panelTasks.forEach((task) => {
+  if (!visibleTasks.length) {
+    const tr = document.createElement("tr");
+    tr.className = "tasks-empty";
+    const td = document.createElement("td");
+    td.colSpan = 8;
+    td.textContent = t("tasks.emptyFiltered");
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    updateTasksDeleteControls();
+    return;
+  }
+
+  visibleTasks.forEach((task) => {
     const tr = document.createElement("tr");
     tr.dataset.taskId = task.id;
     if (task.status === "processing") tr.classList.add("tasks-row-processing");
@@ -2883,5 +3030,12 @@ function initPanelPage() {
       el.checked = checked;
     });
     updateTasksDeleteControls();
+  });
+  document.getElementById("tasks-status-filter")?.addEventListener("change", (e) => {
+    tasksStatusFilter = e.target.value || "all";
+    renderTasksTable();
+  });
+  document.querySelectorAll(".tasks-sort-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setTasksSort(btn.dataset.sort || "created_at"));
   });
 }
