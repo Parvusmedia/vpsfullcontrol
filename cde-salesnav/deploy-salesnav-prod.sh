@@ -14,6 +14,9 @@ scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
 if [[ -f "$LOCAL/index.html" ]]; then
   scp "$LOCAL/index.html" "$REMOTE:$STAGING/"
 fi
+if [[ -f "$LOCAL/styles.css" ]]; then
+  scp "$LOCAL/styles.css" "$REMOTE:$STAGING/"
+fi
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
