@@ -1951,7 +1951,7 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "50";
+  const limitRaw = document.getElementById("export-limit")?.value || "all";
   const honeypot = document.getElementById("company_url")?.value || "";
   const tierEnriched = document.getElementById("tier-enriched")?.checked;
 

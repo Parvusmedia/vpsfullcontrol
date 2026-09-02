@@ -143,7 +143,7 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
 {
     $listUrl = trim((string) ($payload['list_url'] ?? ''));
     $searchUrl = trim((string) ($payload['search_url'] ?? ''));
-    $limitRaw = $payload['limit'] ?? 50;
+    $limitRaw = $payload['limit'] ?? 'all';
     $limit = cde_tasks_normalize_limit($limitRaw);
     $limitLabel = cde_tasks_limit_label($limit, $limitRaw);
 
