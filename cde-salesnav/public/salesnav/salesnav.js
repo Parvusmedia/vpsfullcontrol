@@ -33,6 +33,7 @@ const I18N = {
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Credits",
+    "tasks.colCreditsDetail": "Usage",
     "tasks.colCreated": "Created",
     "tasks.colAction": "Action",
     "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
@@ -41,6 +42,9 @@ const I18N = {
     "tasks.status.ready": "Ready",
     "tasks.status.failed": "Failed",
     "tasks.download": "Download CSV",
+    "tasks.breakdownProfiles": "{n} profiles",
+    "tasks.breakdownEnriched": "{n} enriched",
+    "tasks.breakdownEmails": "{n} verified emails",
     "tasks.limitAll": "All",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
@@ -249,6 +253,7 @@ const I18N = {
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Créditos",
+    "tasks.colCreditsDetail": "Uso",
     "tasks.colCreated": "Creado",
     "tasks.colAction": "Acción",
     "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
@@ -257,6 +262,9 @@ const I18N = {
     "tasks.status.ready": "Listo",
     "tasks.status.failed": "Fallido",
     "tasks.download": "Descargar CSV",
+    "tasks.breakdownProfiles": "{n} perfiles",
+    "tasks.breakdownEnriched": "{n} enriquecidos",
+    "tasks.breakdownEmails": "{n} emails verificados",
     "tasks.limitAll": "Todos",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
@@ -1849,6 +1857,23 @@ function highlightTaskFromQuery() {
   }
 }
 
+function formatCreditsBreakdown(task) {
+  const breakdown = task?.credits_breakdown;
+  if (!breakdown || task.status !== "ready") return "—";
+
+  const parts = [];
+  if (breakdown.profiles > 0) {
+    parts.push(t("tasks.breakdownProfiles", { n: breakdown.profiles }));
+  }
+  if (breakdown.enriched_credits > 0) {
+    parts.push(t("tasks.breakdownEnriched", { n: breakdown.profiles }));
+  }
+  if (breakdown.email_credits > 0) {
+    parts.push(t("tasks.breakdownEmails", { n: breakdown.emails_found }));
+  }
+  return parts.length ? parts.join(" + ") : "—";
+}
+
 function renderTasksTable() {
   const tbody = document.getElementById("tasks-body");
   if (!tbody) return;
@@ -1859,7 +1884,7 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -1891,6 +1916,10 @@ function renderTasksTable() {
     const credits = document.createElement("td");
     credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
 
+    const creditsDetail = document.createElement("td");
+    creditsDetail.className = "tasks-credits-detail";
+    creditsDetail.textContent = formatCreditsBreakdown(task);
+
     const created = document.createElement("td");
     created.textContent = formatTaskDate(task.created_at);
 
@@ -1908,7 +1937,7 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, created, action);
+    tr.append(source, status, leads, credits, creditsDetail, created, action);
     tbody.appendChild(tr);
   });
 }
