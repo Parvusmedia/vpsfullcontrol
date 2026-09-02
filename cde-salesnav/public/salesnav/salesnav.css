@@ -1326,6 +1326,19 @@
   color: var(--teal-deep);
 }
 
+.compose-flash-text {
+  margin: 0 0 0.75rem;
+}
+
+.compose-flash-text:last-child {
+  margin-bottom: 0;
+}
+
+.compose-flash-topup-btn {
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
 .compose-flash[data-tone="error"],
 .panel-flash[data-tone="error"] {
   border-color: #fca5a5;

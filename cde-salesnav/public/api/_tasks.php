@@ -271,12 +271,18 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
 
     $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId, $sourceProfileCount);
     if ($preflight !== null) {
+        $topupOffer = cde_credits_export_topup_offer(
+            (int) $preflight['estimated_cost'],
+            (int) $preflight['balance']
+        );
         cde_json_response(402, [
             'ok' => false,
             'needs_payment' => true,
             'estimated_cost' => $preflight['estimated_cost'],
             'balance' => $preflight['balance'],
             'profile_count' => $preflight['profile_count'],
+            'credits_shortfall' => $topupOffer['credits_shortfall'],
+            'topup' => $topupOffer['topup'],
             'error' => $preflight['error'],
         ]);
     }

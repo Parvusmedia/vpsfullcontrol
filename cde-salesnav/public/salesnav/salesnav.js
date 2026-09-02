@@ -173,6 +173,10 @@ const I18N = {
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
     "credits.insufficient": "Not enough credits for this export. Top up from €20 (240 credits).",
+    "credits.exportTopupDetail":
+      "You need {required} credits for this export (balance: {balance}). Top up {packCredits} credits ({packPrice}) to process it.",
+    "credits.exportTopupBtn": "Top up {packCredits} credits ({packPrice})",
+    "credits.exportRetrying": "Payment received — starting your export…",
     "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 240 credits).",
     "mode.list": "Lead list",
     "mode.search": "People search",
@@ -430,6 +434,10 @@ const I18N = {
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
+    "credits.exportTopupDetail":
+      "Este export necesita {required} créditos (saldo: {balance}). Recarga {packCredits} créditos ({packPrice}) para procesarlo.",
+    "credits.exportTopupBtn": "Recargar {packCredits} créditos ({packPrice})",
+    "credits.exportRetrying": "Pago recibido — iniciando tu export…",
     "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 240 créditos).",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
@@ -573,6 +581,9 @@ let defaultPackId = "240";
 let panelTasks = [];
 let tasksPollTimer = null;
 let composeOpen = false;
+const SN_PENDING_EXPORT_KEY = "sn_pending_export";
+const SN_CHECKOUT_REASON_KEY = "sn_checkout_reason";
+let pendingExportBody = null;
 let exportNameTouched = false;
 let sourceMetaTimer = null;
 let sourceMetaRequest = 0;
@@ -697,19 +708,115 @@ function setAccountNote(text, tone = "ok") {
   setNote(text, tone, "account");
 }
 
-function setPanelFlash(text, tone = "ok") {
-  setComposeFlash(text, tone);
-}
-
-function setComposeFlash(text, tone = "ok") {
-  const el = document.getElementById("compose-flash");
+function setPanelFlash(text, tone = "ok", topup = null) {
+  const composeFlash = document.getElementById("compose-flash");
+  if (composeFlash && (composeOpen || topup)) {
+    setComposeFlash(text, tone, topup);
+    return;
+  }
+  const el = document.getElementById("panel-flash");
   if (!el) return;
   el.hidden = !text;
   el.dataset.tone = tone;
   el.textContent = text || "";
+}
+
+function setComposeFlash(text, tone = "ok", topup = null) {
+  const el = document.getElementById("compose-flash");
+  if (!el) {
+    setPanelFlash(text, tone);
+    return;
+  }
+  el.hidden = !text && !topup;
+  el.dataset.tone = tone;
+  el.replaceChildren();
+  if (text) {
+    const p = document.createElement("p");
+    p.className = "compose-flash-text";
+    p.textContent = text;
+    el.appendChild(p);
+  }
+  if (topup?.packId) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "connect-btn compose-flash-topup-btn";
+    btn.textContent = t("credits.exportTopupBtn", {
+      packCredits: topup.credits,
+      packPrice: formatEur(topup.amountCents),
+    });
+    btn.addEventListener("click", () => {
+      startExportTopupCheckout(topup.packId);
+    });
+    el.appendChild(btn);
+  }
   if (text && tone === "error") {
     el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
+}
+
+function formatEur(cents) {
+  const value = Number(cents) || 0;
+  return new Intl.NumberFormat(lang === "es" ? "es-ES" : "en-GB", {
+    style: "currency",
+    currency: "EUR",
+  }).format(value / 100);
+}
+
+function savePendingExport(body) {
+  pendingExportBody = body;
+  try {
+    sessionStorage.setItem(SN_PENDING_EXPORT_KEY, JSON.stringify(body));
+    sessionStorage.setItem(SN_CHECKOUT_REASON_KEY, "export");
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearPendingExport() {
+  pendingExportBody = null;
+  try {
+    sessionStorage.removeItem(SN_PENDING_EXPORT_KEY);
+    sessionStorage.removeItem(SN_CHECKOUT_REASON_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadPendingExportBody() {
+  if (pendingExportBody) {
+    return pendingExportBody;
+  }
+  try {
+    const raw = sessionStorage.getItem(SN_PENDING_EXPORT_KEY);
+    if (!raw) return null;
+    pendingExportBody = JSON.parse(raw);
+    return pendingExportBody;
+  } catch {
+    return null;
+  }
+}
+
+function showExportTopupOffer(data) {
+  const required = Number(data.estimated_cost ?? data.required) || 0;
+  const balance = Number(data.balance) || 0;
+  const shortfall = Number(data.credits_shortfall) || Math.max(0, required - balance);
+  const topup = data.topup;
+  if (!topup?.pack_id) {
+    setPanelFlash(data.error || t("credits.insufficient"), "error");
+    return;
+  }
+  const message = t("credits.exportTopupDetail", {
+    required,
+    balance,
+    shortfall,
+    packCredits: topup.credits,
+    packPrice: formatEur(topup.amount_cents),
+  });
+  setPanelFlash(message, "error", {
+    packId: String(topup.pack_id),
+    credits: Number(topup.credits) || 0,
+    amountCents: Number(topup.amount_cents) || 0,
+  });
 }
 
 function setConnectNote(text, tone = "ok") {
@@ -1547,7 +1654,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     if (IS_PANEL) {
       document.getElementById("panel-guest-wrap")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    return;
+    return false;
   }
   try {
     sessionStorage.setItem("sn_pre_balance", String(creditBalance));
@@ -1578,14 +1685,35 @@ async function startStripeCheckout(pack = defaultPackId) {
     } catch {
       /* ignore */
     }
-    return;
+    await retryPendingExportIfReady();
+    return true;
   }
   if (result?.ok === false) {
     setAccountNote(t("credits.cancelled"), "error");
-    return;
+    return false;
   }
   setAccountNote(t("credits.checkoutOpened"), "ok");
   await pollCreditsAfterReturn();
+  return creditBalance > (Number(sessionStorage.getItem("sn_pre_balance")) || 0);
+}
+
+async function startExportTopupCheckout(packId) {
+  if (!accountEmail) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  const submitBtn = document.getElementById("create-task-submit");
+  const topupBtn = document.querySelector(".compose-flash-topup-btn");
+  if (submitBtn) submitBtn.disabled = true;
+  if (topupBtn) topupBtn.disabled = true;
+  try {
+    await startStripeCheckout(packId);
+  } catch (err) {
+    setPanelFlash(err.message || t("msg.generic"), "error");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (topupBtn) topupBtn.disabled = false;
+  }
 }
 
 async function handleVerifyQuery() {
@@ -1842,6 +1970,7 @@ async function completeStripeReturn(sessionId) {
         : t("credits.paid"),
       "ok"
     );
+    await retryPendingExportIfReady();
   } catch {
     await pollCreditsAfterReturn();
   }
@@ -1868,6 +1997,7 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
         email ? t("credits.paidWithEmail", { count: creditBalance - prev, email }) : t("credits.paid"),
         "ok"
       );
+      await retryPendingExportIfReady();
       return;
     }
     await new Promise((r) => setTimeout(r, delayMs));
@@ -2164,6 +2294,107 @@ function closeCreateTaskCompose(clearForm = false) {
     document.getElementById("create-task-form")?.reset();
     document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
     resetExportNameState();
+    clearPendingExport();
+  }
+}
+
+function buildCreateTaskBody(challenge) {
+  const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const limitRaw = document.getElementById("export-limit")?.value || "all";
+  const honeypot = document.getElementById("company_url")?.value || "";
+  const tierEnriched = document.getElementById("tier-enriched")?.checked;
+  const tierMail = document.getElementById("tier-mail")?.checked;
+  const exportName = document.getElementById("export-name")?.value.trim() || "";
+  const body = {
+    challenge,
+    company_url: honeypot,
+    limit: limitRaw,
+    tier_enriched: tierEnriched ? 1 : 0,
+    tier_mail: tierMail ? 1 : 0,
+  };
+  if (exportName) body.export_name = exportName;
+  if (mode === "list") body.list_url = listUrl;
+  else body.search_url = searchUrl;
+  return body;
+}
+
+async function postCreateTask(body) {
+  const res = await fetch("/api/salesnav-tasks.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await parseJsonResponse(res);
+  return { res, data };
+}
+
+function handleCreateTaskSuccess(data) {
+  clearPendingExport();
+  closeCreateTaskCompose(true);
+  setPanelFlash(t("tasks.processing"), "ok");
+  if (data.task) {
+    panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
+    renderTasksTable();
+    scheduleTasksPoll();
+  } else {
+    fetchTasks();
+  }
+}
+
+async function retryPendingExportIfReady() {
+  let reason = "";
+  try {
+    reason = sessionStorage.getItem(SN_CHECKOUT_REASON_KEY) || "";
+  } catch {
+    reason = "";
+  }
+  if (reason !== "export") {
+    return false;
+  }
+  const saved = loadPendingExportBody();
+  if (!saved) {
+    return false;
+  }
+  const compose = document.getElementById("tasks-compose");
+  if (compose) {
+    compose.hidden = false;
+    composeOpen = true;
+  }
+  setPanelFlash(t("credits.exportRetrying"), "ok");
+  const submitBtn = document.getElementById("create-task-submit");
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    const challenge = await getChallenge();
+    const body = { ...saved, challenge };
+    const { res, data } = await postCreateTask(body);
+    if (res.status === 402 && data.needs_payment) {
+      savePendingExport(saved);
+      showExportTopupOffer(data);
+      return false;
+    }
+    if (data.needs_connect || data.needs_reconnect) {
+      renderConnectionStatus({
+        connected: false,
+        reconnect_available: true,
+        needs_reconnect: !!data.needs_reconnect,
+        stored_label: data.stored_label || "",
+        connect_message: data.error || "",
+      });
+      throw new Error(data.error || t("connect.required"));
+    }
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || t("msg.generic"));
+    }
+    handleCreateTaskSuccess(data);
+    return true;
+  } catch (err) {
+    setPanelFlash(err.message || t("msg.generic"), "error");
+    return false;
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -2177,10 +2408,6 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "all";
-  const honeypot = document.getElementById("company_url")?.value || "";
-  const tierEnriched = document.getElementById("tier-enriched")?.checked;
-  const exportName = document.getElementById("export-name")?.value.trim() || "";
 
   if (mode === "list" && !listUrl) {
     setPanelFlash(lang === "es" ? "Pega la URL de la lista." : "Paste a list URL.", "error");
@@ -2196,27 +2423,13 @@ async function submitCreateTask(e) {
 
   try {
     const challenge = await getChallenge();
-    const body = {
-      challenge,
-      company_url: honeypot,
-      limit: limitRaw,
-      tier_enriched: tierEnriched ? 1 : 0,
-    };
-    if (exportName) body.export_name = exportName;
-    if (mode === "list") body.list_url = listUrl;
-    else body.search_url = searchUrl;
-
-    const res = await fetch("/api/salesnav-tasks.php", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await parseJsonResponse(res);
+    const body = buildCreateTaskBody(challenge);
+    const { res, data } = await postCreateTask(body);
 
     if (res.status === 402 && data.needs_payment) {
-      const detail = data.error || t("credits.insufficient");
-      throw new Error(detail);
+      savePendingExport(body);
+      showExportTopupOffer(data);
+      return;
     }
     if (data.needs_connect || data.needs_reconnect) {
       renderConnectionStatus({
@@ -2232,15 +2445,7 @@ async function submitCreateTask(e) {
       throw new Error(data.error || t("msg.generic"));
     }
 
-    closeCreateTaskCompose(true);
-    setPanelFlash(t("tasks.processing"), "ok");
-    if (data.task) {
-      panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
-      renderTasksTable();
-      scheduleTasksPoll();
-    } else {
-      await fetchTasks();
-    }
+    handleCreateTaskSuccess(data);
   } catch (err) {
     setPanelFlash(err.message || t("msg.generic"), "error");
   } finally {
