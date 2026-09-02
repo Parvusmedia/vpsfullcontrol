@@ -1,28 +1,40 @@
 {
   "actorSpecification": 1,
   "fields": {
-    "first_name": { "type": "string", "description": "Lead first name" },
-    "last_name": { "type": "string", "description": "Lead last name" },
-    "full_name": { "type": "string", "description": "Full name" },
-    "job_title": { "type": "string", "description": "Headline or current role" },
-    "company_name": { "type": "string", "description": "Current company" },
-    "location": { "type": "string", "description": "Geographic location" },
-    "linkedin_url": { "type": "string", "description": "Public LinkedIn profile URL" },
-    "sales_nav_id": { "type": "string", "description": "Sales Navigator / member ID" },
-    "open_profile": { "type": "string", "description": "Open profile flag if available" },
-    "connection_degree": { "type": "string", "description": "Network distance (1st, 2nd, etc.)" }
+    "first_name": { "type": "string" },
+    "last_name": { "type": "string" },
+    "full_name": { "type": "string" },
+    "job_title": { "type": "string" },
+    "company_name": { "type": "string" },
+    "location": { "type": "string" },
+    "linkedin_url": { "type": "string" },
+    "sales_nav_id": { "type": "string" },
+    "open_profile": { "type": "string" },
+    "connection_degree": { "type": "string" },
+    "company_linkedin_url": { "type": "string" },
+    "company_domain": { "type": "string" },
+    "company_industry": { "type": "string" },
+    "company_size": { "type": "string" },
+    "company_hq": { "type": "string" },
+    "seniority": { "type": "string" },
+    "tenure_years": { "type": "string" },
+    "profile_summary": { "type": "string" },
+    "skills": { "type": "string" },
+    "languages": { "type": "string" }
   },
   "views": {
     "overview": {
-      "title": "Leads",
+      "title": "Leads (full profile)",
       "transformation": {
         "fields": [
           "full_name",
           "job_title",
           "company_name",
+          "company_domain",
+          "seniority",
           "location",
           "linkedin_url",
-          "connection_degree"
+          "profile_summary"
         ]
       },
       "display": {
@@ -31,9 +43,11 @@
           "full_name": { "label": "Name", "format": "text" },
           "job_title": { "label": "Title", "format": "text" },
           "company_name": { "label": "Company", "format": "text" },
+          "company_domain": { "label": "Domain", "format": "text" },
+          "seniority": { "label": "Seniority", "format": "text" },
           "location": { "label": "Location", "format": "text" },
           "linkedin_url": { "label": "LinkedIn", "format": "link" },
-          "connection_degree": { "label": "Degree", "format": "text" }
+          "profile_summary": { "label": "Summary", "format": "text" }
         }
       }
     }

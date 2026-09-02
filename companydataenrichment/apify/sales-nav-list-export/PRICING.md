@@ -1,129 +1,86 @@
-# Pricing: fijo (seat Unipile) + uso (por lead)
+# Pricing: fijo (seat Unipile) + uso (lead con perfil Harvest)
 
-Modelo recomendado para **CompanyDataEnrichment** y, si aplica, para el Actor en Apify Store.
+Modelo para el Actor y para **CompanyDataEnrichment** — export SN con **perfil completo (Harvest)**, **sin email**.
 
-## Coste base (Unipile)
+## Costes de proveedor
 
-Unipile **no cobra por request** — cobra por **cuenta conectada** (pico del mes):
+| Proveedor | Modelo | Orden de magnitud |
+|-----------|--------|-------------------|
+| **Unipile** | Fijo por cuenta conectada (pico mes) | €49/mes hasta 10 seats |
+| **Harvest** | Por perfil/empresa consultados | Variable según plan HarvestAPI |
+| **Email** | — | **No incluido en este actor** |
 
-| Cuentas vinculadas (pico) | Coste Unipile |
-|---------------------------|---------------|
-| 1–10 | **€49/mes** (flat) |
-| 11–50 | €5/cuenta/mes (sobre el mínimo) |
-
-Implicación: hasta que no tengas ~10 clientes compartiendo la misma org Unipile, el coste fijo real por “seat” es alto si solo hay 1–2 cuentas (pagas €49 igual).
-
-## Modelo comercial propuesto
+## Modelo comercial
 
 ```
-Total mensual ≈ SeatFee + (leads exportados × precio/lead) + add-ons
+Total ≈ SeatFee (fijo) + (leads × precio/lead enriquecido)
 ```
 
-### 1. Fijo — “SN seat” (cubre Unipile + conexión + panel)
+Un solo precio por lead — **ya incluye** lista SN + perfil Harvest completo. No hay tier Basic/Mail en Apify.
 
-| Escenario | SeatFee sugerido | Por qué |
-|-----------|------------------|---------|
-| **Pool compartido** (varios clientes en 1 org Unipile, &lt;10 seats) | **€19–29/mes** por cuenta LinkedIn conectada | €49/10 ≈ €4,9/cuenta + margen + soporte |
-| **Seat dedicado** (1 org Unipile por cliente enterprise) | **€59–79/mes** | Cubre mínimo €49 Unipile + margen |
-| **Sin seat** (BYO Unipile — solo Actor Apify) | **€0 fijo** | El usuario paga Unipile directamente |
+### 1. Fijo — seat LinkedIn (Unipile)
 
-El seat incluye: conexión LinkedIn/SN vía hosted auth, reconexión, estado en panel, **sin** incluir leads exportados.
+| Escenario | SeatFee sugerido |
+|-----------|------------------|
+| Pool compartido (&lt;10 seats / org) | **€19–29/mes** por cuenta |
+| Seat dedicado | **€59–79/mes** |
+| BYO Unipile (solo Actor) | €0 fijo en tu checkout |
 
-### 2. Variable — por lead exportado
+### 2. Variable — por lead exportado (perfil completo)
 
-Alineado con créditos CDE actuales (1 crédito ≈ 1 lead basic):
+Equivalente al tier **Enriched** de CDE (Basic + Harvest), no al add-on Mail:
 
-| Pack CDE (referencia) | €/lead efectivo |
-|-----------------------|-----------------|
-| €20 → 240 créditos | ~€0,083 |
-| €29 → 600 créditos | ~€0,048 |
-| €49 → 1.800 créditos | ~€0,027 |
-| €99 → 4.800 créditos | ~€0,021 |
+| Referencia CDE | €/lead |
+|----------------|--------|
+| Basic + Enriched (~1 + 0,4 créditos) | ~**€0,07** retail |
+| Pack volumen | ~**€0,03–0,05** |
 
-**Precio público recomendado (simple):**
+**Precio público recomendado (Actor / CDE Enriched):**
 
-| Tier | Precio/lead |
-|------|-------------|
-| Basic export | **€0,05** (o 1 crédito) |
-| + Enriched | **+€0,02** (+40% → coherente con `_credits.php`) |
-| + Email (cuando exista) | **+€0,05** por email encontrado |
+| Concepto | Precio/lead |
+|----------|-------------|
+| Lead con perfil completo (Harvest) | **€0,06–0,08** |
+| Solo en CDE web, add-on Mail | +€0,05/email *(fuera del actor)* |
+
+Calibración: cubrir **Unipile amortizado + coste Harvest por perfil + margen Apify/compute**.
 
 ### 3. Ejemplos
 
-**Cliente SMB** — seat pool €25/mes, 800 leads/mes basic:
+**SMB** — seat €25/mes, 500 leads/mes con perfil completo:
 
 - Fijo: €25  
-- Variable: 800 × €0,05 = €40  
-- **Total: €65/mes**  
-- Tu coste Unipile (si es 1 de 8 seats en pool): ~€6,1 amortizado + margen amplio
+- Variable: 500 × €0,07 = €35  
+- **Total: €60/mes**
 
-**Cliente solo** — 1 cuenta en org vacía, 200 leads/mes:
-
-- Fijo mínimo: **€59** (cubre €49 Unipile)  
-- Variable: 200 × €0,05 = €10  
-- **Total: €69/mes**
-
-**Power user** — €29 seat, 5.000 leads con pack volumen:
+**Power** — seat €29, 3.000 leads:
 
 - Fijo: €29  
-- Variable: 5.000 × €0,027 ≈ €135 (pack €99 + recargas)  
-- **Total: ~€164/mes**
+- Variable: 3.000 × €0,04 ≈ €120  
+- **Total: ~€149/mes**
 
-## Dónde cobrar: CDE (Stripe) vs Apify Store
+## Apify Store (PPE)
 
-### Recomendado: **CDE + Stripe** (fijo + uso)
+Sin rental mensual. Simular fijo + uso:
 
-| Componente | Cómo cobrar |
-|------------|-------------|
-| Seat mensual | Stripe Subscription (`price_..._seat_monthly`) |
-| Leads | Créditos prepago (ya implementado) o metered billing Stripe |
+| Evento | Rol | Precio orientativo |
+|--------|-----|-------------------|
+| `export-run` | Arranque + seat amortizado | **$3–6** / run |
+| `lead-enriched` | 1 lead con perfil Harvest | **$0,05–0,08** / lead |
 
-Ventajas: control total, fijo mensual real, mismo flujo que el panel actual.
+No crear evento `email-found` — este actor no lo usa.
 
-### Apify Store: simular fijo + uso con **Pay-Per-Event (PPE)**
+## CDE vs Actor
 
-Apify **retira el modelo rental** (cuota fija mensual en Store). El equivalente es:
+| | CDE panel | Actor Apify |
+|--|-----------|-------------|
+| Export SN | Unipile | Unipile |
+| Perfil completo | Harvest (tier Enriched) | Harvest (siempre) |
+| Email | Tier Mail opcional | **No** |
+| Cobro | Stripe seat + créditos | PPE o tu API |
 
-| Evento PPE | Rol | Precio orientativo |
-|------------|-----|-------------------|
-| `export-run` | Sustituye el “fijo” **por ejecución** | **$2–5** / run |
-| `lead-exported` | Uso | **$0,03–0,05** / lead |
+## Resumen
 
-Fórmula para calibrar `export-run`:
-
-```
-export-run ≈ (SeatFee_mensual / runs_mes_esperados) × 1.2
-```
-
-Ejemplo: seat €29/mes, ~6 exports/mes → $5/run + $0.04/lead.
-
-**Actor managed** (tú pones Unipile): ambos eventos.  
-**BYO Unipile**: solo `lead-exported` (o precio más bajo en `export-run`).
-
-Implementación en código (cuando publiques):
-
-```js
-const charging = Actor.getChargingManager();
-if (charging.getPricingInfo().isPayPerEvent) {
-  await Actor.charge({ eventName: 'export-run' });
-}
-// por cada lead:
-await dataset.pushData(row);
-if (charging.getPricingInfo().isPayPerEvent) {
-  await Actor.charge({ eventName: 'lead-exported' });
-}
-```
-
-## Resumen ejecutivo
-
-1. **No publiques solo pay-per-lead** si tú pagas Unipile — pierdes en clientes de bajo volumen.  
-2. **Fijo = seat LinkedIn**; **variable = leads** (créditos).  
-3. **CDE** es el lugar natural para el fijo mensual; **Apify PPE** solo si quieres canal Store/API sin tu checkout.  
-4. Hasta llenar el pool de 10 cuentas Unipile, prioriza **subir SeatFee** o **agrupar clientes** en una org.
-
-## Próximo paso en producto
-
-- [ ] Stripe: producto `SN Seat` recurrente (€25–29 pool / €69 dedicado)  
-- [ ] Panel: bloquear export si seat inactivo o sin créditos  
-- [ ] Actor Apify: eventos PPE `export-run` + `lead-exported` (opcional)  
-- [ ] Página pricing pública con tabla fijo + uso
+1. **Un precio por lead enriquecido** — no cobrar Basic barato y Harvest aparte en Store.  
+2. **Email fuera de scope** del actor Apify.  
+3. **Seat fijo** cubre Unipile; **variable** cubre Harvest + margen.  
+4. En CDE podéis seguir con tiers Basic / Enriched / Mail en web; el actor = siempre Enriched.

@@ -1,5 +1,5 @@
 {
-  "title": "Sales Navigator list export",
+  "title": "Sales Navigator export — full profile (Harvest)",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
@@ -14,7 +14,7 @@
     "listUrl": {
       "title": "Lead list URL or ID",
       "type": "string",
-      "description": "Full Sales Navigator lead list URL (e.g. https://www.linkedin.com/sales/lists/people/123456789) or numeric list ID. Required when mode is `list`.",
+      "description": "Full Sales Navigator lead list URL or numeric list ID. Required when mode is `list`.",
       "editor": "textfield",
       "prefill": "https://www.linkedin.com/sales/lists/people/"
     },
@@ -28,7 +28,7 @@
     "maxLeads": {
       "title": "Max leads",
       "type": "integer",
-      "description": "Maximum number of leads to export (1–2000).",
+      "description": "Maximum number of leads to export (1–2000). Each lead triggers one Harvest profile lookup (+ company when available).",
       "default": 100,
       "minimum": 1,
       "maximum": 2000
@@ -36,14 +36,14 @@
     "unipileApiKey": {
       "title": "Unipile API key",
       "type": "string",
-      "description": "Your Unipile API key (X-API-KEY). Can also be set via UNIPILE_API_KEY env var on the Actor.",
+      "description": "Unipile API key for Sales Navigator list/search export. Env: UNIPILE_API_KEY.",
       "editor": "textfield",
       "isSecret": true
     },
     "unipileAccountId": {
       "title": "Unipile LinkedIn account ID",
       "type": "string",
-      "description": "LinkedIn account connected in Unipile (account_id). Can also be set via UNIPILE_ACCOUNT_ID env var.",
+      "description": "LinkedIn seat connected in Unipile. Env: UNIPILE_ACCOUNT_ID.",
       "editor": "textfield"
     },
     "unipileBaseUrl": {
@@ -53,10 +53,32 @@
       "default": "https://api.unipile.com/v2",
       "editor": "textfield"
     },
-    "pageDelayMs": {
-      "title": "Delay between pages (ms)",
+    "harvestApiKey": {
+      "title": "Harvest API key",
+      "type": "string",
+      "description": "HarvestAPI key for full LinkedIn profile enrichment. Env: HARVEST_API_KEY.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "harvestBaseUrl": {
+      "title": "Harvest API base URL",
+      "type": "string",
+      "description": "Defaults to https://api.harvestapi.io",
+      "default": "https://api.harvestapi.io",
+      "editor": "textfield"
+    },
+    "harvestBatchSize": {
+      "title": "Harvest batch size",
       "type": "integer",
-      "description": "Pause between paginated API calls to reduce rate-limit risk.",
+      "description": "Parallel Harvest profile/company requests per batch (3–15).",
+      "default": 10,
+      "minimum": 3,
+      "maximum": 15
+    },
+    "pageDelayMs": {
+      "title": "Unipile page delay (ms)",
+      "type": "integer",
+      "description": "Pause between Unipile pagination calls.",
       "default": 1500,
       "minimum": 0,
       "maximum": 10000

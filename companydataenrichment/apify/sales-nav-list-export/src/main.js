@@ -1,5 +1,6 @@
 import { Actor } from 'apify';
 import { flattenLead, normalizeSourceUrl } from './flatten.js';
+import { createHarvestConfig, enrichRows } from './harvest.js';
 import { createConfig, exportLeads } from './unipile.js';
 
 await Actor.main(async () => {
@@ -8,16 +9,27 @@ await Actor.main(async () => {
   const mode = input.mode === 'search' ? 'search' : 'list';
   const maxLeads = Math.max(1, Math.min(2000, Number(input.maxLeads ?? 100)));
   const pageDelayMs = Math.max(0, Number(input.pageDelayMs ?? 1500));
+  const harvestBatchSize = Math.max(3, Math.min(15, Number(input.harvestBatchSize ?? 10)));
 
   const apiKey = String(input.unipileApiKey ?? process.env.UNIPILE_API_KEY ?? '').trim();
   const accountId = String(input.unipileAccountId ?? process.env.UNIPILE_ACCOUNT_ID ?? '').trim();
   const baseUrl = String(input.unipileBaseUrl ?? process.env.UNIPILE_BASE_URL ?? 'https://api.unipile.com/v2').trim();
+
+  const harvestApiKey = String(
+    input.harvestApiKey ?? process.env.HARVEST_API_KEY ?? process.env.HARVESTAPI_KEY ?? '',
+  ).trim();
+  const harvestBaseUrl = String(
+    input.harvestBaseUrl ?? process.env.HARVEST_API_BASE ?? process.env.HARVESTAPI_BASE_URL ?? 'https://api.harvestapi.io',
+  ).trim();
 
   if (!apiKey) {
     throw new Error('Missing Unipile API key. Set unipileApiKey input or UNIPILE_API_KEY env var.');
   }
   if (!accountId) {
     throw new Error('Missing Unipile account ID. Set unipileAccountId input or UNIPILE_ACCOUNT_ID env var.');
+  }
+  if (!harvestApiKey) {
+    throw new Error('Missing Harvest API key. Set harvestApiKey input or HARVEST_API_KEY env var.');
   }
 
   const rawUrl = mode === 'search'
@@ -31,36 +43,53 @@ await Actor.main(async () => {
   }
 
   const sourceUrl = normalizeSourceUrl(rawUrl, mode);
-  const config = createConfig(baseUrl, apiKey, accountId);
+  const unipile = createConfig(baseUrl, apiKey, accountId);
+  const harvest = createHarvestConfig(harvestApiKey, harvestBaseUrl);
 
   await Actor.setValue('INPUT_META', {
     mode,
     sourceUrl,
     maxLeads,
     accountId,
-    apiVersion: config.isV1 ? 'v1' : 'v2',
+    apiVersion: unipile.isV1 ? 'v1' : 'v2',
+    enrichment: 'harvest-full-profile',
     startedAt: new Date().toISOString(),
   });
 
-  Actor.log.info(`Exporting up to ${maxLeads} leads from ${sourceUrl} (${mode}, Unipile ${config.isV1 ? 'v1' : 'v2'})`);
+  Actor.log.info(
+    `Exporting up to ${maxLeads} leads from ${sourceUrl} (${mode}) → Unipile list pull + Harvest full profile (no email).`,
+  );
 
-  const rawLeads = await exportLeads(config, sourceUrl, mode, maxLeads, pageDelayMs);
+  const rawLeads = await exportLeads(unipile, sourceUrl, mode, maxLeads, pageDelayMs);
+  const basicRows = rawLeads.map((row) => flattenLead(row));
+
+  Actor.log.info(`Unipile returned ${basicRows.length} leads. Enriching via Harvest…`);
+
+  const enrichedRows = await enrichRows(basicRows, harvest, {
+    batchSize: harvestBatchSize,
+    onProgress: (done, total) => {
+      if (done === total || done % harvestBatchSize === 0) {
+        Actor.log.info(`Harvest profiles: ${done}/${total}`);
+      }
+    },
+  });
+
   const dataset = await Actor.openDataset();
-
-  let pushed = 0;
-  for (const row of rawLeads) {
-    await dataset.pushData(flattenLead(row));
-    pushed += 1;
+  for (const row of enrichedRows) {
+    await dataset.pushData(row);
   }
+
+  const withProfile = enrichedRows.filter((row) => String(row.profile_summary ?? '').trim() !== '').length;
 
   await Actor.setValue('OUTPUT', {
     ok: true,
     mode,
     sourceUrl,
     requested: maxLeads,
-    exported: pushed,
+    exported: enrichedRows.length,
+    enrichedProfiles: withProfile,
     finishedAt: new Date().toISOString(),
   });
 
-  Actor.log.info(`Done. Exported ${pushed} leads.`);
+  Actor.log.info(`Done. Exported ${enrichedRows.length} leads with Harvest full profile (${withProfile} with summary).`);
 });

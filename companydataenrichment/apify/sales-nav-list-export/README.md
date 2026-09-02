@@ -1,37 +1,42 @@
-# Sales Navigator List Export (Apify Actor)
+# Sales Navigator List Export — Full Profile (Harvest)
 
-Apify Actor que exporta leads de **LinkedIn Sales Navigator** usando la API de **Unipile** — la misma integración que ya usa [CompanyDataEnrichment](https://companydataenrichment.com/salesnav/).
+Apify Actor para exportar listas o búsquedas de **LinkedIn Sales Navigator** con **perfil completo** vía [HarvestAPI](https://harvestapi.io).
 
-## Por qué Unipile (y no browser scraping)
+**No incluye email.** Solo export SN + enriquecimiento de perfil (mismo tier *Enriched* de CompanyDataEnrichment).
 
-| Enfoque | Pros | Contras |
-|--------|------|--------|
-| **Unipile API** (este actor) | Estable, misma lógica que CDE en producción, sin cookies `li_at`, paginación oficial | Requiere cuenta Unipile + seat LinkedIn conectado |
-| Browser + cookies | Publicable en Apify Store sin Unipile | Mantenimiento alto, riesgo de ban, compite con decenas de actores existentes |
+## Pipeline
 
-Este actor es ideal para:
+```
+Sales Navigator URL  →  Unipile (lista/búsqueda)  →  Harvest (perfil + empresa)  →  Dataset CSV
+```
 
-- **Uso interno** (CDE, n8n, Make) vía API de Apify
-- **Publicar en Apify Store** como “bring your own Unipile” o empaquetado con tu servicio gestionado
+| Paso | API | Qué hace |
+|------|-----|----------|
+| 1 | **Unipile** | Pagina la lista o búsqueda SN del seat conectado |
+| 2 | **Harvest** | Por cada `linkedin_url`: perfil completo + empresa actual |
+| 3 | Output | 20 columnas (basic + enriched), sin `work_email` |
+
+## Columnas de salida
+
+**Basic (Unipile):** `first_name`, `last_name`, `full_name`, `job_title`, `company_name`, `location`, `linkedin_url`, `sales_nav_id`, `open_profile`, `connection_degree`
+
+**Enriched (Harvest):** `company_linkedin_url`, `company_domain`, `company_industry`, `company_size`, `company_hq`, `seniority`, `tenure_years`, `profile_summary`, `skills`, `languages`
 
 ## Input
 
 | Campo | Descripción |
 |-------|-------------|
-| `mode` | `list` (lista guardada) o `search` (búsqueda people) |
-| `listUrl` | URL `/sales/lists/people/...` o ID numérico |
-| `searchUrl` | URL `/sales/search/people?...` |
-| `maxLeads` | Máximo 1–2000 (default 100) |
-| `unipileApiKey` | API key Unipile (o env `UNIPILE_API_KEY`) |
-| `unipileAccountId` | `account_id` del seat LinkedIn en Unipile |
-| `unipileBaseUrl` | Default `https://api.unipile.com/v2` |
-| `pageDelayMs` | Pausa entre páginas (default 1500 ms) |
+| `mode` | `list` o `search` |
+| `listUrl` / `searchUrl` | URL de Sales Navigator |
+| `maxLeads` | 1–2000 |
+| `unipileApiKey` + `unipileAccountId` | Export SN |
+| `harvestApiKey` | Enriquecimiento perfil completo |
+| `harvestBatchSize` | Paralelismo Harvest (default 10) |
 
-## Output (dataset)
+## Qué NO hace
 
-Columnas alineadas con el CSV de CompanyDataEnrichment:
-
-`first_name`, `last_name`, `full_name`, `job_title`, `company_name`, `location`, `linkedin_url`, `sales_nav_id`, `open_profile`, `connection_degree`
+- No busca email (`work_email`, Icypeas, etc.)
+- No tier “Mail” — eso queda solo en el producto web CDE si lo activáis aparte
 
 ## Desarrollo local
 
@@ -39,64 +44,22 @@ Columnas alineadas con el CSV de CompanyDataEnrichment:
 cd companydataenrichment/apify/sales-nav-list-export
 npm install
 npm test
-
-# Run con Apify CLI (necesitas cuenta Apify)
-export APIFY_TOKEN=...
 apify run --input-file=input.example.json
 ```
 
-Ejemplo `input.example.json`:
-
-```json
-{
-  "mode": "list",
-  "listUrl": "https://www.linkedin.com/sales/lists/people/YOUR_LIST_ID",
-  "maxLeads": 50,
-  "unipileApiKey": "YOUR_UNIPILE_API_KEY",
-  "unipileAccountId": "YOUR_UNIPILE_ACCOUNT_ID"
-}
-```
-
-## Publicar en Apify
+## Publicar
 
 ```bash
-npm install -g apify-cli   # si no lo tienes
 apify login
 apify push
 ```
 
-Luego en Apify Console:
+Pricing: ver [PRICING.md](./PRICING.md) — fijo (seat Unipile) + uso por lead enriquecido (incluye coste Harvest).
 
-1. Configura **secrets** del Actor (`UNIPILE_API_KEY` si ofreces modo managed).
-2. Pricing: ver **[PRICING.md](./PRICING.md)** — modelo **fijo (seat Unipile) + uso (por lead)**. En Store usa PPE (`export-run` + `lead-exported`); en CDE usa Stripe subscription + créditos.
-3. Opcional: webhook a tu backend CDE para sustituir el worker PHP async.
+## Código PHP equivalente
 
-## Integración con CompanyDataEnrichment
-
-Hoy CDE exporta en PHP vía `cde_salesnav_export()` en `public/api/_unipile.php`. Para mover exports pesados a Apify:
-
-1. `salesnav-tasks.php` arranca un run Apify en lugar de `cde_tasks_run()` local.
-2. Webhook Apify → tu API marca task `ready` y guarda dataset CSV.
-3. Mantienes créditos/billing en CDE; Apify solo ejecuta el scrape.
-
-Variables en `private/cde/apify.env`:
-
-```
-APIFY_TOKEN=...
-APIFY_SALESNAV_ACTOR_ID=tu-usuario~sales-nav-list-export
-```
-
-## Seguridad
-
-- No commitear API keys ni `account_id` en el repo.
-- En Apify Store, marca `unipileApiKey` como secret input.
-- El usuario final debe conectar **su** seat SN vía Unipile (hosted auth), igual que en el panel CDE.
-
-## Relación con código PHP
-
-| PHP (`_unipile.php`) | Actor (`src/`) |
-|----------------------|----------------|
-| `cde_salesnav_flatten_lead` | `flattenLead()` |
-| `cde_salesnav_paginate_v2_list` | `paginateV2List()` |
-| `cde_salesnav_paginate_v2_search` | `paginateV2Search()` |
-| `cde_salesnav_normalize_list_url` | `normalizeSourceUrl()` |
+| PHP | Actor |
+|-----|-------|
+| `cde_salesnav_export()` | `exportLeads()` |
+| `cde_salesnav_flatten_lead()` | `flattenLead()` |
+| `cde_harvest_enrich_rows()` | `enrichRows()` |

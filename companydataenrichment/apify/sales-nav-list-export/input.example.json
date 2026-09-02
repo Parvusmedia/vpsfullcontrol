@@ -2,7 +2,9 @@
   "mode": "list",
   "listUrl": "https://www.linkedin.com/sales/lists/people/REPLACE_ME",
   "maxLeads": 25,
-  "unipileApiKey": "REPLACE_WITH_UNIPILE_API_KEY",
-  "unipileAccountId": "REPLACE_WITH_UNIPILE_ACCOUNT_ID",
+  "unipileApiKey": "REPLACE_UNIPILE_API_KEY",
+  "unipileAccountId": "REPLACE_UNIPILE_ACCOUNT_ID",
+  "harvestApiKey": "REPLACE_HARVEST_API_KEY",
+  "harvestBatchSize": 10,
   "pageDelayMs": 1500
 }
