@@ -114,6 +114,29 @@ function cde_tasks_public_view(array $task): array
     ];
 }
 
+/**
+ * @return array{error: string, estimated_cost: int, balance: int}|null
+ */
+function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = null): ?array
+{
+    if (!cde_credits_billing_enabled()) {
+        return null;
+    }
+    $userId = $userId ?? cde_salesnav_user_id();
+    $estimated = cde_credits_estimate_max_export_cost($limit, $tiers);
+    $balance = cde_credits_get_balance($userId);
+    if ($balance >= $estimated) {
+        return null;
+    }
+
+    return [
+        'estimated_cost' => $estimated,
+        'balance' => $balance,
+        'error' => 'Insufficient export credits. This export needs up to '
+            . $estimated . ' credits; your balance is ' . $balance . '.',
+    ];
+}
+
 /** @param array<string, mixed> $payload */
 function cde_tasks_create(string $userId, string $email, array $payload): array
 {
@@ -136,6 +159,17 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
     }
 
     $tiers = cde_credits_parse_tiers($payload);
+    $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId);
+    if ($preflight !== null) {
+        cde_json_response(402, [
+            'ok' => false,
+            'needs_payment' => true,
+            'estimated_cost' => $preflight['estimated_cost'],
+            'balance' => $preflight['balance'],
+            'error' => $preflight['error'],
+        ]);
+    }
+
     $linked = cde_salesnav_session_account();
     $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
     $taskId = cde_tasks_new_id();
@@ -442,6 +476,13 @@ function cde_tasks_run(string $taskId): void
 
         cde_enforce_salesnav_rate_limits($limit);
 
+        if (cde_credits_billing_enabled()) {
+            $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId);
+            if ($preflight !== null) {
+                throw new RuntimeException($preflight['error']);
+            }
+        }
+
         $rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
         $rows = [];
         foreach ($rawRows as $item) {
@@ -507,7 +548,7 @@ function cde_tasks_run(string $taskId): void
         $msg = $e->getMessage();
         if (
             $msg === cde_salesnav_stale_account_message()
-            || cde_unipile_account_error_is_stale(['status' => 404, 'error' => $msg])
+            || cde_unipile_account_error_is_stale(['status' => 0, 'error' => $msg])
         ) {
             cde_salesnav_mark_account_stale($userId, $msg);
             $msg = cde_salesnav_stale_account_message();
