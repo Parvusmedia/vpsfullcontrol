@@ -115,15 +115,16 @@ function cde_tasks_public_view(array $task): array
 }
 
 /**
- * @return array{error: string, estimated_cost: int, balance: int}|null
+ * @return array{error: string, estimated_cost: int, balance: int, profile_count: int}|null
  */
-function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = null): ?array
+function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = null, ?int $sourceProfileCount = null): ?array
 {
     if (!cde_credits_billing_enabled()) {
         return null;
     }
     $userId = $userId ?? cde_salesnav_user_id();
-    $estimated = cde_credits_estimate_max_export_cost($limit, $tiers);
+    $profiles = cde_credits_effective_export_profiles($limit, $sourceProfileCount);
+    $estimated = cde_credits_estimate_max_export_cost($profiles, $tiers);
     $balance = cde_credits_get_balance($userId);
     if ($balance >= $estimated) {
         return null;
@@ -132,8 +133,8 @@ function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = 
     return [
         'estimated_cost' => $estimated,
         'balance' => $balance,
-        'error' => 'Insufficient export credits. This export needs up to '
-            . $estimated . ' credits; your balance is ' . $balance . '.',
+        'profile_count' => $profiles,
+        'error' => cde_credits_insufficient_export_message($profiles, $estimated, $balance),
     ];
 }
 
@@ -159,19 +160,30 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
     }
 
     $tiers = cde_credits_parse_tiers($payload);
-    $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId);
+
+    $linked = cde_salesnav_session_account();
+    $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
+    $sourceProfileCount = null;
+    if ($accountId !== '') {
+        $sourceProfileCount = cde_salesnav_probe_source_profile_count(
+            cde_unipile_api_config($accountId),
+            $sourceUrl,
+            $mode
+        );
+    }
+
+    $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId, $sourceProfileCount);
     if ($preflight !== null) {
         cde_json_response(402, [
             'ok' => false,
             'needs_payment' => true,
             'estimated_cost' => $preflight['estimated_cost'],
             'balance' => $preflight['balance'],
+            'profile_count' => $preflight['profile_count'],
             'error' => $preflight['error'],
         ]);
     }
 
-    $linked = cde_salesnav_session_account();
-    $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
     $taskId = cde_tasks_new_id();
     $task = [
         'user_id' => $userId,
@@ -183,6 +195,7 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
         'source_label' => $sourceLabel,
         'limit' => $limit,
         'limit_label' => $limitLabel,
+        'source_profile_count' => $sourceProfileCount ?? 0,
         'tiers' => $tiers,
         'lead_count' => 0,
         'credits_used' => 0,
@@ -477,7 +490,13 @@ function cde_tasks_run(string $taskId): void
         cde_enforce_salesnav_rate_limits($limit);
 
         if (cde_credits_billing_enabled()) {
-            $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId);
+            $storedCount = (int) ($task['source_profile_count'] ?? 0);
+            $preflight = cde_tasks_credit_preflight(
+                $limit,
+                $tiers,
+                $userId,
+                $storedCount > 0 ? $storedCount : null
+            );
             if ($preflight !== null) {
                 throw new RuntimeException($preflight['error']);
             }
@@ -514,8 +533,7 @@ function cde_tasks_run(string $taskId): void
             $balance = cde_credits_get_balance($userId);
             if ($balance < $creditCost) {
                 throw new RuntimeException(
-                    'Insufficient export credits. This export needs '
-                    . $creditCost . ' credits; your balance is ' . $balance . '.'
+                    cde_credits_insufficient_export_message(count($rows), $creditCost, $balance)
                 );
             }
         }
@@ -529,8 +547,7 @@ function cde_tasks_run(string $taskId): void
         ])) {
             $balance = cde_credits_get_balance($userId);
             throw new RuntimeException(
-                'Insufficient export credits. This export needs '
-                . $creditCost . ' credits; your balance is ' . $balance . '.'
+                cde_credits_insufficient_export_message(count($rows), $creditCost, $balance)
             );
         }
         $creditsCharged = $creditCost;

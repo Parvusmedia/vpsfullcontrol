@@ -1391,6 +1391,61 @@ function cde_salesnav_paginate_v2_list(array $config, string $listId, int $maxLe
     return array_slice($collected, 0, $maxLeads);
 }
 
+/**
+ * Lightweight probe: how many profiles are in a list/search (Unipile paging.total_count).
+ * Returns null when the count cannot be determined.
+ */
+function cde_salesnav_probe_source_profile_count(array $config, string $sourceUrl, string $mode): ?int
+{
+    $sourceUrl = trim($sourceUrl);
+    if ($sourceUrl === '') {
+        return null;
+    }
+
+    if ($config['is_v1']) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/linkedin/search',
+            ['account_id' => $config['account_id'], 'limit' => 1],
+            ['url' => $sourceUrl]
+        );
+        if (!$resp['ok']) {
+            return null;
+        }
+        $total = (int) ($resp['data']['paging']['total_count'] ?? 0);
+
+        return $total > 0 ? $total : null;
+    }
+
+    if ($mode === 'list' && preg_match('#linkedin\.com/sales/lists/people/(?P<id>\d+)#i', $sourceUrl, $m)) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/lead-lists/' . rawurlencode($m['id']),
+            ['limit' => 1, 'offset' => 0],
+            []
+        );
+    } else {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/search',
+            ['limit' => 1],
+            ['url' => $sourceUrl]
+        );
+    }
+
+    if (!$resp['ok']) {
+        return null;
+    }
+
+    $data = is_array($resp['data'] ?? null) ? $resp['data'] : [];
+    $total = (int) ($data['paging']['total_count'] ?? $data['total_count'] ?? $data['total'] ?? 0);
+
+    return $total > 0 ? $total : null;
+}
+
 function cde_salesnav_export(array $config, string $sourceUrl, string $mode, int $maxLeads): array
 {
     if ($config['is_v1']) {
