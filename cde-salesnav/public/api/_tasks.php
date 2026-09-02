@@ -510,8 +510,14 @@ function cde_tasks_run(string $taskId): void
         }
 
         $creditCost = cde_credits_export_cost($rows, $tiers);
-        if (cde_credits_billing_enabled() && cde_credits_get_balance($userId) < $creditCost) {
-            throw new RuntimeException('Insufficient export credits.');
+        if (cde_credits_billing_enabled()) {
+            $balance = cde_credits_get_balance($userId);
+            if ($balance < $creditCost) {
+                throw new RuntimeException(
+                    'Insufficient export credits. This export needs '
+                    . $creditCost . ' credits; your balance is ' . $balance . '.'
+                );
+            }
         }
 
         cde_tasks_write_csv($taskId, $rows, $tiers);
@@ -521,7 +527,11 @@ function cde_tasks_run(string $taskId): void
             'count' => count($rows),
             'credit_cost' => $creditCost,
         ])) {
-            throw new RuntimeException('Insufficient export credits.');
+            $balance = cde_credits_get_balance($userId);
+            throw new RuntimeException(
+                'Insufficient export credits. This export needs '
+                . $creditCost . ' credits; your balance is ' . $balance . '.'
+            );
         }
         $creditsCharged = $creditCost;
 
@@ -546,9 +556,13 @@ function cde_tasks_run(string $taskId): void
         cde_tasks_notify_ready($task, $taskId);
     } catch (Throwable $e) {
         $msg = $e->getMessage();
+        $isCreditError = str_starts_with($msg, 'Insufficient export credits');
         if (
-            $msg === cde_salesnav_stale_account_message()
-            || cde_unipile_account_error_is_stale(['status' => 0, 'error' => $msg])
+            !$isCreditError
+            && (
+                $msg === cde_salesnav_stale_account_message()
+                || cde_unipile_account_error_is_stale(['status' => 0, 'error' => $msg])
+            )
         ) {
             cde_salesnav_mark_account_stale($userId, $msg);
             $msg = cde_salesnav_stale_account_message();
