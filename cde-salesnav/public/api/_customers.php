@@ -651,6 +651,7 @@ function cde_salesnav_establish_session(string $email): void
     session_regenerate_id(true);
     $nextId = cde_salesnav_user_id_for_email($email);
     if ($prevId !== $nextId) {
+        cde_salesnav_clear_session_account();
         if (function_exists('cde_credits_merge_wallets')) {
             cde_credits_merge_wallets($prevId, $nextId);
         }

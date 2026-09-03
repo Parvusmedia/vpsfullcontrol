@@ -287,6 +287,7 @@ function cde_salesnav_bind_customer_email(string $email): string
 
 function cde_salesnav_sign_out_customer(): void
 {
+    cde_salesnav_clear_session_account();
     cde_session_start();
     unset(
         $_SESSION['salesnav_customer_email'],
@@ -382,26 +383,32 @@ function cde_salesnav_clear_session_account(): void
 function cde_salesnav_session_account(): ?array
 {
     cde_session_start();
+    $userId = cde_salesnav_user_id();
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $storedId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedActive = is_array($stored)
+        && $storedId !== ''
+        && empty($stored['disconnected_at'])
+        && empty($stored['invalid_at']);
+
     $accountId = trim((string) ($_SESSION['salesnav_account_id'] ?? ''));
+    if ($accountId !== '') {
+        if (!$storedActive || ($storedId !== '' && $accountId !== $storedId)) {
+            cde_salesnav_clear_session_account();
+            $accountId = '';
+        }
+    }
+
     if ($accountId === '') {
-        $userId = cde_salesnav_user_id();
-        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-        if (
-            is_array($stored)
-            && !empty($stored['account_id'])
-            && empty($stored['disconnected_at'])
-            && empty($stored['invalid_at'])
-        ) {
+        if ($storedActive) {
             cde_salesnav_set_session_account(
-                (string) $stored['account_id'],
+                $storedId,
                 (string) ($stored['label'] ?? ''),
                 (string) ($stored['avatar_url'] ?? '')
             );
-            $accountId = (string) $stored['account_id'];
+            $accountId = $storedId;
         }
     } else {
-        $userId = cde_salesnav_user_id();
-        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
         $sessionAvatar = trim((string) ($_SESSION['salesnav_account_avatar'] ?? ''));
         if ($sessionAvatar === '' && is_array($stored)) {
             if (!empty($stored['avatar_url'])) {
@@ -411,19 +418,8 @@ function cde_salesnav_session_account(): ?array
                 $_SESSION['salesnav_account_label'] = (string) $stored['label'];
             }
         }
-        if (trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')) === '') {
-            foreach (cde_salesnav_load_accounts() as $row) {
-                if (!is_array($row) || ($row['account_id'] ?? '') !== $accountId) {
-                    continue;
-                }
-                if (!empty($row['avatar_url'])) {
-                    $_SESSION['salesnav_account_avatar'] = (string) $row['avatar_url'];
-                }
-                if (trim((string) ($_SESSION['salesnav_account_label'] ?? '')) === '' && !empty($row['label'])) {
-                    $_SESSION['salesnav_account_label'] = (string) $row['label'];
-                }
-                break;
-            }
+        if (trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')) === '' && is_array($stored) && !empty($stored['avatar_url'])) {
+            $_SESSION['salesnav_account_avatar'] = (string) $stored['avatar_url'];
         }
     }
     if ($accountId === '') {
@@ -692,13 +688,18 @@ function cde_salesnav_unipile_seat_exists(string $accountId): bool
  * Find an existing Unipile seat to reconnect (never bill a duplicate).
  * Includes expired/disconnected seats still present in Unipile — reconnect fixes them.
  */
-function cde_salesnav_find_reconnectable_seat(string $userId): ?string
+function cde_salesnav_find_reconnectable_seat(string $userId, bool $includeDisconnected = false): ?string
 {
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     $storedLabel = is_array($stored) ? trim((string) ($stored['label'] ?? '')) : '';
     $storedAccountId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
 
-    if ($storedAccountId !== '' && cde_salesnav_is_account_alive($storedAccountId)) {
+    if (
+        $storedAccountId !== ''
+        && (!$storedDisconnected || $includeDisconnected)
+        && cde_salesnav_is_account_alive($storedAccountId)
+    ) {
         return $storedAccountId;
     }
 
@@ -732,9 +733,6 @@ function cde_salesnav_find_reconnectable_seat(string $userId): ?string
         if ($storedLabel !== '' && $label !== '' && strcasecmp($label, $storedLabel) === 0) {
             $score += 100;
         }
-        if ($alive) {
-            $score += 50;
-        }
 
         $created = strtotime((string) ($item['created_at'] ?? $item['last_update'] ?? ''));
         $candidates[] = [
@@ -757,7 +755,8 @@ function cde_salesnav_find_reconnectable_seat(string $userId): ?string
     });
 
     $best = $candidates[0];
-    if ($best['score'] <= 0) {
+    // Never reuse an unrelated live seat (e.g. another panel account's LinkedIn).
+    if ($best['score'] < 100) {
         return null;
     }
 
@@ -786,8 +785,17 @@ function cde_salesnav_plan_connect(string $userId, bool $explicitReconnect = fal
 {
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     $hadPriorLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
 
-    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($storedDisconnected && !$explicitReconnect) {
+        return [
+            'type' => 'create',
+            'reconnect_id' => null,
+            'reused_account' => false,
+        ];
+    }
+
+    $seat = cde_salesnav_find_reconnectable_seat($userId, $explicitReconnect);
     if ($seat !== null) {
         return [
             'type' => 'reconnect',
@@ -886,7 +894,7 @@ function cde_salesnav_assert_account_not_claimed_by_other_wallet(string $account
         if (!str_starts_with($uid, 'em_')) {
             continue;
         }
-        if ($claimedWallet === null || $claimedWallet === $uid) {
+        if (!empty($rec['disconnected_at'])) {
             continue;
         }
         throw new RuntimeException('This LinkedIn seat is already linked to another panel account.');
