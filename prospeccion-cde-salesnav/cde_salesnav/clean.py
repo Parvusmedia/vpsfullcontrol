@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 _SUFFIXES = {"mba", "cbpa", "phd", "cfa", "cpa", "cpc", "pmp", "msc", "bsc"}
+_PAREN_RE = re.compile(r"\([^)]*\)")
 _EMOJI_RE = re.compile(r"[^\w\s.&'\-]", re.UNICODE)
 _SPACE_RE = re.compile(r"\s+")
 _PROFILE_RE = re.compile(r"linkedin\.com/in/([^/?#]+)", re.I)
