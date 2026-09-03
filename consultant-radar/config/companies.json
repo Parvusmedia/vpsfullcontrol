@@ -1,0 +1,102 @@
+{
+  "companies": [
+    {
+      "id": "accenture",
+      "name": "Accenture",
+      "brands": ["Accenture Song"],
+      "source": "workday",
+      "enabled": true,
+      "host": "accenture.wd103.myworkdayjobs.com",
+      "tenant": "accenture",
+      "site": "AccentureCareers",
+      "search_texts": [
+        "Accenture Song",
+        "Adobe",
+        "martech",
+        "customer experience",
+        "Salesforce Marketing"
+      ],
+      "applied_facets": {
+        "locationCountry": [
+          "bd34c524a6a04ae6915f5d96fa086199",
+          "29247e57dbaf46fb855b224e03170bc7",
+          "54c5b6971ffb4bf0b116fe7651ec789a",
+          "dcc5b7608d8644b3a93716604e78e995",
+          "8cd04a563fd94da7b06857a79faaf815",
+          "2e8c5034deb045d49315417c347472ca",
+          "9696868b09c64d52a62ee13b052383cc"
+        ]
+      },
+      "max_pages": 2,
+      "careers_url": "https://www.accenture.com/us-en/careers/jobsearch"
+    },
+    {
+      "id": "deloitte-us",
+      "name": "Deloitte",
+      "brands": ["Deloitte Digital"],
+      "source": "avature_rss",
+      "enabled": true,
+      "feed_url": "https://apply.deloitte.com/en_US/careers/SearchJobs/feed/?jobRecordsPerPage=100&jobSort=date",
+      "careers_url": "https://apply.deloitte.com/en_US/careers/SearchJobs"
+    },
+    {
+      "id": "deloitte-es",
+      "name": "Deloitte",
+      "brands": ["Deloitte Digital"],
+      "source": "phenom",
+      "enabled": true,
+      "list_url": "https://empleo.es.deloitte.com/search-jobs",
+      "base_url": "https://empleo.es.deloitte.com",
+      "max_pages": 6,
+      "careers_url": "https://empleo.es.deloitte.com/search-jobs"
+    },
+    {
+      "id": "kpmg-es",
+      "name": "KPMG",
+      "brands": ["KPMG"],
+      "source": "phenom",
+      "enabled": true,
+      "list_url": "https://carreras.kpmg.es/search-jobs",
+      "base_url": "https://carreras.kpmg.es",
+      "max_pages": 6,
+      "careers_url": "https://carreras.kpmg.es/search-jobs"
+    },
+    {
+      "id": "pwc",
+      "name": "PwC",
+      "brands": ["PwC"],
+      "source": "workday",
+      "enabled": true,
+      "host": "pwc.wd3.myworkdayjobs.com",
+      "tenant": "pwc",
+      "site": "Global_Experienced_Careers",
+      "search_texts": [
+        "Adobe",
+        "martech",
+        "customer experience",
+        "digital marketing",
+        "Salesforce"
+      ],
+      "max_pages": 4,
+      "careers_url": "https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers"
+    },
+    {
+      "id": "thoughtworks",
+      "name": "Thoughtworks",
+      "brands": ["Thoughtworks"],
+      "source": "greenhouse",
+      "enabled": true,
+      "board": "thoughtworks",
+      "careers_url": "https://www.thoughtworks.com/careers/jobs"
+    },
+    {
+      "id": "capgemini",
+      "name": "Capgemini",
+      "brands": ["Capgemini"],
+      "source": "rss",
+      "enabled": true,
+      "feed_url": "https://jobs.capgemini.com/services/rss/job/?locale=en_US",
+      "careers_url": "https://jobs.capgemini.com/search/"
+    }
+  ]
+}
