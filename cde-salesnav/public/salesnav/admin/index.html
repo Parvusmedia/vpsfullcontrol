@@ -8,175 +8,222 @@
   <link rel="icon" href="/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=51" />
-  <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
-  <link rel="stylesheet" href="/salesnav/salesnav-admin.css?v=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/salesnav/salesnav-admin.css?v=2" />
 </head>
-<body class="product-salesnav product-salesnav-admin">
-  <div class="atmosphere" aria-hidden="true"></div>
-
-  <section class="admin-login" id="admin-login">
-    <article class="panel-card admin-login-card">
-      <h1>Sales Nav Admin</h1>
-      <p class="admin-login-lede">Internal ops — users, credits, exports.</p>
-      <form id="admin-login-form" class="account-auth-form">
-        <label class="account-field">
-          <span>Admin token</span>
-          <input id="admin-token" type="password" autocomplete="off" required placeholder="SALESNAV_ADMIN_SECRET" />
-        </label>
-        <div class="account-actions">
-          <button type="submit" class="connect-btn">Sign in</button>
-        </div>
-      </form>
-      <p class="account-note admin-login-note" id="admin-login-note" hidden aria-live="polite"></p>
-    </article>
-  </section>
-
-  <div id="admin-app" hidden>
-    <header class="top admin-top">
-      <a class="brand" href="/">CompanyDataEnrichment</a>
-      <nav class="site-nav" aria-label="Admin">
-        <a href="/salesnav/admin/" class="is-active">Admin</a>
-        <a href="/salesnav/panel/">User panel</a>
-        <a href="/salesnav/">Landing</a>
-      </nav>
-      <div class="top-actions">
-        <button type="button" class="ghost-btn" id="admin-logout-btn">Sign out</button>
+<body class="sn-admin">
+  <!-- Login -->
+  <div class="sn-login" id="admin-login">
+    <div class="sn-login-shell">
+      <div class="sn-login-brand">
+        <div class="sn-login-logo">SN</div>
+        <h1>Sales Nav Admin</h1>
+        <p>Internal operations console for users, credits &amp; exports.</p>
       </div>
-    </header>
-
-    <main class="admin-main">
-      <nav class="admin-tabs" role="tablist">
-        <button type="button" class="admin-tab is-active" data-tab="overview">Overview</button>
-        <button type="button" class="admin-tab" data-tab="users">Users</button>
-        <button type="button" class="admin-tab" data-tab="ledger">Ledger</button>
-        <button type="button" class="admin-tab" data-tab="tasks">Tasks</button>
-        <button type="button" class="admin-tab" data-tab="grant">Grant credits</button>
-      </nav>
-
-      <p class="admin-flash" id="admin-flash" hidden aria-live="polite"></p>
-
-      <section class="admin-panel is-active" id="admin-panel-overview" data-panel="overview">
-        <div class="admin-stats" id="admin-stats"></div>
-      </section>
-
-      <section class="admin-panel" id="admin-panel-users" data-panel="users" hidden>
-        <div class="admin-toolbar">
-          <input type="search" id="users-search" class="admin-search" placeholder="Search email or user id…" />
-          <button type="button" class="ghost-btn" id="users-refresh">Refresh</button>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="tasks-table admin-table" id="users-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Balance</th>
-                <th>Purchased</th>
-                <th>Granted</th>
-                <th>Spent</th>
-                <th>Tasks</th>
-                <th>LinkedIn</th>
-                <th>Verified</th>
-              </tr>
-            </thead>
-            <tbody id="users-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="admin-panel" id="admin-panel-ledger" data-panel="ledger" hidden>
-        <div class="admin-toolbar">
-          <select id="ledger-kind" class="tasks-status-filter">
-            <option value="all">All types</option>
-            <option value="topup">Stripe top-ups</option>
-            <option value="grant">Admin grants</option>
-            <option value="spend">Export spend</option>
-            <option value="refund">Refunds</option>
-          </select>
-          <button type="button" class="ghost-btn" id="ledger-refresh">Refresh</button>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="tasks-table admin-table" id="ledger-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Email</th>
-                <th>Type</th>
-                <th>Delta</th>
-                <th>Balance</th>
-                <th>Ref</th>
-              </tr>
-            </thead>
-            <tbody id="ledger-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="admin-panel" id="admin-panel-tasks" data-panel="tasks" hidden>
-        <div class="admin-toolbar">
-          <select id="tasks-status-filter" class="tasks-status-filter">
-            <option value="all">All statuses</option>
-            <option value="processing">Processing</option>
-            <option value="ready">Ready</option>
-            <option value="failed">Failed</option>
-          </select>
-          <button type="button" class="ghost-btn" id="tasks-refresh">Refresh</button>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="tasks-table admin-table" id="tasks-table">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Email</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Leads</th>
-                <th>Credits</th>
-                <th>Task id</th>
-              </tr>
-            </thead>
-            <tbody id="tasks-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="admin-panel" id="admin-panel-grant" data-panel="grant" hidden>
-        <article class="panel-card admin-grant-card">
-          <h2>Grant free credits</h2>
-          <p class="admin-grant-lede">Adds credits to a user wallet (same ledger as Stripe top-ups).</p>
-          <form id="grant-form" class="account-auth-form">
-            <label class="account-field">
-              <span>Work email</span>
-              <input id="grant-email" type="email" required placeholder="user@company.com" />
-            </label>
-            <label class="account-field">
-              <span>Credits</span>
-              <input id="grant-credits" type="number" min="1" max="500000" required value="200" />
-            </label>
-            <label class="account-field">
-              <span>Note (optional)</span>
-              <input id="grant-note" type="text" maxlength="240" placeholder="Support top-up, promo, etc." />
-            </label>
-            <div class="account-actions">
-              <button type="submit" class="connect-btn">Grant credits</button>
-            </div>
-          </form>
-          <pre class="admin-grant-result" id="grant-result" hidden></pre>
-        </article>
-      </section>
-
-      <aside class="admin-drawer" id="admin-drawer" hidden>
-        <header class="admin-drawer-head">
-          <h2 id="drawer-title">User detail</h2>
-          <button type="button" class="ghost-btn admin-drawer-close" id="drawer-close" aria-label="Close">×</button>
-        </header>
-        <div class="admin-drawer-body" id="drawer-body"></div>
-      </aside>
-    </main>
+      <div class="sn-login-card">
+        <h2>Sign in</h2>
+        <p class="sn-login-hint">Use your <code>SALESNAV_ADMIN_SECRET</code> token.</p>
+        <form id="admin-login-form">
+          <label class="sn-field">
+            <span>Admin token</span>
+            <input id="admin-token" type="password" autocomplete="off" required placeholder="Paste token…" />
+          </label>
+          <button type="submit" class="sn-btn sn-btn-primary sn-btn-block">Continue</button>
+        </form>
+        <p class="sn-login-note" id="admin-login-note" hidden aria-live="polite"></p>
+      </div>
+    </div>
   </div>
 
-  <script src="/salesnav/salesnav-admin.js?v=1"></script>
+  <!-- App shell -->
+  <div class="sn-app" id="admin-app" hidden>
+    <aside class="sn-sidebar">
+      <div class="sn-sidebar-brand">
+        <span class="sn-sidebar-logo">SN</span>
+        <div>
+          <strong>Sales Nav</strong>
+          <span>Admin</span>
+        </div>
+      </div>
+      <nav class="sn-nav" aria-label="Admin navigation">
+        <button type="button" class="sn-nav-item is-active" data-tab="overview">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 9a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm9-9a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4zm0 9a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3z"/></svg>
+          Overview
+        </button>
+        <button type="button" class="sn-nav-item" data-tab="users">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+          Users
+        </button>
+        <button type="button" class="sn-nav-item" data-tab="ledger">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 2h6v4H7V6zm8 8v2h1v-2h-1zm-2-2v2H9v-2h4zm-2-2v2H7v-2h4z" clip-rule="evenodd"/></svg>
+          Ledger
+        </button>
+        <button type="button" class="sn-nav-item" data-tab="tasks">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+          Tasks
+        </button>
+        <button type="button" class="sn-nav-item" data-tab="grant">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>
+          Grant credits
+        </button>
+      </nav>
+      <div class="sn-sidebar-foot">
+        <a href="/salesnav/panel/" class="sn-sidebar-link">User panel</a>
+        <a href="/salesnav/" class="sn-sidebar-link">Landing</a>
+      </div>
+    </aside>
+
+    <div class="sn-main">
+      <header class="sn-header">
+        <div class="sn-header-left">
+          <h1 class="sn-page-title" id="page-title">Overview</h1>
+          <p class="sn-page-sub" id="page-sub">Platform metrics at a glance</p>
+        </div>
+        <div class="sn-header-right">
+          <span class="sn-env-badge">Production</span>
+          <button type="button" class="sn-btn sn-btn-ghost" id="admin-logout-btn">Sign out</button>
+        </div>
+      </header>
+
+      <div class="sn-content">
+        <div class="sn-flash" id="admin-flash" hidden aria-live="polite"></div>
+
+        <section class="sn-panel is-active" id="admin-panel-overview" data-panel="overview">
+          <div class="sn-stats" id="admin-stats"></div>
+        </section>
+
+        <section class="sn-panel" id="admin-panel-users" data-panel="users" hidden>
+          <div class="sn-card">
+            <div class="sn-card-toolbar">
+              <div class="sn-search-wrap">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                <input type="search" id="users-search" placeholder="Search by email or user id…" />
+              </div>
+              <button type="button" class="sn-btn sn-btn-secondary" id="users-refresh">Refresh</button>
+            </div>
+            <div class="sn-table-scroll">
+              <table class="sn-table" id="users-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Balance</th>
+                    <th>Purchased</th>
+                    <th>Granted</th>
+                    <th>Spent</th>
+                    <th>Tasks</th>
+                    <th>LinkedIn</th>
+                    <th>Verified</th>
+                  </tr>
+                </thead>
+                <tbody id="users-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="sn-panel" id="admin-panel-ledger" data-panel="ledger" hidden>
+          <div class="sn-card">
+            <div class="sn-card-toolbar">
+              <select id="ledger-kind" class="sn-select">
+                <option value="all">All types</option>
+                <option value="topup">Stripe top-ups</option>
+                <option value="grant">Admin grants</option>
+                <option value="spend">Export spend</option>
+                <option value="refund">Refunds</option>
+              </select>
+              <button type="button" class="sn-btn sn-btn-secondary" id="ledger-refresh">Refresh</button>
+            </div>
+            <div class="sn-table-scroll">
+              <table class="sn-table" id="ledger-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Delta</th>
+                    <th>Balance</th>
+                    <th>Reference</th>
+                  </tr>
+                </thead>
+                <tbody id="ledger-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="sn-panel" id="admin-panel-tasks" data-panel="tasks" hidden>
+          <div class="sn-card">
+            <div class="sn-card-toolbar">
+              <select id="tasks-status-filter" class="sn-select">
+                <option value="all">All statuses</option>
+                <option value="processing">Processing</option>
+                <option value="ready">Ready</option>
+                <option value="failed">Failed</option>
+              </select>
+              <button type="button" class="sn-btn sn-btn-secondary" id="tasks-refresh">Refresh</button>
+            </div>
+            <div class="sn-table-scroll">
+              <table class="sn-table" id="tasks-table">
+                <thead>
+                  <tr>
+                    <th>Created</th>
+                    <th>User</th>
+                    <th>Source</th>
+                    <th>Status</th>
+                    <th>Leads</th>
+                    <th>Credits</th>
+                    <th>Task ID</th>
+                  </tr>
+                </thead>
+                <tbody id="tasks-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="sn-panel" id="admin-panel-grant" data-panel="grant" hidden>
+          <div class="sn-card sn-card-narrow">
+            <div class="sn-card-head">
+              <h2>Grant free credits</h2>
+              <p>Adds credits to a user wallet — recorded in the ledger like Stripe top-ups.</p>
+            </div>
+            <form id="grant-form" class="sn-form">
+              <label class="sn-field">
+                <span>Work email</span>
+                <input id="grant-email" type="email" required placeholder="user@company.com" />
+              </label>
+              <label class="sn-field">
+                <span>Credits</span>
+                <input id="grant-credits" type="number" min="1" max="500000" required value="200" />
+              </label>
+              <label class="sn-field">
+                <span>Note <em>(optional)</em></span>
+                <input id="grant-note" type="text" maxlength="240" placeholder="Support top-up, promo, etc." />
+              </label>
+              <button type="submit" class="sn-btn sn-btn-primary">Grant credits</button>
+            </form>
+            <pre class="sn-code-block" id="grant-result" hidden></pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- User drawer -->
+  <div class="sn-drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <aside class="sn-drawer" id="admin-drawer" hidden>
+    <header class="sn-drawer-head">
+      <div>
+        <p class="sn-drawer-label">User detail</p>
+        <h2 id="drawer-title">—</h2>
+      </div>
+      <button type="button" class="sn-drawer-close" id="drawer-close" aria-label="Close">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      </button>
+    </header>
+    <div class="sn-drawer-body" id="drawer-body"></div>
+  </aside>
+
+  <script src="/salesnav/salesnav-admin.js?v=2"></script>
 </body>
 </html>
