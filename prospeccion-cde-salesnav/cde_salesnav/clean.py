@@ -37,14 +37,22 @@ def clean_person_name(value: Any) -> str:
     return _SPACE_RE.sub(" ", text).strip()
 
 
+def _drop_suffixes(parts: list[str]) -> list[str]:
+    cleaned = list(parts)
+    while len(cleaned) > 1 and cleaned[-1].lower().rstrip(".") in _SUFFIXES:
+        cleaned.pop()
+    return cleaned
+
+
 def split_name(full_name: str, *, first: str = "", last: str = "") -> tuple[str, str]:
     first = clean_person_name(first)
     last = clean_person_name(last)
     if first and last:
-        return first, last
-    parts = [p for p in clean_person_name(full_name).split() if p]
-    while len(parts) > 1 and parts[-1].lower().rstrip(".") in _SUFFIXES:
-        parts.pop()
+        last_parts = _drop_suffixes(last.split())
+        last = " ".join(last_parts)
+        if last:
+            return first, last
+    parts = _drop_suffixes([p for p in clean_person_name(full_name).split() if p])
     if not parts:
         return first, last
     if len(parts) == 1:
