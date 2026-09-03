@@ -97,6 +97,14 @@ def cmd_sync(cfg: CdeConfig, *, path: str | None) -> int:
     return 0 if out.get("ok") else 1
 
 
+def cmd_purge_ai(cfg: CdeConfig, *, live: bool) -> int:
+    from .nocodb import purge_ai_rows
+
+    out = purge_ai_rows(cfg=cfg, dry_run=not live)
+    _print(out)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cde_salesnav")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -108,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("ensure-schema", help="Create missing NocoDB columns from prospecting_es_formacion")
     s = sub.add_parser("sync", help="Clean discover hits and upsert into NocoDB cde_salesnav")
     s.add_argument("--file", default="", help="Path to discover_last.json")
+    p = sub.add_parser("purge-ai", help="Mark NocoDB rows with AI references as dropped")
+    p.add_argument("--live", action="store_true", help="Apply relevante=No and status=dropped")
     args = parser.parse_args(argv)
     cfg = CdeConfig.from_env()
     if args.cmd == "queries":
@@ -118,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_ensure_schema(cfg)
     if args.cmd == "sync":
         return cmd_sync(cfg, path=args.file or None)
+    if args.cmd == "purge-ai":
+        return cmd_purge_ai(cfg, live=args.live)
     return 2
 
 

@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, CdeConfig
+from .ai_filter import ai_reference_hit
 
 _HEADCOUNT_RE = re.compile(r"(\d[\d,]*)\s*[-–]?\s*(\d[\d,]*)?")
 
@@ -64,6 +65,9 @@ def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[st
     title_hit = title_excluded(title)
     if title_hit:
         hard_reject = hard_reject or title_hit
+    ai_hit = ai_reference_hit(lead)
+    if ai_hit:
+        hard_reject = hard_reject or ai_hit
     if cfg.require_premium and premium is not True:
         hard_reject = hard_reject or "not_premium"
     if employees is not None and employees < cfg.min_employees:

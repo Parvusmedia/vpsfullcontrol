@@ -32,6 +32,33 @@ EXCLUDED_TITLE_PATTERNS = (
     (r"\bhuman resources\b", "human resources"),
 )
 
+# Hard exclude profiles/companies with AI product positioning or buzzword-heavy copy.
+AI_REFERENCE_PATTERNS = (
+    (r"\bai\b", "ai"),
+    (r"\bai/", "ai"),
+    (r"\bai-", "ai"),
+    (r"\bai/ml\b", "ai_ml"),
+    (r"\bml/ai\b", "ai_ml"),
+    (r"artificial intelligence", "artificial_intelligence"),
+    (r"\bagentic ai\b", "agentic_ai"),
+    (r"\bgenai\b", "genai"),
+    (r"\bgenerative ai\b", "generative_ai"),
+    (r"\bllm\b", "llm"),
+    (r"\bgpt\b", "gpt"),
+    (r"\bchatgpt\b", "chatgpt"),
+    (r"\bmachine learning\b", "machine_learning"),
+    (r"\bmlops\b", "mlops"),
+    (r"\.ai\b", "dot_ai"),
+    (r"\bai infrastructure\b", "ai_infrastructure"),
+    (r"\bai strategy\b", "ai_strategy"),
+    (r"takeonai", "ai_brand"),
+    (r"threetakesonai", "ai_brand"),
+    (r"\bopenai\b", "openai"),
+    (r"\banthropic\b", "anthropic"),
+    (r"\bcopilot\b", "copilot"),
+    (r"\bvirtual agents?\b", "virtual_agent"),
+)
+
 SENIORITY_INCLUDE = (
     "owner/partner",
     "cxo",

@@ -10,6 +10,7 @@ import httpx
 
 from .clean import clean_lead
 from .config import CdeConfig
+from .ai_filter import ai_reference_hit
 
 logger = logging.getLogger(__name__)
 
@@ -127,14 +128,95 @@ def upsert_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None, status: s
         return {"ok": False, "error": str(exc)[:400], "dedupe_key": dedupe}
 
 
+def list_records(
+    *,
+    cfg: CdeConfig | None = None,
+    where: str | None = None,
+    limit: int = 200,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    cfg = cfg or CdeConfig.from_env()
+    if not cfg.nocodb_api_token:
+        raise RuntimeError("missing_nocodb_token")
+    params: dict[str, Any] = {"limit": limit, "offset": offset}
+    if where:
+        params["where"] = where
+    resp = httpx.get(
+        f"{cfg.nocodb_base_url}/api/v2/tables/{cfg.nocodb_table_id}/records",
+        params=params,
+        headers=_headers(cfg),
+        timeout=45,
+    )
+    resp.raise_for_status()
+    rows = (resp.json() or {}).get("list") or []
+    return [r for r in rows if isinstance(r, dict)]
+
+
+def purge_ai_rows(*, cfg: CdeConfig | None = None, dry_run: bool = True) -> dict[str, Any]:
+    cfg = cfg or CdeConfig.from_env()
+    rows = list_records(cfg=cfg, limit=200)
+    flagged: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    for row in rows:
+        hit = ai_reference_hit(row)
+        if hit:
+            flagged.append({"id": row.get("Id"), "title": row.get("Title"), "reason": hit})
+        else:
+            kept.append({"id": row.get("Id"), "title": row.get("Title")})
+    updated = 0
+    if not dry_run:
+        for item in flagged:
+            rid = item.get("id")
+            if rid is None:
+                continue
+            resp = httpx.patch(
+                f"{cfg.nocodb_base_url}/api/v2/tables/{cfg.nocodb_table_id}/records",
+                headers=_headers(cfg),
+                json={
+                    "Id": rid,
+                    "relevante": "No",
+                    "status": "dropped",
+                    "notes": f"auto: {item['reason']}",
+                    "last_touch_at": _utcnow(),
+                },
+                timeout=45,
+            )
+            resp.raise_for_status()
+            updated += 1
+    return {
+        "ok": True,
+        "dry_run": dry_run,
+        "total": len(rows),
+        "flagged": len(flagged),
+        "kept": len(kept),
+        "updated": updated,
+        "flagged_rows": flagged,
+        "kept_rows": kept,
+    }
+
+
 def sync_leads(leads: list[dict[str, Any]], *, cfg: CdeConfig | None = None) -> dict[str, Any]:
     cfg = cfg or CdeConfig.from_env()
-    ok = fail = 0
+    ok = fail = skipped = 0
     actions: list[dict[str, Any]] = []
     for lead in leads:
         if not isinstance(lead, dict):
             continue
-        result = upsert_lead(lead, cfg=cfg, status=lead.get("status") or "discovered")
+        cleaned = clean_lead(lead)
+        ai_hit = ai_reference_hit(cleaned)
+        if ai_hit:
+            skipped += 1
+            actions.append(
+                {
+                    "ok": False,
+                    "skipped": True,
+                    "reason": ai_hit,
+                    "dedupe_key": cleaned.get("dedupe_key"),
+                    "title": cleaned.get("name"),
+                }
+            )
+            continue
+        result = upsert_lead(cleaned, cfg=cfg, status=cleaned.get("status") or "discovered")
         actions.append(result)
         if result.get("ok"):
             ok += 1
@@ -144,6 +226,7 @@ def sync_leads(leads: list[dict[str, Any]], *, cfg: CdeConfig | None = None) -> 
         "ok": fail == 0,
         "upserted": ok,
         "failed": fail,
+        "skipped_ai": skipped,
         "table_id": cfg.nocodb_table_id,
         "actions": actions,
     }
