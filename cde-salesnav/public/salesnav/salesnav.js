@@ -876,6 +876,46 @@ let authPendingBalance = 0;
 let authResetToken = "";
 
 const AUTH_STEP_PANELS = ["password", "legacy", "setup", "verify", "forgot_sent", "reset"];
+const SN_PENDING_VERIFY_KEY = "sn_pending_verify_email";
+
+function markPendingEmailVerification(email) {
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized) return;
+  try {
+    sessionStorage.setItem(SN_PENDING_VERIFY_KEY, normalized);
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearPendingEmailVerification() {
+  try {
+    sessionStorage.removeItem(SN_PENDING_VERIFY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readPendingEmailVerification() {
+  try {
+    return (sessionStorage.getItem(SN_PENDING_VERIFY_KEY) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function isPendingEmailVerification(email) {
+  const pending = readPendingEmailVerification();
+  const candidate = (email || authPendingEmail || "").trim().toLowerCase();
+  return !!pending && !!candidate && pending === candidate;
+}
+
+function shouldShowSessionExpired(storedEmail) {
+  if (!storedEmail || isPendingEmailVerification(storedEmail)) return false;
+  const verifyPanel = document.getElementById("auth-step-verify");
+  if (verifyPanel && !verifyPanel.hidden) return false;
+  return true;
+}
 
 function setAuthStepLabel(key) {
   const label = document.getElementById("auth-step-label");
@@ -898,6 +938,7 @@ function setAuthStep(step, email, balance = authPendingBalance) {
   hideAllAuthStepPanels();
 
   if (step === "email") {
+    clearPendingEmailVerification();
     if (emailForm) emailForm.hidden = false;
     if (backWrap) backWrap.hidden = true;
     setAuthStepLabel("account.stepEmail");
@@ -930,9 +971,11 @@ function setAuthStep(step, email, balance = authPendingBalance) {
     if (copy) copy.textContent = t("account.stepSetupCopy", { email: authPendingEmail });
     document.getElementById("auth-setup-password")?.focus();
   } else if (step === "verify") {
+    markPendingEmailVerification(authPendingEmail);
     setAuthStepLabel("account.stepVerify");
     const copy = document.getElementById("auth-verify-copy");
     if (copy) copy.textContent = t("account.stepVerifyCopy", { email: authPendingEmail });
+    setAccountNote("", "ok");
   } else if (step === "forgot_sent") {
     setAuthStepLabel("account.stepForgot");
     const copy = document.getElementById("auth-forgot-copy");
@@ -1184,6 +1227,7 @@ async function resetPasswordFromForm(ev) {
 function resetAuthFlow() {
   authPendingEmail = "";
   authPendingBalance = 0;
+  clearPendingEmailVerification();
   setAuthStep("email");
   const pwd = document.getElementById("auth-password");
   const setupPwd = document.getElementById("auth-setup-password");
@@ -1194,7 +1238,12 @@ function resetAuthFlow() {
 }
 
 function initAuthFlow() {
-  setAuthStep("email");
+  const pendingVerifyEmail = readPendingEmailVerification();
+  if (pendingVerifyEmail) {
+    setAuthStep("verify", pendingVerifyEmail);
+  } else {
+    setAuthStep("email");
+  }
 }
 
 async function handleResetQuery() {
@@ -1254,6 +1303,7 @@ async function signInAccount(email, password, opts = {}) {
   }
   accountEmail = data.email || email;
   creditBalance = Number(data.balance) || 0;
+  clearPendingEmailVerification();
   persistAccountEmail(accountEmail);
   renderAccount();
   if (IS_PANEL) {
@@ -1320,6 +1370,7 @@ async function verifyAccountToken(token) {
   }
   accountEmail = data.email || "";
   creditBalance = Number(data.balance) || 0;
+  clearPendingEmailVerification();
   if (accountEmail) persistAccountEmail(accountEmail);
   renderAccount();
   if (IS_PANEL) {
@@ -1365,7 +1416,7 @@ async function fetchCredits() {
     if (!accountEmail) {
       if (storedEmail) {
         prefillAuthEmail(storedEmail);
-        if (IS_PANEL && billingEnabled) {
+        if (IS_PANEL && billingEnabled && shouldShowSessionExpired(storedEmail)) {
           setAccountNote(t("account.sessionExpired"), "error");
         }
       }
@@ -1519,6 +1570,7 @@ async function signOutAccount() {
   });
   accountEmail = "";
   creditBalance = 0;
+  clearPendingEmailVerification();
   clearStoredAccountEmail();
   renderAccount();
   renderConnectionStatus(lastConnection);
