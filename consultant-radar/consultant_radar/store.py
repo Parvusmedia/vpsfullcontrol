@@ -180,7 +180,7 @@ class Store:
                    posted_at, brands, matched_keywords, first_seen_at, last_seen_at
             FROM jobs
             {where}
-            ORDER BY last_seen_at DESC, title ASC
+            ORDER BY company_name ASC, title ASC, last_seen_at DESC
             LIMIT ?
             """,
             args,

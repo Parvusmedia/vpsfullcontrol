@@ -44,8 +44,7 @@ class Filters:
 
 
 def haystack(job: Job) -> str:
-    brands = " ".join(job.brands)
-    return _norm(f"{job.title} {job.location} {job.company_name} {brands} {job.url}")
+    return _norm(f"{job.title} {job.location}")
 
 
 def matched_keywords(job: Job, filters: Filters) -> list[str]:
@@ -73,6 +72,8 @@ def is_excluded(job: Job, filters: Filters) -> bool:
 def classify(jobs: Iterable[Job], filters: Filters, *, require_include: bool = True) -> list[tuple[Job, list[str]]]:
     kept: list[tuple[Job, list[str]]] = []
     for job in jobs:
+        if not (job.title or "").strip():
+            continue
         if is_excluded(job, filters):
             continue
         hits = matched_keywords(job, filters)

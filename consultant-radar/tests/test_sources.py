@@ -118,6 +118,41 @@ class WorkdaySourceTests(unittest.TestCase):
         self.assertIn("AccentureCareers/job/Madrid/Song-Designer_R1", song.url)
         self.assertEqual(len(jobs), 21)
 
+    def test_skips_empty_title(self) -> None:
+        def fake_json(url, method="GET", json_body=None):
+            return {
+                "total": 2,
+                "jobPostings": [
+                    {
+                        "title": "",
+                        "externalPath": "",
+                        "bulletFields": ["R0", "Leeds"],
+                    },
+                    {
+                        "title": "AEM Architect - Song",
+                        "externalPath": "/job/Madrid/AEM_R1",
+                        "bulletFields": ["R1", "Madrid"],
+                    },
+                ],
+            }
+
+        source = WorkdaySource(request_json=fake_json)
+        jobs = source.fetch(
+            {
+                "id": "accenture",
+                "name": "Accenture",
+                "brands": ["Accenture"],
+                "host": "accenture.wd103.myworkdayjobs.com",
+                "tenant": "accenture",
+                "site": "AccentureCareers",
+                "search_texts": ["Song"],
+                "max_pages": 1,
+            }
+        )
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "AEM Architect - Song")
+        self.assertIn("Accenture Song", jobs[0].brands)
+
 
 if __name__ == "__main__":
     unittest.main()

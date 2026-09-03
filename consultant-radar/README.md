@@ -2,7 +2,7 @@
 
 Radar de ofertas de trabajo en consultoras (Accenture Song, Deloitte, KPMG, PwC y otras).
 
-No sustituye a `prospeccion-consultoras` (contacto a personas). Este repo vigila **vacantes publicadas** en los portales de empleo de cada firma: señal de contratación en digital / martech / CX.
+No sustituye a `prospeccion-consultoras` (contacto a personas). Este repo vigila **vacantes publicadas** en los portales de empleo de cada firma. Por defecto se quedan las que pegan con digital / martech / CX (`config/filters.json`). `./run.sh scan --all` guarda el resto (sigue aplicando exclusiones: tax, audit, intern, junior).
 
 Python 3.11+, solo librería estándar.
 

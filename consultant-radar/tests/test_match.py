@@ -33,12 +33,33 @@ class MatchTests(unittest.TestCase):
         hits = matched_keywords(job(), self.filters)
         self.assertIn("adobe", hits)
 
-    def test_song_brand(self) -> None:
+    def test_song_from_title_not_brand(self) -> None:
         hits = matched_keywords(
-            job(title="Creative Director", location="New York"),
+            job(title="Creative Director", location="New York", brands=("Accenture Song",)),
+            self.filters,
+        )
+        self.assertEqual(hits, [])
+        hits = matched_keywords(
+            job(title="Accenture Song Designer", location="Madrid"),
             self.filters,
         )
         self.assertIn("song", hits)
+
+    def test_utm_campaign_in_url_is_ignored(self) -> None:
+        hits = matched_keywords(
+            job(
+                title="Ingeniero de Pruebas",
+                location="Mexico",
+                url="https://jobs.example.com/job/1?utm_campaign=J2W_RSS",
+                brands=(),
+            ),
+            Filters(
+                include_keywords=("campaign",),
+                exclude_keywords=(),
+                exclude_title_prefixes=(),
+            ),
+        )
+        self.assertEqual(hits, [])
 
     def test_exclude_tax_not_international(self) -> None:
         self.assertTrue(is_excluded(job(title="Transfer Pricing Tax Manager"), self.filters))
@@ -61,6 +82,10 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(classify([sap], self.filters), [])
         kept = classify([sap], self.filters, require_include=False)
         self.assertEqual(len(kept), 1)
+
+    def test_skips_blank_title(self) -> None:
+        kept = classify([job(title="  ", location="Madrid")], self.filters)
+        self.assertEqual(kept, [])
 
 
 if __name__ == "__main__":

@@ -44,6 +44,8 @@ class WorkdaySource:
                 postings = data.get("jobPostings") or []
                 for posting in postings:
                     job = self._to_job(company, host, site, posting)
+                    if not job.title or not job.source_id:
+                        continue
                     jobs[job.uid] = job
                 if len(postings) < PAGE_SIZE:
                     break
@@ -67,16 +69,21 @@ class WorkdaySource:
         locations_text = posting.get("locationsText") or posting.get("location") or ""
         if locations_text:
             location = locations_text
-        url = f"https://{host}/{site}{path}" if path else company.get("careers_url", "")
+        title = (posting.get("title") or "").strip()
+        url = f"https://{host}/{site}{path}" if path else ""
+        brands = tuple(company.get("brands") or [])
+        blob = f"{title} {location}".lower()
+        if "song" in blob and "Accenture Song" not in brands:
+            brands = brands + ("Accenture Song",)
         return Job(
             company_id=company["id"],
             company_name=company["name"],
             source=self.name,
             source_id=str(source_id),
-            title=posting.get("title") or "",
+            title=title,
             location=location or "",
             url=url,
             posted_at=posting.get("postedOn") or posting.get("postedOnDisplay") or "",
-            brands=tuple(company.get("brands") or []),
+            brands=brands,
             raw=posting,
         )
