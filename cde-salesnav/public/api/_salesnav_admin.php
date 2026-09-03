@@ -231,7 +231,7 @@ function cde_sn_admin_list_tasks(int $limit = 100, ?string $userId = null, ?stri
 function cde_sn_admin_build_users_index(): array
 {
     $users = [];
-    $ensure = static function (string $userId) use (&$users): array {
+    $ensure = static function (string $userId) use (&$users): string {
         if (!isset($users[$userId])) {
             $users[$userId] = [
                 'user_id' => $userId,
@@ -254,40 +254,40 @@ function cde_sn_admin_build_users_index(): array
             ];
         }
 
-        return $users[$userId];
+        return $userId;
     };
 
     foreach (cde_customers_load() as $uid => $row) {
         if (!is_array($row)) {
             continue;
         }
-        $u = $ensure((string) $uid);
-        $u['email'] = cde_customer_normalize_email((string) ($row['email'] ?? ''));
-        $u['email_verified'] = !empty($row['email_verified']);
-        $u['has_password'] = !empty($row['password_hash']);
-        $u['created_at'] = (string) ($row['created_at'] ?? '');
+        $key = $ensure((string) $uid);
+        $users[$key]['email'] = cde_customer_normalize_email((string) ($row['email'] ?? ''));
+        $users[$key]['email_verified'] = !empty($row['email_verified']);
+        $users[$key]['has_password'] = !empty($row['password_hash']);
+        $users[$key]['created_at'] = (string) ($row['created_at'] ?? '');
     }
 
     foreach (cde_credits_load_wallets() as $uid => $wallet) {
         if (!is_array($wallet)) {
             continue;
         }
-        $u = $ensure((string) $uid);
-        $u['balance'] = max(0, (int) ($wallet['balance'] ?? 0));
-        $u['wallet_updated_at'] = (string) ($wallet['updated_at'] ?? '');
+        $key = $ensure((string) $uid);
+        $users[$key]['balance'] = max(0, (int) ($wallet['balance'] ?? 0));
+        $users[$key]['wallet_updated_at'] = (string) ($wallet['updated_at'] ?? '');
     }
 
     foreach (cde_salesnav_load_accounts() as $uid => $acc) {
         if (!is_array($acc)) {
             continue;
         }
-        $u = $ensure((string) $uid);
-        if ($u['email'] === '' && !empty($acc['email'])) {
-            $u['email'] = cde_customer_normalize_email((string) $acc['email']);
+        $key = $ensure((string) $uid);
+        if ($users[$key]['email'] === '' && !empty($acc['email'])) {
+            $users[$key]['email'] = cde_customer_normalize_email((string) $acc['email']);
         }
-        $u['linkedin_connected'] = empty($acc['invalid_at']) && !empty($acc['account_id']);
-        $u['linkedin_invalid'] = !empty($acc['invalid_at']);
-        $u['linkedin_label'] = (string) ($acc['label'] ?? $acc['account_id'] ?? '');
+        $users[$key]['linkedin_connected'] = empty($acc['invalid_at']) && !empty($acc['account_id']);
+        $users[$key]['linkedin_invalid'] = !empty($acc['invalid_at']);
+        $users[$key]['linkedin_label'] = (string) ($acc['label'] ?? $acc['account_id'] ?? '');
     }
 
     foreach (cde_tasks_load_all() as $task) {
@@ -298,19 +298,19 @@ function cde_sn_admin_build_users_index(): array
         if ($uid === '') {
             continue;
         }
-        $u = $ensure($uid);
+        $key = $ensure($uid);
         $email = cde_customer_normalize_email((string) ($task['email'] ?? ''));
         if ($email !== '') {
-            $u['email'] = $email;
+            $users[$key]['email'] = $email;
         }
-        $u['task_count']++;
+        $users[$key]['task_count']++;
         $status = (string) ($task['status'] ?? '');
         if ($status === 'ready') {
-            $u['tasks_ready']++;
+            $users[$key]['tasks_ready']++;
         } elseif ($status === 'failed') {
-            $u['tasks_failed']++;
+            $users[$key]['tasks_failed']++;
         } elseif ($status === 'processing') {
-            $u['tasks_processing']++;
+            $users[$key]['tasks_processing']++;
         }
     }
 
@@ -327,21 +327,21 @@ function cde_sn_admin_build_users_index(): array
                 if ($uid === '') {
                     continue;
                 }
-                $u = $ensure($uid);
+                $key = $ensure($uid);
                 $delta = (int) ($entry['delta'] ?? 0);
                 $ref = (string) ($entry['ref'] ?? '');
                 $meta = is_array($entry['meta'] ?? null) ? $entry['meta'] : [];
-                if ($u['email'] === '' && !empty($meta['email'])) {
-                    $u['email'] = cde_customer_normalize_email((string) $meta['email']);
+                if ($users[$key]['email'] === '' && !empty($meta['email'])) {
+                    $users[$key]['email'] = cde_customer_normalize_email((string) $meta['email']);
                 }
                 if ($delta > 0) {
                     if (str_starts_with($ref, 'stripe:')) {
-                        $u['credits_purchased'] += $delta;
+                        $users[$key]['credits_purchased'] += $delta;
                     } elseif (str_starts_with($ref, 'admin:') || str_contains($ref, 'grant')) {
-                        $u['credits_granted'] += $delta;
+                        $users[$key]['credits_granted'] += $delta;
                     }
                 } elseif ($delta < 0) {
-                    $u['credits_spent'] += abs($delta);
+                    $users[$key]['credits_spent'] += abs($delta);
                 }
             }
             fclose($handle);
