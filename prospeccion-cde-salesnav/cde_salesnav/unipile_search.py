@@ -122,6 +122,17 @@ def search_people(
     return _request(cfg, "POST", "/linkedin/search", params=params, json_body=body, timeout=90)
 
 
+def _as_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        parts = [_as_text(v) for v in value if v]
+        return ", ".join(p for p in parts if p)
+    if isinstance(value, dict):
+        return str(value.get("name") or value.get("title") or value.get("text") or "").strip()
+    return str(value).strip()
+
+
 def _position(item: dict[str, Any]) -> dict[str, Any]:
     positions = item.get("current_positions") or item.get("current_position") or []
     if isinstance(positions, dict):
@@ -156,7 +167,7 @@ def normalize_item(item: dict[str, Any]) -> dict[str, Any]:
         "headline": str(item.get("headline") or "").strip(),
         "company_name": str(company_name or "").strip(),
         "company_employees": employees,
-        "industry": str(item.get("industry") or pos.get("industry") or "").strip(),
+        "industry": _as_text(item.get("industry") or pos.get("industry")),
         "location": str(item.get("location") or "").strip(),
         "premium": premium,
         "open_profile": bool(item.get("open_profile")),

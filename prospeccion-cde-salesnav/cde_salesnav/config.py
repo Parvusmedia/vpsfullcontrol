@@ -14,19 +14,17 @@ DEFAULT_ENV_FILES = (
 )
 
 EXCLUDED_COMPANIES = ("linkedin",)
-EXCLUDED_TITLE_MARKERS = (
-    "intern",
-    "internship",
-    "trainee",
-    "apprentice",
-    "student",
-    "junior",
-    "talent acquisition",
-    "recruiter",
-    "recruiting",
-    "people partner",
-    "hr ",
-    " human resources",
+EXCLUDED_TITLE_PATTERNS = (
+    (r"\bintern(s|ship|ships)?\b", "intern"),
+    (r"\btrainee\b", "trainee"),
+    (r"\bapprentice\b", "apprentice"),
+    (r"\bstudent\b", "student"),
+    (r"\bjunior\b", "junior"),
+    (r"\btalent acquisition\b", "talent acquisition"),
+    (r"\brecruiters?\b", "recruiter"),
+    (r"\brecruiting\b", "recruiting"),
+    (r"\bpeople partner\b", "people partner"),
+    (r"\bhuman resources\b", "human resources"),
 )
 
 SENIORITY_INCLUDE = (

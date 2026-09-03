@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_MARKERS, CdeConfig
+from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, CdeConfig
 
 _HEADCOUNT_RE = re.compile(r"(\d[\d,]*)\s*[-–]?\s*(\d[\d,]*)?")
 
@@ -40,10 +40,10 @@ def is_linkedin_company(company: str) -> bool:
 
 
 def title_excluded(title: str) -> str | None:
-    blob = f" {_norm(title)} "
-    for marker in EXCLUDED_TITLE_MARKERS:
-        if marker in blob:
-            return f"title:{marker.strip()}"
+    blob = _norm(title)
+    for pattern, label in EXCLUDED_TITLE_PATTERNS:
+        if re.search(pattern, blob):
+            return f"title:{label}"
     return None
 
 
