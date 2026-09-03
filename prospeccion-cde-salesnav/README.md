@@ -10,7 +10,11 @@ Pipeline GTM para [companydataenrichment.com/salesnav](https://companydataenrich
 cd /opt/apps/prospeccion-cde-salesnav
 ./run.sh queries
 ./run.sh discover --max-keep 20 --max-raw 80
+./run.sh ensure-schema
+./run.sh sync
 ```
+
+NocoDB: tabla `cde_salesnav` (`mcu2bt73u6vlybz`) en base `p50p7eoxibwohc7`. Columnas clonadas de `prospecting_es_formacion` + `premium` / `open_profile` / `industry`. `relevante=Pendiente` para validar a mano.
 
 Resultado en VPS: **26 raw → 20 kept**, 5 `not_premium`, 1 falso `intern` en “International” (ya corregido con word boundary). Unipile no devuelve headcount en el item de search; el filtro 11+ va en la query SN.
 

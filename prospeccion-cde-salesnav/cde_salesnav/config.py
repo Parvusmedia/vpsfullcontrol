@@ -8,6 +8,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ACCOUNT_ID = "rq1lQcYTToC9hlWD4vO94g"
+DEFAULT_NOCODB_TABLE_ID = "mcu2bt73u6vlybz"
+DEFAULT_NOCODB_REF_TABLE_ID = "m77jzqg4z30b3ez"
+DEFAULT_NOCODB_BASE_ID = "p50p7eoxibwohc7"
+CAMPAIGN_TAG = "cde_salesnav_en"
+PRODUCT_URL = "https://companydataenrichment.com/salesnav/"
 DEFAULT_ENV_FILES = (
     Path("/etc/linkedinreport/app.env"),
     ROOT / ".env",
@@ -93,6 +98,13 @@ class CdeConfig:
     unipile_base_url: str
     unipile_api_key: str
     unipile_account_id: str
+    nocodb_base_url: str = "https://mpa.parvusmedia.com"
+    nocodb_api_token: str = ""
+    nocodb_table_id: str = DEFAULT_NOCODB_TABLE_ID
+    nocodb_ref_table_id: str = DEFAULT_NOCODB_REF_TABLE_ID
+    nocodb_base_id: str = DEFAULT_NOCODB_BASE_ID
+    campaign: str = CAMPAIGN_TAG
+    product_url: str = PRODUCT_URL
     min_employees: int = 11
     require_premium: bool = True
     location_keywords: tuple[str, ...] = LOCATION_KEYWORDS
@@ -117,6 +129,13 @@ class CdeConfig:
             unipile_base_url=base,
             unipile_api_key=key,
             unipile_account_id=account,
+            nocodb_base_url=(os.environ.get("NOCODB_BASE_URL") or "https://mpa.parvusmedia.com").strip().rstrip("/"),
+            nocodb_api_token=(os.environ.get("NOCODB_API_TOKEN") or "").strip(),
+            nocodb_table_id=(os.environ.get("CDE_SALESNAV_NOCODB_TABLE_ID") or DEFAULT_NOCODB_TABLE_ID).strip(),
+            nocodb_ref_table_id=(os.environ.get("CDE_SALESNAV_NOCODB_REF_TABLE_ID") or DEFAULT_NOCODB_REF_TABLE_ID).strip(),
+            nocodb_base_id=(os.environ.get("CDE_SALESNAV_NOCODB_BASE_ID") or DEFAULT_NOCODB_BASE_ID).strip(),
+            campaign=(os.environ.get("CDE_SALESNAV_CAMPAIGN") or CAMPAIGN_TAG).strip(),
+            product_url=(os.environ.get("CDE_SALESNAV_PRODUCT_URL") or PRODUCT_URL).strip(),
             min_employees=int(os.environ.get("CDE_SALESNAV_MIN_EMPLOYEES") or 11),
             require_premium=_truthy("CDE_SALESNAV_REQUIRE_PREMIUM", True),
         )
