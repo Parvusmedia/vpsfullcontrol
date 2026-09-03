@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Nav Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=25" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=51" />
+  <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
+  <link rel="stylesheet" href="/salesnav/salesnav-admin.css?v=1" />
+</head>
+<body class="product-salesnav product-salesnav-admin">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <section class="admin-login" id="admin-login">
+    <article class="panel-card admin-login-card">
+      <h1>Sales Nav Admin</h1>
+      <p class="admin-login-lede">Internal ops — users, credits, exports.</p>
+      <form id="admin-login-form" class="account-auth-form">
+        <label class="account-field">
+          <span>Admin token</span>
+          <input id="admin-token" type="password" autocomplete="off" required placeholder="SALESNAV_ADMIN_SECRET" />
+        </label>
+        <div class="account-actions">
+          <button type="submit" class="connect-btn">Sign in</button>
+        </div>
+      </form>
+      <p class="account-note admin-login-note" id="admin-login-note" hidden aria-live="polite"></p>
+    </article>
+  </section>
+
+  <div id="admin-app" hidden>
+    <header class="top admin-top">
+      <a class="brand" href="/">CompanyDataEnrichment</a>
+      <nav class="site-nav" aria-label="Admin">
+        <a href="/salesnav/admin/" class="is-active">Admin</a>
+        <a href="/salesnav/panel/">User panel</a>
+        <a href="/salesnav/">Landing</a>
+      </nav>
+      <div class="top-actions">
+        <button type="button" class="ghost-btn" id="admin-logout-btn">Sign out</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <nav class="admin-tabs" role="tablist">
+        <button type="button" class="admin-tab is-active" data-tab="overview">Overview</button>
+        <button type="button" class="admin-tab" data-tab="users">Users</button>
+        <button type="button" class="admin-tab" data-tab="ledger">Ledger</button>
+        <button type="button" class="admin-tab" data-tab="tasks">Tasks</button>
+        <button type="button" class="admin-tab" data-tab="grant">Grant credits</button>
+      </nav>
+
+      <p class="admin-flash" id="admin-flash" hidden aria-live="polite"></p>
+
+      <section class="admin-panel is-active" id="admin-panel-overview" data-panel="overview">
+        <div class="admin-stats" id="admin-stats"></div>
+      </section>
+
+      <section class="admin-panel" id="admin-panel-users" data-panel="users" hidden>
+        <div class="admin-toolbar">
+          <input type="search" id="users-search" class="admin-search" placeholder="Search email or user id…" />
+          <button type="button" class="ghost-btn" id="users-refresh">Refresh</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="tasks-table admin-table" id="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Balance</th>
+                <th>Purchased</th>
+                <th>Granted</th>
+                <th>Spent</th>
+                <th>Tasks</th>
+                <th>LinkedIn</th>
+                <th>Verified</th>
+              </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="admin-panel-ledger" data-panel="ledger" hidden>
+        <div class="admin-toolbar">
+          <select id="ledger-kind" class="tasks-status-filter">
+            <option value="all">All types</option>
+            <option value="topup">Stripe top-ups</option>
+            <option value="grant">Admin grants</option>
+            <option value="spend">Export spend</option>
+            <option value="refund">Refunds</option>
+          </select>
+          <button type="button" class="ghost-btn" id="ledger-refresh">Refresh</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="tasks-table admin-table" id="ledger-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>Delta</th>
+                <th>Balance</th>
+                <th>Ref</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="admin-panel-tasks" data-panel="tasks" hidden>
+        <div class="admin-toolbar">
+          <select id="tasks-status-filter" class="tasks-status-filter">
+            <option value="all">All statuses</option>
+            <option value="processing">Processing</option>
+            <option value="ready">Ready</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button type="button" class="ghost-btn" id="tasks-refresh">Refresh</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="tasks-table admin-table" id="tasks-table">
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Email</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Leads</th>
+                <th>Credits</th>
+                <th>Task id</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel" id="admin-panel-grant" data-panel="grant" hidden>
+        <article class="panel-card admin-grant-card">
+          <h2>Grant free credits</h2>
+          <p class="admin-grant-lede">Adds credits to a user wallet (same ledger as Stripe top-ups).</p>
+          <form id="grant-form" class="account-auth-form">
+            <label class="account-field">
+              <span>Work email</span>
+              <input id="grant-email" type="email" required placeholder="user@company.com" />
+            </label>
+            <label class="account-field">
+              <span>Credits</span>
+              <input id="grant-credits" type="number" min="1" max="500000" required value="200" />
+            </label>
+            <label class="account-field">
+              <span>Note (optional)</span>
+              <input id="grant-note" type="text" maxlength="240" placeholder="Support top-up, promo, etc." />
+            </label>
+            <div class="account-actions">
+              <button type="submit" class="connect-btn">Grant credits</button>
+            </div>
+          </form>
+          <pre class="admin-grant-result" id="grant-result" hidden></pre>
+        </article>
+      </section>
+
+      <aside class="admin-drawer" id="admin-drawer" hidden>
+        <header class="admin-drawer-head">
+          <h2 id="drawer-title">User detail</h2>
+          <button type="button" class="ghost-btn admin-drawer-close" id="drawer-close" aria-label="Close">×</button>
+        </header>
+        <div class="admin-drawer-body" id="drawer-body"></div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/salesnav/salesnav-admin.js?v=1"></script>
+</body>
+</html>
