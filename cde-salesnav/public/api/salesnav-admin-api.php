@@ -25,18 +25,26 @@ if ($action === 'status' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!cde_sn_admin_configured()) {
-        cde_json_response(503, ['ok' => false, 'error' => 'Admin access is not configured (SALESNAV_ADMIN_PASSWORD).']);
+        cde_json_response(503, ['ok' => false, 'error' => 'Admin access is not configured (SALESNAV_ADMIN_EMAILS).']);
     }
     $raw = file_get_contents('php://input') ?: '';
     $payload = json_decode($raw, true);
     if (!is_array($payload)) {
         cde_json_response(400, ['ok' => false, 'error' => 'Invalid JSON body']);
     }
+    $email = trim((string) ($payload['email'] ?? ''));
     $password = trim((string) ($payload['password'] ?? $payload['token'] ?? ''));
-    if (!cde_sn_admin_login($password)) {
-        cde_json_response(403, ['ok' => false, 'error' => 'Incorrect password.']);
+    $ok = $email !== ''
+        ? cde_sn_admin_login_with_panel($email, $password)
+        : cde_sn_admin_login($password);
+    if (!$ok) {
+        cde_json_response(403, ['ok' => false, 'error' => 'Invalid email or password.']);
     }
-    cde_json_response(200, ['ok' => true, 'authenticated' => true]);
+    cde_json_response(200, [
+        'ok' => true,
+        'authenticated' => true,
+        'email' => cde_customer_validate_email($email) ?? null,
+    ]);
 }
 
 if ($action === 'logout' && $_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -27,7 +27,44 @@ function cde_sn_admin_password(): string
 
 function cde_sn_admin_configured(): bool
 {
-    return cde_sn_admin_password() !== '';
+    return cde_sn_admin_emails() !== [] || cde_sn_admin_password() !== '';
+}
+
+/** @return list<string> lowercase emails allowed to use panel credentials for admin */
+function cde_sn_admin_emails(): array
+{
+    $env = cde_unipile_read_env();
+    $raw = trim((string) ($env['SALESNAV_ADMIN_EMAILS'] ?? getenv('SALESNAV_ADMIN_EMAILS') ?: ''));
+    if ($raw === '') {
+        return [];
+    }
+    $out = [];
+    foreach (preg_split('/[\s,;]+/', $raw) ?: [] as $part) {
+        $email = cde_customer_validate_email((string) $part);
+        if ($email !== null) {
+            $out[$email] = $email;
+        }
+    }
+
+    return array_values($out);
+}
+
+function cde_sn_admin_panel_login_valid(string $email, string $password): bool
+{
+    $email = cde_customer_validate_email($email) ?? '';
+    if ($email === '' || $password === '') {
+        return false;
+    }
+    $allowed = cde_sn_admin_emails();
+    if ($allowed === [] || !in_array($email, $allowed, true)) {
+        return false;
+    }
+    $row = cde_customer_get_by_email($email);
+    if (!is_array($row) || empty($row['password_hash']) || !is_string($row['password_hash'])) {
+        return false;
+    }
+
+    return password_verify($password, $row['password_hash']);
 }
 
 function cde_sn_admin_password_valid(?string $password): bool
@@ -84,6 +121,20 @@ function cde_sn_admin_login(string $password): bool
     cde_session_start();
     $_SESSION['salesnav_admin_ok'] = true;
     $_SESSION['salesnav_admin_at'] = time();
+    unset($_SESSION['salesnav_admin_email']);
+
+    return true;
+}
+
+function cde_sn_admin_login_with_panel(string $email, string $password): bool
+{
+    if (!cde_sn_admin_panel_login_valid($email, $password)) {
+        return false;
+    }
+    cde_session_start();
+    $_SESSION['salesnav_admin_ok'] = true;
+    $_SESSION['salesnav_admin_at'] = time();
+    $_SESSION['salesnav_admin_email'] = cde_customer_validate_email($email);
 
     return true;
 }
@@ -91,7 +142,7 @@ function cde_sn_admin_login(string $password): bool
 function cde_sn_admin_logout(): void
 {
     cde_session_start();
-    unset($_SESSION['salesnav_admin_ok'], $_SESSION['salesnav_admin_at']);
+    unset($_SESSION['salesnav_admin_ok'], $_SESSION['salesnav_admin_at'], $_SESSION['salesnav_admin_email']);
 }
 
 /** @return array<string, string> user_id => email */

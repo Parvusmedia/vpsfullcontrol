@@ -4,15 +4,17 @@ Internal panel: **https://companydataenrichment.com/salesnav/admin/**
 
 ## Setup (production)
 
-1. Set a password in `private/cde/unipile.env`:
+1. Allow specific panel accounts in `private/cde/unipile.env`:
 
    ```bash
-   SALESNAV_ADMIN_PASSWORD=your-strong-password
+   SALESNAV_ADMIN_EMAILS=you@company.com,other@company.com
    ```
 
-   Legacy `SALESNAV_ADMIN_SECRET` still works as fallback if password is unset.
+   Those users sign in with the **same email + password** as `/salesnav/panel/`.
 
-2. Open `/salesnav/admin/` and sign in with that password (session ~12h).
+   Optional legacy shared password: `SALESNAV_ADMIN_PASSWORD` (API scripts only).
+
+2. Open `/salesnav/admin/` and sign in with your panel credentials (session ~12h).
 
 ## Features
 
@@ -29,7 +31,7 @@ Base: `/api/salesnav-admin-api.php?action=…`
 | Action | Method | Auth |
 |--------|--------|------|
 | `status` | GET | no |
-| `login` | POST `{password}` | no |
+| `login` | POST `{email,password}` | no |
 | `logout` | POST | session |
 | `overview` | GET | yes |
 | `users` | GET `?q=` | yes |

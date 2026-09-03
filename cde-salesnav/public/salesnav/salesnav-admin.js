@@ -99,7 +99,7 @@ async function checkStatus() {
   try {
     const data = await api("status");
     if (!data.admin_configured) {
-      setLoginNote("Admin not configured on server (SALESNAV_ADMIN_PASSWORD).");
+      setLoginNote("Admin not configured on server (SALESNAV_ADMIN_EMAILS).");
       return false;
     }
     showApp(!!data.authenticated);
@@ -121,14 +121,14 @@ function setLoginNote(text) {
   el.textContent = text || "";
 }
 
-async function login(password) {
+async function login(email, password) {
   const btn = $("admin-login-btn");
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Signing in…";
   }
   try {
-    await api("login", { method: "POST", body: { password } });
+    await api("login", { method: "POST", body: { email, password } });
     showApp(true);
     setLoginNote("");
     setPageMeta(activeTab);
@@ -149,7 +149,9 @@ async function logout() {
   }
   showApp(false);
   const pw = $("admin-password");
+  const em = $("admin-email");
   if (pw) pw.value = "";
+  if (em) em.value = "";
 }
 
 function switchTab(tab) {
@@ -349,10 +351,11 @@ function renderSubtable(headers, rows) {
 function bindEvents() {
   $("admin-login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const email = ($("admin-email")?.value || "").trim();
     const password = $("admin-password")?.value || "";
     setLoginNote("");
     try {
-      await login(password);
+      await login(email, password);
     } catch (err) {
       setLoginNote(err.message);
     }
