@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $auth = cde_salesnav_require_auth();
 $userId = $auth['user_id'];
 $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-$accountId = cde_salesnav_find_reconnectable_seat($userId);
+$accountId = cde_salesnav_find_syncable_seat($userId);
 
 if ($accountId === null) {
     if (!is_array($stored)) {

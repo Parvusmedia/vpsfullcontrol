@@ -133,7 +133,28 @@ function cde_customer_send_verification_email(string $email, string $token): arr
         '',
         '— CompanyDataEnrichment',
     ]);
-    return cde_send_contact_mail($email, $subject, $body);
+    $html = implode("\n", [
+        '<!DOCTYPE html>',
+        '<html lang="en"><head><meta charset="utf-8"><title>Confirm your email</title></head>',
+        '<body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5;color:#111827;max-width:560px;margin:0 auto;padding:24px;">',
+        '<p>Hi,</p>',
+        '<p>Thanks for creating an account at <strong>CompanyDataEnrichment</strong>.</p>',
+        '<p>Confirm your email address to activate your account:</p>',
+        '<p style="margin:28px 0;"><a href="' . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;background:#0f2d52;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">Confirm email</a></p>',
+        '<p style="font-size:14px;color:#4b5563;">Or copy this link:<br><a href="' . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($verifyUrl, ENT_QUOTES, 'UTF-8') . '</a></p>',
+        '<p style="font-size:14px;color:#4b5563;">This link expires in ' . (int) CDE_CUSTOMER_VERIFY_HOURS . ' hours.</p>',
+        '<p style="font-size:14px;color:#4b5563;">If you did not create this account, you can ignore this email.</p>',
+        '<p>— CompanyDataEnrichment</p>',
+        '</body></html>',
+    ]);
+
+    if (!is_readable(__DIR__ . '/_mail.php')) {
+        return ['ok' => false, 'error' => 'Mail transport not configured'];
+    }
+    require_once __DIR__ . '/_mail.php';
+    $from = cde_salesnav_mail_from_for('general');
+    $ok = cde_salesnav_send_general_mail($email, $subject, $body, $from, $html);
+    return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'Mail delivery failed'];
 }
 
 function cde_customer_issue_verify_token(string $userId): string
@@ -286,7 +307,27 @@ function cde_customer_send_reset_email(string $email, string $token): array
         '',
         '— CompanyDataEnrichment',
     ]);
-    return cde_send_contact_mail($email, $subject, $body);
+    $html = implode("\n", [
+        '<!DOCTYPE html>',
+        '<html lang="en"><head><meta charset="utf-8"><title>Reset password</title></head>',
+        '<body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5;color:#111827;max-width:560px;margin:0 auto;padding:24px;">',
+        '<p>Hi,</p>',
+        '<p>We received a request to reset the password for your CompanyDataEnrichment panel account.</p>',
+        '<p style="margin:28px 0;"><a href="' . htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;background:#0f2d52;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">Reset password</a></p>',
+        '<p style="font-size:14px;color:#4b5563;">Or copy this link:<br><a href="' . htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8') . '</a></p>',
+        '<p style="font-size:14px;color:#4b5563;">This link expires in ' . (int) CDE_CUSTOMER_VERIFY_HOURS . ' hours.</p>',
+        '<p style="font-size:14px;color:#4b5563;">If you did not request this, you can ignore this email.</p>',
+        '<p>— CompanyDataEnrichment</p>',
+        '</body></html>',
+    ]);
+
+    if (!is_readable(__DIR__ . '/_mail.php')) {
+        return ['ok' => false, 'error' => 'Mail transport not configured'];
+    }
+    require_once __DIR__ . '/_mail.php';
+    $from = cde_salesnav_mail_from_for('general');
+    $ok = cde_salesnav_send_general_mail($email, $subject, $body, $from, $html);
+    return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'Mail delivery failed'];
 }
 
 function cde_customer_issue_reset_token(string $userId): string
@@ -610,6 +651,7 @@ function cde_salesnav_establish_session(string $email): void
     session_regenerate_id(true);
     $nextId = cde_salesnav_user_id_for_email($email);
     if ($prevId !== $nextId) {
+        cde_salesnav_clear_session_account();
         if (function_exists('cde_credits_merge_wallets')) {
             cde_credits_merge_wallets($prevId, $nextId);
         }
