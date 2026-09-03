@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, POSITIVE_TITLE_PATTERNS, CdeConfig
+from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, POSITIVE_TITLE_PATTERNS, ALLOWED_INDUSTRY_MARKERS, CdeConfig
 from .ai_filter import ai_reference_hit
 
 _HEADCOUNT_RE = re.compile(r"(\d[\d,]*)\s*[-–]?\s*(\d[\d,]*)?")
@@ -56,6 +56,13 @@ def title_positive(title: str) -> str | None:
     return None
 
 
+def industry_allowed(industry: str) -> bool:
+    blob = _norm(industry)
+    if not blob:
+        return True
+    return any(marker in blob for marker in ALLOWED_INDUSTRY_MARKERS)
+
+
 def gtm_only_title(title: str) -> bool:
     """Reject GTM-only leadership without sales/outbound/SDR signal."""
     blob = _norm(title)
@@ -78,6 +85,7 @@ def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[st
     cfg = cfg or CdeConfig.from_env()
     title = str(lead.get("job_title") or lead.get("headline") or "")
     company = str(lead.get("company_name") or "")
+    industry = str(lead.get("industry") or "")
     employees = parse_employees(lead.get("company_employees") or lead.get("company_headcount"))
     premium = lead.get("premium")
     if isinstance(premium, str):
@@ -103,6 +111,8 @@ def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[st
         hard_reject = hard_reject or "not_premium"
     if employees is not None and employees < cfg.min_employees:
         hard_reject = hard_reject or f"company_too_small:{employees}"
+    if industry and not industry_allowed(industry):
+        hard_reject = hard_reject or "industry:mismatch"
 
     if premium is True:
         reasons.append("premium")

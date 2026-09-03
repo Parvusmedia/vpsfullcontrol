@@ -45,7 +45,32 @@ EXCLUDED_TITLE_PATTERNS = (
     (r"\baccount executive\b", "account_executive"),
     (r"\baccount manager\b", "account_manager"),
     (r"\bchannel (sales|partner)\b", "channel"),
-    (r"\bpartner (manager|director)\b", "partner"),
+    (r"\bpartner (manager|director|sales)\b", "partner"),
+    (r"\bfractional\b", "fractional"),
+    (r"\bsales training\b", "sales_training"),
+    (r"\btraining (&|and) consulting\b", "training"),
+    (r"\badvisor\b", "advisor"),
+    (r"\bconsulting services\b", "consulting_services"),
+    (r"\bsales (and|&) marketing\b", "sales_marketing"),
+    (r"\bsales marketing\b", "sales_marketing"),
+    (r"\bmarketing director\b", "marketing"),
+    (r"\bpublic sector\b", "public_sector"),
+    (r"\bpartnerships\b", "partnerships"),
+)
+
+ALLOWED_INDUSTRY_MARKERS = (
+    "software",
+    "it services",
+    "it consulting",
+    "advertising",
+    "consulting",
+    "technology",
+    "information and internet",
+    "computer and network security",
+    "internet",
+    "computer hardware",
+    "data infrastructure",
+    "marketing",
 )
 
 # Must match at least one — outbound / enterprise sales leadership only.
