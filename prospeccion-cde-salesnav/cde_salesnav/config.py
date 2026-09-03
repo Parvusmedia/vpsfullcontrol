@@ -30,6 +30,39 @@ EXCLUDED_TITLE_PATTERNS = (
     (r"\brecruiting\b", "recruiting"),
     (r"\bpeople partner\b", "people partner"),
     (r"\bhuman resources\b", "human resources"),
+    (r"\bprofessional employer\b", "peo"),
+    (r"\bpeo\b", "peo"),
+    (r"\bhr (director|manager|lead|head)\b", "hr"),
+    (r"\brevenue operations\b", "revops"),
+    (r"\brevops\b", "revops"),
+    (r"\brev ops\b", "revops"),
+    (r"\bsales operations\b", "sales_ops"),
+    (r"\bsales ops\b", "sales_ops"),
+    (r"\b(head|director|vp|vice president) of operations\b", "operations"),
+    (r"\boperations (director|manager|lead|head)\b", "operations"),
+    (r"\binbound\b", "inbound"),
+    (r"\bcustomer success\b", "customer_success"),
+    (r"\baccount executive\b", "account_executive"),
+    (r"\baccount manager\b", "account_manager"),
+    (r"\bchannel (sales|partner)\b", "channel"),
+    (r"\bpartner (manager|director)\b", "partner"),
+)
+
+# Must match at least one — outbound / enterprise sales leadership only.
+POSITIVE_TITLE_PATTERNS = (
+    (r"\bhead of (sales|sdr|bdr|outbound|sales development|enterprise sales|commercial)\b", "head_sales"),
+    (r"\bvp (of )?sales\b", "vp_sales"),
+    (r"\bvice president.{0,30}sales\b", "vp_sales"),
+    (r"\bsales director\b", "sales_director"),
+    (r"\bdirector of (enterprise )?sales\b", "director_sales"),
+    (r"\bdirector.{0,20}enterprise sales\b", "director_enterprise"),
+    (r"\b(sdr|bdr) (manager|director|lead)\b", "sdr_manager"),
+    (r"\bhead of (sdr|bdr|sales development)\b", "head_sdr"),
+    (r"\bsales development (manager|director|lead)\b", "sdr_manager"),
+    (r"\boutbound (sales )?(manager|director|lead|head)\b", "outbound_lead"),
+    (r"\bdirector.{0,30}performance marketing\b", "perf_marketing"),
+    (r"\bperformance marketing.{0,20}sales\b", "perf_marketing"),
+    (r"\bhead of sales\b", "head_sales"),
 )
 
 # Hard exclude profiles/companies with AI product positioning or buzzword-heavy copy.
@@ -72,13 +105,15 @@ ROLE_TITLES = (
     "Head of Sales",
     "VP Sales",
     "Sales Director",
+    "Director of Enterprise Sales",
     "Head of SDR",
     "Head of BDR",
     "SDR Manager",
-    "Sales Development",
-    "Revenue Operations",
-    "Sales Operations",
-    "Outbound",
+    "BDR Manager",
+    "Sales Development Manager",
+    "Director of Outbound",
+    "Head of Outbound",
+    "Outbound Sales",
 )
 
 LOCATION_KEYWORDS = ("United States", "United Kingdom", "Europe")

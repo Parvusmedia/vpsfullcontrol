@@ -105,6 +105,14 @@ def cmd_purge_ai(cfg: CdeConfig, *, live: bool) -> int:
     return 0
 
 
+def cmd_prune(cfg: CdeConfig, *, keep_ids: list[int], live: bool) -> int:
+    from .nocodb import mark_rows_dropped
+
+    out = mark_rows_dropped(cfg=cfg, keep_ids=set(keep_ids), dry_run=not live)
+    _print(out)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cde_salesnav")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -118,6 +126,9 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--file", default="", help="Path to discover_last.json")
     p = sub.add_parser("purge-ai", help="Mark NocoDB rows with AI references as dropped")
     p.add_argument("--live", action="store_true", help="Apply relevante=No and status=dropped")
+    pr = sub.add_parser("prune", help="Drop Pendiente rows except --keep-ids")
+    pr.add_argument("--keep-ids", type=int, nargs="+", required=True)
+    pr.add_argument("--live", action="store_true", help="Apply relevante=No and status=dropped")
     args = parser.parse_args(argv)
     cfg = CdeConfig.from_env()
     if args.cmd == "queries":
@@ -130,6 +141,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync(cfg, path=args.file or None)
     if args.cmd == "purge-ai":
         return cmd_purge_ai(cfg, live=args.live)
+    if args.cmd == "prune":
+        return cmd_prune(cfg, keep_ids=args.keep_ids, live=args.live)
     return 2
 
 

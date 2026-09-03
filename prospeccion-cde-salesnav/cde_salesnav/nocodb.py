@@ -195,6 +195,72 @@ def purge_ai_rows(*, cfg: CdeConfig | None = None, dry_run: bool = True) -> dict
     }
 
 
+def mark_rows_dropped(
+    *,
+    cfg: CdeConfig | None = None,
+    keep_ids: set[int] | None = None,
+    relevante_filter: str = "Pendiente",
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Mark rows as dropped except those in keep_ids."""
+    cfg = cfg or CdeConfig.from_env()
+    rows = list_records(cfg=cfg, limit=500)
+    keep_ids = keep_ids or set()
+    dropped: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    for row in rows:
+        rid = row.get("Id")
+        rel = str(row.get("relevante") or "").strip()
+        item = {"id": rid, "title": row.get("Title"), "relevante": rel}
+        if rid in keep_ids:
+            kept.append(item)
+            continue
+        if relevante_filter and rel != relevante_filter:
+            continue
+        dropped.append(item)
+    updated = 0
+    if not dry_run:
+        for item in dropped:
+            rid = item.get("id")
+            if rid is None:
+                continue
+            resp = httpx.patch(
+                f"{cfg.nocodb_base_url}/api/v2/tables/{cfg.nocodb_table_id}/records",
+                headers=_headers(cfg),
+                json={
+                    "Id": rid,
+                    "relevante": "No",
+                    "status": "dropped",
+                    "notes": "manual_icp_prune",
+                    "last_touch_at": _utcnow(),
+                },
+                timeout=45,
+            )
+            resp.raise_for_status()
+            updated += 1
+    return {
+        "ok": True,
+        "dry_run": dry_run,
+        "kept": kept,
+        "dropped": dropped,
+        "updated": updated,
+    }
+
+
+def existing_dedupe_keys(*, cfg: CdeConfig | None = None) -> set[str]:
+    cfg = cfg or CdeConfig.from_env()
+    rows = list_records(cfg=cfg, limit=500)
+    keys: set[str] = set()
+    for row in rows:
+        dk = str(row.get("dedupe_key") or "").strip()
+        if dk:
+            keys.add(dk)
+        url = str(row.get("linkedin_url") or "").strip().rstrip("/").lower()
+        if url:
+            keys.add(url)
+    return keys
+
+
 def sync_leads(leads: list[dict[str, Any]], *, cfg: CdeConfig | None = None) -> dict[str, Any]:
     cfg = cfg or CdeConfig.from_env()
     ok = fail = skipped = 0

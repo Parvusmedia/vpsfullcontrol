@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, CdeConfig
+from .config import EXCLUDED_COMPANIES, EXCLUDED_TITLE_PATTERNS, POSITIVE_TITLE_PATTERNS, CdeConfig
 from .ai_filter import ai_reference_hit
 
 _HEADCOUNT_RE = re.compile(r"(\d[\d,]*)\s*[-–]?\s*(\d[\d,]*)?")
@@ -48,6 +48,32 @@ def title_excluded(title: str) -> str | None:
     return None
 
 
+def title_positive(title: str) -> str | None:
+    blob = _norm(title)
+    for pattern, label in POSITIVE_TITLE_PATTERNS:
+        if re.search(pattern, blob):
+            return label
+    return None
+
+
+def gtm_only_title(title: str) -> bool:
+    """Reject GTM-only leadership without sales/outbound/SDR signal."""
+    blob = _norm(title)
+    if "gtm" not in blob and "go-to-market" not in blob and "go to market" not in blob:
+        return False
+    sales_markers = (
+        "sales",
+        "sdr",
+        "bdr",
+        "outbound",
+        "enterprise",
+        "commercial",
+        "revenue",
+        "performance marketing",
+    )
+    return not any(marker in blob for marker in sales_markers)
+
+
 def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[str, Any]:
     cfg = cfg or CdeConfig.from_env()
     title = str(lead.get("job_title") or lead.get("headline") or "")
@@ -65,6 +91,11 @@ def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[st
     title_hit = title_excluded(title)
     if title_hit:
         hard_reject = hard_reject or title_hit
+    if gtm_only_title(title):
+        hard_reject = hard_reject or "title:gtm_only"
+    positive_hit = title_positive(title)
+    if not positive_hit:
+        hard_reject = hard_reject or "title:not_outbound_sales_lead"
     ai_hit = ai_reference_hit(lead)
     if ai_hit:
         hard_reject = hard_reject or ai_hit
@@ -77,6 +108,8 @@ def score_lead(lead: dict[str, Any], *, cfg: CdeConfig | None = None) -> dict[st
         reasons.append("premium")
     if employees:
         reasons.append(f"size:{employees}")
+    if positive_hit:
+        reasons.append(f"role:{positive_hit}")
     if company:
         reasons.append(f"company:{company}")
 

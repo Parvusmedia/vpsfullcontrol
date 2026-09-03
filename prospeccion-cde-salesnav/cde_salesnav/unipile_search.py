@@ -10,7 +10,6 @@ import httpx
 
 from .config import CdeConfig
 from .scoring import score_lead
-
 def _headers(cfg: CdeConfig) -> dict[str, str]:
     return {
         "X-API-KEY": cfg.unipile_api_key,
@@ -184,7 +183,17 @@ def discover(
     max_raw: int = 80,
     page_size: int = 25,
     include_industry: bool = True,
+    skip_existing: bool = True,
 ) -> dict[str, Any]:
+    from .nocodb import existing_dedupe_keys
+
+    existing_keys: set[str] = set()
+    if skip_existing:
+        try:
+            existing_keys = existing_dedupe_keys(cfg=cfg)
+        except Exception:
+            existing_keys = set()
+
     locations = resolve_ids(cfg, ptype="REGION", keywords=cfg.location_keywords)
     industries: list[dict[str, str]] = []
     if include_industry:
@@ -197,6 +206,7 @@ def discover(
 
     kept: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
+    skipped_existing = 0
     raw_count = 0
     cursor = None
     pages = 0
@@ -215,6 +225,15 @@ def discover(
         for item in items:
             raw_count += 1
             lead = normalize_item(item)
+            url_key = str(lead.get("linkedin_url") or "").strip().rstrip("/").lower()
+            pid_key = str(lead.get("public_identifier") or "").strip().lower()
+            if existing_keys and (
+                url_key in existing_keys
+                or pid_key in existing_keys
+                or (pid_key and f"https://www.linkedin.com/in/{pid_key}" in existing_keys)
+            ):
+                skipped_existing += 1
+                continue
             verdict = score_lead(lead, cfg=cfg)
             row = {**lead, **verdict}
             if verdict["ok"]:
@@ -250,6 +269,7 @@ def discover(
         "search_body": body,
         "pages": pages,
         "raw_count": raw_count,
+        "skipped_existing": skipped_existing,
         "kept_count": len(kept),
         "rejected_count": len(rejected),
         "reject_counts": reject_counts,
