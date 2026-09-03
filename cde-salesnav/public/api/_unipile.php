@@ -763,6 +763,45 @@ function cde_salesnav_find_reconnectable_seat(string $userId, bool $includeDisco
     return (string) $best['id'];
 }
 
+/**
+ * Seat created for this panel wallet via hosted auth (Unipile account "name" = wallet id).
+ * Used after connect callback — never guess unrelated seats.
+ */
+function cde_salesnav_find_wallet_owned_seat(string $userId): ?string
+{
+    foreach (cde_salesnav_list_unipile_account_items() as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
+        if ($id === '') {
+            continue;
+        }
+        $linkedName = trim((string) ($item['name'] ?? ''));
+        if ($linkedName !== '' && $linkedName === $userId && cde_salesnav_is_account_alive($id)) {
+            return $id;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Recover a pending LinkedIn link after hosted auth — only this wallet's own seat.
+ */
+function cde_salesnav_find_syncable_seat(string $userId): ?string
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $storedAccountId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
+
+    if ($storedAccountId !== '' && !$storedDisconnected && cde_salesnav_is_account_alive($storedAccountId)) {
+        return $storedAccountId;
+    }
+
+    return cde_salesnav_find_wallet_owned_seat($userId);
+}
+
 function cde_salesnav_resolve_linked_account_id(string $userId): ?string
 {
     $seat = cde_salesnav_find_reconnectable_seat($userId);
