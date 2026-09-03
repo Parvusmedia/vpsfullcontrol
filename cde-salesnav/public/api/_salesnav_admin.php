@@ -7,18 +7,18 @@ require_once __DIR__ . '/_tasks.php';
 
 const CDE_ADMIN_SESSION_HOURS = 12;
 
-function cde_admin_secret(): string
+function cde_sn_admin_secret(): string
 {
     $env = cde_unipile_read_env();
     return trim((string) ($env['SALESNAV_ADMIN_SECRET'] ?? getenv('SALESNAV_ADMIN_SECRET') ?: ''));
 }
 
-function cde_admin_configured(): bool
+function cde_sn_admin_configured(): bool
 {
-    return cde_admin_secret() !== '';
+    return cde_sn_admin_secret() !== '';
 }
 
-function cde_admin_session_valid(): bool
+function cde_sn_admin_session_valid(): bool
 {
     cde_session_start();
     if (empty($_SESSION['salesnav_admin_ok'])) {
@@ -26,16 +26,16 @@ function cde_admin_session_valid(): bool
     }
     $at = (int) ($_SESSION['salesnav_admin_at'] ?? 0);
     if ($at <= 0 || (time() - $at) > CDE_ADMIN_SESSION_HOURS * 3600) {
-        cde_admin_logout();
+        cde_sn_admin_logout();
         return false;
     }
 
     return true;
 }
 
-function cde_admin_token_valid(?string $token): bool
+function cde_sn_admin_token_valid(?string $token): bool
 {
-    $expected = cde_admin_secret();
+    $expected = cde_sn_admin_secret();
     if ($expected === '' || $token === null || $token === '') {
         return false;
     }
@@ -43,21 +43,21 @@ function cde_admin_token_valid(?string $token): bool
     return hash_equals($expected, trim($token));
 }
 
-function cde_admin_require_auth(): void
+function cde_sn_admin_require_auth(): void
 {
     $header = trim((string) ($_SERVER['HTTP_X_SALESNAV_ADMIN_TOKEN'] ?? ''));
-    if (cde_admin_token_valid($header)) {
+    if (cde_sn_admin_token_valid($header)) {
         return;
     }
-    if (cde_admin_session_valid()) {
+    if (cde_sn_admin_session_valid()) {
         return;
     }
     cde_json_response(401, ['ok' => false, 'error' => 'Unauthorized']);
 }
 
-function cde_admin_login(string $token): bool
+function cde_sn_admin_login(string $token): bool
 {
-    if (!cde_admin_token_valid($token)) {
+    if (!cde_sn_admin_token_valid($token)) {
         return false;
     }
     cde_session_start();
@@ -67,14 +67,14 @@ function cde_admin_login(string $token): bool
     return true;
 }
 
-function cde_admin_logout(): void
+function cde_sn_admin_logout(): void
 {
     cde_session_start();
     unset($_SESSION['salesnav_admin_ok'], $_SESSION['salesnav_admin_at']);
 }
 
 /** @return array<string, string> user_id => email */
-function cde_admin_email_index(): array
+function cde_sn_admin_email_index(): array
 {
     $map = [];
     foreach (cde_customers_load() as $uid => $row) {
@@ -100,7 +100,7 @@ function cde_admin_email_index(): array
     return $map;
 }
 
-function cde_admin_resolve_user_id(?string $userId, ?string $email): ?string
+function cde_sn_admin_resolve_user_id(?string $userId, ?string $email): ?string
 {
     $userId = trim((string) $userId);
     $email = cde_customer_validate_email((string) $email) ?? '';
@@ -114,7 +114,7 @@ function cde_admin_resolve_user_id(?string $userId, ?string $email): ?string
     return null;
 }
 
-function cde_admin_ledger_kind(string $ref, int $delta): string
+function cde_sn_admin_ledger_kind(string $ref, int $delta): string
 {
     if (str_starts_with($ref, 'stripe:')) {
         return 'topup';
@@ -142,7 +142,7 @@ function cde_admin_ledger_kind(string $ref, int $delta): string
 }
 
 /** @return list<array<string, mixed>> newest first */
-function cde_admin_read_ledger(int $limit = 150, ?string $userId = null, ?string $kind = null): array
+function cde_sn_admin_read_ledger(int $limit = 150, ?string $userId = null, ?string $kind = null): array
 {
     $limit = max(1, min(500, $limit));
     $path = cde_credits_ledger_file();
@@ -155,7 +155,7 @@ function cde_admin_read_ledger(int $limit = 150, ?string $userId = null, ?string
         return [];
     }
 
-    $emailIndex = cde_admin_email_index();
+    $emailIndex = cde_sn_admin_email_index();
     $out = [];
     for ($i = count($lines) - 1; $i >= 0 && count($out) < $limit; $i--) {
         $entry = json_decode($lines[$i], true);
@@ -168,7 +168,7 @@ function cde_admin_read_ledger(int $limit = 150, ?string $userId = null, ?string
         }
         $delta = (int) ($entry['delta'] ?? 0);
         $ref = (string) ($entry['ref'] ?? '');
-        $entryKind = cde_admin_ledger_kind($ref, $delta);
+        $entryKind = cde_sn_admin_ledger_kind($ref, $delta);
         if ($kind !== null && $kind !== '' && $kind !== 'all' && $entryKind !== $kind) {
             continue;
         }
@@ -190,10 +190,10 @@ function cde_admin_read_ledger(int $limit = 150, ?string $userId = null, ?string
 }
 
 /** @return list<array<string, mixed>> */
-function cde_admin_list_tasks(int $limit = 100, ?string $userId = null, ?string $status = null): array
+function cde_sn_admin_list_tasks(int $limit = 100, ?string $userId = null, ?string $status = null): array
 {
     $limit = max(1, min(500, $limit));
-    $emailIndex = cde_admin_email_index();
+    $emailIndex = cde_sn_admin_email_index();
     $out = [];
     foreach (cde_tasks_load_all() as $taskId => $task) {
         if (!is_array($task)) {
@@ -228,7 +228,7 @@ function cde_admin_list_tasks(int $limit = 100, ?string $userId = null, ?string 
 }
 
 /** @return list<array<string, mixed>> */
-function cde_admin_build_users_index(): array
+function cde_sn_admin_build_users_index(): array
 {
     $users = [];
     $ensure = static function (string $userId) use (&$users): array {
@@ -368,11 +368,11 @@ function cde_admin_build_users_index(): array
 }
 
 /** @return array<string, mixed> */
-function cde_admin_overview(): array
+function cde_sn_admin_overview(): array
 {
-    $users = cde_admin_build_users_index();
-    $tasks = cde_admin_list_tasks(500);
-    $ledger = cde_admin_read_ledger(500);
+    $users = cde_sn_admin_build_users_index();
+    $tasks = cde_sn_admin_list_tasks(500);
+    $ledger = cde_sn_admin_read_ledger(500);
 
     $totalBalance = 0;
     $verifiedUsers = 0;
@@ -420,14 +420,14 @@ function cde_admin_overview(): array
         'credits_topup_30d' => $topups30,
         'credits_granted_30d' => $grants30,
         'credits_spent_30d' => $spent30,
-        'admin_configured' => cde_admin_configured(),
+        'admin_configured' => cde_sn_admin_configured(),
     ];
 }
 
 /** @return array<string, mixed>|null */
-function cde_admin_user_detail(string $userId): ?array
+function cde_sn_admin_user_detail(string $userId): ?array
 {
-    $users = cde_admin_build_users_index();
+    $users = cde_sn_admin_build_users_index();
     $match = null;
     foreach ($users as $u) {
         if (($u['user_id'] ?? '') === $userId) {
@@ -452,14 +452,14 @@ function cde_admin_user_detail(string $userId): ?array
 
     return [
         'user' => $match,
-        'ledger' => cde_admin_read_ledger(50, $userId),
-        'tasks' => cde_admin_list_tasks(50, $userId),
+        'ledger' => cde_sn_admin_read_ledger(50, $userId),
+        'tasks' => cde_sn_admin_list_tasks(50, $userId),
         'linkedin' => cde_salesnav_stored_account($userId),
     ];
 }
 
 /** @return array{ok: true, email: string, user_id: string, granted: int, balance_before: int, balance: int, ref: string} */
-function cde_admin_grant_credits(string $email, int $amount, string $note = '', string $ref = ''): array
+function cde_sn_admin_grant_credits(string $email, int $amount, string $note = '', string $ref = ''): array
 {
     $email = cde_customer_validate_email($email) ?? '';
     if ($email === '') {
