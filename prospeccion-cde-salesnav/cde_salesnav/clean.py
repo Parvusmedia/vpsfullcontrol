@@ -6,7 +6,7 @@ import re
 from typing import Any
 from urllib.parse import urlparse
 
-_PAREN_RE = re.compile(r"\([^)]*\)")
+_SUFFIXES = {"mba", "cbpa", "phd", "cfa", "cpa", "cpc", "pmp", "msc", "bsc"}
 _EMOJI_RE = re.compile(r"[^\w\s.&'\-]", re.UNICODE)
 _SPACE_RE = re.compile(r"\s+")
 _PROFILE_RE = re.compile(r"linkedin\.com/in/([^/?#]+)", re.I)
@@ -42,6 +42,8 @@ def split_name(full_name: str, *, first: str = "", last: str = "") -> tuple[str,
     if first and last:
         return first, last
     parts = [p for p in clean_person_name(full_name).split() if p]
+    while len(parts) > 1 and parts[-1].lower().rstrip(".") in _SUFFIXES:
+        parts.pop()
     if not parts:
         return first, last
     if len(parts) == 1:
