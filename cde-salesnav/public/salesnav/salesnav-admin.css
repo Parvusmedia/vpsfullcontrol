@@ -47,12 +47,29 @@ body.sn-admin {
 /* ── Login ─────────────────────────────────────────────── */
 
 .sn-login {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1.25rem;
   background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+}
+
+.sn-login[hidden],
+body.is-authed .sn-login {
+  display: none !important;
+}
+
+.sn-app[hidden],
+body:not(.is-authed) .sn-app {
+  display: none !important;
+}
+
+.sn-drawer[hidden],
+.sn-drawer-backdrop[hidden] {
+  display: none !important;
 }
 
 .sn-login-shell {
@@ -627,6 +644,11 @@ body.sn-admin {
 
 .sn-btn-primary:hover {
   background: var(--sn-primary-hover);
+}
+
+.sn-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .sn-btn-secondary {

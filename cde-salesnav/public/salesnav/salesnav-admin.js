@@ -79,9 +79,12 @@ function statusBadge(status) {
 }
 
 function showApp(authenticated) {
-  $("admin-login").hidden = authenticated;
-  $("admin-app").hidden = !authenticated;
-  document.body.classList.toggle("is-authed", authenticated);
+  const login = $("admin-login");
+  const app = $("admin-app");
+  if (login) login.hidden = !!authenticated;
+  if (app) app.hidden = !authenticated;
+  document.body.classList.toggle("is-authed", !!authenticated);
+  if (!authenticated) closeDrawer();
 }
 
 function setPageMeta(tab) {
@@ -96,7 +99,7 @@ async function checkStatus() {
   try {
     const data = await api("status");
     if (!data.admin_configured) {
-      setLoginNote("Admin not configured on server (SALESNAV_ADMIN_SECRET).");
+      setLoginNote("Admin not configured on server (SALESNAV_ADMIN_PASSWORD).");
       return false;
     }
     showApp(!!data.authenticated);
@@ -118,12 +121,24 @@ function setLoginNote(text) {
   el.textContent = text || "";
 }
 
-async function login(token) {
-  await api("login", { method: "POST", body: { token } });
-  showApp(true);
-  setLoginNote("");
-  setPageMeta(activeTab);
-  await loadActiveTab();
+async function login(password) {
+  const btn = $("admin-login-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+  }
+  try {
+    await api("login", { method: "POST", body: { password } });
+    showApp(true);
+    setLoginNote("");
+    setPageMeta(activeTab);
+    await loadActiveTab();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Sign in";
+    }
+  }
 }
 
 async function logout() {
@@ -133,7 +148,8 @@ async function logout() {
     /* ignore */
   }
   showApp(false);
-  $("admin-token").value = "";
+  const pw = $("admin-password");
+  if (pw) pw.value = "";
 }
 
 function switchTab(tab) {
@@ -333,10 +349,10 @@ function renderSubtable(headers, rows) {
 function bindEvents() {
   $("admin-login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const token = $("admin-token")?.value || "";
+    const password = $("admin-password")?.value || "";
     setLoginNote("");
     try {
-      await login(token.trim());
+      await login(password);
     } catch (err) {
       setLoginNote(err.message);
     }

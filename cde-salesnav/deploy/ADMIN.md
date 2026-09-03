@@ -4,13 +4,15 @@ Internal panel: **https://companydataenrichment.com/salesnav/admin/**
 
 ## Setup (production)
 
-1. Set a strong secret in `private/cde/unipile.env`:
+1. Set a password in `private/cde/unipile.env`:
 
    ```bash
-   SALESNAV_ADMIN_SECRET=<random-hex-32+>
+   SALESNAV_ADMIN_PASSWORD=your-strong-password
    ```
 
-2. Open `/salesnav/admin/` and sign in with that token (stored in session ~12h).
+   Legacy `SALESNAV_ADMIN_SECRET` still works as fallback if password is unset.
+
+2. Open `/salesnav/admin/` and sign in with that password (session ~12h).
 
 ## Features
 
@@ -27,7 +29,7 @@ Base: `/api/salesnav-admin-api.php?action=…`
 | Action | Method | Auth |
 |--------|--------|------|
 | `status` | GET | no |
-| `login` | POST `{token}` | no |
+| `login` | POST `{password}` | no |
 | `logout` | POST | session |
 | `overview` | GET | yes |
 | `users` | GET `?q=` | yes |
@@ -36,7 +38,7 @@ Base: `/api/salesnav-admin-api.php?action=…`
 | `tasks` | GET `?status=&limit=` | yes |
 | `grant` | POST `{email,credits,note?}` | yes |
 
-Header auth (scripts): `X-Salesnav-Admin-Token: <secret>`
+Header auth (scripts): `X-Salesnav-Admin-Token: <password>`
 
 Legacy grant-only endpoint: `POST /api/salesnav-admin-credits.php`
 

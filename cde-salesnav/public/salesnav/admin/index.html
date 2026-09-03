@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/salesnav/salesnav-admin.css?v=2" />
+  <link rel="stylesheet" href="/salesnav/salesnav-admin.css?v=3" />
 </head>
 <body class="sn-admin">
   <!-- Login -->
@@ -22,13 +22,13 @@
       </div>
       <div class="sn-login-card">
         <h2>Sign in</h2>
-        <p class="sn-login-hint">Use your <code>SALESNAV_ADMIN_SECRET</code> token.</p>
+        <p class="sn-login-hint">Enter the admin password for this environment.</p>
         <form id="admin-login-form">
           <label class="sn-field">
-            <span>Admin token</span>
-            <input id="admin-token" type="password" autocomplete="off" required placeholder="Paste token…" />
+            <span>Password</span>
+            <input id="admin-password" type="password" autocomplete="current-password" required placeholder="Admin password" />
           </label>
-          <button type="submit" class="sn-btn sn-btn-primary sn-btn-block">Continue</button>
+          <button type="submit" class="sn-btn sn-btn-primary sn-btn-block" id="admin-login-btn">Sign in</button>
         </form>
         <p class="sn-login-note" id="admin-login-note" hidden aria-live="polite"></p>
       </div>
@@ -224,6 +224,6 @@
     <div class="sn-drawer-body" id="drawer-body"></div>
   </aside>
 
-  <script src="/salesnav/salesnav-admin.js?v=2"></script>
+  <script src="/salesnav/salesnav-admin.js?v=3"></script>
 </body>
 </html>

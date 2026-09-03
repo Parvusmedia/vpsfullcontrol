@@ -13,9 +13,35 @@ function cde_sn_admin_secret(): string
     return trim((string) ($env['SALESNAV_ADMIN_SECRET'] ?? getenv('SALESNAV_ADMIN_SECRET') ?: ''));
 }
 
+/** Plain password or bcrypt hash ($2y$…) from SALESNAV_ADMIN_PASSWORD; falls back to legacy secret. */
+function cde_sn_admin_password(): string
+{
+    $env = cde_unipile_read_env();
+    $pass = trim((string) ($env['SALESNAV_ADMIN_PASSWORD'] ?? getenv('SALESNAV_ADMIN_PASSWORD') ?: ''));
+    if ($pass !== '') {
+        return $pass;
+    }
+
+    return cde_sn_admin_secret();
+}
+
 function cde_sn_admin_configured(): bool
 {
-    return cde_sn_admin_secret() !== '';
+    return cde_sn_admin_password() !== '';
+}
+
+function cde_sn_admin_password_valid(?string $password): bool
+{
+    $expected = cde_sn_admin_password();
+    if ($expected === '' || $password === null || $password === '') {
+        return false;
+    }
+    $password = trim($password);
+    if (str_starts_with($expected, '$2y$') || str_starts_with($expected, '$2a$')) {
+        return password_verify($password, $expected);
+    }
+
+    return hash_equals($expected, $password);
 }
 
 function cde_sn_admin_session_valid(): bool
@@ -35,12 +61,7 @@ function cde_sn_admin_session_valid(): bool
 
 function cde_sn_admin_token_valid(?string $token): bool
 {
-    $expected = cde_sn_admin_secret();
-    if ($expected === '' || $token === null || $token === '') {
-        return false;
-    }
-
-    return hash_equals($expected, trim($token));
+    return cde_sn_admin_password_valid($token);
 }
 
 function cde_sn_admin_require_auth(): void
@@ -55,9 +76,9 @@ function cde_sn_admin_require_auth(): void
     cde_json_response(401, ['ok' => false, 'error' => 'Unauthorized']);
 }
 
-function cde_sn_admin_login(string $token): bool
+function cde_sn_admin_login(string $password): bool
 {
-    if (!cde_sn_admin_token_valid($token)) {
+    if (!cde_sn_admin_password_valid($password)) {
         return false;
     }
     cde_session_start();
