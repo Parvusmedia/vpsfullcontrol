@@ -7,7 +7,10 @@ from typing import Any
 
 from .config import PRODUCT_URL
 
-_SPACE_RE = re.compile(r"\s+")
+_TITLE_RE = re.compile(
+    r"\b(head of|vp|vice president|director|svp|chief|founder)\b.*\b(sales|gtm|outbound|sdr|bdr|commercial|revenue)\b",
+    re.I,
+)
 
 
 def _first_name(lead: dict[str, Any]) -> str:
@@ -33,25 +36,37 @@ def _region_hint(lead: dict[str, Any]) -> str:
     return "intl"
 
 
+def _role_hook(lead: dict[str, Any]) -> str:
+    title = str(lead.get("job_title") or lead.get("sn_title") or "").strip()
+    if _TITLE_RE.search(title):
+        return "your sales leadership work"
+    if re.search(r"\b(sdr|bdr|outbound)\b", title, re.I):
+        return "your outbound motion"
+    if re.search(r"\bgtm\b|go-to-market", title, re.I):
+        return "your GTM work"
+    return "your work on the sales side"
+
+
 def build_connection_message(lead: dict[str, Any]) -> str:
     first = _first_name(lead)
     company = _company(lead)
+    hook = _role_hook(lead)
     region = _region_hint(lead)
 
     if region == "es":
         return (
             f"Hola {first},\n\n"
-            f"He visto tu perfil en {company} y pensé que podría interesarte: exportar listas de Sales Navigator "
-            f"a CSV (nombre, cargo, empresa, URL) en minutos, sin copiar a mano.\n\n"
-            f"Lo uso con equipos outbound/SDR. Si encaja, encantado de conectar.\n\n"
+            f"Vi {hook} en {company} y me pareció que podríamos tener temas en común "
+            f"(prospección, Sales Navigator, equipos outbound).\n\n"
+            f"Encantado de conectar.\n\n"
             f"Emiliano"
         )
 
     return (
         f"Hi {first},\n\n"
-        f"I saw your role at {company} — I built a small tool that exports Sales Navigator lists/searches to CSV "
-        f"(name, title, company, LinkedIn URL) in minutes, which SDR/outbound teams seem to find useful.\n\n"
-        f"Would be glad to connect.\n\n"
+        f"Came across {hook} at {company} — looks like we overlap on prospecting and "
+        f"Sales Navigator workflows.\n\n"
+        f"Would be good to connect.\n\n"
         f"Emiliano"
     )
 
@@ -66,27 +81,25 @@ def build_followup_message(lead: dict[str, Any]) -> str:
         return (
             f"Hola {first},\n\n"
             f"Gracias por conectar.\n\n"
-            f"Si en {company} exportáis leads desde Sales Navigator, aquí tienes el panel: {url}\n\n"
-            f"Puedes probar con una lista pequeña (demo gratis) y recargar créditos cuando os encaje.\n\n"
-            f"Si te parece útil, te enseño en 10 min cómo lo usamos con listas reales.\n\n"
+            f"Curiosidad rápida: ¿cómo lleváis hoy la exportación de listas desde Sales Navigator en {company}? "
+            f"He estado hablando con varios equipos de ventas sobre eso.\n\n"
+            f"Si te encaja, te paso un enlace con algo que hemos montado ({url}) — sin compromiso.\n\n"
             f"Emiliano"
         )
 
     return (
         f"Hi {first},\n\n"
         f"Thanks for connecting.\n\n"
-        f"If your team exports leads from Sales Navigator, here's the panel: {url}\n\n"
-        f"You can run a small demo export free, then top up credits if it saves your reps time.\n\n"
-        f"Happy to walk you through a real list in ~10 minutes if useful for {company}.\n\n"
+        f"Quick question — how does your team handle Sales Navigator list exports today at {company}? "
+        f"I've been chatting with a few sales leaders about that lately.\n\n"
+        f"If it's relevant, happy to share something we've been using: {url}\n\n"
         f"Emiliano"
     )
 
 
 def compose_row_messages(lead: dict[str, Any]) -> dict[str, str]:
-    connection = build_connection_message(lead)
-    followup = build_followup_message(lead)
     return {
-        "connection_message": connection,
-        "followup_message": followup,
+        "connection_message": build_connection_message(lead),
+        "followup_message": build_followup_message(lead),
         "mensaje_estado": "Pendiente confirmar",
     }
