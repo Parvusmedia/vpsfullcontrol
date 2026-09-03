@@ -25,4 +25,4 @@ Cuenta Unipile: `rq1lQcYTToC9hlWD4vO94g`. Sin invites ni Smartlead en esta olead
 - US / UK / Europe, English profile
 - Company headcount 11+ (prioridad 51–500)
 - Sales / SDR / RevOps seniority manager+
-- Hard exclude: LinkedIn, intern/junior/recruiter hiring, **`premium != true`**
+- Hard exclude: LinkedIn, intern/junior/recruiter hiring, **`premium != true`**, **referencias IA** (título, headline, empresa `.ai`, copy tipo Agentic AI / AI Infrastructure / etc.)
