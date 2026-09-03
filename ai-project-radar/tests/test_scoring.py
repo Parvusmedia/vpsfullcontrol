@@ -29,6 +29,16 @@ async def test_mock_scorer_missing_budget_still_evaluates():
     assert "Likely" in scored.estimated_value or "potential" in scored.why_fit.lower()
 
 
+async def test_mock_scorer_uae_adtech_without_budget():
+    scorer = MockScorer()
+    uae = next(r for r in MOCK_RESULTS if "Dubai" in r.title)
+    scored = await scorer.score(uae)
+    assert scored.score >= 8
+    assert scored.country == "UAE"
+    assert "UAE" in scored.why_fit or "AdTech" in scored.why_fit
+    assert "US contract" not in scored.why_fit
+
+
 async def test_wordpress_is_not_qualified():
     scorer = MockScorer()
     wp = next(r for r in MOCK_RESULTS if "WordPress" in r.title)

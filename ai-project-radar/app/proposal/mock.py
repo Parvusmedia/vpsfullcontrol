@@ -15,6 +15,7 @@ class MockProposalGenerator(ProposalGenerator):
             else "how I typically approach this kind of work"
         )
         greeting = company.split("(")[0].strip() or "there"
+        angle_open = angle[:1].upper() + angle[1:]
         rewrite_line = (
             "This rewrite stays on the same facts and just changes the entry point."
             if rewrite
@@ -31,9 +32,9 @@ class MockProposalGenerator(ProposalGenerator):
             f"operations.\n\n"
             f"On similar work I map the current workflow, find the inefficiency, then design "
             f"the integration with APIs, webhooks and CRM — WhatsApp or Telegram only when "
-            f"the process actually lives there — and only then automate. {angle.capitalize()} "
-            f"is to keep the first pass tight: one process, a measurable output, no tool "
-            f"theatre. {rewrite_line} If useful I can start with a short diagnostic of the "
-            f"current path from lead to report before proposing stack or timeline.\n\n"
-            f"— Senior founder / business automation consultant / solutions architect"
+            f"the process actually lives there — and only then automate. {angle_open} "
+            f"keeps the first pass tight: one process, a measurable output. {rewrite_line} "
+            f"I can start with a short diagnostic of the current path from lead to report "
+            f"before proposing stack or timeline.\n\n"
+            f"— Senior founder / business automation consultant"
         )

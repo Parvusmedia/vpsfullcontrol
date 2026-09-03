@@ -84,12 +84,19 @@ class MockScorer(Scorer):
             )
             risks = "Scope may expand; confirm decision-maker and timeline."
             if not has_budget:
-                score = 8.1
-                estimated = "Likely €4k–9k based on US contract seniority"
-                why = (
-                    "No posted budget, but US contract + CRM/lead qualification "
-                    "suggests mid-five-figure potential if scoped as consulting."
-                )
+                if "dubai" in text or "uae" in text:
+                    estimated = "Likely €4k–8k for a 4–6 week AdTech consulting contract"
+                    why = (
+                        "No posted budget, but UAE media group + AdTech reporting "
+                        "is a strong consulting brief in a priority market."
+                    )
+                else:
+                    score = 8.1
+                    estimated = "Likely €4k–9k based on contract seniority"
+                    why = (
+                        "No posted budget, but contract + CRM/lead qualification "
+                        "suggests mid-five-figure potential if scoped as consulting."
+                    )
         else:
             score = 6.2
             country = "Unknown"

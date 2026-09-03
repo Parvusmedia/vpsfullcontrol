@@ -1,3 +1,5 @@
+import re
+
 from app.deps import AppContext
 from app.search.mock import MOCK_RESULTS
 
@@ -14,9 +16,9 @@ async def test_pipeline_search_score_telegram_end_to_end(ctx: AppContext):
     assert len(messages) == summary.notified
     for msg in messages:
         assert "🔥" in msg["text"]
-        score_line = msg["text"].split("—", 1)[0]
-        score = float(score_line.split()[1].split("/")[0])
-        assert score >= 8.0
+        match = re.search(r"([\d.]+)/10", msg["text"])
+        assert match is not None
+        assert float(match.group(1)) >= 8.0
         markup = msg["reply_markup"]["inline_keyboard"]
         assert markup[0][0]["text"] == "🔗 View"
 
