@@ -10,6 +10,10 @@ DOCROOT="/var/www/vhosts/companydataenrichment.com/httpdocs"
 PRIVATE="/var/www/vhosts/companydataenrichment.com/private/cde"
 LOCAL="/workspace/cde-salesnav/public"
 STAGING="/opt/apps/companydataenrichment/public"
+VERIFY="/workspace/cde-salesnav/deploy/verify-salesnav-routes.py"
+
+echo "==> Verify Sales Nav landing vs panel (local, before deploy)"
+python3 "$VERIFY" "$LOCAL" || { echo "ERROR: fix salesnav/index.html vs salesnav/panel/index.html before deploy"; exit 1; }
 
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
@@ -54,6 +58,10 @@ ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_
 echo "==> Rsync public site to production httpdocs"
 ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' --exclude 'harvest.env' --exclude 'stripe.env' \
   $STAGING/ $PROD:$DOCROOT/"
+
+echo "==> Verify Sales Nav routes on production (landing ≠ panel)"
+scp "$VERIFY" "$REMOTE:/tmp/verify-salesnav-routes.py"
+ssh "$REMOTE" "scp /tmp/verify-salesnav-routes.py $PROD:/tmp/verify-salesnav-routes.py && ssh $PROD 'python3 /tmp/verify-salesnav-routes.py $DOCROOT || (echo ERROR: salesnav/index.html must be landing — run deploy again from correct branch; exit 1)'"
 
 echo "==> Ensure production homepage is Companies hub (never Sales Nav landing)"
 ssh "$REMOTE" "ssh $PROD 'if grep -q product-salesnav $DOCROOT/index.html 2>/dev/null; then echo ERROR: root index.html is Sales Nav — restoring from staging; fi'"
