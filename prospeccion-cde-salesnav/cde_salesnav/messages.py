@@ -28,15 +28,15 @@ def build_connection_message(lead: dict[str, Any]) -> str:
     if _region_hint(lead) == "es":
         return (
             f"Hola {first},\n\n"
-            f"Soy Emiliano — ventas y outbound.\n\n"
-            f"Encantado de conectar.\n\n"
+            f"Emiliano. También en ventas/outbound.\n\n"
+            f"Un saludo,\n"
             f"Emiliano"
         )
 
     return (
         f"Hi {first},\n\n"
-        f"I'm Emiliano — sales & outbound.\n\n"
-        f"Glad to connect.\n\n"
+        f"Emiliano here — also in sales/outbound.\n\n"
+        f"Cheers,\n"
         f"Emiliano"
     )
 
@@ -49,16 +49,16 @@ def build_followup_message(lead: dict[str, Any]) -> str:
         return (
             f"Hola {first},\n\n"
             f"Gracias por conectar.\n\n"
-            f"Si algún día necesitáis sacar listas de Sales Navigator a CSV: {url}\n"
-            f"Podéis probar gratis con una lista pequeña.\n\n"
+            f"Por si os sirve algún día: sacar listas de Sales Navigator a CSV → {url}\n"
+            f"Hay demo gratis con una lista pequeña.\n\n"
             f"Emiliano"
         )
 
     return (
         f"Hi {first},\n\n"
         f"Thanks for connecting.\n\n"
-        f"If you ever need Sales Navigator lists in CSV: {url}\n"
-        f"Free to try on a small list.\n\n"
+        f"In case it's useful: export Sales Navigator lists to CSV → {url}\n"
+        f"Free demo on a small list.\n\n"
         f"Emiliano"
     )
 
