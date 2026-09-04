@@ -7,6 +7,7 @@ require_once __DIR__ . '/_icypeas.php';
 require_once __DIR__ . '/_mail.php';
 
 const CDE_TASKS_MAX_LIMIT = 2000;
+const CDE_TASKS_RETENTION_DAYS = 90;
 
 function cde_tasks_store_file(): string
 {
@@ -93,8 +94,70 @@ function cde_tasks_for_user(string $userId): array
 }
 
 /** @param array<string, mixed> $task */
+function cde_tasks_task_tiers(array $task): array
+{
+    if (is_array($task['tiers'] ?? null)) {
+        return [
+            'basic' => true,
+            'enriched' => !empty($task['tiers']['enriched']),
+            'mail' => !empty($task['tiers']['mail']),
+        ];
+    }
+
+    return [
+        'basic' => true,
+        'enriched' => !empty($task['tier_enriched']),
+        'mail' => !empty($task['tier_mail']),
+    ];
+}
+
+/** @return array<string, int>|null */
+function cde_tasks_credits_breakdown(array $task): ?array
+{
+    if (isset($task['credits_breakdown']) && is_array($task['credits_breakdown'])) {
+        return [
+            'profiles' => (int) ($task['credits_breakdown']['profiles'] ?? 0),
+            'profile_credits' => (int) ($task['credits_breakdown']['profile_credits'] ?? 0),
+            'enriched_credits' => (int) ($task['credits_breakdown']['enriched_credits'] ?? 0),
+            'emails_found' => (int) ($task['credits_breakdown']['emails_found'] ?? 0),
+            'email_credits' => (int) ($task['credits_breakdown']['email_credits'] ?? 0),
+            'total' => (int) ($task['credits_breakdown']['total'] ?? 0),
+        ];
+    }
+
+    if ((string) ($task['status'] ?? '') !== 'ready') {
+        return null;
+    }
+
+    $profiles = (int) ($task['lead_count'] ?? 0);
+    if ($profiles <= 0) {
+        return null;
+    }
+
+    $tiers = cde_tasks_task_tiers($task);
+    $enrichedCredits = !empty($tiers['enriched']) ? (int) ceil($profiles * 0.4) : 0;
+    $emailsFound = (int) ($task['emails_found'] ?? 0);
+    $emailCredits = !empty($tiers['mail']) ? $emailsFound : 0;
+    $total = (int) ($task['credits_used'] ?? 0);
+    if ($total <= 0) {
+        $total = max(1, $profiles + $enrichedCredits + $emailCredits);
+    }
+
+    return [
+        'profiles' => $profiles,
+        'profile_credits' => $profiles,
+        'enriched_credits' => $enrichedCredits,
+        'emails_found' => $emailsFound,
+        'email_credits' => $emailCredits,
+        'total' => $total,
+    ];
+}
+
+/** @param array<string, mixed> $task */
 function cde_tasks_public_view(array $task): array
 {
+    $breakdown = cde_tasks_credits_breakdown($task);
+
     return [
         'id' => (string) ($task['id'] ?? ''),
         'status' => (string) ($task['status'] ?? 'processing'),
@@ -104,6 +167,7 @@ function cde_tasks_public_view(array $task): array
         'limit_label' => (string) ($task['limit_label'] ?? ''),
         'lead_count' => (int) ($task['lead_count'] ?? 0),
         'credits_used' => (int) ($task['credits_used'] ?? 0),
+        'credits_breakdown' => $breakdown,
         'tier_enriched' => !empty($task['tiers']['enriched']),
         'tier_mail' => !empty($task['tiers']['mail']),
         'emails_found' => (int) ($task['emails_found'] ?? 0),
@@ -114,30 +178,116 @@ function cde_tasks_public_view(array $task): array
     ];
 }
 
+/**
+ * @return array{error: string, estimated_cost: int, balance: int, profile_count: int}|null
+ */
+function cde_tasks_credit_preflight(int $limit, array $tiers, ?string $userId = null, ?int $sourceProfileCount = null): ?array
+{
+    if (!cde_credits_billing_enabled()) {
+        return null;
+    }
+    $userId = $userId ?? cde_salesnav_user_id();
+    $profiles = cde_credits_effective_export_profiles($limit, $sourceProfileCount);
+    $estimated = cde_credits_estimate_max_export_cost($profiles, $tiers);
+    $balance = cde_credits_get_balance($userId);
+    if ($balance >= $estimated) {
+        return null;
+    }
+
+    return [
+        'estimated_cost' => $estimated,
+        'balance' => $balance,
+        'profile_count' => $profiles,
+        'error' => cde_credits_insufficient_export_message($profiles, $estimated, $balance),
+    ];
+}
+
+function cde_tasks_normalize_export_name(string $name): string
+{
+    $name = trim(preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '');
+    if ($name === '') {
+        return '';
+    }
+
+    if (function_exists('mb_substr')) {
+        return mb_substr($name, 0, 120);
+    }
+
+    return substr($name, 0, 120);
+}
+
+function cde_tasks_default_source_label(string $sourceUrl, string $mode): string
+{
+    if ($mode === 'list') {
+        return preg_match('#/lists/people/(\d+)#', $sourceUrl, $m) ? 'List ' . $m[1] : 'Lead list';
+    }
+
+    return 'People search';
+}
+
 /** @param array<string, mixed> $payload */
 function cde_tasks_create(string $userId, string $email, array $payload): array
 {
     $listUrl = trim((string) ($payload['list_url'] ?? ''));
     $searchUrl = trim((string) ($payload['search_url'] ?? ''));
-    $limitRaw = $payload['limit'] ?? 50;
+    $limitRaw = $payload['limit'] ?? 'all';
     $limit = cde_tasks_normalize_limit($limitRaw);
     $limitLabel = cde_tasks_limit_label($limit, $limitRaw);
+    $exportName = cde_tasks_normalize_export_name((string) ($payload['export_name'] ?? $payload['source_name'] ?? ''));
 
     if ($listUrl !== '') {
         $sourceUrl = cde_salesnav_normalize_list_url($listUrl);
         $mode = 'list';
-        $sourceLabel = preg_match('#/lists/people/(\d+)#', $sourceUrl, $m) ? 'List ' . $m[1] : 'Lead list';
     } elseif ($searchUrl !== '') {
         $sourceUrl = cde_salesnav_normalize_search_url($searchUrl);
         $mode = 'search';
-        $sourceLabel = 'People search';
     } else {
         cde_json_response(400, ['ok' => false, 'error' => 'Provide a Sales Navigator list URL or search URL.']);
     }
 
+    $sourceLabel = cde_tasks_default_source_label($sourceUrl, $mode);
+
     $tiers = cde_credits_parse_tiers($payload);
+
     $linked = cde_salesnav_session_account();
     $accountId = is_array($linked) ? trim((string) ($linked['account_id'] ?? '')) : '';
+    $sourceProfileCount = null;
+    if ($accountId !== '') {
+        $config = cde_unipile_api_config($accountId);
+        if ($exportName === '' && $mode === 'list') {
+            $meta = cde_salesnav_probe_source_meta($config, $sourceUrl, $mode);
+            $sourceProfileCount = $meta['profile_count'];
+            $resolvedName = cde_tasks_normalize_export_name((string) ($meta['source_name'] ?? ''));
+            if ($resolvedName !== '') {
+                $exportName = $resolvedName;
+            }
+        } else {
+            $sourceProfileCount = cde_salesnav_probe_source_profile_count($config, $sourceUrl, $mode);
+        }
+    }
+
+    if ($exportName !== '') {
+        $sourceLabel = $exportName;
+    }
+
+    $preflight = cde_tasks_credit_preflight($limit, $tiers, $userId, $sourceProfileCount);
+    if ($preflight !== null) {
+        $topupOffer = cde_credits_export_topup_offer(
+            (int) $preflight['estimated_cost'],
+            (int) $preflight['balance']
+        );
+        cde_json_response(402, [
+            'ok' => false,
+            'needs_payment' => true,
+            'estimated_cost' => $preflight['estimated_cost'],
+            'balance' => $preflight['balance'],
+            'profile_count' => $preflight['profile_count'],
+            'credits_shortfall' => $topupOffer['credits_shortfall'],
+            'topup' => $topupOffer['topup'],
+            'error' => $preflight['error'],
+        ]);
+    }
+
     $taskId = cde_tasks_new_id();
     $task = [
         'user_id' => $userId,
@@ -149,6 +299,7 @@ function cde_tasks_create(string $userId, string $email, array $payload): array
         'source_label' => $sourceLabel,
         'limit' => $limit,
         'limit_label' => $limitLabel,
+        'source_profile_count' => $sourceProfileCount ?? 0,
         'tiers' => $tiers,
         'lead_count' => 0,
         'credits_used' => 0,
@@ -377,11 +528,29 @@ function cde_tasks_notify_ready(array $task, string $taskId): void
     }
     $label = (string) ($task['source_label'] ?? 'export');
     $count = (int) ($task['lead_count'] ?? 0);
+    $breakdown = cde_tasks_credits_breakdown($task);
+    $usageLine = '';
+    if (is_array($breakdown)) {
+        $parts = [];
+        if ($breakdown['profiles'] > 0) {
+            $parts[] = $breakdown['profiles'] . ' profiles';
+        }
+        if ($breakdown['enriched_credits'] > 0) {
+            $parts[] = $breakdown['profiles'] . ' enriched';
+        }
+        if ($breakdown['email_credits'] > 0) {
+            $parts[] = $breakdown['emails_found'] . ' verified emails';
+        }
+        if ($parts !== []) {
+            $usageLine = "Usage: " . implode(' + ', $parts) . "\n";
+        }
+    }
     $subject = 'Sales Navigator export ready — ' . $count . ' leads';
     $body = "Hello,\n\nYour export is ready.\n\n"
         . "Task: {$label}\n"
         . "Leads exported: {$count}\n"
-        . "Credits used: " . (int) ($task['credits_used'] ?? 0) . "\n\n"
+        . "Credits used: " . (int) ($task['credits_used'] ?? 0) . "\n"
+        . $usageLine . "\n"
         . "Download from your panel:\n"
         . cde_tasks_panel_url($taskId) . "\n";
     cde_tasks_send_mail($email, $subject, $body);
@@ -442,6 +611,19 @@ function cde_tasks_run(string $taskId): void
 
         cde_enforce_salesnav_rate_limits($limit);
 
+        if (cde_credits_billing_enabled()) {
+            $storedCount = (int) ($task['source_profile_count'] ?? 0);
+            $preflight = cde_tasks_credit_preflight(
+                $limit,
+                $tiers,
+                $userId,
+                $storedCount > 0 ? $storedCount : null
+            );
+            if ($preflight !== null) {
+                throw new RuntimeException($preflight['error']);
+            }
+        }
+
         $rawRows = cde_salesnav_export($config, $sourceUrl, $mode, $limit);
         $rows = [];
         foreach ($rawRows as $item) {
@@ -469,8 +651,14 @@ function cde_tasks_run(string $taskId): void
         }
 
         $creditCost = cde_credits_export_cost($rows, $tiers);
-        if (cde_credits_billing_enabled() && cde_credits_get_balance($userId) < $creditCost) {
-            throw new RuntimeException('Insufficient export credits.');
+        $creditBreakdown = cde_credits_export_breakdown($rows, $tiers);
+        if (cde_credits_billing_enabled()) {
+            $balance = cde_credits_get_balance($userId);
+            if ($balance < $creditCost) {
+                throw new RuntimeException(
+                    cde_credits_insufficient_export_message(count($rows), $creditCost, $balance)
+                );
+            }
         }
 
         cde_tasks_write_csv($taskId, $rows, $tiers);
@@ -479,23 +667,22 @@ function cde_tasks_run(string $taskId): void
             'task_id' => $taskId,
             'count' => count($rows),
             'credit_cost' => $creditCost,
+            'credits_breakdown' => $creditBreakdown,
+            'tiers' => $tiers,
         ])) {
-            throw new RuntimeException('Insufficient export credits.');
+            $balance = cde_credits_get_balance($userId);
+            throw new RuntimeException(
+                cde_credits_insufficient_export_message(count($rows), $creditCost, $balance)
+            );
         }
         $creditsCharged = $creditCost;
 
-        $emailsFound = 0;
-        if (!empty($tiers['mail'])) {
-            foreach ($rows as $row) {
-                if (trim((string) ($row['work_email'] ?? '')) !== '') {
-                    $emailsFound++;
-                }
-            }
-        }
+        $emailsFound = $creditBreakdown['emails_found'];
         $done = [
             'status' => 'ready',
             'lead_count' => count($rows),
             'credits_used' => $creditCost,
+            'credits_breakdown' => $creditBreakdown,
             'emails_found' => $emailsFound,
             'completed_at' => gmdate('c'),
             'error' => '',
@@ -505,9 +692,13 @@ function cde_tasks_run(string $taskId): void
         cde_tasks_notify_ready($task, $taskId);
     } catch (Throwable $e) {
         $msg = $e->getMessage();
+        $isCreditError = str_starts_with($msg, 'Insufficient export credits');
         if (
-            $msg === cde_salesnav_stale_account_message()
-            || cde_unipile_account_error_is_stale(['status' => 404, 'error' => $msg])
+            !$isCreditError
+            && (
+                $msg === cde_salesnav_stale_account_message()
+                || cde_unipile_account_error_is_stale(['status' => 0, 'error' => $msg])
+            )
         ) {
             cde_salesnav_mark_account_stale($userId, $msg);
             $msg = cde_salesnav_stale_account_message();
@@ -532,4 +723,91 @@ function cde_tasks_run(string $taskId): void
         $task['error'] = $msg;
         cde_tasks_notify_failed($task, $taskId, $msg);
     }
+}
+
+/** @param array<string, mixed> $task */
+function cde_tasks_is_deletable(array $task): bool
+{
+    $status = (string) ($task['status'] ?? '');
+
+    return $status === 'ready' || $status === 'failed';
+}
+
+/** @param array<string, mixed> $task */
+function cde_tasks_reference_timestamp(array $task): int
+{
+    $raw = (string) ($task['completed_at'] ?? $task['created_at'] ?? '');
+    $ts = strtotime($raw);
+
+    return $ts !== false ? $ts : 0;
+}
+
+function cde_tasks_remove_export_file(string $taskId): void
+{
+    $path = cde_tasks_csv_path($taskId);
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+/** @param list<string> $taskIds
+ *  @return array{deleted: list<string>, skipped: list<array{id: string, reason: string}>}
+ */
+function cde_tasks_delete_for_user(string $userId, array $taskIds): array
+{
+    $taskIds = array_values(array_unique(array_filter(array_map('strval', $taskIds))));
+    $all = cde_tasks_load_all();
+    $deleted = [];
+    $skipped = [];
+
+    foreach ($taskIds as $taskId) {
+        $task = $all[$taskId] ?? null;
+        if (!is_array($task)) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'not_found'];
+            continue;
+        }
+        if ((string) ($task['user_id'] ?? '') !== $userId) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'forbidden'];
+            continue;
+        }
+        if (!cde_tasks_is_deletable($task)) {
+            $skipped[] = ['id' => $taskId, 'reason' => 'not_deletable'];
+            continue;
+        }
+        unset($all[$taskId]);
+        cde_tasks_remove_export_file($taskId);
+        $deleted[] = $taskId;
+    }
+
+    if ($deleted !== []) {
+        cde_tasks_save_all($all);
+    }
+
+    return ['deleted' => $deleted, 'skipped' => $skipped];
+}
+
+function cde_tasks_purge_expired(int $days = CDE_TASKS_RETENTION_DAYS): int
+{
+    $days = max(1, $days);
+    $cutoff = time() - ($days * 86400);
+    $all = cde_tasks_load_all();
+    $removed = 0;
+
+    foreach ($all as $taskId => $task) {
+        if (!is_array($task) || !cde_tasks_is_deletable($task)) {
+            continue;
+        }
+        if (cde_tasks_reference_timestamp($task) >= $cutoff) {
+            continue;
+        }
+        unset($all[$taskId]);
+        cde_tasks_remove_export_file($taskId);
+        $removed++;
+    }
+
+    if ($removed > 0) {
+        cde_tasks_save_all($all);
+    }
+
+    return $removed;
 }

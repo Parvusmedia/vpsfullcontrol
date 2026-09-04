@@ -11,6 +11,8 @@ function scrollPanelHash() {
   const hash = window.location.hash.replace("#", "");
   if (hash === "topup") {
     document.getElementById("topup")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  } else if (hash === "faq") {
+    document.getElementById("faq")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -19,6 +21,39 @@ const I18N = {
     "nav.companies": "Companies",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "My panel",
+    "nav.faq": "FAQ",
+    "faq.title": "FAQ — how it works",
+    "faq.lede": "Step-by-step guide: panel, LinkedIn connection, credits and exports.",
+    "faq.qSteps": "How does it work, step by step?",
+    "faq.aSteps":
+      '<ol><li><strong>Create your account</strong> — open <a href="/salesnav/panel/">My panel</a>, enter your work email and sign in (or create a password).</li><li><strong>Top up credits</strong> — from €20 (240 credits with the +20% bonus). Credits stay linked to your email.</li><li><strong>Connect LinkedIn</strong> — click <em>Connect LinkedIn</em> in the panel. We use secure hosted authentication; we never store your password. You need an active Sales Navigator seat on that account.</li><li><strong>Start an export</strong> — paste a Sales Navigator saved list or people-search URL, set max leads and pick options: Basic (always), Enriched and/or Mail.</li><li><strong>Download the CSV</strong> — we process in the background and email you when ready. Download from the tasks table in your panel.</li></ol>',
+    "faq.qConnect": "How do I connect my LinkedIn / Sales Navigator account?",
+    "faq.aConnect":
+      "<p>You need export credits before the first connection. In your panel, click <strong>Connect LinkedIn</strong>.</p><p>You are redirected to our secure sign-in page. Log in with the LinkedIn account that has Sales Navigator. When it succeeds, the panel shows <strong>Connected</strong> with your name.</p><p>We never see or store your LinkedIn password. If the badge later shows <strong>Not connected</strong>, click <strong>Reconnect</strong> — we reuse your existing seat.</p>",
+    "faq.qCredits": "How are credits consumed?",
+    "faq.aCredits":
+      '<p>Credits are prepaid. You are charged only when an export <strong>completes successfully</strong>. The tasks table shows total credits and a usage breakdown per export.</p><ul><li><strong>Basic</strong> — 1 credit per profile exported.</li><li><strong>Enriched</strong> (optional) — +0.4 credits per profile (rounded up for the whole export).</li><li><strong>Mail</strong> (optional) — +1 credit per work email actually found — you only pay for hits.</li></ul><div class="faq-examples"><p><strong>Examples</strong></p><ul><li>50 profiles, Basic only → <strong>50 credits</strong></li><li>50 profiles + Enriched → 50 + 20 = <strong>70 credits</strong></li><li>50 profiles + 25 verified emails → 50 + 25 = <strong>75 credits</strong></li><li>100 profiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 credits</strong></li></ul></div><p>If your balance is too low, the export is rejected <em>before</em> processing starts — top up and try again.</p>',
+    "faq.qUrls": "Which URLs can I export?",
+    "faq.aUrls":
+      "<p>Paste the full browser URL while you are viewing the list or search in Sales Navigator:</p><ul><li><strong>Saved lead lists</strong> — <code>linkedin.com/sales/lists/people/…</code></li><li><strong>People searches</strong> — <code>linkedin.com/sales/search/people?…</code></li></ul><p>You must have access to that list or search on the LinkedIn account you connected. Copy the URL from the address bar — do not use a public LinkedIn profile URL.</p>",
+    "faq.qWhenCharged": "When am I charged?",
+    "faq.aWhenCharged":
+      "<p>Credits are deducted when the export <strong>finishes successfully</strong> and the CSV is ready — not when you click <em>Start export</em>.</p><p>If an export fails (LinkedIn disconnected, invalid URL, insufficient credits, etc.), you are not charged for that run. Failed tasks show the reason in the panel.</p>",
+    "faq.qDuration": "How long does an export take?",
+    "faq.aDuration":
+      "<p>Small lists (25–100 leads) with Basic only often finish in under a minute. Enriched adds company and profile data — large lists can take several minutes. Mail runs email discovery on top and may take longer still.</p><p>You can close the tab: we email you when the CSV is ready. Refresh the tasks table or follow the link in the email to download.</p>",
+    "faq.qTopup": "How do top-ups and bonuses work?",
+    "faq.aTopup":
+      "<p>Minimum top-up is <strong>€20</strong>. Packs from 100 base credits include a <strong>+20% bonus</strong> (e.g. pay €20 → 240 credits).</p><p>Payment is via Stripe. Credits are linked to your work email — sign in with the same email on any device to see your balance. Top-ups do not expire while your account exists.</p>",
+    "faq.qDisconnect": "LinkedIn shows as disconnected — what now?",
+    "faq.aDisconnect":
+      "<p>Sessions can expire after LinkedIn security checks or password changes. Click <strong>Reconnect</strong> in the panel and sign in again through the secure flow.</p><p>Exports in progress may fail if LinkedIn disconnects mid-run; reconnect and start a new export. Your credit balance is unchanged for failed runs.</p>",
+    "faq.qMultiDevice": "Can I use the same credits on another computer?",
+    "faq.aMultiDevice":
+      "<p>Yes. Sign in to <a href=\"/salesnav/panel/\">My panel</a> with the same work email. Credits, LinkedIn connection and export history follow your account.</p><p>Only one active browser session is needed to start exports — you do not need to keep the tab open until completion.</p>",
+    "faq.qLimits": "Are there export limits?",
+    "faq.aLimits":
+      "<p>Each export can request up to <strong>2,000 leads</strong>. LinkedIn also applies daily export caps per Sales Navigator seat (~2,000/day).</p><p>Enriched and Mail options increase processing time and credit cost but do not change the lead cap. For agencies with multiple SN seats, <a href=\"/salesnav/#pricing\">contact us</a> for multi-account setup.</p>",
     "panel.title": "My panel",
     "panel.lede": "Manage credits, LinkedIn connection and CSV exports.",
     "panel.exportTitle": "Export",
@@ -33,6 +68,7 @@ const I18N = {
     "tasks.colStatus": "Status",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Credits",
+    "tasks.colCreditsDetail": "Usage",
     "tasks.colCreated": "Created",
     "tasks.colAction": "Action",
     "tasks.empty": "No export tasks yet. Create one to process a lead list or search URL.",
@@ -41,9 +77,28 @@ const I18N = {
     "tasks.status.ready": "Ready",
     "tasks.status.failed": "Failed",
     "tasks.download": "Download CSV",
+    "tasks.breakdownProfiles": "{n} profiles",
+    "tasks.breakdownEnriched": "{n} enriched",
+    "tasks.breakdownEmails": "{n} verified emails",
     "tasks.limitAll": "All",
+    "tasks.retentionNote": "Completed and failed exports are kept for 90 days, then removed automatically.",
+    "tasks.deleteSelected": "Delete selected",
+    "tasks.deleteConfirm": "Delete {n} selected export(s)? This cannot be undone.",
+    "tasks.deleteDone": "Deleted {n} export task(s).",
+    "tasks.deleteNone": "Select completed or failed exports to delete.",
+    "tasks.filterStatus": "Status",
+    "tasks.filterAll": "All statuses",
+    "tasks.filterCount": "Showing {shown} of {total}",
+    "tasks.emptyFiltered": "No tasks match this filter.",
+    "tasks.sortLabel": "Sort by {column}",
+    "tasks.sortAsc": "ascending",
+    "tasks.sortDesc": "descending",
     "form.limitAll": "All (up to 2,000)",
     "landing.openPanel": "Open my panel",
+    "landing.createAccount": "Create account",
+    "landing.signIn": "Sign in",
+    "landing.signInPrompt": "Already have an account?",
+    "landing.createAccountNote": "Free to sign up — enter your work email, then top up credits when you're ready to export.",
     "landing.getStarted": "Get started — from €20",
     "landing.panelNote": "After payment, manage credits, LinkedIn and exports in your private panel — not on this page.",
     "hero.kicker": "Paste a Sales Navigator list or search URL.",
@@ -57,9 +112,9 @@ const I18N = {
     "connect.connected": "Connected",
     "connect.connectedAs": "Connected as {label}",
     "connect.body":
-      "Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.",
+      "Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.",
     "connect.cta": "Connect LinkedIn",
-    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — no new Unipile account.",
+    "connect.reconnectHint": "We will reuse your existing LinkedIn seat — we do not create a duplicate connection.",
     "connect.disconnect": "Disconnect",
     "connect.reconnect": "Reconnect",
     "connect.expired":
@@ -89,6 +144,9 @@ const I18N = {
     "account.registerReady": "Account created. You can sign in now.",
     "account.resendOk": "If an unconfirmed account exists for this email, we sent a new confirmation link.",
     "account.guestLead": "Enter your work email to manage credits and exports.",
+    "account.createLead": "Create your free account with your work email — then top up credits and start exporting.",
+    "account.signInLead": "Welcome back — enter your work email to sign in.",
+    "account.newUserPrompt": "New here?",
     "account.stepEmail": "Step 1 · Work email",
     "account.stepPassword": "Step 2 · Sign in",
     "account.stepPasswordCopy": "Enter the password for {email}.",
@@ -134,6 +192,10 @@ const I18N = {
     "credits.paid": "Credits added. You can connect LinkedIn now.",
     "credits.cancelled": "Payment cancelled.",
     "credits.insufficient": "Not enough credits for this export. Top up from €20 (240 credits).",
+    "credits.exportTopupDetail":
+      "You need {required} credits for this export (balance: {balance}). Top up {packCredits} credits ({packPrice}) to process it.",
+    "credits.exportTopupBtn": "Top up {packCredits} credits ({packPrice})",
+    "credits.exportRetrying": "Payment received — starting your export…",
     "credits.bonusNote": "Top-ups from 100 base credits include +20% bonus (e.g. pay €20 → 240 credits).",
     "mode.list": "Lead list",
     "mode.search": "People search",
@@ -141,6 +203,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "Sales Navigator search URL",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Export name",
+    "form.exportNamePlaceholder": "e.g. Q1 prospects — auto-filled from list name",
+    "form.exportNameLoading": "Looking up list name…",
+    "form.exportNameProfiles": "{count} profiles in this list",
     "form.limit": "Max leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -235,6 +301,39 @@ const I18N = {
     "nav.companies": "Empresas",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "Mi panel",
+    "nav.faq": "FAQ",
+    "faq.title": "FAQ — cómo funciona",
+    "faq.lede": "Guía paso a paso: panel, conexión LinkedIn, créditos y exports.",
+    "faq.qSteps": "¿Cómo funciona, paso a paso?",
+    "faq.aSteps":
+      '<ol><li><strong>Crea tu cuenta</strong> — abre <a href="/salesnav/panel/">Mi panel</a>, introduce tu email de trabajo e inicia sesión (o crea una contraseña).</li><li><strong>Recarga créditos</strong> — desde €20 (240 créditos con el bonus +20%). Los créditos quedan vinculados a tu email.</li><li><strong>Conecta LinkedIn</strong> — pulsa <em>Conectar LinkedIn</em> en el panel. Usamos autenticación segura alojada; no guardamos tu contraseña. Necesitas un seat activo de Sales Navigator.</li><li><strong>Inicia un export</strong> — pega la URL de una lista guardada o búsqueda de personas en Sales Navigator, elige el máximo de leads y las opciones: Basic (siempre), Enriched y/o Mail.</li><li><strong>Descarga el CSV</strong> — lo procesamos en segundo plano y te avisamos por email. Descarga desde la tabla de tareas en tu panel.</li></ol>',
+    "faq.qConnect": "¿Cómo conecto mi cuenta LinkedIn / Sales Navigator?",
+    "faq.aConnect":
+      "<p>Necesitas créditos de export antes de la primera conexión. En el panel, pulsa <strong>Conectar LinkedIn</strong>.</p><p>Te redirigimos a nuestra página de inicio de sesión segura. Entra con la cuenta LinkedIn que tiene Sales Navigator. Al completarse, el panel muestra <strong>Conectado</strong> con tu nombre.</p><p>No vemos ni guardamos tu contraseña de LinkedIn. Si más tarde aparece <strong>Sin conectar</strong>, pulsa <strong>Reconectar</strong> — reutilizamos tu seat existente.</p>",
+    "faq.qCredits": "¿Cómo se consumen los créditos?",
+    "faq.aCredits":
+      '<p>Los créditos son prepago. Solo se cobran cuando un export <strong>termina correctamente</strong>. La tabla de tareas muestra el total y el desglose de uso por export.</p><ul><li><strong>Basic</strong> — 1 crédito por perfil exportado.</li><li><strong>Enriched</strong> (opcional) — +0,4 créditos por perfil (redondeado al alza en el export).</li><li><strong>Mail</strong> (opcional) — +1 crédito por email de trabajo encontrado — solo pagas los aciertos.</li></ul><div class="faq-examples"><p><strong>Ejemplos</strong></p><ul><li>50 perfiles, solo Basic → <strong>50 créditos</strong></li><li>50 perfiles + Enriched → 50 + 20 = <strong>70 créditos</strong></li><li>50 perfiles + 25 emails verificados → 50 + 25 = <strong>75 créditos</strong></li><li>100 perfiles + Enriched + 30 emails → 100 + 40 + 30 = <strong>170 créditos</strong></li></ul></div><p>Si el saldo es insuficiente, el export se rechaza <em>antes</em> de procesar — recarga e inténtalo de nuevo.</p>',
+    "faq.qUrls": "¿Qué URLs puedo exportar?",
+    "faq.aUrls":
+      "<p>Pega la URL completa del navegador mientras ves la lista o búsqueda en Sales Navigator:</p><ul><li><strong>Listas guardadas</strong> — <code>linkedin.com/sales/lists/people/…</code></li><li><strong>Búsquedas de personas</strong> — <code>linkedin.com/sales/search/people?…</code></li></ul><p>Debes tener acceso a esa lista o búsqueda en la cuenta LinkedIn conectada. Copia la URL de la barra de direcciones — no uses una URL pública de perfil.</p>",
+    "faq.qWhenCharged": "¿Cuándo se me cobran los créditos?",
+    "faq.aWhenCharged":
+      "<p>Los créditos se descuentan cuando el export <strong>termina con éxito</strong> y el CSV está listo — no al pulsar <em>Iniciar export</em>.</p><p>Si falla (LinkedIn desconectado, URL inválida, créditos insuficientes, etc.), no se cobra esa ejecución. Las tareas fallidas muestran el motivo en el panel.</p>",
+    "faq.qDuration": "¿Cuánto tarda un export?",
+    "faq.aDuration":
+      "<p>Listas pequeñas (25–100 leads) solo con Basic suelen tardar menos de un minuto. Enriched añade datos de empresa y perfil — listas grandes pueden tardar varios minutos. Mail busca emails encima y puede tardar más.</p><p>Puedes cerrar la pestaña: te avisamos por email cuando el CSV esté listo. Recarga la tabla de tareas o usa el enlace del email para descargar.</p>",
+    "faq.qTopup": "¿Cómo funcionan las recargas y el bonus?",
+    "faq.aTopup":
+      "<p>La recarga mínima es <strong>€20</strong>. Los packs desde 100 créditos base incluyen <strong>+20% bonus</strong> (ej. pagas €20 → 240 créditos).</p><p>El pago es con Stripe. Los créditos van con tu email de trabajo — inicia sesión con el mismo email en cualquier dispositivo. No caducan mientras exista tu cuenta.</p>",
+    "faq.qDisconnect": "LinkedIn aparece como desconectado — ¿qué hago?",
+    "faq.aDisconnect":
+      "<p>La sesión puede caducar tras controles de seguridad de LinkedIn o cambios de contraseña. Pulsa <strong>Reconectar</strong> en el panel y vuelve a iniciar sesión en el flujo seguro.</p><p>Los exports en curso pueden fallar si LinkedIn se desconecta a mitad — reconecta e inicia uno nuevo. El saldo no cambia en ejecuciones fallidas.</p>",
+    "faq.qMultiDevice": "¿Puedo usar los mismos créditos en otro ordenador?",
+    "faq.aMultiDevice":
+      "<p>Sí. Inicia sesión en <a href=\"/salesnav/panel/\">Mi panel</a> con el mismo email de trabajo. Créditos, conexión LinkedIn e historial de exports siguen tu cuenta.</p><p>No hace falta mantener la pestaña abierta hasta que termine — solo para iniciar el export.</p>",
+    "faq.qLimits": "¿Hay límites de export?",
+    "faq.aLimits":
+      "<p>Cada export puede pedir hasta <strong>2.000 leads</strong>. LinkedIn también aplica límites diarios por seat de Sales Navigator (~2.000/día).</p><p>Enriched y Mail aumentan tiempo y coste en créditos pero no el tope de leads. Para agencias con varios seats SN, <a href=\"/salesnav/#pricing\">contáctanos</a> para multi-cuenta.</p>",
     "panel.title": "Mi panel",
     "panel.lede": "Gestiona créditos, conexión LinkedIn y exports CSV.",
     "panel.exportTitle": "Exportar",
@@ -249,6 +348,7 @@ const I18N = {
     "tasks.colStatus": "Estado",
     "tasks.colLeads": "Leads",
     "tasks.colCredits": "Créditos",
+    "tasks.colCreditsDetail": "Uso",
     "tasks.colCreated": "Creado",
     "tasks.colAction": "Acción",
     "tasks.empty": "Aún no hay tareas. Crea una para procesar una lista o URL de búsqueda.",
@@ -257,9 +357,28 @@ const I18N = {
     "tasks.status.ready": "Listo",
     "tasks.status.failed": "Fallido",
     "tasks.download": "Descargar CSV",
+    "tasks.breakdownProfiles": "{n} perfiles",
+    "tasks.breakdownEnriched": "{n} enriquecidos",
+    "tasks.breakdownEmails": "{n} emails verificados",
     "tasks.limitAll": "Todos",
+    "tasks.retentionNote": "Los exports completados y fallidos se conservan 90 días; después se eliminan automáticamente.",
+    "tasks.deleteSelected": "Eliminar seleccionadas",
+    "tasks.deleteConfirm": "¿Eliminar {n} export(s) seleccionado(s)? No se puede deshacer.",
+    "tasks.deleteDone": "Se eliminaron {n} tarea(s) de export.",
+    "tasks.deleteNone": "Selecciona exports completados o fallidos para eliminar.",
+    "tasks.filterStatus": "Estado",
+    "tasks.filterAll": "Todos los estados",
+    "tasks.filterCount": "Mostrando {shown} de {total}",
+    "tasks.emptyFiltered": "Ninguna tarea coincide con el filtro.",
+    "tasks.sortLabel": "Ordenar por {column}",
+    "tasks.sortAsc": "ascendente",
+    "tasks.sortDesc": "descendente",
     "form.limitAll": "Todos (hasta 2.000)",
     "landing.openPanel": "Abrir mi panel",
+    "landing.createAccount": "Crear cuenta",
+    "landing.signIn": "Iniciar sesión",
+    "landing.signInPrompt": "¿Ya tienes cuenta?",
+    "landing.createAccountNote": "Registro gratis — introduce tu email de trabajo y recarga créditos cuando quieras exportar.",
     "landing.getStarted": "Empezar — desde €20",
     "landing.panelNote": "Tras pagar, gestionas créditos, LinkedIn y exports en tu panel privado — no en esta página.",
     "hero.kicker": "Pega la URL de una lista o búsqueda de Sales Navigator.",
@@ -273,9 +392,9 @@ const I18N = {
     "connect.connected": "Conectado",
     "connect.connectedAs": "Conectado como {label}",
     "connect.body":
-      "Conecta tu seat de LinkedIn / Sales Navigator de forma segura vía Unipile. No guardamos tu contraseña.",
+      "Conecta tu cuenta LinkedIn / Sales Navigator con nuestro flujo de conexión seguro. No guardamos tu contraseña.",
     "connect.cta": "Conectar LinkedIn",
-    "connect.reconnectHint": "Reutilizaremos tu cuenta de LinkedIn existente — no creamos otra en Unipile.",
+    "connect.reconnectHint": "Reutilizaremos tu seat de LinkedIn existente — no creamos otra conexión.",
     "connect.disconnect": "Desconectar",
     "connect.reconnect": "Reconectar",
     "connect.expired":
@@ -305,6 +424,9 @@ const I18N = {
     "account.registerReady": "Cuenta creada. Ya puedes iniciar sesión.",
     "account.resendOk": "Si existe una cuenta sin confirmar con este email, enviamos un enlace nuevo.",
     "account.guestLead": "Introduce tu email de trabajo para gestionar créditos y exports.",
+    "account.createLead": "Crea tu cuenta gratis con tu email de trabajo — después recarga créditos y empieza a exportar.",
+    "account.signInLead": "Bienvenido de nuevo — introduce tu email de trabajo para iniciar sesión.",
+    "account.newUserPrompt": "¿Primera vez?",
     "account.stepEmail": "Paso 1 · Email de trabajo",
     "account.stepPassword": "Paso 2 · Iniciar sesión",
     "account.stepPasswordCopy": "Introduce la contraseña de {email}.",
@@ -350,6 +472,10 @@ const I18N = {
     "credits.paid": "Créditos añadidos. Ya puedes conectar LinkedIn.",
     "credits.cancelled": "Pago cancelado.",
     "credits.insufficient": "Créditos insuficientes para este export. Compra más (mín. €20).",
+    "credits.exportTopupDetail":
+      "Este export necesita {required} créditos (saldo: {balance}). Recarga {packCredits} créditos ({packPrice}) para procesarlo.",
+    "credits.exportTopupBtn": "Recargar {packCredits} créditos ({packPrice})",
+    "credits.exportRetrying": "Pago recibido — iniciando tu export…",
     "credits.bonusNote": "Recargas desde 100 créditos base incluyen +20% bonus (ej. pagas €20 → 240 créditos).",
     "mode.list": "Lista de leads",
     "mode.search": "Búsqueda de personas",
@@ -357,6 +483,10 @@ const I18N = {
     "form.listPlaceholder": "https://www.linkedin.com/sales/lists/people/…",
     "form.searchLabel": "URL de búsqueda Sales Navigator",
     "form.searchPlaceholder": "https://www.linkedin.com/sales/search/people?…",
+    "form.exportName": "Nombre del export",
+    "form.exportNamePlaceholder": "p. ej. Prospects Q1 — se rellena con el nombre de la lista",
+    "form.exportNameLoading": "Buscando nombre de la lista…",
+    "form.exportNameProfiles": "{count} perfiles en esta lista",
     "form.limit": "Máx. leads",
     "form.limit50": "50",
     "form.limit100": "100",
@@ -487,8 +617,18 @@ let creditBalance = 0;
 let accountEmail = "";
 let defaultPackId = "240";
 let panelTasks = [];
+let tasksStatusFilter = "all";
+let tasksSortKey = "created_at";
+let tasksSortDir = "desc";
+let guestAuthMode = "create";
 let tasksPollTimer = null;
 let composeOpen = false;
+const SN_PENDING_EXPORT_KEY = "sn_pending_export";
+const SN_CHECKOUT_REASON_KEY = "sn_checkout_reason";
+let pendingExportBody = null;
+let exportNameTouched = false;
+let sourceMetaTimer = null;
+let sourceMetaRequest = 0;
 let connectionStatusLoading = false;
 
 function setAuthSubmitLoading(loading, btn, idleKey = "") {
@@ -572,6 +712,9 @@ function initLang() {
       lang = btn.dataset.lang === "es" ? "es" : "en";
       applyI18n();
       renderConnectionStatus(lastConnection);
+      renderTasksTable();
+      updateLandingPanelCta();
+      updateGuestAuthCopy();
     });
   });
 }
@@ -610,12 +753,115 @@ function setAccountNote(text, tone = "ok") {
   setNote(text, tone, "account");
 }
 
-function setPanelFlash(text, tone = "ok") {
+function setPanelFlash(text, tone = "ok", topup = null) {
+  const composeFlash = document.getElementById("compose-flash");
+  if (composeFlash && (composeOpen || topup)) {
+    setComposeFlash(text, tone, topup);
+    return;
+  }
   const el = document.getElementById("panel-flash");
   if (!el) return;
   el.hidden = !text;
   el.dataset.tone = tone;
   el.textContent = text || "";
+}
+
+function setComposeFlash(text, tone = "ok", topup = null) {
+  const el = document.getElementById("compose-flash");
+  if (!el) {
+    setPanelFlash(text, tone);
+    return;
+  }
+  el.hidden = !text && !topup;
+  el.dataset.tone = tone;
+  el.replaceChildren();
+  if (text) {
+    const p = document.createElement("p");
+    p.className = "compose-flash-text";
+    p.textContent = text;
+    el.appendChild(p);
+  }
+  if (topup?.packId) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "connect-btn compose-flash-topup-btn";
+    btn.textContent = t("credits.exportTopupBtn", {
+      packCredits: topup.credits,
+      packPrice: formatEur(topup.amountCents),
+    });
+    btn.addEventListener("click", () => {
+      startExportTopupCheckout(topup.packId);
+    });
+    el.appendChild(btn);
+  }
+  if (text && tone === "error") {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function formatEur(cents) {
+  const value = Number(cents) || 0;
+  return new Intl.NumberFormat(lang === "es" ? "es-ES" : "en-GB", {
+    style: "currency",
+    currency: "EUR",
+  }).format(value / 100);
+}
+
+function savePendingExport(body) {
+  pendingExportBody = body;
+  try {
+    sessionStorage.setItem(SN_PENDING_EXPORT_KEY, JSON.stringify(body));
+    sessionStorage.setItem(SN_CHECKOUT_REASON_KEY, "export");
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearPendingExport() {
+  pendingExportBody = null;
+  try {
+    sessionStorage.removeItem(SN_PENDING_EXPORT_KEY);
+    sessionStorage.removeItem(SN_CHECKOUT_REASON_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadPendingExportBody() {
+  if (pendingExportBody) {
+    return pendingExportBody;
+  }
+  try {
+    const raw = sessionStorage.getItem(SN_PENDING_EXPORT_KEY);
+    if (!raw) return null;
+    pendingExportBody = JSON.parse(raw);
+    return pendingExportBody;
+  } catch {
+    return null;
+  }
+}
+
+function showExportTopupOffer(data) {
+  const required = Number(data.estimated_cost ?? data.required) || 0;
+  const balance = Number(data.balance) || 0;
+  const shortfall = Number(data.credits_shortfall) || Math.max(0, required - balance);
+  const topup = data.topup;
+  if (!topup?.pack_id) {
+    setPanelFlash(data.error || t("credits.insufficient"), "error");
+    return;
+  }
+  const message = t("credits.exportTopupDetail", {
+    required,
+    balance,
+    shortfall,
+    packCredits: topup.credits,
+    packPrice: formatEur(topup.amount_cents),
+  });
+  setPanelFlash(message, "error", {
+    packId: String(topup.pack_id),
+    credits: Number(topup.credits) || 0,
+    amountCents: Number(topup.amount_cents) || 0,
+  });
 }
 
 function setConnectNote(text, tone = "ok") {
@@ -1193,8 +1439,84 @@ function resetAuthFlow() {
   if (setupConfirm) setupConfirm.value = "";
 }
 
+function updateLandingPanelCta() {
+  const cta = document.getElementById("landing-panel-cta");
+  const signin = document.getElementById("landing-signin-cta");
+  const note = document.getElementById("landing-panel-note");
+  if (!cta) return;
+
+  if (accountEmail) {
+    cta.textContent = t("landing.openPanel");
+    cta.setAttribute("data-i18n", "landing.openPanel");
+    if (signin) signin.hidden = true;
+    if (note) {
+      note.textContent = t("landing.panelNote");
+      note.setAttribute("data-i18n", "landing.panelNote");
+    }
+    return;
+  }
+
+  cta.textContent = t("landing.createAccount");
+  cta.setAttribute("data-i18n", "landing.createAccount");
+  if (signin) {
+    signin.hidden = false;
+    signin.textContent = t("landing.signIn");
+    signin.setAttribute("data-i18n", "landing.signIn");
+  }
+  if (note) {
+    note.textContent = t("landing.createAccountNote");
+    note.setAttribute("data-i18n", "landing.createAccountNote");
+  }
+}
+
+function updateGuestAuthCopy() {
+  if (!IS_PANEL || accountEmail) return;
+  const lede = document.querySelector(".panel-guest-lede");
+  if (!lede) return;
+  const key = guestAuthMode === "signin" ? "account.signInLead" : "account.createLead";
+  lede.textContent = t(key);
+  lede.setAttribute("data-i18n", key);
+
+  const switchLabel = document.getElementById("auth-mode-switch-label");
+  const switchBtn = document.getElementById("auth-mode-switch-btn");
+  if (switchLabel && switchBtn) {
+    if (guestAuthMode === "signin") {
+      switchLabel.textContent = t("account.newUserPrompt");
+      switchBtn.textContent = t("landing.createAccount");
+      switchBtn.setAttribute("data-i18n", "landing.createAccount");
+    } else {
+      switchLabel.textContent = t("landing.signInPrompt");
+      switchBtn.textContent = t("landing.signIn");
+      switchBtn.setAttribute("data-i18n", "landing.signIn");
+    }
+  }
+}
+
+function setGuestAuthMode(mode) {
+  guestAuthMode = mode === "signin" ? "signin" : "create";
+  updateGuestAuthCopy();
+  resetAuthFlow();
+}
+
+function handleSigninQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("signin") === "1") {
+    guestAuthMode = "signin";
+  }
+  updateGuestAuthCopy();
+}
+
+function initLandingPage() {
+  updateLandingPanelCta();
+  fetchCredits().then(() => updateLandingPanelCta()).catch(() => {});
+}
+
 function initAuthFlow() {
+  handleSigninQuery();
   setAuthStep("email");
+  document.getElementById("auth-mode-switch-btn")?.addEventListener("click", () => {
+    setGuestAuthMode(guestAuthMode === "signin" ? "create" : "signin");
+  });
 }
 
 async function handleResetQuery() {
@@ -1453,7 +1775,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     if (IS_PANEL) {
       document.getElementById("panel-guest-wrap")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    return;
+    return false;
   }
   try {
     sessionStorage.setItem("sn_pre_balance", String(creditBalance));
@@ -1484,14 +1806,35 @@ async function startStripeCheckout(pack = defaultPackId) {
     } catch {
       /* ignore */
     }
-    return;
+    await retryPendingExportIfReady();
+    return true;
   }
   if (result?.ok === false) {
     setAccountNote(t("credits.cancelled"), "error");
-    return;
+    return false;
   }
   setAccountNote(t("credits.checkoutOpened"), "ok");
   await pollCreditsAfterReturn();
+  return creditBalance > (Number(sessionStorage.getItem("sn_pre_balance")) || 0);
+}
+
+async function startExportTopupCheckout(packId) {
+  if (!accountEmail) {
+    setAccountNote(t("credits.emailRequired"), "error");
+    return;
+  }
+  const submitBtn = document.getElementById("create-task-submit");
+  const topupBtn = document.querySelector(".compose-flash-topup-btn");
+  if (submitBtn) submitBtn.disabled = true;
+  if (topupBtn) topupBtn.disabled = true;
+  try {
+    await startStripeCheckout(packId);
+  } catch (err) {
+    setPanelFlash(err.message || t("msg.generic"), "error");
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (topupBtn) topupBtn.disabled = false;
+  }
 }
 
 async function handleVerifyQuery() {
@@ -1748,6 +2091,7 @@ async function completeStripeReturn(sessionId) {
         : t("credits.paid"),
       "ok"
     );
+    await retryPendingExportIfReady();
   } catch {
     await pollCreditsAfterReturn();
   }
@@ -1774,6 +2118,7 @@ async function pollCreditsAfterReturn(maxAttempts = 15, delayMs = 2000) {
         email ? t("credits.paidWithEmail", { count: creditBalance - prev, email }) : t("credits.paid"),
         "ok"
       );
+      await retryPendingExportIfReady();
       return;
     }
     await new Promise((r) => setTimeout(r, delayMs));
@@ -1849,9 +2194,167 @@ function highlightTaskFromQuery() {
   }
 }
 
+function formatCreditsBreakdown(task) {
+  const breakdown = task?.credits_breakdown;
+  if (!breakdown || task.status !== "ready") return "—";
+
+  const parts = [];
+  if (breakdown.profiles > 0) {
+    parts.push(t("tasks.breakdownProfiles", { n: breakdown.profiles }));
+  }
+  if (breakdown.enriched_credits > 0) {
+    parts.push(t("tasks.breakdownEnriched", { n: breakdown.profiles }));
+  }
+  if (breakdown.email_credits > 0) {
+    parts.push(t("tasks.breakdownEmails", { n: breakdown.emails_found }));
+  }
+  return parts.length ? parts.join(" + ") : "—";
+}
+
+function taskIsDeletable(task) {
+  const status = task?.status || "";
+  return status === "ready" || status === "failed";
+}
+
+function getSelectedTaskIds() {
+  return [...document.querySelectorAll(".tasks-row-check:checked")].map((el) => el.value);
+}
+
+function updateTasksDeleteControls() {
+  const deleteBtn = document.getElementById("tasks-delete-btn");
+  const selectAll = document.getElementById("tasks-select-all");
+  const checks = [...document.querySelectorAll(".tasks-row-check")];
+  const selected = getSelectedTaskIds();
+  if (deleteBtn) {
+    deleteBtn.disabled = selected.length === 0;
+  }
+  if (selectAll) {
+    selectAll.disabled = checks.length === 0;
+    selectAll.indeterminate = selected.length > 0 && selected.length < checks.length;
+    selectAll.checked = checks.length > 0 && selected.length === checks.length;
+  }
+}
+
+function taskStatusSortRank(status) {
+  if (status === "processing") return 0;
+  if (status === "ready") return 1;
+  if (status === "failed") return 2;
+  return 3;
+}
+
+function taskSortValue(task, key) {
+  switch (key) {
+    case "source_label":
+      return (task.source_label || task.mode || "").toLowerCase();
+    case "status":
+      return taskStatusSortRank(task.status);
+    case "lead_count":
+      return task.status === "ready" ? Number(task.lead_count || 0) : -1;
+    case "credits_used":
+      return task.status === "ready" ? Number(task.credits_used || 0) : -1;
+    case "created_at": {
+      const ts = Date.parse(task.created_at || "");
+      return Number.isFinite(ts) ? ts : 0;
+    }
+    default:
+      return 0;
+  }
+}
+
+function compareTasks(a, b) {
+  const av = taskSortValue(a, tasksSortKey);
+  const bv = taskSortValue(b, tasksSortKey);
+  let cmp = 0;
+  if (typeof av === "string" || typeof bv === "string") {
+    cmp = String(av).localeCompare(String(bv), lang === "es" ? "es" : "en", { sensitivity: "base" });
+  } else {
+    cmp = av === bv ? 0 : av < bv ? -1 : 1;
+  }
+  if (cmp === 0) {
+    const at = Date.parse(a.created_at || "") || 0;
+    const bt = Date.parse(b.created_at || "") || 0;
+    cmp = bt === at ? 0 : bt < at ? 1 : -1;
+  }
+  return tasksSortDir === "asc" ? cmp : -cmp;
+}
+
+function getVisibleTasks() {
+  let tasks = [...panelTasks];
+  if (tasksStatusFilter !== "all") {
+    tasks = tasks.filter((task) => (task.status || "processing") === tasksStatusFilter);
+  }
+  tasks.sort(compareTasks);
+  return tasks;
+}
+
+function tasksSortColumnLabel(key) {
+  const labels = {
+    source_label: t("tasks.colSource"),
+    status: t("tasks.colStatus"),
+    lead_count: t("tasks.colLeads"),
+    credits_used: t("tasks.colCredits"),
+    created_at: t("tasks.colCreated"),
+  };
+  return labels[key] || key;
+}
+
+function updateTasksFilterCount(shown, total) {
+  const el = document.getElementById("tasks-filter-count");
+  if (!el) return;
+  if (total === 0 || (tasksStatusFilter === "all" && shown === total)) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = t("tasks.filterCount")
+    .replace("{shown}", String(shown))
+    .replace("{total}", String(total));
+}
+
+function updateTasksSortHeaders() {
+  document.querySelectorAll(".tasks-sort-btn").forEach((btn) => {
+    const key = btn.dataset.sort || "";
+    const active = key === tasksSortKey;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-sort", active ? (tasksSortDir === "asc" ? "ascending" : "descending") : "none");
+    const column = tasksSortColumnLabel(key);
+    const dirLabel = tasksSortDir === "asc" ? t("tasks.sortAsc") : t("tasks.sortDesc");
+    btn.setAttribute(
+      "aria-label",
+      active
+        ? `${column}, ${dirLabel}`
+        : t("tasks.sortLabel").replace("{column}", column)
+    );
+    const indicator = btn.querySelector(".tasks-sort-indicator");
+    if (indicator) {
+      indicator.textContent = active ? (tasksSortDir === "asc" ? "▲" : "▼") : "";
+    }
+  });
+}
+
+function setTasksSort(key) {
+  if (tasksSortKey === key) {
+    tasksSortDir = tasksSortDir === "asc" ? "desc" : "asc";
+  } else {
+    tasksSortKey = key;
+    tasksSortDir = key === "source_label" || key === "status" ? "asc" : "desc";
+  }
+  renderTasksTable();
+}
+
 function renderTasksTable() {
   const tbody = document.getElementById("tasks-body");
   if (!tbody) return;
+
+  const filterEl = document.getElementById("tasks-status-filter");
+  if (filterEl && filterEl.value !== tasksStatusFilter) {
+    filterEl.value = tasksStatusFilter;
+  }
+
+  const visibleTasks = getVisibleTasks();
+  updateTasksFilterCount(visibleTasks.length, panelTasks.length);
+  updateTasksSortHeaders();
 
   tbody.innerHTML = "";
   if (!panelTasks.length) {
@@ -1859,18 +2362,43 @@ function renderTasksTable() {
     tr.className = "tasks-empty";
     tr.id = "tasks-empty-row";
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 8;
     td.textContent = t("tasks.empty");
     tr.appendChild(td);
     tbody.appendChild(tr);
+    updateTasksDeleteControls();
     return;
   }
 
-  panelTasks.forEach((task) => {
+  if (!visibleTasks.length) {
+    const tr = document.createElement("tr");
+    tr.className = "tasks-empty";
+    const td = document.createElement("td");
+    td.colSpan = 8;
+    td.textContent = t("tasks.emptyFiltered");
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    updateTasksDeleteControls();
+    return;
+  }
+
+  visibleTasks.forEach((task) => {
     const tr = document.createElement("tr");
     tr.dataset.taskId = task.id;
     if (task.status === "processing") tr.classList.add("tasks-row-processing");
     if (task.status === "failed") tr.classList.add("tasks-row-failed");
+
+    const select = document.createElement("td");
+    select.className = "tasks-col-select";
+    if (taskIsDeletable(task)) {
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "tasks-row-check";
+      check.value = task.id;
+      check.setAttribute("aria-label", task.source_label || task.id);
+      check.addEventListener("change", updateTasksDeleteControls);
+      select.appendChild(check);
+    }
 
     const source = document.createElement("td");
     source.textContent = task.source_label || task.mode || "—";
@@ -1891,6 +2419,10 @@ function renderTasksTable() {
     const credits = document.createElement("td");
     credits.textContent = task.status === "ready" ? String(task.credits_used || 0) : "—";
 
+    const creditsDetail = document.createElement("td");
+    creditsDetail.className = "tasks-credits-detail";
+    creditsDetail.textContent = formatCreditsBreakdown(task);
+
     const created = document.createElement("td");
     created.textContent = formatTaskDate(task.created_at);
 
@@ -1908,9 +2440,152 @@ function renderTasksTable() {
       action.textContent = "…";
     }
 
-    tr.append(source, status, leads, credits, created, action);
+    tr.append(select, source, status, leads, credits, creditsDetail, created, action);
     tbody.appendChild(tr);
   });
+
+  updateTasksDeleteControls();
+}
+
+async function deleteSelectedTasks() {
+  const ids = getSelectedTaskIds();
+  if (!ids.length) {
+    setPanelFlash(t("tasks.deleteNone"), "warn");
+    return;
+  }
+  const confirmMsg = t("tasks.deleteConfirm").replace("{n}", String(ids.length));
+  if (!window.confirm(confirmMsg)) return;
+
+  const deleteBtn = document.getElementById("tasks-delete-btn");
+  if (deleteBtn) deleteBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/salesnav-tasks.php", {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task_ids: ids }),
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Delete failed");
+    }
+    panelTasks = Array.isArray(data.tasks) ? data.tasks : panelTasks.filter((task) => !ids.includes(task.id));
+    renderTasksTable();
+    const deletedCount = Array.isArray(data.deleted) ? data.deleted.length : ids.length;
+    setPanelFlash(t("tasks.deleteDone").replace("{n}", String(deletedCount)), "ok");
+  } catch (err) {
+    setPanelFlash(err.message || "Delete failed", "err");
+    updateTasksDeleteControls();
+  }
+}
+
+function setExportNameHint(text = "", loading = false) {
+  const hint = document.getElementById("export-name-hint");
+  if (!hint) return;
+  hint.hidden = !text;
+  hint.textContent = text || "";
+  hint.dataset.loading = loading ? "1" : "0";
+}
+
+function resetExportNameState() {
+  exportNameTouched = false;
+  setExportNameHint("");
+  const exportName = document.getElementById("export-name");
+  if (exportName) {
+    exportName.dataset.auto = "0";
+  }
+}
+
+function applyExportNameMeta(data) {
+  const exportName = document.getElementById("export-name");
+  if (!exportName || exportNameTouched) return;
+
+  const resolved = (data?.source_name || "").trim();
+  if (resolved) {
+    exportName.value = resolved;
+    exportName.dataset.auto = "1";
+  }
+
+  const count = Number(data?.profile_count || 0);
+  if (count > 0) {
+    setExportNameHint(t("form.exportNameProfiles").replace("{count}", count.toLocaleString(lang === "es" ? "es-ES" : "en-US")));
+  } else {
+    setExportNameHint("");
+  }
+}
+
+async function fetchSourceMeta(mode) {
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const sourceUrl = mode === "list" ? listUrl : searchUrl;
+  if (!sourceUrl) {
+    setExportNameHint("");
+    return;
+  }
+
+  const requestId = ++sourceMetaRequest;
+  setExportNameHint(t("form.exportNameLoading"), true);
+
+  try {
+    const params = new URLSearchParams({ mode });
+    if (mode === "list") params.set("list_url", listUrl);
+    else params.set("search_url", searchUrl);
+
+    const res = await fetch(`/api/salesnav-source-meta.php?${params.toString()}`, {
+      credentials: "same-origin",
+    });
+    const data = await parseJsonResponse(res);
+    if (requestId !== sourceMetaRequest) return;
+    if (!res.ok || !data.ok) {
+      setExportNameHint("");
+      return;
+    }
+    applyExportNameMeta(data);
+  } catch {
+    if (requestId === sourceMetaRequest) {
+      setExportNameHint("");
+    }
+  }
+}
+
+function scheduleSourceMetaLookup(mode) {
+  if (sourceMetaTimer) {
+    clearTimeout(sourceMetaTimer);
+  }
+  sourceMetaTimer = setTimeout(() => {
+    sourceMetaTimer = null;
+    fetchSourceMeta(mode);
+  }, 450);
+}
+
+function initExportNameLookup() {
+  const exportName = document.getElementById("export-name");
+  const listUrl = document.getElementById("list-url");
+  const searchUrl = document.getElementById("search-url");
+
+  exportName?.addEventListener("input", () => {
+    exportNameTouched = true;
+    exportName.dataset.auto = "0";
+  });
+
+  listUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("list");
+  });
+  listUrl?.addEventListener("blur", () => fetchSourceMeta("list"));
+
+  searchUrl?.addEventListener("input", () => {
+    if (!exportNameTouched) {
+      exportName.value = "";
+      exportName.dataset.auto = "0";
+    }
+    scheduleSourceMetaLookup("search");
+  });
+  searchUrl?.addEventListener("blur", () => fetchSourceMeta("search"));
 }
 
 function openCreateTaskCompose() {
@@ -1926,6 +2601,7 @@ function openCreateTaskCompose() {
   if (!compose) return;
   compose.hidden = false;
   composeOpen = true;
+  setComposeFlash("");
   compose.scrollIntoView({ behavior: "smooth", block: "nearest" });
   document.getElementById("list-url")?.focus();
 }
@@ -1935,9 +2611,112 @@ function closeCreateTaskCompose(clearForm = false) {
   if (!compose) return;
   compose.hidden = true;
   composeOpen = false;
+  setComposeFlash("");
   if (clearForm) {
     document.getElementById("create-task-form")?.reset();
     document.querySelector("#create-task-form .mode-btn[data-mode='list']")?.click();
+    resetExportNameState();
+    clearPendingExport();
+  }
+}
+
+function buildCreateTaskBody(challenge) {
+  const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
+  const listUrl = document.getElementById("list-url")?.value.trim() || "";
+  const searchUrl = document.getElementById("search-url")?.value.trim() || "";
+  const limitRaw = document.getElementById("export-limit")?.value || "all";
+  const honeypot = document.getElementById("company_url")?.value || "";
+  const tierEnriched = document.getElementById("tier-enriched")?.checked;
+  const tierMail = document.getElementById("tier-mail")?.checked;
+  const exportName = document.getElementById("export-name")?.value.trim() || "";
+  const body = {
+    challenge,
+    company_url: honeypot,
+    limit: limitRaw,
+    tier_enriched: tierEnriched ? 1 : 0,
+    tier_mail: tierMail ? 1 : 0,
+  };
+  if (exportName) body.export_name = exportName;
+  if (mode === "list") body.list_url = listUrl;
+  else body.search_url = searchUrl;
+  return body;
+}
+
+async function postCreateTask(body) {
+  const res = await fetch("/api/salesnav-tasks.php", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await parseJsonResponse(res);
+  return { res, data };
+}
+
+function handleCreateTaskSuccess(data) {
+  clearPendingExport();
+  closeCreateTaskCompose(true);
+  setPanelFlash(t("tasks.processing"), "ok");
+  if (data.task) {
+    panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
+    renderTasksTable();
+    scheduleTasksPoll();
+  } else {
+    fetchTasks();
+  }
+}
+
+async function retryPendingExportIfReady() {
+  let reason = "";
+  try {
+    reason = sessionStorage.getItem(SN_CHECKOUT_REASON_KEY) || "";
+  } catch {
+    reason = "";
+  }
+  if (reason !== "export") {
+    return false;
+  }
+  const saved = loadPendingExportBody();
+  if (!saved) {
+    return false;
+  }
+  const compose = document.getElementById("tasks-compose");
+  if (compose) {
+    compose.hidden = false;
+    composeOpen = true;
+  }
+  setPanelFlash(t("credits.exportRetrying"), "ok");
+  const submitBtn = document.getElementById("create-task-submit");
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    const challenge = await getChallenge();
+    const body = { ...saved, challenge };
+    const { res, data } = await postCreateTask(body);
+    if (res.status === 402 && data.needs_payment) {
+      savePendingExport(saved);
+      showExportTopupOffer(data);
+      return false;
+    }
+    if (data.needs_connect || data.needs_reconnect) {
+      renderConnectionStatus({
+        connected: false,
+        reconnect_available: true,
+        needs_reconnect: !!data.needs_reconnect,
+        stored_label: data.stored_label || "",
+        connect_message: data.error || "",
+      });
+      throw new Error(data.error || t("connect.required"));
+    }
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || t("msg.generic"));
+    }
+    handleCreateTaskSuccess(data);
+    return true;
+  } catch (err) {
+    setPanelFlash(err.message || t("msg.generic"), "error");
+    return false;
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -1951,9 +2730,6 @@ async function submitCreateTask(e) {
   const mode = document.querySelector("#create-task-form .mode-btn.is-active")?.dataset.mode || "list";
   const listUrl = document.getElementById("list-url")?.value.trim() || "";
   const searchUrl = document.getElementById("search-url")?.value.trim() || "";
-  const limitRaw = document.getElementById("export-limit")?.value || "50";
-  const honeypot = document.getElementById("company_url")?.value || "";
-  const tierEnriched = document.getElementById("tier-enriched")?.checked;
 
   if (mode === "list" && !listUrl) {
     setPanelFlash(lang === "es" ? "Pega la URL de la lista." : "Paste a list URL.", "error");
@@ -1969,26 +2745,13 @@ async function submitCreateTask(e) {
 
   try {
     const challenge = await getChallenge();
-    const body = {
-      challenge,
-      company_url: honeypot,
-      limit: limitRaw,
-      tier_enriched: tierEnriched ? 1 : 0,
-    };
-    if (mode === "list") body.list_url = listUrl;
-    else body.search_url = searchUrl;
-
-    const res = await fetch("/api/salesnav-tasks.php", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await parseJsonResponse(res);
+    const body = buildCreateTaskBody(challenge);
+    const { res, data } = await postCreateTask(body);
 
     if (res.status === 402 && data.needs_payment) {
-      await startStripeCheckout(defaultPackId);
-      throw new Error(t("credits.insufficient"));
+      savePendingExport(body);
+      showExportTopupOffer(data);
+      return;
     }
     if (data.needs_connect || data.needs_reconnect) {
       renderConnectionStatus({
@@ -2004,15 +2767,7 @@ async function submitCreateTask(e) {
       throw new Error(data.error || t("msg.generic"));
     }
 
-    closeCreateTaskCompose(true);
-    setPanelFlash(t("tasks.processing"), "ok");
-    if (data.task) {
-      panelTasks = [data.task, ...panelTasks.filter((item) => item.id !== data.task.id)];
-      renderTasksTable();
-      scheduleTasksPoll();
-    } else {
-      await fetchTasks();
-    }
+    handleCreateTaskSuccess(data);
   } catch (err) {
     setPanelFlash(err.message || t("msg.generic"), "error");
   } finally {
@@ -2200,6 +2955,10 @@ function initModeSwitch() {
       const mode = btn.dataset.mode;
       if (listWrap) listWrap.hidden = mode !== "list";
       if (searchWrap) searchWrap.hidden = mode !== "search";
+      if (!exportNameTouched) {
+        resetExportNameState();
+        scheduleSourceMetaLookup(mode);
+      }
     });
   });
 }
@@ -2300,10 +3059,12 @@ if (IS_PANEL) {
 } else {
   redirectLegacyAppQueriesToPanel();
   initContactForm();
+  initLandingPage();
 }
 
 function initPanelPage() {
   initModeSwitch();
+  initExportNameLookup();
   initAuthFlow();
   handleVerifyQuery();
   handleResetQuery();
@@ -2356,4 +3117,19 @@ function initPanelPage() {
   });
   document.getElementById("create-task-cancel")?.addEventListener("click", () => closeCreateTaskCompose(false));
   document.getElementById("create-task-form")?.addEventListener("submit", (e) => submitCreateTask(e));
+  document.getElementById("tasks-delete-btn")?.addEventListener("click", () => deleteSelectedTasks());
+  document.getElementById("tasks-select-all")?.addEventListener("change", (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll(".tasks-row-check").forEach((el) => {
+      el.checked = checked;
+    });
+    updateTasksDeleteControls();
+  });
+  document.getElementById("tasks-status-filter")?.addEventListener("change", (e) => {
+    tasksStatusFilter = e.target.value || "all";
+    renderTasksTable();
+  });
+  document.querySelectorAll(".tasks-sort-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setTasksSort(btn.dataset.sort || "created_at"));
+  });
 }

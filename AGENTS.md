@@ -57,3 +57,19 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+### URL routes (do not break)
+
+| URL | File | Purpose |
+|-----|------|---------|
+| `/salesnav/` | `public/salesnav/index.html` | **Landing** (marketing, FAQ, pricing) |
+| `/salesnav/panel/` | `public/salesnav/panel/index.html` | **Panel** (login, credits, exports) |
+| `/salesnav/admin/` | `public/salesnav/admin/index.html` | Admin ops |
+
+**Never** copy `panel/index.html` to `salesnav/index.html`. After any deploy or manual `scp`/`rsync`, run:
+
+```bash
+python3 cde-salesnav/deploy/verify-salesnav-routes.py cde-salesnav/public
+```
+
+Markers: `<!-- cde-page: landing -->` vs `<!-- cde-page: panel -->`. Deploy script runs this check locally and on production.

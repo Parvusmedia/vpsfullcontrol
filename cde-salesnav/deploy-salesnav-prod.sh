@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy Sales Navigator section to production (82.223.3.205 via nextconvers-vps)
+# Deploy from a branch that includes all pending SalesNav UI/API changes (e.g. cursor/salesnav-prod-sync-8bb3).
+# Stale branches can overwrite prod features (FAQ, export name, default limit=all, usage column).
 set -euo pipefail
 
 REMOTE="parvus-vps"
@@ -8,9 +10,19 @@ DOCROOT="/var/www/vhosts/companydataenrichment.com/httpdocs"
 PRIVATE="/var/www/vhosts/companydataenrichment.com/private/cde"
 LOCAL="/workspace/cde-salesnav/public"
 STAGING="/opt/apps/companydataenrichment/public"
+VERIFY="/workspace/cde-salesnav/deploy/verify-salesnav-routes.py"
+
+echo "==> Verify Sales Nav landing vs panel (local, before deploy)"
+python3 "$VERIFY" "$LOCAL" || { echo "ERROR: fix salesnav/index.html vs salesnav/panel/index.html before deploy"; exit 1; }
 
 echo "==> Stage files on parvus-vps"
 scp -r "$LOCAL/salesnav" "$REMOTE:$STAGING/"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:$STAGING/"
+fi
+if [[ -f "$LOCAL/styles.css" ]]; then
+  scp "$LOCAL/styles.css" "$REMOTE:$STAGING/"
+fi
 scp "$LOCAL/api/_unipile.php" "$LOCAL/api/salesnav-export.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_credits.php" "$LOCAL/api/_stripe.php" "$LOCAL/api/_harvest.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-credits.php" "$LOCAL/api/salesnav-stripe-checkout.php" "$REMOTE:$STAGING/api/"
@@ -18,7 +30,8 @@ scp "$LOCAL/api/salesnav-stripe-webhook.php" "$LOCAL/api/salesnav-stripe-complet
 scp "$LOCAL/api/salesnav-status.php" "$LOCAL/api/salesnav-connect.php" "$LOCAL/api/salesnav-connect-sync.php" "$LOCAL/api/salesnav-task-run.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/_customers.php" "$REMOTE:$STAGING/api/"
 scp "$LOCAL/api/salesnav-disconnect.php" "$LOCAL/api/salesnav-unipile-notify.php" "$REMOTE:$STAGING/api/"
-scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/_tasks.php" "$LOCAL/api/salesnav-tasks.php" "$LOCAL/api/salesnav-tasks-download.php" "$LOCAL/api/salesnav-source-meta.php" "$LOCAL/api/_mail.php" "$LOCAL/api/_icypeas.php" "$REMOTE:$STAGING/api/"
+scp "$LOCAL/api/_salesnav_admin.php" "$LOCAL/api/salesnav-admin-api.php" "$LOCAL/api/salesnav-admin-credits.php" "$REMOTE:$STAGING/api/"
 
 echo "==> Apply patches on parvus-vps staging (if not already)"
 ssh "$REMOTE" "bash /opt/apps/companydataenrichment/../..//workspace/cde-salesnav/deploy-salesnav.sh 2>/dev/null || true"
@@ -40,11 +53,22 @@ echo "==> Merge Unipile API keys on production (keep existing notify secret)"
 ssh "$REMOTE" "grep '^UNIPILE_' /etc/linkedinreport/app.env | ssh $PROD \"install -d -m 700 $PRIVATE; touch $PRIVATE/unipile.env; chmod 640 $PRIVATE/unipile.env; chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/unipile.env\""
 
 echo "==> Ensure notify secret + writable private dir on production"
-ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json && install -d -m 700 $PRIVATE/salesnav_exports && chmod 660 $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json 2>/dev/null || true && chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json $PRIVATE/salesnav_exports 2>/dev/null || true; if ! grep -q ^SALESNAV_NOTIFY_SECRET= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_NOTIFY_SECRET=\$(openssl rand -hex 24) >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_SITE_ORIGIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_SITE_ORIGIN=https://companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_HOSTED_AUTH_DOMAIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_HOSTED_AUTH_DOMAIN=connect.companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_FROM= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_FROM=hello@companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_EXPORT_FROM= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_EXPORT_FROM=export@companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_FROM_NAME= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_FROM_NAME=CompanyDataEnrichment >> $PRIVATE/unipile.env; fi; touch $PRIVATE/stripe.env; chmod 640 $PRIVATE/stripe.env; chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/stripe.env 2>/dev/null || true; if ! grep -q ^STRIPE_PRODUCT_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRODUCT_ID=prod_VB9BUSTFvzzBRm >> $PRIVATE/stripe.env; fi; if ! grep -q ^STRIPE_PRICE_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRICE_ID=price_1UAnliL0sc6a4STMwyYdMPF4 >> $PRIVATE/stripe.env; fi'"
+ssh "$REMOTE" "ssh $PROD 'install -d -m 700 $PRIVATE && touch $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json && install -d -m 700 $PRIVATE/salesnav_exports && chmod 660 $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json 2>/dev/null || true && chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/salesnav_accounts.json $PRIVATE/salesnav_wallets.json $PRIVATE/salesnav_credits_ledger.jsonl $PRIVATE/salesnav_tasks.json $PRIVATE/salesnav_exports 2>/dev/null || true; if ! grep -q ^SALESNAV_NOTIFY_SECRET= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_NOTIFY_SECRET=\$(openssl rand -hex 24) >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_ADMIN_SECRET= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_ADMIN_SECRET=\$(openssl rand -hex 32) >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_SITE_ORIGIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_SITE_ORIGIN=https://companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_HOSTED_AUTH_DOMAIN= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_HOSTED_AUTH_DOMAIN=connect.companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_FROM= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_FROM=hello@companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_EXPORT_FROM= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_EXPORT_FROM=export@companydataenrichment.com >> $PRIVATE/unipile.env; fi; if ! grep -q ^SALESNAV_MAIL_FROM_NAME= $PRIVATE/unipile.env 2>/dev/null; then echo SALESNAV_MAIL_FROM_NAME=CompanyDataEnrichment >> $PRIVATE/unipile.env; fi; touch $PRIVATE/stripe.env; chmod 640 $PRIVATE/stripe.env; chown companydataenrichment_d7ory6ctv7:psacln $PRIVATE/stripe.env 2>/dev/null || true; if ! grep -q ^STRIPE_PRODUCT_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRODUCT_ID=prod_VB9BUSTFvzzBRm >> $PRIVATE/stripe.env; fi; if ! grep -q ^STRIPE_PRICE_ID= $PRIVATE/stripe.env 2>/dev/null; then echo STRIPE_PRICE_ID=price_1UAnliL0sc6a4STMwyYdMPF4 >> $PRIVATE/stripe.env; fi'"
 
 echo "==> Rsync public site to production httpdocs"
 ssh "$REMOTE" "rsync -avz --exclude 'apify.env' --exclude 'unipile.env' --exclude 'harvest.env' --exclude 'stripe.env' \
   $STAGING/ $PROD:$DOCROOT/"
+
+echo "==> Verify Sales Nav routes on production (landing ≠ panel)"
+scp "$VERIFY" "$REMOTE:/tmp/verify-salesnav-routes.py"
+ssh "$REMOTE" "scp /tmp/verify-salesnav-routes.py $PROD:/tmp/verify-salesnav-routes.py && ssh $PROD 'python3 /tmp/verify-salesnav-routes.py $DOCROOT || (echo ERROR: salesnav/index.html must be landing — run deploy again from correct branch; exit 1)'"
+
+echo "==> Ensure production homepage is Companies hub (never Sales Nav landing)"
+ssh "$REMOTE" "ssh $PROD 'if grep -q product-salesnav $DOCROOT/index.html 2>/dev/null; then echo ERROR: root index.html is Sales Nav — restoring from staging; fi'"
+if [[ -f "$LOCAL/index.html" ]]; then
+  scp "$LOCAL/index.html" "$REMOTE:/tmp/cde-index.html"
+  ssh "$REMOTE" "scp /tmp/cde-index.html $PROD:$DOCROOT/index.html && ssh $PROD 'chown companydataenrichment_d7ory6ctv7:psacln $DOCROOT/index.html'"
+fi
 
 echo "==> Patch production contact.php volume labels"
 ssh "$REMOTE" "ssh $PROD python3 - <<'PY'
@@ -183,7 +207,15 @@ echo "==> Install export task runner wrapper on production"
 scp "/workspace/cde-salesnav/deploy/run-export-task.sh" "$REMOTE:/tmp/run-export-task.sh"
 ssh "$REMOTE" "scp /tmp/run-export-task.sh $PROD:/var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && ssh $PROD 'chmod 750 /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh && chown companydataenrichment_d7ory6ctv7:psacln /var/www/vhosts/companydataenrichment.com/private/cde/run-export-task.sh'"
 
+echo "==> Install task retention purge script + daily cron on production"
+scp "/workspace/cde-salesnav/deploy/purge-salesnav-tasks.php" "$REMOTE:/tmp/purge-salesnav-tasks.php"
+ssh "$REMOTE" "scp /tmp/purge-salesnav-tasks.php $PROD:/var/www/vhosts/companydataenrichment.com/private/cde/purge-salesnav-tasks.php && ssh $PROD 'chmod 750 /var/www/vhosts/companydataenrichment.com/private/cde/purge-salesnav-tasks.php && chown companydataenrichment_d7ory6ctv7:psacln /var/www/vhosts/companydataenrichment.com/private/cde/purge-salesnav-tasks.php && (crontab -l 2>/dev/null | grep -v purge-salesnav-tasks.php; echo \"15 4 * * * /opt/plesk/php/8.3/bin/php /var/www/vhosts/companydataenrichment.com/private/cde/purge-salesnav-tasks.php >> /var/www/vhosts/companydataenrichment.com/private/cde/salesnav_task_purge.log 2>&1\") | crontab -'"
+
+echo "==> Install admin grant CLI on production"
+scp "/workspace/cde-salesnav/deploy/grant-credits.php" "$REMOTE:/tmp/grant-credits.php"
+ssh "$REMOTE" "scp /tmp/grant-credits.php $PROD:/var/www/vhosts/companydataenrichment.com/private/cde/grant-credits.php && ssh $PROD 'chmod 750 /var/www/vhosts/companydataenrichment.com/private/cde/grant-credits.php && chown companydataenrichment_d7ory6ctv7:psacln /var/www/vhosts/companydataenrichment.com/private/cde/grant-credits.php'"
+
 echo "==> Set ownership on production"
-ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php 2>/dev/null || true\""
+ssh "$REMOTE" "ssh $PROD \"chown -R companydataenrichment_d7ory6ctv7:psacln $DOCROOT/salesnav $DOCROOT/api/_unipile.php $DOCROOT/api/_credits.php $DOCROOT/api/_stripe.php $DOCROOT/api/_harvest.php $DOCROOT/api/_tasks.php $DOCROOT/api/_salesnav_admin.php $DOCROOT/api/_mail.php $DOCROOT/api/_icypeas.php $DOCROOT/api/_customers.php $DOCROOT/api/salesnav-export.php $DOCROOT/api/salesnav-credits.php $DOCROOT/api/salesnav-stripe-checkout.php $DOCROOT/api/salesnav-stripe-webhook.php $DOCROOT/api/salesnav-stripe-complete.php $DOCROOT/api/salesnav-account.php $DOCROOT/api/salesnav-status.php $DOCROOT/api/salesnav-connect.php $DOCROOT/api/salesnav-connect-sync.php $DOCROOT/api/salesnav-disconnect.php $DOCROOT/api/salesnav-unipile-notify.php $DOCROOT/api/salesnav-tasks.php $DOCROOT/api/salesnav-tasks-download.php $DOCROOT/api/salesnav-source-meta.php $DOCROOT/api/salesnav-admin-api.php $DOCROOT/api/salesnav-admin-credits.php 2>/dev/null || true\""
 
 echo "==> Done — production deploy complete"

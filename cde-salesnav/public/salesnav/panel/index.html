@@ -11,10 +11,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=25" />
-  <link rel="stylesheet" href="/salesnav/salesnav.css?v=34" />
+  <link rel="stylesheet" href="/salesnav/salesnav.css?v=50" />
   <link rel="stylesheet" href="/salesnav/salesnav-theme.css?v=2" />
 </head>
 <body class="product-salesnav product-salesnav-panel">
+  <!-- cde-page: panel -->
   <div class="atmosphere" aria-hidden="true"></div>
 
   <header class="top">
@@ -23,6 +24,7 @@
       <a href="/" data-i18n="nav.companies">Companies</a>
       <a href="/salesnav/" data-i18n="nav.salesnav">Sales Navigator</a>
       <a href="/salesnav/panel/" class="is-active" aria-current="page" data-i18n="nav.panel">My panel</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
     </nav>
     <div class="top-actions">
       <div class="lang-switch" role="group" aria-label="Language">
@@ -36,7 +38,7 @@
     <section class="panel-guest" id="panel-guest-wrap">
       <article class="panel-card panel-card-guest">
         <h1 data-i18n="panel.title">My panel</h1>
-        <p class="panel-guest-lede" data-i18n="account.guestLead">Enter your work email to manage credits and exports.</p>
+        <p class="panel-guest-lede" data-i18n="account.createLead">Create your free account with your work email — then top up credits and start exporting.</p>
         <div class="auth-flow">
           <p class="auth-step-label" id="auth-step-label" aria-live="polite" data-i18n="account.stepEmail">Step 1 · Work email</p>
 
@@ -48,6 +50,10 @@
             <div class="account-actions">
               <button type="submit" class="connect-btn" id="auth-continue-btn" data-i18n="account.continue">Continue</button>
             </div>
+            <p class="account-inline-help auth-mode-switch" id="auth-mode-switch">
+              <span id="auth-mode-switch-label" data-i18n="landing.signInPrompt">Already have an account?</span>
+              <button type="button" class="linkish-btn" id="auth-mode-switch-btn" data-i18n="landing.signIn">Sign in</button>
+            </p>
           </form>
 
           <div id="auth-step-password" class="auth-step-panel" hidden>
@@ -166,7 +172,7 @@
           </header>
           <div class="panel-li-identity" id="connect-identity">
             <img id="connect-avatar" class="panel-li-avatar" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer" hidden />
-            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator seat securely via Unipile. We never store your password.</span>
+            <span class="panel-li-copy" id="connect-copy" data-i18n="connect.body">Connect your LinkedIn / Sales Navigator account through our secure connection flow. We never store your password.</span>
           </div>
           <div class="panel-card-foot panel-li-actions-wrap">
             <div class="panel-li-actions" id="connect-actions-billing">
@@ -188,7 +194,6 @@
 
       <p class="account-note" id="account-note" hidden aria-live="polite"></p>
       <p class="connect-note" id="connect-note" hidden aria-live="polite"></p>
-      <p class="panel-flash" id="panel-flash" hidden aria-live="polite"></p>
 
       <article class="panel-card panel-card-tasks">
         <header class="panel-tasks-head">
@@ -218,6 +223,11 @@
                 <input id="search-url" type="url" placeholder="https://www.linkedin.com/sales/search/people?…" />
               </label>
             </div>
+            <label class="account-field" for="export-name">
+              <span data-i18n="form.exportName">Export name</span>
+              <input id="export-name" type="text" maxlength="120" autocomplete="off" data-i18n-placeholder="form.exportNamePlaceholder" placeholder="e.g. Q1 prospects — auto-filled from list name" />
+              <span class="field-hint" id="export-name-hint" hidden></span>
+            </label>
             <label class="account-field" for="export-limit">
               <span data-i18n="form.limit">Max leads</span>
               <select id="export-limit" name="limit">
@@ -226,7 +236,7 @@
                 <option value="200" data-i18n="form.limit200">200</option>
                 <option value="500" data-i18n="form.limit500">500</option>
                 <option value="1000" data-i18n="form.limit1000">1,000</option>
-                <option value="all" data-i18n="form.limitAll">All (up to 2,000)</option>
+                <option value="all" data-i18n="form.limitAll" selected>All (up to 2,000)</option>
               </select>
             </label>
             <fieldset class="export-tiers">
@@ -245,29 +255,123 @@
               <button type="button" class="ghost-btn" id="create-task-cancel" data-i18n="panel.composeCancel">Cancel</button>
               <button type="submit" class="connect-btn" id="create-task-submit" data-i18n="panel.startTask">Start export</button>
             </div>
+            <p class="compose-flash" id="compose-flash" hidden aria-live="polite"></p>
           </form>
+        </div>
+
+        <div class="tasks-table-toolbar">
+          <label class="tasks-filter-label" for="tasks-status-filter">
+            <span data-i18n="tasks.filterStatus">Status</span>
+            <select id="tasks-status-filter" class="tasks-status-filter">
+              <option value="all" data-i18n="tasks.filterAll">All statuses</option>
+              <option value="processing" data-i18n="tasks.status.processing">Processing</option>
+              <option value="ready" data-i18n="tasks.status.ready">Ready</option>
+              <option value="failed" data-i18n="tasks.status.failed">Failed</option>
+            </select>
+          </label>
+          <p class="tasks-filter-count" id="tasks-filter-count" hidden></p>
         </div>
 
         <div class="tasks-table-wrap">
           <table class="tasks-table" id="tasks-table">
             <thead>
               <tr>
-                <th data-i18n="tasks.colSource">Source</th>
-                <th data-i18n="tasks.colStatus">Status</th>
-                <th data-i18n="tasks.colLeads">Leads</th>
-                <th data-i18n="tasks.colCredits">Credits</th>
-                <th data-i18n="tasks.colCreated">Created</th>
-                <th data-i18n="tasks.colAction">Action</th>
+                <th class="tasks-col-select" scope="col">
+                  <input type="checkbox" id="tasks-select-all" aria-label="Select all deletable tasks" />
+                </th>
+                <th scope="col">
+                  <button type="button" class="tasks-sort-btn" data-sort="source_label">
+                    <span data-i18n="tasks.colSource">Source</span>
+                    <span class="tasks-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="tasks-sort-btn" data-sort="status">
+                    <span data-i18n="tasks.colStatus">Status</span>
+                    <span class="tasks-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="tasks-sort-btn" data-sort="lead_count">
+                    <span data-i18n="tasks.colLeads">Leads</span>
+                    <span class="tasks-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="tasks-sort-btn" data-sort="credits_used">
+                    <span data-i18n="tasks.colCredits">Credits</span>
+                    <span class="tasks-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th scope="col" data-i18n="tasks.colCreditsDetail">Usage</th>
+                <th scope="col">
+                  <button type="button" class="tasks-sort-btn" data-sort="created_at">
+                    <span data-i18n="tasks.colCreated">Created</span>
+                    <span class="tasks-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th scope="col" data-i18n="tasks.colAction">Action</th>
               </tr>
             </thead>
             <tbody id="tasks-body">
               <tr class="tasks-empty" id="tasks-empty-row">
-                <td colspan="6" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
+                <td colspan="8" data-i18n="tasks.empty">No export tasks yet. Create one to process a lead list or search URL.</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <footer class="tasks-table-foot">
+          <p class="tasks-retention-note" data-i18n="tasks.retentionNote">Completed and failed exports are kept for 90 days, then removed automatically.</p>
+          <button type="button" class="ghost-btn tasks-delete-btn" id="tasks-delete-btn" disabled data-i18n="tasks.deleteSelected">Delete selected</button>
+        </footer>
       </article>
+    </section>
+
+    <section class="strip faq-section panel-faq" id="faq">
+      <h2 class="strip-title" data-i18n="faq.title">FAQ</h2>
+      <p class="strip-lede" data-i18n="faq.lede">Step-by-step guide: panel, LinkedIn connection, credits and exports.</p>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary data-i18n="faq.qSteps">How does it work, step by step?</summary>
+          <div class="faq-answer" data-i18n="faq.aSteps"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qConnect">How do I connect my LinkedIn / Sales Navigator account?</summary>
+          <div class="faq-answer" data-i18n="faq.aConnect"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qCredits">How are credits consumed?</summary>
+          <div class="faq-answer" data-i18n="faq.aCredits"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qUrls">Which URLs can I export?</summary>
+          <div class="faq-answer" data-i18n="faq.aUrls"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qWhenCharged">When am I charged?</summary>
+          <div class="faq-answer" data-i18n="faq.aWhenCharged"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qDuration">How long does an export take?</summary>
+          <div class="faq-answer" data-i18n="faq.aDuration"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qTopup">How do top-ups and bonuses work?</summary>
+          <div class="faq-answer" data-i18n="faq.aTopup"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qDisconnect">LinkedIn shows as disconnected — what now?</summary>
+          <div class="faq-answer" data-i18n="faq.aDisconnect"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qMultiDevice">Can I use the same credits on another computer?</summary>
+          <div class="faq-answer" data-i18n="faq.aMultiDevice"></div>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.qLimits">Are there export limits?</summary>
+          <div class="faq-answer" data-i18n="faq.aLimits"></div>
+        </details>
+      </div>
     </section>
   </main>
 
@@ -283,6 +387,6 @@
     </div>
   </footer>
 
-  <script src="/salesnav/salesnav.js?v=36"></script>
+  <script src="/salesnav/salesnav.js?v=50"></script>
 </body>
 </html>
