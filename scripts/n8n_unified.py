@@ -90,8 +90,29 @@ class N8NClient:
             return 0, {"error": "missing_mcp_token"}
         url = f"{self.base_url}/mcp-server/http"
         payload = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
-        headers = {"Authorization": f"Bearer {self.mcp_token}"}
-        return self._request("POST", url, headers=headers, payload=payload)
+        headers = {
+            "Authorization": f"Bearer {self.mcp_token}",
+            "Accept": "application/json, text/event-stream",
+        }
+        status, data = self._request("POST", url, headers=headers, payload=payload)
+        if status != 200:
+            return status, data
+        if isinstance(data, dict) and "raw" in data and "result" not in data:
+            parsed = self._parse_mcp_sse(str(data.get("raw") or ""))
+            if parsed is not None:
+                return status, parsed
+        return status, data
+
+    @staticmethod
+    def _parse_mcp_sse(raw: str) -> dict[str, Any] | None:
+        data_lines = [line[5:].strip() for line in raw.splitlines() if line.startswith("data:")]
+        if not data_lines:
+            return None
+        try:
+            parsed = json.loads(data_lines[-1])
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
 
     def mcp_initialize(self) -> tuple[int, Any]:
         params = {
