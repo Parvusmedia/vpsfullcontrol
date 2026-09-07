@@ -19,6 +19,39 @@ const I18N = {
     "nav.companies": "Companies",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "My panel",
+    "nav.faq": "FAQ",
+    "faq.title": "FAQ",
+    "faq.lede": "Step-by-step guide: panel, LinkedIn connection, credits and exports.",
+    "faq.qSteps": "How does it work, step by step?",
+    "faq.aSteps":
+      "<ol><li>Create a free account with your work email in <strong>My panel</strong>.</li><li>Top up credits (from €20).</li><li>Connect LinkedIn / Sales Navigator securely.</li><li>Paste a list or search URL and start an export.</li><li>Download the CSV from your panel or from the email we send when it is ready.</li></ol>",
+    "faq.qConnect": "How do I connect my LinkedIn / Sales Navigator account?",
+    "faq.aConnect":
+      "Open <strong>My panel</strong>, load credits if needed, then click <strong>Connect LinkedIn</strong>. You complete a secure Unipile wizard — we never store your password. Use the same LinkedIn account you use for Sales Navigator.",
+    "faq.qCredits": "How are credits consumed?",
+    "faq.aCredits":
+      "Basic export costs <strong>1 credit per lead</strong>. Enriched adds <strong>+0.4 credits per lead</strong>. Mail adds <strong>+1 credit per work email found</strong>. Credits are deducted only when an export completes successfully.",
+    "faq.qUrls": "Which URLs can I export?",
+    "faq.aUrls":
+      "Paste a Sales Navigator <strong>people list</strong> URL (<code>…/sales/lists/people/…</code>) or a <strong>people search</strong> URL (<code>…/sales/search/people?…</code>). Open the list in SN and copy the browser address bar.",
+    "faq.qWhenCharged": "When am I charged?",
+    "faq.aWhenCharged":
+      "Top-ups are charged via Stripe when you buy a credit pack. Export credits are consumed from your balance when an export <strong>finishes</strong> — not when you paste a URL.",
+    "faq.qDuration": "How long does an export take?",
+    "faq.aDuration":
+      "Small lists (up to a few hundred leads) usually finish in a few minutes. Large lists or Enriched exports can take longer. We email you when the CSV is ready.",
+    "faq.qTopup": "How do top-ups and bonuses work?",
+    "faq.aTopup":
+      "Credit packs start at €20. Packs from 100 base credits include a <strong>+20% bonus</strong> (e.g. €20 → 240 credits). Credits are tied to your work email — sign in on any device to restore your balance.",
+    "faq.qDisconnect": "LinkedIn shows as disconnected — what now?",
+    "faq.aDisconnect":
+      "Click <strong>Reconnect</strong> in your panel to reuse your existing seat. If it still fails, <strong>Disconnect</strong> and <strong>Connect</strong> again — log in with the correct LinkedIn account in the secure popup.",
+    "faq.qMultiDevice": "Can I use the same credits on another computer?",
+    "faq.aMultiDevice":
+      "Yes. Sign in with the same work email in <strong>My panel</strong> on any browser or device. Credits, exports and your LinkedIn connection are linked to your account.",
+    "faq.qLimits": "Are there export limits?",
+    "faq.aLimits":
+      "Each export can fetch up to <strong>2,000 leads</strong>. LinkedIn may impose daily caps per Sales Navigator seat (~2,000/day). Need multiple seats? <a href=\"#contact\">Contact us</a> for agency setup.",
     "panel.title": "My panel",
     "panel.lede": "Manage credits, LinkedIn connection and CSV exports.",
     "panel.exportTitle": "Export",
@@ -235,6 +268,39 @@ const I18N = {
     "nav.companies": "Empresas",
     "nav.salesnav": "Sales Navigator",
     "nav.panel": "Mi panel",
+    "nav.faq": "FAQ",
+    "faq.title": "Preguntas frecuentes",
+    "faq.lede": "Guía paso a paso: panel, conexión LinkedIn, créditos y exports.",
+    "faq.qSteps": "¿Cómo funciona, paso a paso?",
+    "faq.aSteps":
+      "<ol><li>Crea una cuenta gratuita con tu email de trabajo en <strong>Mi panel</strong>.</li><li>Recarga créditos (desde €20).</li><li>Conecta LinkedIn / Sales Navigator de forma segura.</li><li>Pega la URL de una lista o búsqueda e inicia un export.</li><li>Descarga el CSV desde tu panel o desde el email que enviamos cuando esté listo.</li></ol>",
+    "faq.qConnect": "¿Cómo conecto mi cuenta de LinkedIn / Sales Navigator?",
+    "faq.aConnect":
+      "Abre <strong>Mi panel</strong>, carga créditos si hace falta y pulsa <strong>Connect LinkedIn</strong>. Completarás un asistente seguro de Unipile — nunca guardamos tu contraseña. Usa la misma cuenta de LinkedIn con la que usas Sales Navigator.",
+    "faq.qCredits": "¿Cómo se consumen los créditos?",
+    "faq.aCredits":
+      "El export Basic cuesta <strong>1 crédito por lead</strong>. Enriched suma <strong>+0,4 créditos por lead</strong>. Mail suma <strong>+1 crédito por email laboral encontrado</strong>. Los créditos se descuentan solo cuando el export termina correctamente.",
+    "faq.qUrls": "¿Qué URLs puedo exportar?",
+    "faq.aUrls":
+      "Pega la URL de una <strong>lista de personas</strong> de Sales Navigator (<code>…/sales/lists/people/…</code>) o de una <strong>búsqueda de personas</strong> (<code>…/sales/search/people?…</code>). Abre la lista en SN y copia la barra de direcciones del navegador.",
+    "faq.qWhenCharged": "¿Cuándo se me cobra?",
+    "faq.aWhenCharged":
+      "Las recargas se cobran con Stripe al comprar un pack de créditos. Los créditos de export se consumen de tu saldo cuando el export <strong>termina</strong> — no al pegar la URL.",
+    "faq.qDuration": "¿Cuánto tarda un export?",
+    "faq.aDuration":
+      "Listas pequeñas (hasta unos cientos de leads) suelen tardar unos minutos. Listas grandes o exports Enriched pueden tardar más. Te enviamos un email cuando el CSV esté listo.",
+    "faq.qTopup": "¿Cómo funcionan las recargas y los bonus?",
+    "faq.aTopup":
+      "Los packs empiezan en €20. Los packs desde 100 créditos base incluyen un <strong>bonus del +20%</strong> (p. ej. €20 → 240 créditos). Los créditos van ligados a tu email de trabajo — inicia sesión en cualquier dispositivo para recuperar tu saldo.",
+    "faq.qDisconnect": "LinkedIn aparece desconectado — ¿qué hago?",
+    "faq.aDisconnect":
+      "Pulsa <strong>Reconnect</strong> en tu panel para reutilizar tu asiento existente. Si sigue fallando, <strong>Disconnect</strong> y <strong>Connect</strong> de nuevo — inicia sesión con la cuenta de LinkedIn correcta en el popup seguro.",
+    "faq.qMultiDevice": "¿Puedo usar los mismos créditos en otro ordenador?",
+    "faq.aMultiDevice":
+      "Sí. Inicia sesión con el mismo email de trabajo en <strong>Mi panel</strong> desde cualquier navegador o dispositivo. Créditos, exports y la conexión LinkedIn están ligados a tu cuenta.",
+    "faq.qLimits": "¿Hay límites de export?",
+    "faq.aLimits":
+      "Cada export puede obtener hasta <strong>2.000 leads</strong>. LinkedIn puede imponer límites diarios por asiento de Sales Navigator (~2.000/día). ¿Varios asientos? <a href=\"#contact\">Contáctanos</a> para configuración multi-cuenta.",
     "panel.title": "Mi panel",
     "panel.lede": "Gestiona créditos, conexión LinkedIn y exports CSV.",
     "panel.exportTitle": "Exportar",
@@ -876,6 +942,46 @@ let authPendingBalance = 0;
 let authResetToken = "";
 
 const AUTH_STEP_PANELS = ["password", "legacy", "setup", "verify", "forgot_sent", "reset"];
+const SN_PENDING_VERIFY_KEY = "sn_pending_verify_email";
+
+function markPendingEmailVerification(email) {
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized) return;
+  try {
+    sessionStorage.setItem(SN_PENDING_VERIFY_KEY, normalized);
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearPendingEmailVerification() {
+  try {
+    sessionStorage.removeItem(SN_PENDING_VERIFY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readPendingEmailVerification() {
+  try {
+    return (sessionStorage.getItem(SN_PENDING_VERIFY_KEY) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function isPendingEmailVerification(email) {
+  const pending = readPendingEmailVerification();
+  const candidate = (email || authPendingEmail || "").trim().toLowerCase();
+  return !!pending && !!candidate && pending === candidate;
+}
+
+function shouldShowSessionExpired(storedEmail) {
+  if (!storedEmail || isPendingEmailVerification(storedEmail)) return false;
+  const verifyPanel = document.getElementById("auth-step-verify");
+  if (verifyPanel && !verifyPanel.hidden) return false;
+  return true;
+}
 
 function setAuthStepLabel(key) {
   const label = document.getElementById("auth-step-label");
@@ -898,6 +1004,7 @@ function setAuthStep(step, email, balance = authPendingBalance) {
   hideAllAuthStepPanels();
 
   if (step === "email") {
+    clearPendingEmailVerification();
     if (emailForm) emailForm.hidden = false;
     if (backWrap) backWrap.hidden = true;
     setAuthStepLabel("account.stepEmail");
@@ -930,9 +1037,11 @@ function setAuthStep(step, email, balance = authPendingBalance) {
     if (copy) copy.textContent = t("account.stepSetupCopy", { email: authPendingEmail });
     document.getElementById("auth-setup-password")?.focus();
   } else if (step === "verify") {
+    markPendingEmailVerification(authPendingEmail);
     setAuthStepLabel("account.stepVerify");
     const copy = document.getElementById("auth-verify-copy");
     if (copy) copy.textContent = t("account.stepVerifyCopy", { email: authPendingEmail });
+    setAccountNote("", "ok");
   } else if (step === "forgot_sent") {
     setAuthStepLabel("account.stepForgot");
     const copy = document.getElementById("auth-forgot-copy");
@@ -1184,6 +1293,7 @@ async function resetPasswordFromForm(ev) {
 function resetAuthFlow() {
   authPendingEmail = "";
   authPendingBalance = 0;
+  clearPendingEmailVerification();
   setAuthStep("email");
   const pwd = document.getElementById("auth-password");
   const setupPwd = document.getElementById("auth-setup-password");
@@ -1194,7 +1304,12 @@ function resetAuthFlow() {
 }
 
 function initAuthFlow() {
-  setAuthStep("email");
+  const pendingVerifyEmail = readPendingEmailVerification();
+  if (pendingVerifyEmail) {
+    setAuthStep("verify", pendingVerifyEmail);
+  } else {
+    setAuthStep("email");
+  }
 }
 
 async function handleResetQuery() {
@@ -1254,6 +1369,7 @@ async function signInAccount(email, password, opts = {}) {
   }
   accountEmail = data.email || email;
   creditBalance = Number(data.balance) || 0;
+  clearPendingEmailVerification();
   persistAccountEmail(accountEmail);
   renderAccount();
   if (IS_PANEL) {
@@ -1320,6 +1436,7 @@ async function verifyAccountToken(token) {
   }
   accountEmail = data.email || "";
   creditBalance = Number(data.balance) || 0;
+  clearPendingEmailVerification();
   if (accountEmail) persistAccountEmail(accountEmail);
   renderAccount();
   if (IS_PANEL) {
@@ -1365,7 +1482,7 @@ async function fetchCredits() {
     if (!accountEmail) {
       if (storedEmail) {
         prefillAuthEmail(storedEmail);
-        if (IS_PANEL && billingEnabled) {
+        if (IS_PANEL && billingEnabled && shouldShowSessionExpired(storedEmail)) {
           setAccountNote(t("account.sessionExpired"), "error");
         }
       }
@@ -1519,6 +1636,7 @@ async function signOutAccount() {
   });
   accountEmail = "";
   creditBalance = 0;
+  clearPendingEmailVerification();
   clearStoredAccountEmail();
   renderAccount();
   renderConnectionStatus(lastConnection);
