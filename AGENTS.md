@@ -1,5 +1,22 @@
 # AGENTS.md
 
+## Catálogo de accesos (tokens / APIs / SSH)
+
+Tabla privada NocoDB para que otros agentes no queden limitados a los secrets de un solo Cloud environment:
+
+- UI: https://mpa.parvusmedia.com/w1yr9d7k/pluyg9y6o3thd5o/m6956l2gfi8d96c/vwb7btk1zh9yc601/accesos-accesos
+- Table ID: `m6956l2gfi8d96c` (base `pluyg9y6o3thd5o`)
+- Auth: `xc-token` = `NOCODB_API_TOKEN` (el helper lo resuelve por env o por SSH a `parvus-vps`)
+- Segunda clave: `ACCESOS_MASTER_KEY` (AES-256-GCM). Está en `parvus-vps:/opt/apps/private/accesos.master.key`, **no** en NocoDB. Un token de Noco filtrado solo ve ciphertext.
+
+```bash
+scripts/accesos status
+scripts/accesos list --query unipile
+scripts/accesos get --clave ICYPEAS_API_KEY --entorno nextconvers-vps --out /tmp/icypeas.key
+```
+
+`list` no devuelve secretos. `get` descifra a un archivo 0600. Nunca echo de tokens ni de `ACCESOS_MASTER_KEY` en chat, commits o logs. Detalle: [`docs/ACCESOS_NOCO.md`](docs/ACCESOS_NOCO.md).
+
 ## n8n default workflow (this repository)
 
 When a user request is related to n8n (for example: "n8n", "workflow", workflow IDs, exports, MCP, REST API), use the unified helper command in this repository instead of calling n8n endpoints directly.
