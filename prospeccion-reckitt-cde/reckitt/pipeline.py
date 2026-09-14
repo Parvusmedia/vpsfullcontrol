@@ -341,11 +341,11 @@ async def _contact_one(
         first_name=first,
         company_name=company,
         dedupe_key=row.get("dedupe_key") or "",
-        source_row_id=str(rid or ""),
+        source_row_id=f"reckitt-cde:{rid}" if rid is not None else "",
         connection_message=row.get("connection_message") or "",
         dry_run=dry_run,
     )
-    if result.get("ok") and rid and not dry_run:
+    if result.get("ok") and rid and not dry_run and result.get("status") in {"sent", "already_invited"}:
         patch_record(int(rid), {"status": "unipile_sent", "unipile_status": "sent"}, cfg=cfg)
     elif rid and not dry_run and result.get("skipped") and result.get("reason") in {
         "daily_limit_reached",
@@ -514,7 +514,7 @@ def cmd_unipile_drain(cfg: ReckittConfig, live: bool, limit: int | None) -> int:
             first_name=row.get("first_name") or "",
             company_name=row.get("company_name") or "",
             dedupe_key=row.get("dedupe_key") or "",
-            source_row_id=str(rid or ""),
+            source_row_id=f"reckitt-cde:{rid}" if rid is not None else "",
             connection_message=row.get("connection_message") or "",
             dry_run=dry,
             sleep_before=not dry,
@@ -522,8 +522,14 @@ def cmd_unipile_drain(cfg: ReckittConfig, live: bool, limit: int | None) -> int:
         out = {"id": rid, "name": row.get("first_name"), "company": row.get("company_name"), "result": result}
         results.append(out)
         print(json.dumps(out, ensure_ascii=False))
-        if result.get("ok") and rid and not dry:
+        if result.get("ok") and rid and not dry and result.get("status") in {
+            "sent",
+            "already_invited",
+        }:
             patch_record(int(rid), {"status": "unipile_sent", "unipile_status": "sent"}, cfg=cfg)
+        elif result.get("ok") and result.get("reason") == "already_resolved":
+            # Same Reckitt workflow already logged this invite; keep queued unless truly sent.
+            pass
         elif not dry and result.get("reason") in {
             "daily_limit_reached",
             "hourly_limit_reached",

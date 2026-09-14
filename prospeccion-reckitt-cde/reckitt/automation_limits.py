@@ -196,14 +196,15 @@ def has_resolved_invite(
     target_ids: list[str] | None = None,
     source_row_id: str = "",
 ) -> bool:
-    """True if this person/row already succeeded or was skipped (do not resend)."""
+    """True if this Reckitt workflow already succeeded or skipped this person."""
+    wf = WORKFLOW_NAME
     for tid in [str(t).strip() for t in (target_ids or []) if str(t).strip()]:
-        where = f"(target_id,eq,{tid})~and(status,in,success,skipped)"
+        where = f"(workflow_name,eq,{wf})~and(target_id,eq,{tid})~and(status,in,success,skipped)"
         if _count_logs(cfg=cfg, where=where) > 0:
             return True
     src = str(source_row_id or "").strip()
     if src:
-        where = f"(source_row_id,eq,{src})~and(status,in,success,skipped)"
+        where = f"(workflow_name,eq,{wf})~and(source_row_id,eq,{src})~and(status,in,success,skipped)"
         if _count_logs(cfg=cfg, where=where) > 0:
             return True
     return False
