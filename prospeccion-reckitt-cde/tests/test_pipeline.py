@@ -41,12 +41,14 @@ class CsvMappingTests(unittest.TestCase):
 
 
 class CopyTests(unittest.TestCase):
-    def test_invite_note_under_300(self) -> None:
-        lead = {"first_name": "Ada", "company_name": "Reckitt"}
+    def test_invite_note_under_175(self) -> None:
+        lead = {"first_name": "Nattaphan", "company_name": "Reckitt"}
         note = build_connection_message(lead)
-        self.assertLessEqual(len(note), 300)
-        self.assertIn("Ada", note)
+        self.assertLessEqual(len(note), 175)
+        self.assertIn("Nattaphan", note)
         self.assertIn("weather", note.lower())
+        self.assertIn("Google Trends", note)
+        self.assertTrue(note.startswith("Hi Nattaphan, I'm Emiliano from Parvus Media."))
         msgs = compose_row_messages(lead)
         self.assertEqual(msgs["mensaje_estado"], "Pendiente confirmar")
         self.assertIn("Google Trends", msgs["followup_message"])

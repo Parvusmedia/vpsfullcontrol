@@ -28,12 +28,13 @@ BLOCKED_UNIPILE_ACCOUNT_IDS = frozenset(
 
 UNIPILE_DAILY_CAP = 10
 UNIPILE_NOTE_MAX_CHARS = 300
+INVITE_NOTE_MAX_CHARS = 175
 DEFAULT_COMPANY_DOMAIN = "reckitt.com"
 
 INVITE_NOTE_EN = (
-    "Hi {first_name} — Emiliano, Parvus Media. We helped Reckitt Spain plan the next "
-    "7 days of media using weather + Google Trends in real time (demand by region). "
-    "Happy to share how."
+    "Hi {first_name}, I'm Emiliano from Parvus Media. We helped Reckitt Spain combine "
+    "7-day weather + Google Trends to estimate demand and plan media by region. "
+    "Happy to show how."
 )
 
 

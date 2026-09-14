@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .config import UNIPILE_NOTE_MAX_CHARS
+from .config import INVITE_NOTE_MAX_CHARS, INVITE_NOTE_EN
 
 
 def _first_name(lead: dict[str, Any]) -> str:
@@ -15,13 +15,9 @@ def _first_name(lead: dict[str, Any]) -> str:
     return title.split()[0] if title else "there"
 
 
-def build_connection_message(lead: dict[str, Any], *, max_chars: int = UNIPILE_NOTE_MAX_CHARS) -> str:
+def build_connection_message(lead: dict[str, Any], *, max_chars: int = INVITE_NOTE_MAX_CHARS) -> str:
     first = _first_name(lead)
-    note = (
-        f"Hi {first} — Emiliano, Parvus Media. We helped Reckitt Spain plan the next "
-        "7 days of media using weather + Google Trends in real time (demand by region). "
-        "Happy to share how."
-    )
+    note = INVITE_NOTE_EN.replace("{first_name}", first)
     if len(note) > max_chars:
         note = note[: max_chars - 1].rstrip() + "…"
     return note
