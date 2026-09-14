@@ -1,14 +1,15 @@
 # OpenAI Ads — Sales Navigator (`/salesnav/`)
 
-## Landing pixel
+## Landing pixel + arrival event
 
 `public/salesnav/openai-ads.js` loads `oaiq.min.js` and calls `init` with Pixel ID `NQH4BHyBvLncEkDLpUrQpJ`.
 
-Included on:
+**Campaign landing** (`https://companydataenrichment.com/salesnav/` only, not the panel):
 
-- `https://companydataenrichment.com/salesnav/` (`index.html`)
-- `https://companydataenrichment.com/salesnav/panel/` (`panel/index.html`)
-- `stripe-callback.html` (after checkout)
+1. **Browser:** `oaiq("measure", "contents_viewed", { type: "contents" }, { event_id: "landing_…" })` on each visit.
+2. **Server (optional):** same `event_id` POSTed to `/api/salesnav-ads-event.php` → Conversions API `contents_viewed` when `OPENAI_CONVERSIONS_API_KEY` is set (dedup with pixel).
+
+Also loaded on panel and `stripe-callback.html` (top-up only; no `contents_viewed` there).
 
 Debug: add `?oaiq_debug=1` to the URL or `localStorage.oaiq_debug = "1"`.
 

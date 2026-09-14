@@ -101,41 +101,25 @@ function cde_openai_ads_mark_sent(string $eventId): void
     @file_put_contents($path, json_encode($data, JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
+function cde_openai_ads_landing_source_url(): string
+{
+    return 'https://companydataenrichment.com/salesnav/';
+}
+
 /**
- * Server-side order_created (top-up). Idempotent per event id (Stripe session id).
+ * @param list<array<string, mixed>> $events
  */
-function cde_openai_ads_track_order_created(
-    string $eventId,
-    int $amountCents,
-    string $currency = 'EUR',
-    string $sourceUrl = 'https://companydataenrichment.com/salesnav/panel/#topup'
-): bool {
+function cde_openai_ads_post_events(array $events, bool $validateOnly = false): bool
+{
     $pixelId = cde_openai_ads_pixel_id();
     $apiKey = cde_openai_ads_conversions_api_key();
-    $eventId = trim($eventId);
-    if ($pixelId === '' || $apiKey === '' || $eventId === '') {
-        return false;
-    }
-    if (cde_openai_ads_already_sent($eventId)) {
+    if ($pixelId === '' || $apiKey === '' || $events === []) {
         return false;
     }
 
     $payload = [
-        'validate_only' => false,
-        'events' => [
-            [
-                'id' => $eventId,
-                'type' => 'order_created',
-                'timestamp_ms' => (int) round(microtime(true) * 1000),
-                'source_url' => $sourceUrl,
-                'action_source' => 'web',
-                'data' => [
-                    'type' => 'contents',
-                    'amount' => max(0, $amountCents),
-                    'currency' => strtoupper($currency !== '' ? $currency : 'EUR'),
-                ],
-            ],
-        ],
+        'validate_only' => $validateOnly,
+        'events' => $events,
     ];
 
     $url = 'https://bzr.openai.com/v1/events?pid=' . rawurlencode($pixelId);
@@ -154,12 +138,78 @@ function cde_openai_ads_track_order_created(
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($raw === false || $code < 200 || $code >= 300) {
+    return $raw !== false && $code >= 200 && $code < 300;
+}
+
+/**
+ * Landing arrival (ad campaigns). Idempotent per event id.
+ */
+function cde_openai_ads_track_contents_viewed(
+    string $eventId,
+    string $sourceUrl = ''
+): bool {
+    $eventId = trim($eventId);
+    if ($eventId === '' || cde_openai_ads_already_sent($eventId)) {
+        return false;
+    }
+    if ($sourceUrl === '') {
+        $sourceUrl = cde_openai_ads_landing_source_url();
+    }
+
+    $ok = cde_openai_ads_post_events([
+        [
+            'id' => $eventId,
+            'type' => 'contents_viewed',
+            'timestamp_ms' => (int) round(microtime(true) * 1000),
+            'source_url' => $sourceUrl,
+            'action_source' => 'web',
+            'data' => [
+                'type' => 'contents',
+            ],
+        ],
+    ]);
+
+    if ($ok) {
+        cde_openai_ads_mark_sent($eventId);
+    }
+
+    return $ok;
+}
+
+/**
+ * Server-side order_created (top-up). Idempotent per event id (Stripe session id).
+ */
+function cde_openai_ads_track_order_created(
+    string $eventId,
+    int $amountCents,
+    string $currency = 'EUR',
+    string $sourceUrl = 'https://companydataenrichment.com/salesnav/panel/#topup'
+): bool {
+    $eventId = trim($eventId);
+    if ($eventId === '' || cde_openai_ads_already_sent($eventId)) {
         return false;
     }
 
-    cde_openai_ads_mark_sent($eventId);
-    return true;
+    $ok = cde_openai_ads_post_events([
+        [
+            'id' => $eventId,
+            'type' => 'order_created',
+            'timestamp_ms' => (int) round(microtime(true) * 1000),
+            'source_url' => $sourceUrl,
+            'action_source' => 'web',
+            'data' => [
+                'type' => 'contents',
+                'amount' => max(0, $amountCents),
+                'currency' => strtoupper($currency !== '' ? $currency : 'EUR'),
+            ],
+        ],
+    ]);
+
+    if ($ok) {
+        cde_openai_ads_mark_sent($eventId);
+    }
+
+    return $ok;
 }
 
 /** @param array<string, mixed> $session Stripe checkout.session */
