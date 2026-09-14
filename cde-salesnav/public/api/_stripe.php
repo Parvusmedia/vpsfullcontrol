@@ -245,7 +245,9 @@ function cde_stripe_apply_checkout_credits(array $session, bool $bindBrowserSess
         $userId = $metaUserId !== '' ? $metaUserId : cde_salesnav_user_id();
     }
 
-    $balance = cde_credits_add($userId, $credits, 'stripe:' . $sessionId, [
+    $ledgerRef = 'stripe:' . $sessionId;
+    $isNewPayment = !cde_credits_ledger_has_ref($ledgerRef);
+    $balance = cde_credits_add($userId, $credits, $ledgerRef, [
         'pack_id' => (string) ($session['metadata']['pack_id'] ?? ''),
         'paid_base' => (int) ($session['metadata']['paid_base'] ?? 0),
         'bonus_credits' => (int) ($session['metadata']['bonus_credits'] ?? 0),
@@ -253,11 +255,22 @@ function cde_stripe_apply_checkout_credits(array $session, bool $bindBrowserSess
         'email' => $email,
     ]);
 
+    if ($isNewPayment) {
+        if (is_readable(__DIR__ . '/_openai_ads.php')) {
+            require_once __DIR__ . '/_openai_ads.php';
+            cde_openai_ads_track_checkout_session($session);
+        }
+    }
+
     return [
         'ok' => true,
         'balance' => $balance,
         'credits' => $credits,
         'email' => $email,
         'user_id' => $userId,
+        'session_id' => $sessionId,
+        'amount_cents' => (int) ($session['amount_total'] ?? 0),
+        'currency' => strtoupper((string) ($session['currency'] ?? 'EUR')),
+        'pack_id' => (string) ($session['metadata']['pack_id'] ?? ''),
     ];
 }

@@ -45,4 +45,10 @@ cde_json_response(200, [
     'balance' => (int) ($result['balance'] ?? 0),
     'credits_added' => (int) ($result['credits'] ?? 0),
     'email' => (string) ($result['email'] ?? cde_salesnav_session_email() ?? ''),
+    'conversion' => [
+        'event_id' => (string) ($result['session_id'] ?? $sessionId),
+        'amount_cents' => (int) ($result['amount_cents'] ?? 0),
+        'currency' => (string) ($result['currency'] ?? 'EUR'),
+        'pack_id' => (string) ($result['pack_id'] ?? ''),
+    ],
 ]);
