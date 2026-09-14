@@ -34,19 +34,33 @@
     return "ev_" + Date.now() + "_" + Math.random().toString(16).slice(2);
   }
 
+  function oaiCookie(name) {
+    var match = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&") + "=([^;]*)"));
+    return match ? decodeURIComponent(match[1]) : "";
+  }
+
   function sendOpenAiCapi(type) {
     var key = "oaiq_" + type + "_" + location.pathname + location.hash;
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
     } catch (e) {}
+    var eventId = oaiEventId();
+    var dataType = type === "appointment_scheduled" ? "customer_action" : "contents";
+    var params = new URLSearchParams(location.search);
+    var oppref = params.get("oppref") || oaiCookie("__oppref") || "";
+    if (typeof oaiq === "function") {
+      oaiq("measure", type, { type: dataType }, { event_id: eventId });
+    }
     fetch("/oai-event.php", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        id: oaiEventId(),
+        id: eventId,
         type: type,
         source_url: location.href.split("#")[0] + (location.hash || ""),
+        oppref: oppref,
+        obref: oaiCookie("__obref") || "",
       }),
       keepalive: true,
     }).catch(function () {});

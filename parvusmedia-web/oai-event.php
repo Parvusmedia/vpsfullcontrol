@@ -98,6 +98,26 @@ if (strlen($eventId) > 80) {
     $eventId = substr($eventId, 0, 80);
 }
 
+$oppref = preg_replace('/[^\x20-\x7E]/', '', (string)($in['oppref'] ?? ''));
+if (strlen($oppref) > 512) {
+    $oppref = substr($oppref, 0, 512);
+}
+$obref = preg_replace('/[^\x20-\x7E]/', '', (string)($in['obref'] ?? ''));
+if (strlen($obref) > 512) {
+    $obref = substr($obref, 0, 512);
+}
+
+$clientIp = $ip;
+$xff = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+if ($xff !== '') {
+    $first = trim(explode(',', $xff)[0]);
+    if (filter_var($first, FILTER_VALIDATE_IP)) {
+        $clientIp = $first;
+    }
+}
+$ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512);
+$curlUa = $ua !== '' ? $ua : 'Mozilla/5.0 (compatible; ParvusMediaCAPI/1.0)';
+
 $env = parvus_web_read_env('openai-ads.env');
 $pixelId = trim((string)($env['OPENAI_ADS_PIXEL_ID'] ?? 'SBNmyZzRGpsz8rh413aMQN'));
 $apiKey = trim((string)($env['OPENAI_ADS_CAPI_KEY'] ?? ''));
@@ -105,18 +125,31 @@ if ($apiKey === '') {
     oai_json(503, ['ok' => false, 'error' => 'Not configured']);
 }
 
+$event = [
+    'id' => $eventId,
+    'type' => $type,
+    'timestamp_ms' => (int)round(microtime(true) * 1000),
+    'source_url' => $sourceUrl,
+    'action_source' => 'web',
+    'data' => [
+        'type' => $allowed[$type],
+    ],
+];
+$user = array_filter([
+    'ip_address' => $clientIp !== '' ? $clientIp : null,
+    'user_agent' => $ua !== '' ? $ua : null,
+    'obref' => $obref !== '' ? $obref : null,
+]);
+if ($user) {
+    $event['user'] = $user;
+}
+if ($oppref !== '') {
+    $event['oppref'] = $oppref;
+}
+
 $payload = [
     'validate_only' => false,
-    'events' => [[
-        'id' => $eventId,
-        'type' => $type,
-        'timestamp_ms' => (int)round(microtime(true) * 1000),
-        'source_url' => $sourceUrl,
-        'action_source' => 'web',
-        'data' => [
-            'type' => $allowed[$type],
-        ],
-    ]],
+    'events' => [$event],
 ];
 
 $ch = curl_init('https://bzr.openai.com/v1/events?pid=' . rawurlencode($pixelId));
@@ -129,6 +162,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer ' . $apiKey,
         'Content-Type: application/json',
     ],
+    CURLOPT_USERAGENT => $curlUa,
     CURLOPT_POSTFIELDS => json_encode($payload),
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_TIMEOUT => 8,
@@ -138,7 +172,7 @@ $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($response === false || $status < 200 || $status >= 300) {
-    oai_json(502, ['ok' => false, 'error' => 'Upstream failed']);
+    oai_json(502, ['ok' => false, 'error' => 'Upstream failed', 'status' => $status]);
 }
 
 oai_json(200, ['ok' => true]);

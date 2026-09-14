@@ -35,7 +35,15 @@ Do not deploy `.captcha_secret` from git (it is gitignored). Leave the live file
 
 Mail from the contact form goes through Zoho SMTP (`private/cde/mail.env` on Plesk). PHP `mail()` is rejected by Zoho because SPF only allows `zoho.com` and `mailgun.org`.
 
-OpenAI Ads pixel is in the page head. Conversion API events are posted from `/oai-event.php` using `private/parvusmedia-web/openai-ads.env` (never commit the API key).
+OpenAI Ads pixel is in the page `<head>` (`debug: true` while the campaign is being verified). Conversion API events are posted from `/oai-event.php` using `private/parvusmedia-web/openai-ads.env` (never commit the API key).
+
+| View | Event |
+|------|--------|
+| `https://parvusmedia.com/` (home landing) | `contents_viewed` |
+| `https://parvusmedia.com/#chatgpt-ads` and `/chatgpt-ads/` | `contents_viewed` |
+| `https://parvusmedia.com/#contact` | `appointment_scheduled` |
+
+The browser pixel `measure` call and the server event share the same `event_id` so OpenAI can deduplicate.
 
 ### Email example short links (`/e/…`)
 
