@@ -1,0 +1,4 @@
+first_name,last_name,full_name,job_title,company_name,location,linkedin_url,company_domain,profile_summary,work_email,email_status,email_confidence,email_source
+Ada,Lovelace,Ada Lovelace,Digital Media Manager,Reckitt,"London, United Kingdom",https://www.linkedin.com/in/ada-lovelace-test,reckitt.com,Media planning,ada.lovelace@reckitt.com,found,0.9,icypeas
+Alan,Turing,Alan Turing,Media Senior Manager,Reckitt,"New York, United States",https://linkedin.com/in/alan-turing-test,reckitt.com,Performance,alan.turing@reckitt.com,found,0.8,proofpoint
+Grace,Hopper,Grace Hopper,Head of Digital Media,Reckitt,"Toronto, Canada",https://www.linkedin.com/in/grace-hopper-test,reckitt.com,Trading,,not_found,,icypeas
