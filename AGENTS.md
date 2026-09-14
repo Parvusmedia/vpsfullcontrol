@@ -36,6 +36,10 @@ Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
 
 Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never echo the value in chat, commits, or logs. Example template: `cde-salesnav/deploy/icypeas.env.example`.
 
+### Admin credit grants
+
+See `cde-salesnav/deploy/ADMIN_CREDITS.md`. CLI: `deploy/grant-credits.php`. HTTP: `salesnav-admin-credits.php` (token `SALESNAV_ADMIN_SECRET` in `private/cde/unipile.env`).
+
 ## Sales Navigator panel (CDE)
 
 Repo path: `cde-salesnav/`. Production: https://companydataenrichment.com/salesnav/panel/
