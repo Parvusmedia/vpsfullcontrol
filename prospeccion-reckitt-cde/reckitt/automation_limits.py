@@ -152,10 +152,13 @@ def ensure_reckitt_limit_row(*, cfg: ReckittConfig) -> LimitRule:
         timeout=45,
     )
     created.raise_for_status()
-    body = created.json() if created.content else payload
-    if isinstance(body, dict) and body.get("Id") is None:
-        body = {**payload, "Id": body.get("id")}
-    return _rule_from_row(body if isinstance(body, dict) else payload, fallback_account=account_id, fallback_daily=daily)
+    body = created.json() if created.content else {}
+    if not isinstance(body, dict):
+        body = {}
+    merged = {**payload, **body}
+    if merged.get("Id") is None and body.get("id") is not None:
+        merged["Id"] = body.get("id")
+    return _rule_from_row(merged, fallback_account=account_id, fallback_daily=daily)
 
 
 def _rule_from_row(row: dict[str, Any], *, fallback_account: str, fallback_daily: int) -> LimitRule:

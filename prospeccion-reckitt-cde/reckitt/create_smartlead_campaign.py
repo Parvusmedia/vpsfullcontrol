@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -39,6 +40,11 @@ def _existing_campaign_payload() -> dict | None:
 
 def main(argv: list[str] | None = None) -> int:
     load_dotenv_files()
+    import logging
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     ensure_data_dirs()
     args = argv if argv is not None else sys.argv[1:]
     dry_run = "--dry-run" in args
