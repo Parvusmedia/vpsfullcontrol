@@ -1,1 +1,3 @@
 .captcha_secret
+*.env
+!deploy/*.env.example

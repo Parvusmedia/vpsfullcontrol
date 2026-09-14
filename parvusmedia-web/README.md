@@ -33,6 +33,10 @@ ssh nextconvers-vps 'chown -R parvusadmin:psacln /var/www/vhosts/parvusmedia.com
 
 Do not deploy `.captcha_secret` from git (it is gitignored). Leave the live file in place.
 
+Mail from the contact form goes through Zoho SMTP (`private/cde/mail.env` on Plesk). PHP `mail()` is rejected by Zoho because SPF only allows `zoho.com` and `mailgun.org`.
+
+OpenAI Ads pixel is in the page head. Conversion API events are posted from `/oai-event.php` using `private/parvusmedia-web/openai-ads.env` (never commit the API key).
+
 ### Email example short links (`/e/…`)
 
 | Short URL | Asset |

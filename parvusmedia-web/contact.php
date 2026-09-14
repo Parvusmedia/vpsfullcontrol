@@ -11,6 +11,8 @@ header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
+require_once __DIR__ . '/lib/smtp_mail.php';
+
 const CONTACT_TO = 'hello@parvusmedia.com';
 const CAPTCHA_TTL = 600; // 10 minutes
 
@@ -147,14 +149,8 @@ if (!verify_captcha($captchaToken, $captchaAnswer)) {
 $to = CONTACT_TO;
 $subject = 'Parvus Media web inquiry' . ($interest !== '' ? ' — ' . $interest : '') . ($company !== '' ? ' — ' . $company : '');
 $body = "Name: {$name}\nEmail: {$email}\nCompany: {$company}\nInterest: {$interest}\n\n{$message}\n\n--\nSent from parvusmedia.com\nIP: " . ($_SERVER['REMOTE_ADDR'] ?? '');
-$headers = [
-    'From: Parvus Media Web <noreply@parvusmedia.com>',
-    'Reply-To: ' . $email,
-    'Content-Type: text/plain; charset=UTF-8',
-    'X-Mailer: ParvusMedia-web',
-];
 
-$sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, implode("\r\n", $headers));
+$sent = parvus_web_send_mail($to, $subject, $body, $email);
 
 if (!$sent) {
     json_out(500, ['ok' => false, 'error' => 'Mail failed']);
