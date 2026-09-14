@@ -252,6 +252,190 @@
   var captchaRefresh = document.getElementById("captcha-refresh");
   var captchaEndpoint = "/contact.php?action=captcha";
 
+  var PHONE_COUNTRIES = [
+    ["+34", "Spain"],
+    ["+971", "United Arab Emirates"],
+    ["+1", "United States / Canada"],
+    ["+44", "United Kingdom"],
+    ["+93", "Afghanistan"],
+    ["+355", "Albania"],
+    ["+213", "Algeria"],
+    ["+376", "Andorra"],
+    ["+244", "Angola"],
+    ["+54", "Argentina"],
+    ["+374", "Armenia"],
+    ["+61", "Australia"],
+    ["+43", "Austria"],
+    ["+994", "Azerbaijan"],
+    ["+973", "Bahrain"],
+    ["+880", "Bangladesh"],
+    ["+32", "Belgium"],
+    ["+591", "Bolivia"],
+    ["+387", "Bosnia"],
+    ["+55", "Brazil"],
+    ["+359", "Bulgaria"],
+    ["+56", "Chile"],
+    ["+86", "China"],
+    ["+57", "Colombia"],
+    ["+506", "Costa Rica"],
+    ["+385", "Croatia"],
+    ["+357", "Cyprus"],
+    ["+420", "Czechia"],
+    ["+45", "Denmark"],
+    ["+1809", "Dominican Republic"],
+    ["+593", "Ecuador"],
+    ["+20", "Egypt"],
+    ["+503", "El Salvador"],
+    ["+372", "Estonia"],
+    ["+358", "Finland"],
+    ["+33", "France"],
+    ["+995", "Georgia"],
+    ["+49", "Germany"],
+    ["+30", "Greece"],
+    ["+502", "Guatemala"],
+    ["+504", "Honduras"],
+    ["+852", "Hong Kong"],
+    ["+36", "Hungary"],
+    ["+354", "Iceland"],
+    ["+91", "India"],
+    ["+62", "Indonesia"],
+    ["+353", "Ireland"],
+    ["+972", "Israel"],
+    ["+39", "Italy"],
+    ["+81", "Japan"],
+    ["+962", "Jordan"],
+    ["+7", "Kazakhstan"],
+    ["+254", "Kenya"],
+    ["+965", "Kuwait"],
+    ["+371", "Latvia"],
+    ["+961", "Lebanon"],
+    ["+370", "Lithuania"],
+    ["+352", "Luxembourg"],
+    ["+60", "Malaysia"],
+    ["+356", "Malta"],
+    ["+52", "Mexico"],
+    ["+377", "Monaco"],
+    ["+212", "Morocco"],
+    ["+31", "Netherlands"],
+    ["+64", "New Zealand"],
+    ["+505", "Nicaragua"],
+    ["+234", "Nigeria"],
+    ["+389", "North Macedonia"],
+    ["+47", "Norway"],
+    ["+968", "Oman"],
+    ["+92", "Pakistan"],
+    ["+507", "Panama"],
+    ["+595", "Paraguay"],
+    ["+51", "Peru"],
+    ["+63", "Philippines"],
+    ["+48", "Poland"],
+    ["+351", "Portugal"],
+    ["+974", "Qatar"],
+    ["+40", "Romania"],
+    ["+7", "Russia"],
+    ["+966", "Saudi Arabia"],
+    ["+381", "Serbia"],
+    ["+65", "Singapore"],
+    ["+421", "Slovakia"],
+    ["+386", "Slovenia"],
+    ["+27", "South Africa"],
+    ["+82", "South Korea"],
+    ["+46", "Sweden"],
+    ["+41", "Switzerland"],
+    ["+886", "Taiwan"],
+    ["+66", "Thailand"],
+    ["+216", "Tunisia"],
+    ["+90", "Turkey"],
+    ["+380", "Ukraine"],
+    ["+598", "Uruguay"],
+    ["+58", "Venezuela"],
+    ["+84", "Vietnam"],
+  ];
+
+  function guessPhoneCc() {
+    var tz = "";
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch (e) {}
+    var map = {
+      "Europe/Madrid": "+34",
+      "Atlantic/Canary": "+34",
+      "Africa/Ceuta": "+34",
+      "Asia/Dubai": "+971",
+      "Europe/London": "+44",
+      "America/New_York": "+1",
+      "America/Chicago": "+1",
+      "America/Denver": "+1",
+      "America/Los_Angeles": "+1",
+      "America/Toronto": "+1",
+      "America/Mexico_City": "+52",
+      "America/Bogota": "+57",
+      "America/Argentina/Buenos_Aires": "+54",
+      "America/Santiago": "+56",
+      "America/Sao_Paulo": "+55",
+      "America/Lima": "+51",
+      "Europe/Paris": "+33",
+      "Europe/Berlin": "+49",
+      "Europe/Rome": "+39",
+      "Europe/Lisbon": "+351",
+      "Asia/Riyadh": "+966",
+      "Asia/Qatar": "+974",
+      "Asia/Kuwait": "+965",
+    };
+    if (map[tz]) return map[tz];
+    var lang = (navigator.language || "").toLowerCase();
+    if (lang.indexOf("es-mx") === 0) return "+52";
+    if (lang.indexOf("es-ar") === 0) return "+54";
+    if (lang.indexOf("es-co") === 0) return "+57";
+    if (lang.indexOf("es-cl") === 0) return "+56";
+    if (lang.indexOf("pt-br") === 0) return "+55";
+    if (lang.indexOf("en-gb") === 0) return "+44";
+    if (lang.indexOf("en-us") === 0) return "+1";
+    if (lang.indexOf("fr") === 0) return "+33";
+    if (lang.indexOf("de") === 0) return "+49";
+    if (lang.indexOf("ar") === 0) return "+971";
+    if (lang.indexOf("es") === 0) return "+34";
+    return "+34";
+  }
+
+  function fillPhoneCountrySelects() {
+    var preferred = ["+34", "+971", "+1", "+44"];
+    var seen = {};
+    var options = [];
+    function add(cc, name) {
+      if (seen[cc + name]) return;
+      seen[cc + name] = true;
+      options.push([cc, name]);
+    }
+    preferred.forEach(function (cc) {
+      PHONE_COUNTRIES.forEach(function (row) {
+        if (row[0] === cc) add(row[0], row[1]);
+      });
+    });
+    PHONE_COUNTRIES.slice()
+      .sort(function (a, b) {
+        return a[1].localeCompare(b[1]);
+      })
+      .forEach(function (row) {
+        add(row[0], row[1]);
+      });
+    var guessed = guessPhoneCc();
+    document.querySelectorAll("select.phone-cc").forEach(function (select) {
+      var current = select.value || guessed;
+      select.innerHTML = "";
+      options.forEach(function (row) {
+        var opt = document.createElement("option");
+        opt.value = row[0];
+        opt.textContent = row[1] + " (" + row[0] + ")";
+        select.appendChild(opt);
+      });
+      select.value = current;
+      if (!select.value) select.value = guessed;
+    });
+  }
+
+  fillPhoneCountrySelects();
+
   function applyCaptcha(payload) {
     if (!payload) return;
     if (captchaQ) captchaQ.textContent = payload.question || "Security check";
@@ -296,6 +480,7 @@
           statusEl.textContent = "Thanks — we’ll be in touch.";
         }
         form.reset();
+        fillPhoneCountrySelects();
         loadCaptcha();
         return;
       }
@@ -316,6 +501,7 @@
               statusEl.textContent = "Thanks — your message was sent to hello@parvusmedia.com.";
             }
             form.reset();
+            fillPhoneCountrySelects();
             loadCaptcha();
             return;
           }
@@ -336,11 +522,17 @@
           var subject = encodeURIComponent(
             "Parvus Media inquiry" + (form.company.value ? " — " + form.company.value : "")
           );
+          var phoneCc = form.phone_cc ? form.phone_cc.value : "";
+          var phone = form.phone ? form.phone.value : "";
           var body = encodeURIComponent(
             "Name: " +
               form.name.value +
               "\nEmail: " +
               form.email.value +
+              "\nPhone: " +
+              phoneCc +
+              " " +
+              phone +
               "\nCompany: " +
               form.company.value +
               "\n\n" +

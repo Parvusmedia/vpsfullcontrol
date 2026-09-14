@@ -121,12 +121,15 @@ $name = trim((string)($_POST['name'] ?? ''));
 $email = trim((string)($_POST['email'] ?? ''));
 $company = trim((string)($_POST['company'] ?? ''));
 $interest = str_replace(["\r", "\n"], '', trim((string)($_POST['interest'] ?? '')));
+$phoneCc = preg_replace('/[^\+\d]/', '', (string)($_POST['phone_cc'] ?? '')) ?? '';
+$phoneRaw = trim((string)($_POST['phone'] ?? ''));
+$phoneDigits = preg_replace('/\D+/', '', $phoneRaw) ?? '';
 $message = trim((string)($_POST['message'] ?? ''));
 $consent = !empty($_POST['consent']);
 $captchaAnswer = trim((string)($_POST['captcha'] ?? ''));
 $captchaToken = trim((string)($_POST['captcha_token'] ?? ''));
 
-if ($name === '' || $email === '' || $message === '' || !$consent) {
+if ($name === '' || $email === '' || $message === '' || $phoneCc === '' || $phoneDigits === '' || !$consent) {
     json_out(400, ['ok' => false, 'error' => 'Missing required fields']);
 }
 
@@ -134,7 +137,13 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     json_out(400, ['ok' => false, 'error' => 'Invalid email']);
 }
 
-if (mb_strlen($name) > 120 || mb_strlen($email) > 160 || mb_strlen($company) > 160 || mb_strlen($interest) > 80 || mb_strlen($message) > 4000) {
+if (!preg_match('/^\+\d{1,4}$/', $phoneCc) || strlen($phoneDigits) < 6 || strlen($phoneDigits) > 15) {
+    json_out(400, ['ok' => false, 'error' => 'Invalid phone']);
+}
+
+$phone = $phoneCc . ' ' . $phoneDigits;
+
+if (mb_strlen($name) > 120 || mb_strlen($email) > 160 || mb_strlen($company) > 160 || mb_strlen($interest) > 80 || mb_strlen($phone) > 32 || mb_strlen($message) > 4000) {
     json_out(400, ['ok' => false, 'error' => 'Field too long']);
 }
 
@@ -148,7 +157,7 @@ if (!verify_captcha($captchaToken, $captchaAnswer)) {
 
 $to = CONTACT_TO;
 $subject = 'Parvus Media web inquiry' . ($interest !== '' ? ' — ' . $interest : '') . ($company !== '' ? ' — ' . $company : '');
-$body = "Name: {$name}\nEmail: {$email}\nCompany: {$company}\nInterest: {$interest}\n\n{$message}\n\n--\nSent from parvusmedia.com\nIP: " . ($_SERVER['REMOTE_ADDR'] ?? '');
+$body = "Name: {$name}\nEmail: {$email}\nPhone: {$phone}\nCompany: {$company}\nInterest: {$interest}\n\n{$message}\n\n--\nSent from parvusmedia.com\nIP: " . ($_SERVER['REMOTE_ADDR'] ?? '');
 
 $sent = parvus_web_send_mail($to, $subject, $body, $email);
 

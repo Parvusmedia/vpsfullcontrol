@@ -1257,15 +1257,23 @@ button, input, textarea { font: inherit; }
   display: grid; gap: .35rem;
   font-size: .85rem; font-weight: 650;
 }
-.form input, .form textarea {
+.form input, .form textarea, .form select {
   width: 100%; padding: 1rem 1.05rem;
   border: 1px solid var(--line-dark);
   background: #fff; color: var(--ink);
   font-size: 1rem;
   border-radius: 8px;
 }
-.form input:focus, .form textarea:focus {
+.form input:focus, .form textarea:focus, .form select:focus {
   outline: 2px solid var(--ink); outline-offset: 1px;
+}
+.phone-row {
+  display: grid;
+  grid-template-columns: minmax(9.5rem, 12.5rem) minmax(0, 1fr);
+  gap: .5rem;
+}
+.form .phone-cc {
+  padding-right: 2rem;
 }
 .form .check {
   display: flex; gap: .55rem; align-items: flex-start;
