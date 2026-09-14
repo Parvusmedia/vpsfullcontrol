@@ -28,10 +28,11 @@ def build_followup_message(lead: dict[str, Any]) -> str:
     return (
         f"Hi {first},\n\n"
         "Thanks for connecting.\n\n"
-        "We helped Reckitt in Spain plan media for the following 7 days by tying "
-        "campaigns to weather and Google Trends in real time — so the team knew "
-        "which region demand was about to land in, and could activate accordingly.\n\n"
-        "If useful, happy to walk you through that loop in 20 minutes.\n\n"
+        "As I mentioned, we helped Reckitt Spain using data driven signals for "
+        "Strepsils campaigns by region.\n"
+        "If this could be relevant for your market, I'd be happy to show you how it "
+        "works in a short 20-minute call or by email if you consider.\n\n"
+        "Thanks.\n\n"
         "Emiliano"
     )
 

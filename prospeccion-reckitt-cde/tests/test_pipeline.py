@@ -51,7 +51,8 @@ class CopyTests(unittest.TestCase):
         self.assertTrue(note.startswith("Hi Nattaphan, I'm Emiliano from Parvus Media."))
         msgs = compose_row_messages(lead)
         self.assertEqual(msgs["mensaje_estado"], "Pendiente confirmar")
-        self.assertIn("Google Trends", msgs["followup_message"])
+        self.assertIn("Strepsils", msgs["followup_message"])
+        self.assertIn("20-minute call", msgs["followup_message"])
 
     def test_sequence_has_three_en_subjects(self) -> None:
         spec = campaign_sequence_spec()
