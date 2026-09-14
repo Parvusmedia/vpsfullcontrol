@@ -1,0 +1,25 @@
+---
+description: Reckitt CDE SN list — CSV → Icypeas → Smartlead / Unipile
+alwaysApply: true
+---
+
+# Prospección Reckitt CDE (Sales Nav list)
+
+Pipeline: **CDE CSV (`tsk_fb6268304961e568`) → Icypeas (si falta email) → Smartlead / Unipile**
+
+## Rules
+
+- Punctual curated list — contact rows with **`relevante = Sí`**. Do not expand ICP via Harvest.
+- Default contact is **dry-run**. Use `--live` only when the user asks after a summary.
+- Smartlead campaign is **dedicated** (`CDE · Reckitt SN list · Data for Media · EN`) — never reuse Gift / NextConvers / Alarmas campaign IDs.
+- Unipile: **only** the CDE panel seat for `emiliano@parvusmedia.com` (`RECKITT_UNIPILE_ACCOUNT_ID`). Never the NextConvers / other-wallet account from `/etc/linkedinreport/app.env`.
+- Unipile: respect `automation_limits` (≈10/day, 3/hour). Prefer `./run.sh unipile-drain` over ad-hoc invites.
+- LinkedIn copy: `compose-messages` then human `mensaje_estado=Confirmado` **before** `unipile-drain --live`.
+- Env may come from `.env` and `/etc/linkedinreport/app.env` — do not print secrets.
+
+## Daily order
+
+1. `./run.sh confirm`
+2. `./run.sh contact --limit 5` (dry-run)
+3. After copy OK: `RECKITT_SMARTLEAD_ENABLED=true` then `./run.sh contact --limit 10 --live`
+4. `./run.sh compose-messages` → human confirm → `./run.sh queue-unipile` → `./run.sh unipile-drain`
