@@ -38,4 +38,5 @@ $filename = 'salesnav-' . $label . '-' . $taskId . '.csv';
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: no-store');
-readfile($path);
+
+cde_tasks_stream_csv_download($path);

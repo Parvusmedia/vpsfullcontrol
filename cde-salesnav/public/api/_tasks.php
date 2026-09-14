@@ -352,6 +352,65 @@ function cde_tasks_fix_export_file_perms(string $path): void
     @chmod($path, 0600);
 }
 
+/** Flatten line breaks so Excel/Sheets open one row per lead (RFC multiline CSV breaks in Excel). */
+function cde_tasks_csv_normalize_cell(string $value): string
+{
+    $value = str_replace(["\r\n", "\r", "\n"], ' ', $value);
+    $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+    return trim($value);
+}
+
+/** Re-emit stored CSV with BOM + single-line rows (fixes legacy multiline fields on download). */
+function cde_tasks_stream_csv_download(string $path): void
+{
+    $raw = @file_get_contents($path);
+    if ($raw === false) {
+        http_response_code(404);
+        echo 'File not found';
+        exit;
+    }
+    if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+        $raw = substr($raw, 3);
+    }
+
+    $in = fopen('php://memory', 'rb+');
+    if ($in === false) {
+        readfile($path);
+        return;
+    }
+    fwrite($in, $raw);
+    rewind($in);
+
+    $header = fgetcsv($in);
+    if ($header === false || $header === [null]) {
+        fclose($in);
+        readfile($path);
+        return;
+    }
+
+    echo "\xEF\xBB\xBF";
+    $out = fopen('php://output', 'wb');
+    if ($out === false) {
+        fclose($in);
+        readfile($path);
+        return;
+    }
+    fputcsv($out, $header);
+    while (($row = fgetcsv($in)) !== false) {
+        if ($row === [null] || $row === []) {
+            continue;
+        }
+        $cells = [];
+        $colCount = count($header);
+        for ($i = 0; $i < $colCount; $i++) {
+            $cells[] = cde_tasks_csv_normalize_cell((string) ($row[$i] ?? ''));
+        }
+        fputcsv($out, $cells);
+    }
+    fclose($in);
+    fclose($out);
+}
+
 /** @param array<int, array<string, mixed>> $rows */
 function cde_tasks_write_csv(string $taskId, array $rows, array $tiers): void
 {
@@ -366,20 +425,22 @@ function cde_tasks_write_csv(string $taskId, array $rows, array $tiers): void
         $cols = array_merge($cols, $mail);
     }
 
-    $lines = [implode(',', $cols)];
+    $path = cde_tasks_csv_path($taskId);
+    $fh = @fopen($path, 'wb');
+    if ($fh === false) {
+        return;
+    }
+    fwrite($fh, "\xEF\xBB\xBF");
+    fputcsv($fh, $cols);
     foreach ($rows as $row) {
         $cells = [];
         foreach ($cols as $col) {
-            $v = (string) ($row[$col] ?? '');
-            if (str_contains($v, ',') || str_contains($v, '"') || str_contains($v, "\n")) {
-                $v = '"' . str_replace('"', '""', $v) . '"';
-            }
-            $cells[] = $v;
+            $cells[] = cde_tasks_csv_normalize_cell((string) ($row[$col] ?? ''));
         }
-        $lines[] = implode(',', $cells);
+        fputcsv($fh, $cells);
     }
-    @file_put_contents(cde_tasks_csv_path($taskId), implode("\n", $lines), LOCK_EX);
-    cde_tasks_fix_export_file_perms(cde_tasks_csv_path($taskId));
+    fclose($fh);
+    cde_tasks_fix_export_file_perms($path);
 }
 
 function cde_tasks_panel_url(string $taskId = ''): string
