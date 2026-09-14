@@ -2028,8 +2028,8 @@ function setProgress(active, labelKey = "progress.label") {
 }
 
 function csvEscape(value) {
-  const s = value == null ? "" : String(value);
-  if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+  const s = (value == null ? "" : String(value)).replace(/\r\n|\r|\n/g, " ").replace(/\s+/g, " ").trim();
+  if (/[",]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
   return s;
 }
 
@@ -2047,7 +2047,7 @@ function downloadCsv(rows) {
   rows.forEach((row) => {
     lines.push(cols.map((c) => csvEscape(row[c])).join(","));
   });
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
