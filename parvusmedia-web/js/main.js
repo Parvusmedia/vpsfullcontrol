@@ -282,7 +282,6 @@
     ["+357", "Cyprus"],
     ["+420", "Czechia"],
     ["+45", "Denmark"],
-    ["+1809", "Dominican Republic"],
     ["+593", "Ecuador"],
     ["+20", "Egypt"],
     ["+503", "El Salvador"],
