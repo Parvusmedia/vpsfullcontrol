@@ -287,6 +287,7 @@ function cde_salesnav_bind_customer_email(string $email): string
 
 function cde_salesnav_sign_out_customer(): void
 {
+    cde_salesnav_clear_session_account();
     cde_session_start();
     unset(
         $_SESSION['salesnav_customer_email'],
@@ -382,26 +383,32 @@ function cde_salesnav_clear_session_account(): void
 function cde_salesnav_session_account(): ?array
 {
     cde_session_start();
+    $userId = cde_salesnav_user_id();
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $storedId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedActive = is_array($stored)
+        && $storedId !== ''
+        && empty($stored['disconnected_at'])
+        && empty($stored['invalid_at']);
+
     $accountId = trim((string) ($_SESSION['salesnav_account_id'] ?? ''));
+    if ($accountId !== '') {
+        if (!$storedActive || ($storedId !== '' && $accountId !== $storedId)) {
+            cde_salesnav_clear_session_account();
+            $accountId = '';
+        }
+    }
+
     if ($accountId === '') {
-        $userId = cde_salesnav_user_id();
-        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
-        if (
-            is_array($stored)
-            && !empty($stored['account_id'])
-            && empty($stored['disconnected_at'])
-            && empty($stored['invalid_at'])
-        ) {
+        if ($storedActive) {
             cde_salesnav_set_session_account(
-                (string) $stored['account_id'],
+                $storedId,
                 (string) ($stored['label'] ?? ''),
                 (string) ($stored['avatar_url'] ?? '')
             );
-            $accountId = (string) $stored['account_id'];
+            $accountId = $storedId;
         }
     } else {
-        $userId = cde_salesnav_user_id();
-        $stored = cde_salesnav_load_accounts()[$userId] ?? null;
         $sessionAvatar = trim((string) ($_SESSION['salesnav_account_avatar'] ?? ''));
         if ($sessionAvatar === '' && is_array($stored)) {
             if (!empty($stored['avatar_url'])) {
@@ -411,19 +418,8 @@ function cde_salesnav_session_account(): ?array
                 $_SESSION['salesnav_account_label'] = (string) $stored['label'];
             }
         }
-        if (trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')) === '') {
-            foreach (cde_salesnav_load_accounts() as $row) {
-                if (!is_array($row) || ($row['account_id'] ?? '') !== $accountId) {
-                    continue;
-                }
-                if (!empty($row['avatar_url'])) {
-                    $_SESSION['salesnav_account_avatar'] = (string) $row['avatar_url'];
-                }
-                if (trim((string) ($_SESSION['salesnav_account_label'] ?? '')) === '' && !empty($row['label'])) {
-                    $_SESSION['salesnav_account_label'] = (string) $row['label'];
-                }
-                break;
-            }
+        if (trim((string) ($_SESSION['salesnav_account_avatar'] ?? '')) === '' && is_array($stored) && !empty($stored['avatar_url'])) {
+            $_SESSION['salesnav_account_avatar'] = (string) $stored['avatar_url'];
         }
     }
     if ($accountId === '') {
@@ -692,13 +688,18 @@ function cde_salesnav_unipile_seat_exists(string $accountId): bool
  * Find an existing Unipile seat to reconnect (never bill a duplicate).
  * Includes expired/disconnected seats still present in Unipile — reconnect fixes them.
  */
-function cde_salesnav_find_reconnectable_seat(string $userId): ?string
+function cde_salesnav_find_reconnectable_seat(string $userId, bool $includeDisconnected = false): ?string
 {
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     $storedLabel = is_array($stored) ? trim((string) ($stored['label'] ?? '')) : '';
     $storedAccountId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
 
-    if ($storedAccountId !== '' && cde_salesnav_is_account_alive($storedAccountId)) {
+    if (
+        $storedAccountId !== ''
+        && (!$storedDisconnected || $includeDisconnected)
+        && cde_salesnav_is_account_alive($storedAccountId)
+    ) {
         return $storedAccountId;
     }
 
@@ -732,9 +733,6 @@ function cde_salesnav_find_reconnectable_seat(string $userId): ?string
         if ($storedLabel !== '' && $label !== '' && strcasecmp($label, $storedLabel) === 0) {
             $score += 100;
         }
-        if ($alive) {
-            $score += 50;
-        }
 
         $created = strtotime((string) ($item['created_at'] ?? $item['last_update'] ?? ''));
         $candidates[] = [
@@ -757,11 +755,51 @@ function cde_salesnav_find_reconnectable_seat(string $userId): ?string
     });
 
     $best = $candidates[0];
-    if ($best['score'] <= 0) {
+    // Never reuse an unrelated live seat (e.g. another panel account's LinkedIn).
+    if ($best['score'] < 100) {
         return null;
     }
 
     return (string) $best['id'];
+}
+
+/**
+ * Seat created for this panel wallet via hosted auth (Unipile account "name" = wallet id).
+ * Used after connect callback — never guess unrelated seats.
+ */
+function cde_salesnav_find_wallet_owned_seat(string $userId): ?string
+{
+    foreach (cde_salesnav_list_unipile_account_items() as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string) ($item['id'] ?? $item['account_id'] ?? ''));
+        if ($id === '') {
+            continue;
+        }
+        $linkedName = trim((string) ($item['name'] ?? ''));
+        if ($linkedName !== '' && $linkedName === $userId && cde_salesnav_is_account_alive($id)) {
+            return $id;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Recover a pending LinkedIn link after hosted auth — only this wallet's own seat.
+ */
+function cde_salesnav_find_syncable_seat(string $userId): ?string
+{
+    $stored = cde_salesnav_load_accounts()[$userId] ?? null;
+    $storedAccountId = is_array($stored) ? trim((string) ($stored['account_id'] ?? '')) : '';
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
+
+    if ($storedAccountId !== '' && !$storedDisconnected && cde_salesnav_is_account_alive($storedAccountId)) {
+        return $storedAccountId;
+    }
+
+    return cde_salesnav_find_wallet_owned_seat($userId);
 }
 
 function cde_salesnav_resolve_linked_account_id(string $userId): ?string
@@ -786,8 +824,17 @@ function cde_salesnav_plan_connect(string $userId, bool $explicitReconnect = fal
 {
     $stored = cde_salesnav_load_accounts()[$userId] ?? null;
     $hadPriorLink = is_array($stored) && (!empty($stored['account_id']) || !empty($stored['label']));
+    $storedDisconnected = is_array($stored) && !empty($stored['disconnected_at']);
 
-    $seat = cde_salesnav_find_reconnectable_seat($userId);
+    if ($storedDisconnected && !$explicitReconnect) {
+        return [
+            'type' => 'create',
+            'reconnect_id' => null,
+            'reused_account' => false,
+        ];
+    }
+
+    $seat = cde_salesnav_find_reconnectable_seat($userId, $explicitReconnect);
     if ($seat !== null) {
         return [
             'type' => 'reconnect',
@@ -886,7 +933,7 @@ function cde_salesnav_assert_account_not_claimed_by_other_wallet(string $account
         if (!str_starts_with($uid, 'em_')) {
             continue;
         }
-        if ($claimedWallet === null || $claimedWallet === $uid) {
+        if (!empty($rec['disconnected_at'])) {
             continue;
         }
         throw new RuntimeException('This LinkedIn seat is already linked to another panel account.');
@@ -1389,6 +1436,200 @@ function cde_salesnav_paginate_v2_list(array $config, string $listId, int $maxLe
     }
 
     return array_slice($collected, 0, $maxLeads);
+}
+
+function cde_salesnav_probe_source_profile_count(array $config, string $sourceUrl, string $mode): ?int
+{
+    $sourceUrl = trim($sourceUrl);
+    if ($sourceUrl === '') {
+        return null;
+    }
+
+    if ($config['is_v1']) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/linkedin/search',
+            ['account_id' => $config['account_id'], 'limit' => 1],
+            ['url' => $sourceUrl]
+        );
+        if (!$resp['ok']) {
+            return null;
+        }
+        $total = (int) ($resp['data']['paging']['total_count'] ?? 0);
+
+        return $total > 0 ? $total : null;
+    }
+
+    if ($mode === 'list' && preg_match('#linkedin\.com/sales/lists/people/(?P<id>\d+)#i', $sourceUrl, $m)) {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/lead-lists/' . rawurlencode($m['id']),
+            ['limit' => 1, 'offset' => 0],
+            []
+        );
+    } else {
+        $resp = cde_unipile_request(
+            $config,
+            'POST',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/search',
+            ['limit' => 1],
+            ['url' => $sourceUrl]
+        );
+    }
+
+    if (!$resp['ok']) {
+        return null;
+    }
+
+    $data = is_array($resp['data'] ?? null) ? $resp['data'] : [];
+    $total = (int) ($data['paging']['total_count'] ?? $data['total_count'] ?? $data['total'] ?? 0);
+
+    return $total > 0 ? $total : null;
+}
+
+/** @return list<array<string, mixed>> */
+function cde_salesnav_collect_lead_list_catalog_items(mixed $data): array
+{
+    if (!is_array($data)) {
+        return [];
+    }
+    if (isset($data['data']) && is_array($data['data'])) {
+        return array_values(array_filter($data['data'], 'is_array'));
+    }
+    if (isset($data['items']) && is_array($data['items'])) {
+        return array_values(array_filter($data['items'], 'is_array'));
+    }
+
+    return [];
+}
+
+function cde_salesnav_lead_list_name_from_item(array $item): string
+{
+    return trim((string) ($item['name'] ?? $item['title'] ?? $item['label'] ?? ''));
+}
+
+function cde_salesnav_lead_list_id_from_item(array $item): string
+{
+    return trim((string) ($item['id'] ?? $item['list_id'] ?? ''));
+}
+
+/**
+ * Resolve a Sales Navigator lead list display name from Unipile.
+ */
+function cde_salesnav_fetch_lead_list_name(array $config, string $listId): ?string
+{
+    $listId = trim($listId);
+    if ($listId === '') {
+        return null;
+    }
+
+    if ($config['is_v1']) {
+        $offset = 0;
+        $limit = 100;
+        for ($page = 0; $page < 30; $page++) {
+            $query = [
+                'account_id' => $config['account_id'],
+                'type' => 'LEAD_LISTS',
+                'limit' => $limit,
+            ];
+            if ($offset > 0) {
+                $query['offset'] = $offset;
+            }
+
+            $resp = cde_unipile_request($config, 'GET', '/linkedin/search/parameters', $query);
+            if (!$resp['ok']) {
+                return null;
+            }
+
+            $items = cde_salesnav_collect_lead_list_catalog_items($resp['data']);
+            if ($items === []) {
+                break;
+            }
+
+            foreach ($items as $item) {
+                if (cde_salesnav_lead_list_id_from_item($item) === $listId) {
+                    $name = cde_salesnav_lead_list_name_from_item($item);
+
+                    return $name !== '' ? $name : null;
+                }
+            }
+
+            if (count($items) < $limit) {
+                break;
+            }
+            $offset += count($items);
+        }
+
+        return null;
+    }
+
+    $offset = 0;
+    $limit = 100;
+    $cursor = null;
+    for ($page = 0; $page < 30; $page++) {
+        $query = ['limit' => $limit];
+        if ($cursor !== null && $cursor !== '') {
+            $query['cursor'] = $cursor;
+        } elseif ($offset > 0) {
+            $query['offset'] = $offset;
+        }
+
+        $resp = cde_unipile_request(
+            $config,
+            'GET',
+            '/' . rawurlencode($config['account_id']) . '/linkedin/sales-navigator/lead-lists',
+            $query
+        );
+        if (!$resp['ok']) {
+            return null;
+        }
+
+        $items = cde_salesnav_collect_lead_list_catalog_items($resp['data']);
+        if ($items === []) {
+            break;
+        }
+
+        foreach ($items as $item) {
+            if (cde_salesnav_lead_list_id_from_item($item) === $listId) {
+                $name = cde_salesnav_lead_list_name_from_item($item);
+
+                return $name !== '' ? $name : null;
+            }
+        }
+
+        $data = is_array($resp['data'] ?? null) ? $resp['data'] : [];
+        $nextCursor = trim((string) ($data['next_cursor'] ?? ''));
+        if ($nextCursor !== '') {
+            $cursor = $nextCursor;
+            continue;
+        }
+        if (count($items) < $limit) {
+            break;
+        }
+        $offset += count($items);
+    }
+
+    return null;
+}
+
+/**
+ * @return array{profile_count: ?int, source_name: ?string}
+ */
+function cde_salesnav_probe_source_meta(array $config, string $sourceUrl, string $mode): array
+{
+    $profileCount = cde_salesnav_probe_source_profile_count($config, $sourceUrl, $mode);
+    $sourceName = null;
+
+    if ($mode === 'list' && preg_match('#/lists/people/(?P<id>\d+)#', $sourceUrl, $m)) {
+        $sourceName = cde_salesnav_fetch_lead_list_name($config, $m['id']);
+    }
+
+    return [
+        'profile_count' => $profileCount,
+        'source_name' => $sourceName,
+    ];
 }
 
 function cde_salesnav_export(array $config, string $sourceUrl, string $mode, int $maxLeads): array
