@@ -27,6 +27,55 @@
   }
 
   var needLinks = Array.prototype.slice.call(document.querySelectorAll(".need-link"));
+  function oaiEventId() {
+    try {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    } catch (e) {}
+    return "ev_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  }
+
+  function sendOpenAiCapi(type) {
+    var key = "oaiq_" + type + "_" + location.pathname + location.hash;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch (e) {}
+    fetch("/oai-event.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        id: oaiEventId(),
+        type: type,
+        source_url: location.href.split("#")[0] + (location.hash || ""),
+      }),
+      keepalive: true,
+    }).catch(function () {});
+  }
+
+  function syncOpenAiHashEvents() {
+    var hash = (location.hash || "").replace(/^#/, "");
+    if (hash === "chatgpt-ads") sendOpenAiCapi("contents_viewed");
+    else if (hash === "contact") sendOpenAiCapi("appointment_scheduled");
+  }
+
+  function fireOpenAiLanding() {
+    var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+    var hash = (location.hash || "").replace(/^#/, "");
+    if (hash === "chatgpt-ads") {
+      sendOpenAiCapi("contents_viewed");
+      return;
+    }
+    if (hash === "contact") {
+      sendOpenAiCapi("appointment_scheduled");
+      return;
+    }
+    if (path === "/chatgpt-ads") sendOpenAiCapi("contents_viewed");
+    else if (path === "/") sendOpenAiCapi("contents_viewed");
+  }
+
+  fireOpenAiLanding();
+  window.addEventListener("hashchange", syncOpenAiHashEvents);
+
   var sections = ["chatgpt-ads", "dco", "leads", "automation", "whatsapp", "insights"]
     .map(function (id) {
       return document.getElementById(id);
