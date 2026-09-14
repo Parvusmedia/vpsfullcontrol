@@ -118,6 +118,7 @@ if (!empty($_POST['website'])) {
 $name = trim((string)($_POST['name'] ?? ''));
 $email = trim((string)($_POST['email'] ?? ''));
 $company = trim((string)($_POST['company'] ?? ''));
+$interest = str_replace(["\r", "\n"], '', trim((string)($_POST['interest'] ?? '')));
 $message = trim((string)($_POST['message'] ?? ''));
 $consent = !empty($_POST['consent']);
 $captchaAnswer = trim((string)($_POST['captcha'] ?? ''));
@@ -131,7 +132,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     json_out(400, ['ok' => false, 'error' => 'Invalid email']);
 }
 
-if (mb_strlen($name) > 120 || mb_strlen($email) > 160 || mb_strlen($company) > 160 || mb_strlen($message) > 4000) {
+if (mb_strlen($name) > 120 || mb_strlen($email) > 160 || mb_strlen($company) > 160 || mb_strlen($interest) > 80 || mb_strlen($message) > 4000) {
     json_out(400, ['ok' => false, 'error' => 'Field too long']);
 }
 
@@ -144,8 +145,8 @@ if (!verify_captcha($captchaToken, $captchaAnswer)) {
 }
 
 $to = CONTACT_TO;
-$subject = 'Parvus Media web inquiry' . ($company !== '' ? ' — ' . $company : '');
-$body = "Name: {$name}\nEmail: {$email}\nCompany: {$company}\n\n{$message}\n\n--\nSent from parvusmedia.com\nIP: " . ($_SERVER['REMOTE_ADDR'] ?? '');
+$subject = 'Parvus Media web inquiry' . ($interest !== '' ? ' — ' . $interest : '') . ($company !== '' ? ' — ' . $company : '');
+$body = "Name: {$name}\nEmail: {$email}\nCompany: {$company}\nInterest: {$interest}\n\n{$message}\n\n--\nSent from parvusmedia.com\nIP: " . ($_SERVER['REMOTE_ADDR'] ?? '');
 $headers = [
     'From: Parvus Media Web <noreply@parvusmedia.com>',
     'Reply-To: ' . $email,

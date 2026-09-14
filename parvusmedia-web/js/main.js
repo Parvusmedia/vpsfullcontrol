@@ -27,7 +27,7 @@
   }
 
   var needLinks = Array.prototype.slice.call(document.querySelectorAll(".need-link"));
-  var sections = ["dco", "leads", "automation", "whatsapp", "insights"]
+  var sections = ["chatgpt-ads", "dco", "leads", "automation", "whatsapp", "insights"]
     .map(function (id) {
       return document.getElementById(id);
     })
@@ -173,6 +173,13 @@
     applyAiTheme(theme);
   });
   applyAiTheme("reports");
+
+  document.querySelectorAll("[data-interest]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var field = document.getElementById("contact-interest");
+      if (field) field.value = el.getAttribute("data-interest") || "";
+    });
+  });
 
   var form = document.getElementById("contact-form");
   var statusEl = document.getElementById("form-status");

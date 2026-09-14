@@ -2,18 +2,36 @@
 
 Production landing for https://parvusmedia.com/
 
+Source of truth in this repo: `parvusmedia-web/`. Live files also live on Parvus VPS at `/opt/apps/parvusmedia-web` and deploy to Plesk on `nextconvers-vps`.
+
+## ChatGPT Ads
+
+- Homepage band: `/#chatgpt-ads`
+- Service page: https://parvusmedia.com/chatgpt-ads/
+
 ## Deploy
 
+From this directory, hop through `parvus-vps` (rsync runs there):
+
 ```bash
-rsync -avz index.html contact.php .captcha_secret robots.txt nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/
+./deploy.sh
+```
+
+Manual equivalent:
+
+```bash
+rsync -avz index.html contact.php robots.txt nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/
 rsync -avz css/main.css nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/css/main.css
 rsync -avz js/main.js nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/js/main.js
+rsync -avz chatgpt-ads/ nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/chatgpt-ads/
 rsync -avz assets/ nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/assets/
 rsync -avz e/ nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/e/
 rsync -avz privacy/ nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/privacy/
 rsync -avz legal-notice/ nextconvers-vps:/var/www/vhosts/parvusmedia.com/httpdocs/legal-notice/
-ssh nextconvers-vps 'chown -R parvusadmin:psacln /var/www/vhosts/parvusmedia.com/httpdocs/{index.html,contact.php,.captcha_secret,robots.txt,css/main.css,js/main.js,assets,e,privacy,legal-notice}'
+ssh nextconvers-vps 'chown -R parvusadmin:psacln /var/www/vhosts/parvusmedia.com/httpdocs/{index.html,contact.php,robots.txt,css/main.css,js/main.js,chatgpt-ads,assets,e,privacy,legal-notice}'
 ```
+
+Do not deploy `.captcha_secret` from git (it is gitignored). Leave the live file in place.
 
 ### Email example short links (`/e/…`)
 
