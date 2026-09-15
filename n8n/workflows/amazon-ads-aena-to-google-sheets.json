@@ -244,18 +244,82 @@
       }
     },
     {
-      "id": "prepare-csv",
-      "name": "Preparar CSV",
+      "id": "inspect-download",
+      "name": "Inspeccionar descarga",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1000,
+        880,
         40
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "const email = $('Extraer enlace de descarga').item.json;\nconst binary = $input.item.binary?.data;\nif (!binary) {\n  throw new Error('La descarga no devolvió un fichero binario.');\n}\n\nconst zlib = require('zlib');\nlet buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst headers = $json.headers || {};\nconst contentType = String(headers['content-type'] || headers['Content-Type'] || binary.mimeType || '').toLowerCase();\nconst contentDisposition = String(headers['content-disposition'] || headers['Content-Disposition'] || '');\n\nfunction filenameFromDisposition(value) {\n  const star = /filename\\*\\s*=\\s*UTF-8''([^;]+)/i.exec(value);\n  if (star) return decodeURIComponent(star[1].replace(/[\"']/g, ''));\n  const basic = /filename\\s*=\\s*\"?([^\";]+)\"?/i.exec(value);\n  return basic ? basic[1] : '';\n}\n\nfunction sniff(buf) {\n  if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) return 'gzip';\n  const text = buf.slice(0, 400).toString('utf8').toLowerCase();\n  if (text.includes('<html') || text.includes('<!doctype html')) return 'html';\n  return 'csv';\n}\n\nlet fileName = filenameFromDisposition(contentDisposition) || binary.fileName || 'amazon-aena-report.csv';\nlet kind = sniff(buffer);\n\nif (kind === 'gzip') {\n  buffer = zlib.gunzipSync(buffer);\n  fileName = fileName.replace(/\\.gz$/i, '');\n  kind = sniff(buffer);\n}\n\nif (kind === 'html') {\n  const preview = buffer.slice(0, 280).toString('utf8').replace(/\\s+/g, ' ');\n  throw new Error(\n    'El enlace no entregó el CSV (HTML de login o link caducado). Preview: ' + preview\n  );\n}\n\nif (!/\\.(csv|txt|tsv)$/i.test(fileName)) fileName += '.csv';\n\nconst stamp = new Date().toISOString().slice(0, 10);\nconst storedName = `Aena_AmazonAds_${stamp}_${fileName.replace(/[^\\w.\\-]+/g, '_')}`;\nconst prepared = await this.helpers.prepareBinaryData(buffer, storedName, 'text/csv');\n\nreturn {\n  json: {\n    emailId: email.emailId,\n    threadId: email.threadId,\n    subject: email.subject,\n    from: email.from,\n    date: email.date,\n    downloadUrl: email.downloadUrl,\n    fileName: storedName,\n    byteSize: buffer.length,\n    contentType,\n  },\n  binary: { data: prepared },\n};\n"
+        "jsCode": "const binary = $input.item.binary?.data;\nif (!binary) {\n  throw new Error('La descarga no devolvió un fichero binario.');\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst isGzip = buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b;\n\nreturn {\n  json: {\n    ...$('Extraer enlace de descarga').item.json,\n    isGzip,\n    httpHeaders: $json.headers || {},\n  },\n  binary: $input.item.binary,\n};\n"
+      }
+    },
+    {
+      "id": "if-gzip",
+      "name": "Es gzip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-gzip",
+              "leftValue": "={{ $json.isGzip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "decompress-gzip",
+      "name": "Descomprimir gzip",
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -80
+      ],
+      "parameters": {
+        "operation": "decompress",
+        "binaryPropertyName": "data",
+        "outputPrefix": "file_"
+      }
+    },
+    {
+      "id": "prepare-csv",
+      "name": "Preparar CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const email = $('Extraer enlace de descarga').item.json;\nconst http = $('Descargar CSV').first().json;\nconst binaryMap = $input.item.binary || {};\nconst field =\n  binaryMap.data\n    ? 'data'\n    : Object.keys(binaryMap).find((key) => key.startsWith('file_')) || Object.keys(binaryMap)[0];\n\nif (!field || !binaryMap[field]) {\n  throw new Error('No hay datos binarios para preparar el CSV.');\n}\n\nconst binary = binaryMap[field];\nlet buffer = await this.helpers.getBinaryDataBuffer(0, field);\nconst headers = http.headers || $json.httpHeaders || {};\nconst contentType = String(headers['content-type'] || headers['Content-Type'] || binary.mimeType || '').toLowerCase();\nconst contentDisposition = String(headers['content-disposition'] || headers['Content-Disposition'] || '');\n\nfunction filenameFromDisposition(value) {\n  const star = /filename\\*\\s*=\\s*UTF-8''([^;]+)/i.exec(value);\n  if (star) return decodeURIComponent(star[1].replace(/[\"']/g, ''));\n  const basic = /filename\\s*=\\s*\"?([^\";]+)\"?/i.exec(value);\n  return basic ? basic[1] : '';\n}\n\nfunction sniff(buf) {\n  if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) return 'gzip';\n  const text = buf.slice(0, 400).toString('utf8').toLowerCase();\n  if (text.includes('<html') || text.includes('<!doctype html')) return 'html';\n  return 'csv';\n}\n\nlet fileName = filenameFromDisposition(contentDisposition) || binary.fileName || 'amazon-aena-report.csv';\nlet kind = sniff(buffer);\n\nif (kind === 'gzip') {\n  throw new Error('El fichero sigue comprimido en gzip; usa el nodo Descomprimir gzip antes de Preparar CSV.');\n}\n\nif (kind === 'html') {\n  const preview = buffer.slice(0, 280).toString('utf8').replace(/\\s+/g, ' ');\n  throw new Error(\n    'El enlace no entregó el CSV (HTML de login o link caducado). Preview: ' + preview\n  );\n}\n\nif (!/\\.(csv|txt|tsv)$/i.test(fileName)) fileName += '.csv';\n\nconst stamp = new Date().toISOString().slice(0, 10);\nconst storedName = `Aena_AmazonAds_${stamp}_${fileName.replace(/[^\\w.\\-]+/g, '_')}`;\nconst prepared = await this.helpers.prepareBinaryData(buffer, storedName, 'text/csv');\n\nreturn {\n  json: {\n    emailId: email.emailId,\n    threadId: email.threadId,\n    subject: email.subject,\n    from: email.from,\n    date: email.date,\n    downloadUrl: email.downloadUrl,\n    fileName: storedName,\n    byteSize: buffer.length,\n    contentType,\n  },\n  binary: { data: prepared },\n};\n"
       }
     },
     {
@@ -532,6 +596,46 @@
       ]
     },
     "Descargar CSV": {
+      "main": [
+        [
+          {
+            "node": "Inspeccionar descarga",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspeccionar descarga": {
+      "main": [
+        [
+          {
+            "node": "Es gzip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es gzip?": {
+      "main": [
+        [
+          {
+            "node": "Descomprimir gzip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descomprimir gzip": {
       "main": [
         [
           {

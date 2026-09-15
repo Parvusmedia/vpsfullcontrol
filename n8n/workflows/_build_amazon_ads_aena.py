@@ -151,15 +151,39 @@ return {
 };
 """
 
-PREPARE_CSV_CODE = r"""const email = $('Extraer enlace de descarga').item.json;
-const binary = $input.item.binary?.data;
+INSPECT_DOWNLOAD_CODE = r"""const binary = $input.item.binary?.data;
 if (!binary) {
   throw new Error('La descarga no devolvió un fichero binario.');
 }
 
-const zlib = require('zlib');
-let buffer = await this.helpers.getBinaryDataBuffer(0, 'data');
-const headers = $json.headers || {};
+const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');
+const isGzip = buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b;
+
+return {
+  json: {
+    ...$('Extraer enlace de descarga').item.json,
+    isGzip,
+    httpHeaders: $json.headers || {},
+  },
+  binary: $input.item.binary,
+};
+"""
+
+PREPARE_CSV_CODE = r"""const email = $('Extraer enlace de descarga').item.json;
+const http = $('Descargar CSV').first().json;
+const binaryMap = $input.item.binary || {};
+const field =
+  binaryMap.data
+    ? 'data'
+    : Object.keys(binaryMap).find((key) => key.startsWith('file_')) || Object.keys(binaryMap)[0];
+
+if (!field || !binaryMap[field]) {
+  throw new Error('No hay datos binarios para preparar el CSV.');
+}
+
+const binary = binaryMap[field];
+let buffer = await this.helpers.getBinaryDataBuffer(0, field);
+const headers = http.headers || $json.httpHeaders || {};
 const contentType = String(headers['content-type'] || headers['Content-Type'] || binary.mimeType || '').toLowerCase();
 const contentDisposition = String(headers['content-disposition'] || headers['Content-Disposition'] || '');
 
@@ -181,9 +205,7 @@ let fileName = filenameFromDisposition(contentDisposition) || binary.fileName ||
 let kind = sniff(buffer);
 
 if (kind === 'gzip') {
-  buffer = zlib.gunzipSync(buffer);
-  fileName = fileName.replace(/\.gz$/i, '');
-  kind = sniff(buffer);
+  throw new Error('El fichero sigue comprimido en gzip; usa el nodo Descomprimir gzip antes de Preparar CSV.');
 }
 
 if (kind === 'html') {
@@ -525,12 +547,44 @@ nodes = [
             },
         },
     },
+        {
+        "id": "inspect-download",
+        "name": "Inspeccionar descarga",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [880, 40],
+        "parameters": {
+            "mode": "runOnceForEachItem",
+            "language": "javaScript",
+            "jsCode": INSPECT_DOWNLOAD_CODE,
+        },
+    },
+    {
+        "id": "if-gzip",
+        "name": "Es gzip?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [1040, 40],
+        "parameters": if_boolean_true("={{ $json.isGzip }}", "is-gzip"),
+    },
+    {
+        "id": "decompress-gzip",
+        "name": "Descomprimir gzip",
+        "type": "n8n-nodes-base.compression",
+        "typeVersion": 1.1,
+        "position": [1280, -80],
+        "parameters": {
+            "operation": "decompress",
+            "binaryPropertyName": "data",
+            "outputPrefix": "file_",
+        },
+    },
     {
         "id": "prepare-csv",
         "name": "Preparar CSV",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [1000, 40],
+        "position": [1280, 120],
         "parameters": {
             "mode": "runOnceForEachItem",
             "language": "javaScript",
@@ -706,7 +760,15 @@ connections = {
             [conn("Sin enlace de descarga")],
         ]
     },
-    "Descargar CSV": {"main": [[conn("Preparar CSV")]]},
+    "Descargar CSV": {"main": [[conn("Inspeccionar descarga")]]},
+    "Inspeccionar descarga": {"main": [[conn("Es gzip?")]]},
+    "Es gzip?": {
+        "main": [
+            [conn("Descomprimir gzip")],
+            [conn("Preparar CSV")],
+        ]
+    },
+    "Descomprimir gzip": {"main": [[conn("Preparar CSV")]]},
     "Preparar CSV": {"main": [[conn("Parsear CSV")]]},
     "Parsear CSV": {"main": [[conn("Normalizar filas")]]},
     "Normalizar filas": {"main": [[conn("Hay filas?")]]},
@@ -775,6 +837,8 @@ def validate(data: dict) -> list[str]:
         "Destinatario Aena?",
         "Extraer enlace de descarga",
         "Descargar CSV",
+        "Inspeccionar descarga",
+        "Descomprimir gzip",
         "Parsear CSV",
         "Vaciar pestaña Amazon",
         "Pegar CSV en Amazon",
