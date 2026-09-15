@@ -1,3 +1,3 @@
 {
-  "install": "curl -fsSL https://raw.githubusercontent.com/Parvusmedia/vpsfullcontrol/main/scripts/cursor-env-ssh-bootstrap.sh | bash || true"
+  "install": "curl -fsSL https://raw.githubusercontent.com/Parvusmedia/vpsfullcontrol/main/scripts/cursor-env-ssh-bootstrap.sh | bash || true; if [ -f .cursor/n8n.env ]; then set -a && . ./.cursor/n8n.env && set +a; fi"
 }

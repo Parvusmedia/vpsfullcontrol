@@ -6,13 +6,15 @@ Objetivo: usar un único comando local y que el script elija automáticamente MC
 
 - `N8N_URL` (ej: `https://pmedia.app.n8n.cloud`)
 - `N8N_MCP_TOKEN` (JWT con `aud: mcp-server-api`)
-- `N8N_REST_API_KEY` (API key REST de n8n, normalmente prefijo `n8n_api_`)
+- `N8N_REST_API_KEY` (API key REST de n8n: prefijo `n8n_api_` o JWT con `aud: public-api`)
 
 Compatibilidad legacy:
 
 - Si solo existe `N8N_API_KEY`, el script intenta inferir el tipo:
-  - JWT (`a.b.c`) => MCP
+  - JWT con `aud: public-api` => REST (header `X-N8N-API-KEY`)
+  - JWT con `aud: mcp-server-api` => MCP
   - `n8n_api_...` => REST
+- En Cloud Agent puedes guardar `N8N_REST_API_KEY` y `N8N_URL` como secrets del entorno; opcionalmente `/.cursor/n8n.env` (gitignored) para cargar en `install`.
 
 ## Comando único
 
