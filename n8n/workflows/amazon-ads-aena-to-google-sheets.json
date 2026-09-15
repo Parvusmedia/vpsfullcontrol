@@ -86,7 +86,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "function collect(value) {\n  if (value === null || value === undefined) return '';\n  if (Array.isArray(value)) return value.map(collect).join(' ');\n  if (typeof value === 'object') {\n    const nested = [];\n    for (const [key, entry] of Object.entries(value)) {\n      nested.push(key, collect(entry));\n    }\n    return nested.join(' ');\n  }\n  return String(value);\n}\n\nconst expected = 'aena@pmediaplus.com';\nconst headers = $json.headers || $json.header || {};\nconst haystack = [\n  $json.to,\n  $json.cc,\n  $json.bcc,\n  $json.recipients,\n  $json.deliveredTo,\n  headers['delivered-to'],\n  headers['Delivered-To'],\n  headers['x-original-to'],\n  headers['X-Original-To'],\n  headers['envelope-to'],\n  headers['Envelope-To'],\n  headers,\n].map(collect).join(' ').toLowerCase();\n\nconst isAenaRecipient = haystack.includes(expected);\n\nreturn {\n  json: {\n    ...$json,\n    isAenaRecipient,\n    recipientCheck: expected,\n  },\n};\n"
+        "jsCode": "function collect(value) {\n  if (value === null || value === undefined) return '';\n  if (Array.isArray(value)) return value.map(collect).join(' ');\n  if (typeof value === 'object') {\n    const nested = [];\n    for (const [key, entry] of Object.entries(value)) {\n      nested.push(key, collect(entry));\n    }\n    return nested.join(' ');\n  }\n  return String(value);\n}\n\nconst expected = 'aena@pmediaplus.com';\nconst headers = $json.headers || $json.header || {};\nconst haystack = [\n  $json.to,\n  $json.cc,\n  $json.bcc,\n  $json.recipients,\n  $json.deliveredTo,\n  headers['delivered-to'],\n  headers['Delivered-To'],\n  headers['x-original-to'],\n  headers['X-Original-To'],\n  headers['envelope-to'],\n  headers['Envelope-To'],\n  headers,\n].map(collect).join(' ').toLowerCase();\n\nconst isAenaRecipient = haystack.includes(expected);\n\nreturn {\n  json: {\n    ...$json,\n    isAenaRecipient,\n    recipientCheck: expected,\n    imapUid: String($json.attributes?.uid ?? $json.uid ?? ''),\n    messageIdKey: String(\n      $json.messageId ?? $json.metadata?.['message-id'] ?? $json.headers?.['message-id'] ?? ''\n    ).trim(),\n  },\n};\n"
       }
     },
     {
@@ -124,6 +124,69 @@
       }
     },
     {
+      "id": "dedup-guard",
+      "name": "Comprobar duplicado IMAP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};\nif (!staticData.aenaAmazonInFlight) staticData.aenaAmazonInFlight = {};\n\nconst uid = String($json.imapUid || $json.attributes?.uid || '').trim();\nconst messageId = String($json.messageIdKey || $json.messageId || '').trim();\nconst guardKey = uid || messageId;\n\nlet skipAsDuplicate = false;\nlet skipReason = '';\n\nif (guardKey && staticData.aenaAmazonProcessedUids[guardKey]) {\n  skipAsDuplicate = true;\n  skipReason = 'already_processed';\n} else if (guardKey) {\n  const startedAt = staticData.aenaAmazonInFlight[guardKey];\n  if (startedAt) {\n    const ageMs = Date.now() - Date.parse(startedAt);\n    if (ageMs < 15 * 60 * 1000) {\n      skipAsDuplicate = true;\n      skipReason = 'in_flight';\n    } else {\n      delete staticData.aenaAmazonInFlight[guardKey];\n    }\n  }\n  if (!skipAsDuplicate) {\n    staticData.aenaAmazonInFlight[guardKey] = new Date().toISOString();\n  }\n}\n\nreturn {\n  json: {\n    ...$json,\n    guardKey,\n    skipAsDuplicate,\n    skipReason,\n    duplicateProcessedAt: guardKey ? staticData.aenaAmazonProcessedUids[guardKey] || null : null,\n  },\n};\n"
+      },
+      "notes": "Evita reprocesar el mismo UID IMAP y bloquea ejecuciones solapadas.",
+      "notesInFlow": true
+    },
+    {
+      "id": "if-dedup",
+      "name": "Correo nuevo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-duplicate",
+              "leftValue": "={{ $json.skipAsDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "skip-duplicate",
+      "name": "Correo ya importado",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        520,
+        260
+      ],
+      "parameters": {},
+      "notes": "UID ya registrado o otra ejecución está escribiendo en la Sheet.",
+      "notesInFlow": true
+    },
+    {
       "id": "ignore-other",
       "name": "Ignorar otro destinatario",
       "type": "n8n-nodes-base.noOp",
@@ -148,7 +211,7 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "language": "javaScript",
-        "jsCode": "const html = String($json.html || $json.textAsHtml || $json.text || '');\nconst text = String($json.text || '');\nconst subject = String($json.subject || '');\n\nfunction decodeEntities(value) {\n  return value\n    .replace(/&amp;/gi, '&')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))\n    .replace(/&#(\\d+);/g, (_, num) => String.fromCharCode(Number(num)));\n}\n\nfunction unwrap(url) {\n  let current = decodeEntities(url).trim();\n  for (let i = 0; i < 5; i++) {\n    try {\n      const parsed = new URL(current);\n      const nested =\n        parsed.searchParams.get('q') ||\n        parsed.searchParams.get('u') ||\n        parsed.searchParams.get('U') ||\n        parsed.searchParams.get('url') ||\n        parsed.searchParams.get('dest') ||\n        parsed.searchParams.get('redirect');\n      if (nested && /^https?:/i.test(nested) && nested !== current) {\n        current = decodeEntities(nested);\n        continue;\n      }\n    } catch (error) {\n      break;\n    }\n    break;\n  }\n  return current;\n}\n\nfunction score(url) {\n  const lower = url.toLowerCase();\n  if (!/^https?:\\/\\//i.test(url)) return -100;\n  if (lower.startsWith('mailto:')) return -100;\n  if (/(unsubscribe|privacy|help|support|preferences|pixel|tracking|fls-na\\.amazon)/i.test(lower)) return -50;\n  if (/\\.(png|gif|jpg|jpeg|svg|css|woff2?)(\\?|$)/i.test(lower)) return -50;\n\n  let points = 0;\n  if (/(advertising\\.amazon|amazonaws\\.com|offline-report-storage)/i.test(lower)) points += 40;\n  if (/amazon\\.com/i.test(lower)) points += 10;\n  if (/(download|report|csv|gzip)/i.test(lower)) points += 25;\n  if (/(\\.csv|\\.gz)(\\?|$)/i.test(lower)) points += 30;\n  if (/(s3\\.|signed|X-Amz-Signature)/i.test(url)) points += 20;\n  return points;\n}\n\nconst hrefs = [];\nconst hrefRe = /href\\s*=\\s*[\"']([^\"']+)[\"']/gi;\nlet match;\nwhile ((match = hrefRe.exec(html))) {\n  hrefs.push(unwrap(match[1]));\n}\nconst rawUrlRe = /https?:\\/\\/[^\\s\"'<>]+/gi;\nfor (const found of (html + ' ' + text).match(rawUrlRe) || []) {\n  hrefs.push(unwrap(found.replace(/[),.;]+$/, '')));\n}\n\nconst unique = [...new Set(hrefs.filter(Boolean))];\nconst ranked = unique\n  .map((url) => ({ url, score: score(url) }))\n  .filter((row) => row.score > 0)\n  .sort((a, b) => b.score - a.score);\n\nreturn {\n  json: {\n    emailId: $json.id,\n    threadId: $json.threadId,\n    subject,\n    from: $json.from,\n    to: $json.to,\n    date: $json.date,\n    isAenaRecipient: $json.isAenaRecipient,\n    downloadUrl: ranked[0]?.url || '',\n    candidateUrls: ranked.slice(0, 8),\n  },\n};\n"
+        "jsCode": "const html = String($json.html || $json.textAsHtml || $json.text || '');\nconst text = String($json.text || '');\nconst subject = String($json.subject || '');\n\nfunction decodeEntities(value) {\n  return value\n    .replace(/&amp;/gi, '&')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))\n    .replace(/&#(\\d+);/g, (_, num) => String.fromCharCode(Number(num)));\n}\n\nfunction unwrap(url) {\n  let current = decodeEntities(url).trim();\n  for (let i = 0; i < 5; i++) {\n    try {\n      const parsed = new URL(current);\n      const nested =\n        parsed.searchParams.get('q') ||\n        parsed.searchParams.get('u') ||\n        parsed.searchParams.get('U') ||\n        parsed.searchParams.get('url') ||\n        parsed.searchParams.get('dest') ||\n        parsed.searchParams.get('redirect');\n      if (nested && /^https?:/i.test(nested) && nested !== current) {\n        current = decodeEntities(nested);\n        continue;\n      }\n    } catch (error) {\n      break;\n    }\n    break;\n  }\n  return current;\n}\n\nfunction score(url) {\n  const lower = url.toLowerCase();\n  if (!/^https?:\\/\\//i.test(url)) return -100;\n  if (lower.startsWith('mailto:')) return -100;\n  if (/(unsubscribe|privacy|help|support|preferences|pixel|tracking|fls-na\\.amazon)/i.test(lower)) return -50;\n  if (/\\.(png|gif|jpg|jpeg|svg|css|woff2?)(\\?|$)/i.test(lower)) return -50;\n\n  let points = 0;\n  if (/(advertising\\.amazon|amazonaws\\.com|offline-report-storage)/i.test(lower)) points += 40;\n  if (/amazon\\.com/i.test(lower)) points += 10;\n  if (/(download|report|csv|gzip)/i.test(lower)) points += 25;\n  if (/(\\.csv|\\.gz)(\\?|$)/i.test(lower)) points += 30;\n  if (/(s3\\.|signed|X-Amz-Signature)/i.test(url)) points += 20;\n  return points;\n}\n\nconst hrefs = [];\nconst hrefRe = /href\\s*=\\s*[\"']([^\"']+)[\"']/gi;\nlet match;\nwhile ((match = hrefRe.exec(html))) {\n  hrefs.push(unwrap(match[1]));\n}\nconst rawUrlRe = /https?:\\/\\/[^\\s\"'<>]+/gi;\nfor (const found of (html + ' ' + text).match(rawUrlRe) || []) {\n  hrefs.push(unwrap(found.replace(/[),.;]+$/, '')));\n}\n\nconst unique = [...new Set(hrefs.filter(Boolean))];\nconst ranked = unique\n  .map((url) => ({ url, score: score(url) }))\n  .filter((row) => row.score > 0)\n  .sort((a, b) => b.score - a.score);\n\nconst guardKey = String($json.guardKey || $json.imapUid || $json.attributes?.uid || $json.id || '').trim();\n\nreturn {\n  json: {\n    emailId: guardKey,\n    threadId: $json.threadId,\n    subject,\n    from: $json.from,\n    to: $json.to,\n    date: $json.date,\n    isAenaRecipient: $json.isAenaRecipient,\n    downloadUrl: ranked[0]?.url || '',\n    candidateUrls: ranked.slice(0, 8),\n  },\n};\n"
       }
     },
     {
@@ -501,6 +564,22 @@
       }
     },
     {
+      "id": "register-processed",
+      "name": "Registrar UID procesado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        -80
+      ],
+      "executeOnce": true,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};\n\nconst coord = $('Coordinar reemplazo').first().json;\nconst guardKey = String(coord.emailId || $('Comprobar duplicado IMAP').first().json.guardKey || '').trim();\n\nif (guardKey) {\n  delete staticData.aenaAmazonInFlight?.[guardKey];\n  staticData.aenaAmazonProcessedUids[guardKey] = new Date().toISOString();\n  const keys = Object.keys(staticData.aenaAmazonProcessedUids);\n  if (keys.length > 400) {\n    keys.sort(\n      (a, b) =>\n        Date.parse(staticData.aenaAmazonProcessedUids[a]) -\n        Date.parse(staticData.aenaAmazonProcessedUids[b])\n    );\n    for (let i = 0; i < keys.length - 250; i++) {\n      delete staticData.aenaAmazonProcessedUids[keys[i]];\n    }\n  }\n}\n\nreturn [\n  {\n    json: {\n      registered: guardKey,\n      rowCount: coord.rowCount,\n      finishedAt: new Date().toISOString(),\n    },\n  },\n];\n"
+      }
+    },
+    {
       "id": "mark-read",
       "name": "Marcar correo leido",
       "type": "n8n-nodes-base.gmail",
@@ -553,7 +632,7 @@
       "main": [
         [
           {
-            "node": "Extraer enlace de descarga",
+            "node": "Comprobar duplicado IMAP",
             "type": "main",
             "index": 0
           }
@@ -561,6 +640,35 @@
         [
           {
             "node": "Ignorar otro destinatario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprobar duplicado IMAP": {
+      "main": [
+        [
+          {
+            "node": "Correo nuevo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Correo nuevo?": {
+      "main": [
+        [
+          {
+            "node": "Extraer enlace de descarga",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Correo ya importado",
             "type": "main",
             "index": 0
           }
@@ -726,6 +834,17 @@
       ]
     },
     "Pegar CSV en Amazon": {
+      "main": [
+        [
+          {
+            "node": "Registrar UID procesado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar UID procesado": {
       "main": [
         [
           {

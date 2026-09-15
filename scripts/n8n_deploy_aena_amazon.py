@@ -78,7 +78,10 @@ def main() -> int:
     for old_if in ("Hay filas?", "Hay filas para pegar?"):
         if old_if in connections and len(connections[old_if]["main"]) > 1:
             connections[old_if]["main"][1] = []
-    connections["Pegar CSV en Amazon"] = {"main": [[]]}
+    connections["Pegar CSV en Amazon"] = {
+        "main": [[{"node": "Registrar UID procesado", "type": "main", "index": 0}]]
+    }
+    connections["Registrar UID procesado"] = {"main": [[]]}
 
     # Patch IMAP-friendly fields in code nodes
     for node in nodes:
@@ -87,6 +90,11 @@ def main() -> int:
                 "const headers = $json.headers || $json.header || {};",
                 "const headers = $json.headers || $json.header || $json.metadata || {};",
             )
+            if "imapUid:" not in node["parameters"]["jsCode"]:
+                node["parameters"]["jsCode"] = node["parameters"]["jsCode"].replace(
+                    "recipientCheck: expected,\n  },\n};",
+                    "recipientCheck: expected,\n    imapUid: String($json.attributes?.uid ?? $json.uid ?? ''),\n    messageIdKey: String(\n      $json.messageId ?? $json.metadata?.['message-id'] ?? $json.headers?.['message-id'] ?? ''\n    ).trim(),\n  },\n};",
+                )
         if node["name"] == "Extraer enlace de descarga":
             node["parameters"]["jsCode"] = node["parameters"]["jsCode"].replace(
                 "const html = String($json.html || $json.textAsHtml || $json.text || '');",
@@ -98,11 +106,22 @@ def main() -> int:
                 "emailId: $json.id,",
                 "emailId: $json.attributes?.uid || $json.id,",
             )
+            if "guardKey" not in node["parameters"]["jsCode"]:
+                node["parameters"]["jsCode"] = node["parameters"]["jsCode"].replace(
+                    "return {\n  json: {\n    emailId:",
+                    "const guardKey = String($json.guardKey || $json.imapUid || $json.attributes?.uid || $json.id || '').trim();\n\nreturn {\n  json: {\n    emailId: guardKey ||",
+                )
 
     settings = live.get("settings", {})
     allowed_settings = {
         k: settings[k]
-        for k in ("executionOrder", "callerPolicy", "errorWorkflow", "timezone", "saveManualExecutions")
+        for k in (
+            "executionOrder",
+            "callerPolicy",
+            "errorWorkflow",
+            "timezone",
+            "saveManualExecutions",
+        )
         if k in settings
     }
 

@@ -60,8 +60,86 @@ return {
     ...$json,
     isAenaRecipient,
     recipientCheck: expected,
+    imapUid: String($json.attributes?.uid ?? $json.uid ?? ''),
+    messageIdKey: String(
+      $json.messageId ?? $json.metadata?.['message-id'] ?? $json.headers?.['message-id'] ?? ''
+    ).trim(),
   },
 };
+"""
+
+DEDUP_GUARD_CODE = r"""const staticData = $getWorkflowStaticData('global');
+if (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};
+if (!staticData.aenaAmazonInFlight) staticData.aenaAmazonInFlight = {};
+
+const uid = String($json.imapUid || $json.attributes?.uid || '').trim();
+const messageId = String($json.messageIdKey || $json.messageId || '').trim();
+const guardKey = uid || messageId;
+
+let skipAsDuplicate = false;
+let skipReason = '';
+
+if (guardKey && staticData.aenaAmazonProcessedUids[guardKey]) {
+  skipAsDuplicate = true;
+  skipReason = 'already_processed';
+} else if (guardKey) {
+  const startedAt = staticData.aenaAmazonInFlight[guardKey];
+  if (startedAt) {
+    const ageMs = Date.now() - Date.parse(startedAt);
+    if (ageMs < 15 * 60 * 1000) {
+      skipAsDuplicate = true;
+      skipReason = 'in_flight';
+    } else {
+      delete staticData.aenaAmazonInFlight[guardKey];
+    }
+  }
+  if (!skipAsDuplicate) {
+    staticData.aenaAmazonInFlight[guardKey] = new Date().toISOString();
+  }
+}
+
+return {
+  json: {
+    ...$json,
+    guardKey,
+    skipAsDuplicate,
+    skipReason,
+    duplicateProcessedAt: guardKey ? staticData.aenaAmazonProcessedUids[guardKey] || null : null,
+  },
+};
+"""
+
+REGISTER_PROCESSED_CODE = r"""const staticData = $getWorkflowStaticData('global');
+if (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};
+
+const coord = $('Coordinar reemplazo').first().json;
+const guardKey = String(coord.emailId || $('Comprobar duplicado IMAP').first().json.guardKey || '').trim();
+
+if (guardKey) {
+  delete staticData.aenaAmazonInFlight?.[guardKey];
+  staticData.aenaAmazonProcessedUids[guardKey] = new Date().toISOString();
+  const keys = Object.keys(staticData.aenaAmazonProcessedUids);
+  if (keys.length > 400) {
+    keys.sort(
+      (a, b) =>
+        Date.parse(staticData.aenaAmazonProcessedUids[a]) -
+        Date.parse(staticData.aenaAmazonProcessedUids[b])
+    );
+    for (let i = 0; i < keys.length - 250; i++) {
+      delete staticData.aenaAmazonProcessedUids[keys[i]];
+    }
+  }
+}
+
+return [
+  {
+    json: {
+      registered: guardKey,
+      rowCount: coord.rowCount,
+      finishedAt: new Date().toISOString(),
+    },
+  },
+];
 """
 
 EXTRACT_URL_CODE = r"""const html = String($json.html || $json.textAsHtml || $json.text || '');
@@ -136,9 +214,11 @@ const ranked = unique
   .filter((row) => row.score > 0)
   .sort((a, b) => b.score - a.score);
 
+const guardKey = String($json.guardKey || $json.imapUid || $json.attributes?.uid || $json.id || '').trim();
+
 return {
   json: {
-    emailId: $json.id,
+    emailId: guardKey,
     threadId: $json.threadId,
     subject,
     from: $json.from,
@@ -479,6 +559,60 @@ nodes = [
         "parameters": if_boolean_true("={{ $json.isAenaRecipient }}", "is-aena"),
     },
     {
+        "id": "dedup-guard",
+        "name": "Comprobar duplicado IMAP",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [140, 40],
+        "parameters": {
+            "mode": "runOnceForEachItem",
+            "language": "javaScript",
+            "jsCode": DEDUP_GUARD_CODE,
+        },
+        "notes": "Evita reprocesar el mismo UID IMAP y bloquea ejecuciones solapadas.",
+        "notesInFlow": True,
+    },
+    {
+        "id": "if-dedup",
+        "name": "Correo nuevo?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [280, 40],
+        "parameters": {
+            "conditions": {
+                "options": {
+                    "caseSensitive": True,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 2,
+                },
+                "conditions": [
+                    {
+                        "id": "not-duplicate",
+                        "leftValue": "={{ $json.skipAsDuplicate }}",
+                        "rightValue": True,
+                        "operator": {
+                            "type": "boolean",
+                            "operation": "notEquals",
+                        },
+                    }
+                ],
+                "combinator": "and",
+            },
+            "options": {},
+        },
+    },
+    {
+        "id": "skip-duplicate",
+        "name": "Correo ya importado",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [520, 260],
+        "parameters": {},
+        "notes": "UID ya registrado o otra ejecución está escribiendo en la Sheet.",
+        "notesInFlow": True,
+    },
+    {
         "id": "ignore-other",
         "name": "Ignorar otro destinatario",
         "type": "n8n-nodes-base.noOp",
@@ -713,6 +847,19 @@ nodes = [
         },
     },
     {
+        "id": "register-processed",
+        "name": "Registrar UID procesado",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [2920, -80],
+        "executeOnce": True,
+        "parameters": {
+            "mode": "runOnceForAllItems",
+            "language": "javaScript",
+            "jsCode": REGISTER_PROCESSED_CODE,
+        },
+    },
+    {
         "id": "mark-read",
         "name": "Marcar correo leido",
         "type": "n8n-nodes-base.gmail",
@@ -744,8 +891,15 @@ connections = {
     "Validar destinatario": {"main": [[conn("Destinatario Aena?")]]},
     "Destinatario Aena?": {
         "main": [
-            [conn("Extraer enlace de descarga")],
+            [conn("Comprobar duplicado IMAP")],
             [conn("Ignorar otro destinatario")],
+        ]
+    },
+    "Comprobar duplicado IMAP": {"main": [[conn("Correo nuevo?")]]},
+    "Correo nuevo?": {
+        "main": [
+            [conn("Extraer enlace de descarga")],
+            [conn("Correo ya importado")],
         ]
     },
     "Extraer enlace de descarga": {"main": [[conn("Hay enlace?")]]},
@@ -776,7 +930,8 @@ connections = {
     },
     "Vaciar pestaña Amazon": {"main": [[conn("Restaurar filas CSV")]]},
     "Restaurar filas CSV": {"main": [[conn("Pegar CSV en Amazon")]]},
-    "Pegar CSV en Amazon": {"main": [[conn("Marcar correo leido")]]},
+    "Pegar CSV en Amazon": {"main": [[conn("Registrar UID procesado")]]},
+    "Registrar UID procesado": {"main": [[conn("Marcar correo leido")]]},
 }
 
 workflow = {
@@ -830,6 +985,9 @@ def validate(data: dict) -> list[str]:
         "Gmail Trigger Aena",
         "Validar destinatario",
         "Destinatario Aena?",
+        "Comprobar duplicado IMAP",
+        "Correo nuevo?",
+        "Registrar UID procesado",
         "Extraer enlace de descarga",
         "Descargar CSV",
         "Inspeccionar descarga",
