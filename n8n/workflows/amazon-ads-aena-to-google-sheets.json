@@ -1,0 +1,884 @@
+{
+  "name": "Amazon Ads Aena → Google Sheets",
+  "active": false,
+  "nodes": [
+    {
+      "id": "note-setup",
+      "name": "Nota setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -480
+      ],
+      "parameters": {
+        "content": "## Amazon Ads Aena — pegar en el escenario existente\n\nCanvas vivo: https://pmedia.app.n8n.cloud/workflow/EkaAF0yc5VuRwtVG\nEl **primer nodo de ese workflow ya recibe el correo**. No dupliques el Gmail Trigger:\n1. Importa este JSON (`Workflows → Import from File`) o copia los nodos desde `Validar destinatario`.\n2. Conecta la salida del trigger actual → `Validar destinatario`.\n3. Google Sheets: credencial **Google Sheets account** (misma que el escenario vivo).\n4. Destinatario obligatorio: `aena@pmediaplus.com` (To/Cc/Delivered-To).\n5. Cada día se **vacía** la pestaña Amazon y se pega el CSV nuevo.\n\nSheet: `Amazon` — https://docs.google.com/spreadsheets/d/1DzDf3h0LwsQfxgDnU31iLLXGnW9wjgfaRT4uZsrBZa4/edit?gid=1035524264#gid=1035524264",
+        "height": 380,
+        "width": 620,
+        "color": 5
+      }
+    },
+    {
+      "id": "note-flow",
+      "name": "Nota flujo",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -480
+      ],
+      "parameters": {
+        "content": "## Flujo\n\nTrigger (existente) → validar `aena@pmediaplus.com` → extraer `href` del HTML → GET del CSV → (gunzip si viene `.gz`) → Clear pestaña Amazon → Append filas → marcar leído.\n\nSi el enlace de Amazon exige login o está caducado, `Preparar CSV` falla a propósito.",
+        "height": 260,
+        "width": 460,
+        "color": 6
+      }
+    },
+    {
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger Aena",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        40
+      ],
+      "notes": "En EkaAF0yc5VuRwtVG el trigger ya existe. Usa este nodo solo si importas el workflow completo; si no, conéctalo al trigger actual y bórralo.",
+      "notesInFlow": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail emiliano@parvusmedia.com"
+        }
+      },
+      "parameters": {
+        "authentication": "oAuth2",
+        "event": "messageReceived",
+        "simple": false,
+        "filters": {
+          "q": "from:(\"Amazon Display Advertising Analytics\") subject:\"Report available: Aena\"",
+          "readStatus": "unread",
+          "sender": "Amazon Display Advertising Analytics"
+        },
+        "options": {
+          "downloadAttachments": false
+        },
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 15,
+              "unit": "minutes"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "validate-recipient",
+      "name": "Validar destinatario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "function collect(value) {\n  if (value === null || value === undefined) return '';\n  if (Array.isArray(value)) return value.map(collect).join(' ');\n  if (typeof value === 'object') {\n    const nested = [];\n    for (const [key, entry] of Object.entries(value)) {\n      nested.push(key, collect(entry));\n    }\n    return nested.join(' ');\n  }\n  return String(value);\n}\n\nconst expected = 'aena@pmediaplus.com';\nconst headers = $json.headers || $json.header || {};\nconst haystack = [\n  $json.to,\n  $json.cc,\n  $json.bcc,\n  $json.recipients,\n  $json.deliveredTo,\n  headers['delivered-to'],\n  headers['Delivered-To'],\n  headers['x-original-to'],\n  headers['X-Original-To'],\n  headers['envelope-to'],\n  headers['Envelope-To'],\n  headers,\n].map(collect).join(' ').toLowerCase();\n\nconst isAenaRecipient = haystack.includes(expected);\n\nreturn {\n  json: {\n    ...$json,\n    isAenaRecipient,\n    recipientCheck: expected,\n    imapUid: String($json.attributes?.uid ?? $json.uid ?? ''),\n    messageIdKey: String(\n      $json.messageId ?? $json.metadata?.['message-id'] ?? $json.headers?.['message-id'] ?? ''\n    ).trim(),\n  },\n};\n"
+      }
+    },
+    {
+      "id": "if-recipient",
+      "name": "Destinatario Aena?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-aena",
+              "leftValue": "={{ $json.isAenaRecipient }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dedup-guard",
+      "name": "Comprobar duplicado IMAP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};\nif (!staticData.aenaAmazonInFlight) staticData.aenaAmazonInFlight = {};\n\nconst uid = String($json.imapUid || $json.attributes?.uid || '').trim();\nconst messageId = String($json.messageIdKey || $json.messageId || '').trim();\nconst guardKey = uid || messageId;\n\nlet skipAsDuplicate = false;\nlet skipReason = '';\n\nif (guardKey && staticData.aenaAmazonProcessedUids[guardKey]) {\n  skipAsDuplicate = true;\n  skipReason = 'already_processed';\n} else if (guardKey) {\n  const startedAt = staticData.aenaAmazonInFlight[guardKey];\n  if (startedAt) {\n    const ageMs = Date.now() - Date.parse(startedAt);\n    if (ageMs < 15 * 60 * 1000) {\n      skipAsDuplicate = true;\n      skipReason = 'in_flight';\n    } else {\n      delete staticData.aenaAmazonInFlight[guardKey];\n    }\n  }\n  if (!skipAsDuplicate) {\n    staticData.aenaAmazonInFlight[guardKey] = new Date().toISOString();\n  }\n}\n\nreturn {\n  json: {\n    ...$json,\n    guardKey,\n    skipAsDuplicate,\n    skipReason,\n    duplicateProcessedAt: guardKey ? staticData.aenaAmazonProcessedUids[guardKey] || null : null,\n  },\n};\n"
+      },
+      "notes": "Evita reprocesar el mismo UID IMAP y bloquea ejecuciones solapadas.",
+      "notesInFlow": true
+    },
+    {
+      "id": "if-dedup",
+      "name": "Correo nuevo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-duplicate",
+              "leftValue": "={{ $json.skipAsDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "skip-duplicate",
+      "name": "Correo ya importado",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        520,
+        260
+      ],
+      "parameters": {},
+      "notes": "UID ya registrado o otra ejecución está escribiendo en la Sheet.",
+      "notesInFlow": true
+    },
+    {
+      "id": "ignore-other",
+      "name": "Ignorar otro destinatario",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        280,
+        260
+      ],
+      "parameters": {},
+      "notes": "El correo no va a aena@pmediaplus.com; no se toca la Sheet.",
+      "notesInFlow": true
+    },
+    {
+      "id": "extract-url",
+      "name": "Extraer enlace de descarga",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const html = String($json.html || $json.textAsHtml || $json.text || '');\nconst text = String($json.text || '');\nconst subject = String($json.subject || '');\n\nfunction decodeEntities(value) {\n  return value\n    .replace(/&amp;/gi, '&')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))\n    .replace(/&#(\\d+);/g, (_, num) => String.fromCharCode(Number(num)));\n}\n\nfunction unwrap(url) {\n  let current = decodeEntities(url).trim();\n  for (let i = 0; i < 5; i++) {\n    try {\n      const parsed = new URL(current);\n      const nested =\n        parsed.searchParams.get('q') ||\n        parsed.searchParams.get('u') ||\n        parsed.searchParams.get('U') ||\n        parsed.searchParams.get('url') ||\n        parsed.searchParams.get('dest') ||\n        parsed.searchParams.get('redirect');\n      if (nested && /^https?:/i.test(nested) && nested !== current) {\n        current = decodeEntities(nested);\n        continue;\n      }\n    } catch (error) {\n      break;\n    }\n    break;\n  }\n  return current;\n}\n\nfunction score(url) {\n  const lower = url.toLowerCase();\n  if (!/^https?:\\/\\//i.test(url)) return -100;\n  if (lower.startsWith('mailto:')) return -100;\n  if (/(unsubscribe|privacy|help|support|preferences|pixel|tracking|fls-na\\.amazon)/i.test(lower)) return -50;\n  if (/\\.(png|gif|jpg|jpeg|svg|css|woff2?)(\\?|$)/i.test(lower)) return -50;\n\n  let points = 0;\n  if (/(advertising\\.amazon|amazonaws\\.com|offline-report-storage)/i.test(lower)) points += 40;\n  if (/amazon\\.com/i.test(lower)) points += 10;\n  if (/(download|report|csv|gzip)/i.test(lower)) points += 25;\n  if (/(\\.csv|\\.gz)(\\?|$)/i.test(lower)) points += 30;\n  if (/(s3\\.|signed|X-Amz-Signature)/i.test(url)) points += 20;\n  return points;\n}\n\nconst hrefs = [];\nconst hrefRe = /href\\s*=\\s*[\"']([^\"']+)[\"']/gi;\nlet match;\nwhile ((match = hrefRe.exec(html))) {\n  hrefs.push(unwrap(match[1]));\n}\nconst rawUrlRe = /https?:\\/\\/[^\\s\"'<>]+/gi;\nfor (const found of (html + ' ' + text).match(rawUrlRe) || []) {\n  hrefs.push(unwrap(found.replace(/[),.;]+$/, '')));\n}\n\nconst unique = [...new Set(hrefs.filter(Boolean))];\nconst ranked = unique\n  .map((url) => ({ url, score: score(url) }))\n  .filter((row) => row.score > 0)\n  .sort((a, b) => b.score - a.score);\n\nconst guardKey = String($json.guardKey || $json.imapUid || $json.attributes?.uid || $json.id || '').trim();\n\nreturn {\n  json: {\n    emailId: guardKey,\n    threadId: $json.threadId,\n    subject,\n    from: $json.from,\n    to: $json.to,\n    date: $json.date,\n    isAenaRecipient: $json.isAenaRecipient,\n    downloadUrl: ranked[0]?.url || '',\n    candidateUrls: ranked.slice(0, 8),\n  },\n};\n"
+      }
+    },
+    {
+      "id": "if-url",
+      "name": "Hay enlace?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-download-url",
+              "leftValue": "={{ $json.downloadUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "no-url",
+      "name": "Sin enlace de descarga",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        760,
+        260
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "={{ 'No se encontró un enlace de descarga en: ' + ($json.subject || 'sin asunto') }}"
+      }
+    },
+    {
+      "id": "download-report",
+      "name": "Descargar CSV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        40
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.downloadUrl }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/csv,application/gzip,text/plain,*/*"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 10
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "inspect-download",
+      "name": "Inspeccionar descarga",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const binary = $input.item.binary?.data;\nif (!binary) {\n  throw new Error('La descarga no devolvió un fichero binario.');\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst isGzip = buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b;\n\nreturn {\n  json: {\n    ...$('Extraer enlace de descarga').item.json,\n    isGzip,\n    httpHeaders: $json.headers || {},\n  },\n  binary: $input.item.binary,\n};\n"
+      }
+    },
+    {
+      "id": "if-gzip",
+      "name": "Es gzip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-gzip",
+              "leftValue": "={{ $json.isGzip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "decompress-gzip",
+      "name": "Descomprimir gzip",
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -80
+      ],
+      "parameters": {
+        "operation": "decompress",
+        "binaryPropertyName": "data",
+        "outputPrefix": "file_"
+      }
+    },
+    {
+      "id": "prepare-csv",
+      "name": "Preparar CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const email = $('Extraer enlace de descarga').item.json;\nconst http = $('Descargar CSV').first().json;\nconst binaryMap = $input.item.binary || {};\nconst field =\n  binaryMap.data\n    ? 'data'\n    : Object.keys(binaryMap).find((key) => key.startsWith('file_')) || Object.keys(binaryMap)[0];\n\nif (!field || !binaryMap[field]) {\n  throw new Error('No hay datos binarios para preparar el CSV.');\n}\n\nconst binary = binaryMap[field];\nlet buffer = await this.helpers.getBinaryDataBuffer(0, field);\nconst headers = http.headers || $json.httpHeaders || {};\nconst contentType = String(headers['content-type'] || headers['Content-Type'] || binary.mimeType || '').toLowerCase();\nconst contentDisposition = String(headers['content-disposition'] || headers['Content-Disposition'] || '');\n\nfunction filenameFromDisposition(value) {\n  const star = /filename\\*\\s*=\\s*UTF-8''([^;]+)/i.exec(value);\n  if (star) return decodeURIComponent(star[1].replace(/[\"']/g, ''));\n  const basic = /filename\\s*=\\s*\"?([^\";]+)\"?/i.exec(value);\n  return basic ? basic[1] : '';\n}\n\nfunction sniff(buf) {\n  if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) return 'gzip';\n  const text = buf.slice(0, 400).toString('utf8').toLowerCase();\n  if (text.includes('<html') || text.includes('<!doctype html')) return 'html';\n  return 'csv';\n}\n\nlet fileName = filenameFromDisposition(contentDisposition) || binary.fileName || 'amazon-aena-report.csv';\nlet kind = sniff(buffer);\n\nif (kind === 'gzip') {\n  throw new Error('El fichero sigue comprimido en gzip; usa el nodo Descomprimir gzip antes de Preparar CSV.');\n}\n\nif (kind === 'html') {\n  const preview = buffer.slice(0, 280).toString('utf8').replace(/\\s+/g, ' ');\n  throw new Error(\n    'El enlace no entregó el CSV (HTML de login o link caducado). Preview: ' + preview\n  );\n}\n\nif (!/\\.(csv|txt|tsv)$/i.test(fileName)) fileName += '.csv';\n\nconst stamp = new Date().toISOString().slice(0, 10);\nconst storedName = `Aena_AmazonAds_${stamp}_${fileName.replace(/[^\\w.\\-]+/g, '_')}`;\nconst prepared = await this.helpers.prepareBinaryData(buffer, storedName, 'text/csv');\n\nreturn {\n  json: {\n    emailId: email.emailId,\n    threadId: email.threadId,\n    subject: email.subject,\n    from: email.from,\n    date: email.date,\n    downloadUrl: email.downloadUrl,\n    fileName: storedName,\n    byteSize: buffer.length,\n    contentType,\n  },\n  binary: { data: prepared },\n};\n"
+      }
+    },
+    {
+      "id": "extract-csv",
+      "name": "Parsear CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        40
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "relaxQuotes": true
+        }
+      }
+    },
+    {
+      "id": "normalize",
+      "name": "Normalizar filas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const meta = $('Preparar CSV').first().json;\nconst items = $input.all();\n\nfunction flatten(value) {\n  if (value && typeof value === 'object' && value.row && typeof value.row === 'object') {\n    return value.row;\n  }\n  return value;\n}\n\nconst rows = [];\nfor (const item of items) {\n  const payload = flatten(item.json);\n  if (payload && typeof payload === 'object' && Object.keys(payload).length) {\n    rows.push(payload);\n  }\n}\n\nconst usable = rows.filter((row) =>\n  row && typeof row === 'object' && Object.values(row).some((v) => v !== '' && v !== null && v !== undefined)\n);\n\nif (!usable.length) {\n  return [{ json: { _skip_sheets: true, emailId: meta.emailId, fileName: meta.fileName } }];\n}\n\nreturn usable.map((row) => {\n  const mapped = {};\n  for (const [key, value] of Object.entries(row)) {\n    if (key.startsWith('_')) continue;\n    mapped[key] = value;\n  }\n  mapped.Plataforma = 'Amazon';\n  mapped.ImportadoAt = new Date().toISOString();\n  mapped._skip_sheets = false;\n  mapped._emailId = meta.emailId;\n  mapped._fileName = meta.fileName;\n  return { json: mapped };\n});\n"
+      }
+    },
+    {
+      "id": "coordinate-replace",
+      "name": "Coordinar reemplazo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $('Normalizar filas')\n  .all()\n  .filter((item) => item.json && item.json._skip_sheets !== true);\n\nif (!rows.length) {\n  return [{ json: { _skip_sheets: true } }];\n}\n\nconst first = rows[0].json;\nreturn [\n  {\n    json: {\n      _replaceAmazon: true,\n      rowCount: rows.length,\n      emailId: first._emailId,\n      fileName: first._fileName,\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "if-rows",
+      "name": "Hay filas para pegar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1960,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "replace-amazon",
+              "leftValue": "={{ $json._replaceAmazon }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "clear-sheet",
+      "name": "Vaciar pestaña Amazon",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        -80
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "value": "1DzDf3h0LwsQfxgDnU31iLLXGnW9wjgfaRT4uZsrBZa4",
+          "mode": "id",
+          "cachedResultName": "Copia de Aena V3"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1035524264",
+          "mode": "id",
+          "cachedResultName": "Amazon"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      }
+    },
+    {
+      "id": "restore-rows",
+      "name": "Restaurar filas CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $('Normalizar filas').all().filter((item) => item.json._skip_sheets !== true);\n"
+      }
+    },
+    {
+      "id": "append-sheets",
+      "name": "Pegar CSV en Amazon",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2680,
+        -80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DzDf3h0LwsQfxgDnU31iLLXGnW9wjgfaRT4uZsrBZa4",
+          "mode": "id",
+          "cachedResultName": "Copia de Aena V3"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1035524264",
+          "mode": "id",
+          "cachedResultName": "Amazon"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true,
+          "cellFormat": "USER_ENTERED",
+          "handlingExtraData": "insertInNewColumn"
+        }
+      }
+    },
+    {
+      "id": "register-processed",
+      "name": "Registrar UID procesado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        -80
+      ],
+      "executeOnce": true,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.aenaAmazonProcessedUids) staticData.aenaAmazonProcessedUids = {};\n\nconst coord = $('Coordinar reemplazo').first().json;\nconst guardKey = String(coord.emailId || $('Comprobar duplicado IMAP').first().json.guardKey || '').trim();\n\nif (guardKey) {\n  delete staticData.aenaAmazonInFlight?.[guardKey];\n  staticData.aenaAmazonProcessedUids[guardKey] = new Date().toISOString();\n  const keys = Object.keys(staticData.aenaAmazonProcessedUids);\n  if (keys.length > 400) {\n    keys.sort(\n      (a, b) =>\n        Date.parse(staticData.aenaAmazonProcessedUids[a]) -\n        Date.parse(staticData.aenaAmazonProcessedUids[b])\n    );\n    for (let i = 0; i < keys.length - 250; i++) {\n      delete staticData.aenaAmazonProcessedUids[keys[i]];\n    }\n  }\n}\n\nreturn [\n  {\n    json: {\n      registered: guardKey,\n      rowCount: coord.rowCount,\n      finishedAt: new Date().toISOString(),\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "mark-read",
+      "name": "Marcar correo leido",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2920,
+        40
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail emiliano@parvusmedia.com"
+        }
+      },
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger Aena').item.json.id }}"
+      },
+      "notes": "Si enganchas el trigger existente de EkaAF0yc5VuRwtVG, cambia esta expresión al nombre real de ese nodo.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Gmail Trigger Aena": {
+      "main": [
+        [
+          {
+            "node": "Validar destinatario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar destinatario": {
+      "main": [
+        [
+          {
+            "node": "Destinatario Aena?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Destinatario Aena?": {
+      "main": [
+        [
+          {
+            "node": "Comprobar duplicado IMAP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar otro destinatario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprobar duplicado IMAP": {
+      "main": [
+        [
+          {
+            "node": "Correo nuevo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Correo nuevo?": {
+      "main": [
+        [
+          {
+            "node": "Extraer enlace de descarga",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Correo ya importado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer enlace de descarga": {
+      "main": [
+        [
+          {
+            "node": "Hay enlace?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay enlace?": {
+      "main": [
+        [
+          {
+            "node": "Descargar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin enlace de descarga",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar CSV": {
+      "main": [
+        [
+          {
+            "node": "Inspeccionar descarga",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspeccionar descarga": {
+      "main": [
+        [
+          {
+            "node": "Es gzip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es gzip?": {
+      "main": [
+        [
+          {
+            "node": "Descomprimir gzip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descomprimir gzip": {
+      "main": [
+        [
+          {
+            "node": "Preparar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar CSV": {
+      "main": [
+        [
+          {
+            "node": "Parsear CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear CSV": {
+      "main": [
+        [
+          {
+            "node": "Normalizar filas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar filas": {
+      "main": [
+        [
+          {
+            "node": "Coordinar reemplazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coordinar reemplazo": {
+      "main": [
+        [
+          {
+            "node": "Hay filas para pegar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay filas para pegar?": {
+      "main": [
+        [
+          {
+            "node": "Vaciar pestaña Amazon",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Vaciar pestaña Amazon": {
+      "main": [
+        [
+          {
+            "node": "Restaurar filas CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restaurar filas CSV": {
+      "main": [
+        [
+          {
+            "node": "Pegar CSV en Amazon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pegar CSV en Amazon": {
+      "main": [
+        [
+          {
+            "node": "Registrar UID procesado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar UID procesado": {
+      "main": [
+        [
+          {
+            "node": "Marcar correo leido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 3600
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Extiende el escenario EkaAF0yc5VuRwtVG: valida destinatario aena@pmediaplus.com, descarga el CSV del enlace del correo Amazon Display Advertising Analytics y reemplaza la pestaña Amazon del spreadsheet Copia de Aena V3."
+  },
+  "tags": [
+    {
+      "name": "amazon-ads"
+    },
+    {
+      "name": "aena"
+    },
+    {
+      "name": "gmail"
+    }
+  ]
+}

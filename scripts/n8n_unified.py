@@ -27,6 +27,21 @@ def _is_jwt(value: str) -> bool:
     return value.count(".") == 2
 
 
+def _jwt_audience(value: str) -> str | None:
+    if not _is_jwt(value):
+        return None
+    try:
+        import base64
+
+        payload = value.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload))
+        aud = data.get("aud")
+        return aud if isinstance(aud, str) else None
+    except Exception:
+        return None
+
+
 def _safe_name(name: str) -> str:
     return re.sub(r"[^a-zA-Z0-9._-]+", "_", name).strip("_") or "workflow"
 
@@ -180,10 +195,13 @@ def _detect_tokens() -> tuple[str | None, str | None]:
     legacy = os.getenv("N8N_API_KEY")
 
     if legacy:
-        if not rest_key and legacy.startswith("n8n_api_"):
+        legacy_aud = _jwt_audience(legacy)
+        if not rest_key and (legacy.startswith("n8n_api_") or legacy_aud == "public-api"):
             rest_key = legacy
-        if not mcp_token and _is_jwt(legacy):
+        if not mcp_token and _is_jwt(legacy) and legacy_aud != "public-api":
             mcp_token = legacy
+    if rest_key and _jwt_audience(rest_key) == "mcp-server-api" and not mcp_token:
+        mcp_token, rest_key = rest_key, None
     return rest_key, mcp_token
 
 
