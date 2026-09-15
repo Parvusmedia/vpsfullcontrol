@@ -1,0 +1,50 @@
+{
+  "include_keywords": [
+    "adobe",
+    "aem",
+    "analytics",
+    "campaign",
+    "cdp",
+    "commerce",
+    "contentful",
+    "cro",
+    "customer experience",
+    "cx",
+    "digital",
+    "ecommerce",
+    "e-commerce",
+    "experience",
+    "google analytics",
+    "gtm",
+    "martech",
+    "marketing",
+    "personalization",
+    "personalisation",
+    "salesforce",
+    "sitecore",
+    "song",
+    "tealeaf",
+    "unica"
+  ],
+  "exclude_keywords": [
+    "audit",
+    "auditor",
+    "cyber",
+    "internal audit",
+    "intern",
+    "internship",
+    "junior",
+    "legal counsel",
+    "medico",
+    "médico",
+    "nurse",
+    "paralegal",
+    "payroll",
+    "tax",
+    "transfer pricing"
+  ],
+  "exclude_title_prefixes": [
+    "US E - Tax",
+    "US E - Audit"
+  ]
+}
