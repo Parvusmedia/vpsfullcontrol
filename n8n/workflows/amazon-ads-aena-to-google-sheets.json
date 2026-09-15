@@ -12,7 +12,7 @@
         -480
       ],
       "parameters": {
-        "content": "## Amazon Ads Aena — pegar en el escenario existente\n\nCanvas vivo: https://pmedia.app.n8n.cloud/workflow/EkaAF0yc5VuRwtVG\nEl **primer nodo de ese workflow ya recibe el correo**. No dupliques el Gmail Trigger:\n1. Importa este JSON (`Workflows → Import from File`) o copia los nodos desde `Validar destinatario`.\n2. Conecta la salida del trigger actual → `Validar destinatario`.\n3. Credenciales OAuth de **emiliano@parvusmedia.com**: Gmail + Google Sheets.\n4. Destinatario obligatorio: `aena@pmediaplus.com` (To/Cc/Delivered-To).\n5. Cada día se **vacía** la pestaña Amazon y se pega el CSV nuevo.\n\nSheet: `Amazon` — https://docs.google.com/spreadsheets/d/1DzDf3h0LwsQfxgDnU31iLLXGnW9wjgfaRT4uZsrBZa4/edit?gid=1035524264#gid=1035524264",
+        "content": "## Amazon Ads Aena — pegar en el escenario existente\n\nCanvas vivo: https://pmedia.app.n8n.cloud/workflow/EkaAF0yc5VuRwtVG\nEl **primer nodo de ese workflow ya recibe el correo**. No dupliques el Gmail Trigger:\n1. Importa este JSON (`Workflows → Import from File`) o copia los nodos desde `Validar destinatario`.\n2. Conecta la salida del trigger actual → `Validar destinatario`.\n3. Google Sheets: credencial **Google Sheets account** (misma que el escenario vivo).\n4. Destinatario obligatorio: `aena@pmediaplus.com` (To/Cc/Delivered-To).\n5. Cada día se **vacía** la pestaña Amazon y se pega el CSV nuevo.\n\nSheet: `Amazon` — https://docs.google.com/spreadsheets/d/1DzDf3h0LwsQfxgDnU31iLLXGnW9wjgfaRT4uZsrBZa4/edit?gid=1035524264#gid=1035524264",
         "height": 380,
         "width": 620,
         "color": 5
@@ -481,7 +481,7 @@
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "",
-          "name": "Google Sheets emiliano@parvusmedia.com"
+          "name": "Google Sheets account"
         }
       },
       "parameters": {
@@ -530,7 +530,7 @@
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "",
-          "name": "Google Sheets emiliano@parvusmedia.com"
+          "name": "Google Sheets account"
         }
       },
       "parameters": {

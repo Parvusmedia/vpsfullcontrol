@@ -411,7 +411,8 @@ def gmail_creds() -> dict:
 
 
 def sheets_creds() -> dict:
-    return {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets emiliano@parvusmedia.com"}}
+    # En n8n Cloud vivo: credencial «Google Sheets account» (id asignado en la UI).
+    return {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
 
 
 def if_not_empty(left: str, condition_id: str) -> dict:
@@ -480,7 +481,7 @@ nodes = [
                 "El **primer nodo de ese workflow ya recibe el correo**. No dupliques el Gmail Trigger:",
                 "1. Importa este JSON (`Workflows → Import from File`) o copia los nodos desde `Validar destinatario`.",
                 "2. Conecta la salida del trigger actual → `Validar destinatario`.",
-                "3. Credenciales OAuth de **emiliano@parvusmedia.com**: Gmail + Google Sheets.",
+                "3. Google Sheets: credencial **Google Sheets account** (misma que el escenario vivo).",
                 "4. Destinatario obligatorio: `aena@pmediaplus.com` (To/Cc/Delivered-To).",
                 "5. Cada día se **vacía** la pestaña Amazon y se pega el CSV nuevo.",
                 "",

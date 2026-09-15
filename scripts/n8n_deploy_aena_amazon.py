@@ -14,6 +14,36 @@ from pathlib import Path
 WORKFLOW_ID = "EkaAF0yc5VuRwtVG"
 TRIGGER_NAME = "Email Trigger (IMAP)"
 BLUEPRINT = Path(__file__).resolve().parents[1] / "n8n/workflows/amazon-ads-aena-to-google-sheets.json"
+SHEETS_NODE_NAMES = ("Vaciar pestaña Amazon", "Pegar CSV en Amazon")
+
+
+def preserve_google_sheets_setup(live_nodes: list[dict], nodes: list[dict]) -> None:
+    """Keep live Google Sheets credential + document/sheet/column mapping on deploy."""
+    live_by_name = {
+        n["name"]: n
+        for n in live_nodes
+        if n.get("type") == "n8n-nodes-base.googleSheets" or "googleSheets" in n.get("type", "")
+    }
+    for node in nodes:
+        if node["name"] not in SHEETS_NODE_NAMES:
+            continue
+        live = live_by_name.get(node["name"])
+        if not live:
+            continue
+        if live.get("credentials"):
+            node["credentials"] = copy.deepcopy(live["credentials"])
+        live_params = live.get("parameters") or {}
+        params = node.setdefault("parameters", {})
+        for key in ("documentId", "sheetName"):
+            if key in live_params:
+                params[key] = copy.deepcopy(live_params[key])
+        if node["name"] == "Pegar CSV en Amazon":
+            for key in ("columns", "options"):
+                if live_params.get(key):
+                    params[key] = copy.deepcopy(live_params[key])
+        for attr in ("typeVersion", "id"):
+            if live.get(attr) is not None:
+                node[attr] = live[attr]
 
 
 def api_request(method: str, path: str, payload: dict | None = None) -> tuple[int, dict]:
@@ -71,6 +101,7 @@ def main() -> int:
     imap["parameters"].setdefault("options", {})["trackLastMessageId"] = True
 
     nodes = [imap] + new_nodes
+    preserve_google_sheets_setup(live["nodes"], nodes)
     connections = copy.deepcopy(blueprint["connections"])
     connections[TRIGGER_NAME] = {"main": [[{"node": "Validar destinatario", "type": "main", "index": 0}]]}
     connections.pop("Gmail Trigger Aena", None)
