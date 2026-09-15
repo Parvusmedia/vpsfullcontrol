@@ -357,12 +357,27 @@
       }
     },
     {
+      "id": "coordinate-replace",
+      "name": "Coordinar reemplazo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $('Normalizar filas')\n  .all()\n  .filter((item) => item.json && item.json._skip_sheets !== true);\n\nif (!rows.length) {\n  return [{ json: { _skip_sheets: true } }];\n}\n\nconst first = rows[0].json;\nreturn [\n  {\n    json: {\n      _replaceAmazon: true,\n      rowCount: rows.length,\n      emailId: first._emailId,\n      fileName: first._fileName,\n    },\n  },\n];\n"
+      }
+    },
+    {
       "id": "if-rows",
-      "name": "Hay filas?",
+      "name": "Hay filas para pegar?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1720,
+        1960,
         40
       ],
       "parameters": {
@@ -375,12 +390,12 @@
           },
           "conditions": [
             {
-              "id": "not-skip",
-              "leftValue": "={{ $json._skip_sheets }}",
+              "id": "replace-amazon",
+              "leftValue": "={{ $json._replaceAmazon }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
-                "operation": "false",
+                "operation": "true",
                 "singleValue": true
               }
             }
@@ -388,21 +403,6 @@
           "combinator": "and"
         },
         "options": {}
-      }
-    },
-    {
-      "id": "trigger-clear",
-      "name": "Una vez para vaciar",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1960,
-        -80
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
-        "jsCode": "const items = $input.all();\nreturn [{ json: { ok: true, rowCount: items.length, emailId: items[0].json._emailId } }];\n"
       }
     },
     {
@@ -414,6 +414,7 @@
         2200,
         -80
       ],
+      "executeOnce": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "",
@@ -672,32 +673,25 @@
       "main": [
         [
           {
-            "node": "Hay filas?",
+            "node": "Coordinar reemplazo",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Hay filas?": {
+    "Coordinar reemplazo": {
       "main": [
         [
           {
-            "node": "Una vez para vaciar",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Marcar correo leido",
+            "node": "Hay filas para pegar?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Una vez para vaciar": {
+    "Hay filas para pegar?": {
       "main": [
         [
           {
@@ -705,7 +699,8 @@
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     },
     "Vaciar pestaña Amazon": {

@@ -75,8 +75,9 @@ def main() -> int:
     connections[TRIGGER_NAME] = {"main": [[{"node": "Validar destinatario", "type": "main", "index": 0}]]}
     connections.pop("Gmail Trigger Aena", None)
     connections.pop("Marcar correo leido", None)
-    if "Hay filas?" in connections:
-        connections["Hay filas?"]["main"][1] = []
+    for old_if in ("Hay filas?", "Hay filas para pegar?"):
+        if old_if in connections and len(connections[old_if]["main"]) > 1:
+            connections[old_if]["main"][1] = []
     connections["Pegar CSV en Amazon"] = {"main": [[]]}
 
     # Patch IMAP-friendly fields in code nodes

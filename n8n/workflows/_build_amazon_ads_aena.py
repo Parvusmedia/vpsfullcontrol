@@ -278,8 +278,25 @@ return usable.map((row) => {
 });
 """
 
-TRIGGER_CLEAR_CODE = r"""const items = $input.all();
-return [{ json: { ok: true, rowCount: items.length, emailId: items[0].json._emailId } }];
+COORDINATE_REPLACE_CODE = r"""const rows = $('Normalizar filas')
+  .all()
+  .filter((item) => item.json && item.json._skip_sheets !== true);
+
+if (!rows.length) {
+  return [{ json: { _skip_sheets: true } }];
+}
+
+const first = rows[0].json;
+return [
+  {
+    json: {
+      _replaceAmazon: true,
+      rowCount: rows.length,
+      emailId: first._emailId,
+      fileName: first._fileName,
+    },
+  },
+];
 """
 
 RESTORE_ROWS_CODE = r"""return $('Normalizar filas').all().filter((item) => item.json._skip_sheets !== true);
@@ -620,47 +637,24 @@ nodes = [
         },
     },
     {
-        "id": "if-rows",
-        "name": "Hay filas?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [1720, 40],
-        "parameters": {
-            "conditions": {
-                "options": {
-                    "caseSensitive": True,
-                    "leftValue": "",
-                    "typeValidation": "loose",
-                    "version": 2,
-                },
-                "conditions": [
-                    {
-                        "id": "not-skip",
-                        "leftValue": "={{ $json._skip_sheets }}",
-                        "rightValue": True,
-                        "operator": {
-                            "type": "boolean",
-                            "operation": "false",
-                            "singleValue": True,
-                        },
-                    }
-                ],
-                "combinator": "and",
-            },
-            "options": {},
-        },
-    },
-    {
-        "id": "trigger-clear",
-        "name": "Una vez para vaciar",
+        "id": "coordinate-replace",
+        "name": "Coordinar reemplazo",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [1960, -80],
+        "position": [1720, 40],
         "parameters": {
             "mode": "runOnceForAllItems",
             "language": "javaScript",
-            "jsCode": TRIGGER_CLEAR_CODE,
+            "jsCode": COORDINATE_REPLACE_CODE,
         },
+    },
+    {
+        "id": "if-rows",
+        "name": "Hay filas para pegar?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [1960, 40],
+        "parameters": if_boolean_true("={{ $json._replaceAmazon }}", "replace-amazon"),
     },
     {
         "id": "clear-sheet",
@@ -668,6 +662,7 @@ nodes = [
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.5,
         "position": [2200, -80],
+        "executeOnce": True,
         "credentials": sheets_creds(),
         "parameters": {
             "resource": "sheet",
@@ -771,14 +766,14 @@ connections = {
     "Descomprimir gzip": {"main": [[conn("Preparar CSV")]]},
     "Preparar CSV": {"main": [[conn("Parsear CSV")]]},
     "Parsear CSV": {"main": [[conn("Normalizar filas")]]},
-    "Normalizar filas": {"main": [[conn("Hay filas?")]]},
-    "Hay filas?": {
+    "Normalizar filas": {"main": [[conn("Coordinar reemplazo")]]},
+    "Coordinar reemplazo": {"main": [[conn("Hay filas para pegar?")]]},
+    "Hay filas para pegar?": {
         "main": [
-            [conn("Una vez para vaciar")],
-            [conn("Marcar correo leido")],
+            [conn("Vaciar pestaña Amazon")],
+            [],
         ]
     },
-    "Una vez para vaciar": {"main": [[conn("Vaciar pestaña Amazon")]]},
     "Vaciar pestaña Amazon": {"main": [[conn("Restaurar filas CSV")]]},
     "Restaurar filas CSV": {"main": [[conn("Pegar CSV en Amazon")]]},
     "Pegar CSV en Amazon": {"main": [[conn("Marcar correo leido")]]},
@@ -839,6 +834,7 @@ def validate(data: dict) -> list[str]:
         "Descargar CSV",
         "Inspeccionar descarga",
         "Descomprimir gzip",
+        "Coordinar reemplazo",
         "Parsear CSV",
         "Vaciar pestaña Amazon",
         "Pegar CSV en Amazon",
