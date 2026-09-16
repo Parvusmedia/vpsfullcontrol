@@ -1,0 +1,110 @@
+{
+  "iphone-16-128": {
+    "battery_mah": 3561,
+    "fast_charge_w": 25,
+    "camera_main_mp": 48,
+    "processor": "Apple A18"
+  },
+  "iphone-15-256": {
+    "battery_mah": 3349,
+    "fast_charge_w": 20,
+    "camera_main_mp": 48,
+    "processor": "Apple A16"
+  },
+  "iphone-16-pro": {
+    "battery_mah": 3582,
+    "fast_charge_w": 27,
+    "camera_main_mp": 48,
+    "processor": "Apple A18 Pro"
+  },
+  "galaxy-s25": {
+    "battery_mah": 4000,
+    "fast_charge_w": 45,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 8 Elite"
+  },
+  "galaxy-a55": {
+    "battery_mah": 5000,
+    "fast_charge_w": 25,
+    "camera_main_mp": 50,
+    "processor": "Exynos 1480"
+  },
+  "galaxy-z-flip": {
+    "battery_mah": 4000,
+    "fast_charge_w": 25,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 8 Gen 3"
+  },
+  "galaxy-tab-s9": {
+    "battery_mah": 8400,
+    "fast_charge_w": 45,
+    "camera_main_mp": 13,
+    "processor": "Snapdragon 8 Gen 2"
+  },
+  "pixel-11-256": {
+    "battery_mah": 4600,
+    "fast_charge_w": 30,
+    "camera_main_mp": 50,
+    "processor": "Google Tensor G4"
+  },
+  "pixel-9a": {
+    "battery_mah": 5100,
+    "fast_charge_w": 23,
+    "camera_main_mp": 48,
+    "processor": "Google Tensor G4"
+  },
+  "redmi-note-14": {
+    "battery_mah": 5500,
+    "fast_charge_w": 45,
+    "camera_main_mp": 108,
+    "processor": "MediaTek Helio G99"
+  },
+  "xiaomi-15": {
+    "battery_mah": 5400,
+    "fast_charge_w": 90,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 8 Elite"
+  },
+  "xiaomi-14t": {
+    "battery_mah": 5000,
+    "fast_charge_w": 120,
+    "camera_main_mp": 50,
+    "processor": "MediaTek Dimensity 8300"
+  },
+  "motorola-edge-50": {
+    "battery_mah": 5000,
+    "fast_charge_w": 68,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 7 Gen 1"
+  },
+  "motorola-razr": {
+    "battery_mah": 4200,
+    "fast_charge_w": 30,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 8s Gen 3"
+  },
+  "oppo-reno12": {
+    "battery_mah": 5000,
+    "fast_charge_w": 80,
+    "camera_main_mp": 50,
+    "processor": "MediaTek Dimensity 7300"
+  },
+  "honor-200": {
+    "battery_mah": 5200,
+    "fast_charge_w": 100,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 7 Gen 3"
+  },
+  "realme-12-pro": {
+    "battery_mah": 5000,
+    "fast_charge_w": 67,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 7s Gen 2"
+  },
+  "nothing-phone-3": {
+    "battery_mah": 5000,
+    "fast_charge_w": 45,
+    "camera_main_mp": 50,
+    "processor": "Snapdragon 8s Gen 3"
+  }
+}
