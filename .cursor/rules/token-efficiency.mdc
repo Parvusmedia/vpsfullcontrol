@@ -1,0 +1,32 @@
+---
+description: Minimize file reads and token use on edits and new development
+alwaysApply: true
+---
+
+# Token-efficient reads
+
+Read the smallest set of files that completes the task. Extra reads, re-reads, and repo-wide dumps waste tokens.
+
+## Locate before you read
+
+- Find paths with `Glob` (name) or `Grep` (symbol/string). Do not dump the tree or open files at random.
+- Cap search output (`head_limit`). Stop when you have the target path.
+- Skip `.git/`, `node_modules/`, build artifacts, secrets, `.env`, and `n8n_export_latest` unless the user asked for an export.
+
+## Read only the needed span
+
+- Use `Read` with `offset`/`limit` around the match. Do not load large files whole.
+- Do not re-read a file already in this conversation unless it changed or the snippet was too small.
+- After `StrReplace`/`Write`, do not re-read the whole file to confirm. Use lints or a short range if needed.
+- Work in one product/repo at a time. Do not open sibling apps unless the task names them.
+
+## Changes vs new work
+
+- **Small change / bugfix:** locate the function, read that span, edit, stop.
+- **New development:** find 1–2 similar existing files as the pattern, read those, implement. Do not survey the whole codebase first.
+- Do not spawn Explore/Task subagents for a known file or a few-step edit. If a subagent is required, inherit the parent model.
+
+## n8n
+
+- Use `scripts/n8n` only. Run `status`, then `details --workflow-id` for a single workflow.
+- Do not `list` with a high limit or `export` unless the user asked for a catalog or backup.
