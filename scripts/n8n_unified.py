@@ -11,6 +11,7 @@ Usage examples:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import re
 import sys
@@ -21,6 +22,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 import os
+
+from n8n_env import load_n8n_env
 
 
 def _is_jwt(value: str) -> bool:
@@ -174,15 +177,27 @@ def _extract_rest_list(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _jwt_aud(value: str) -> str | None:
+    try:
+        payload = value.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload))
+        aud = data.get("aud")
+        return aud if isinstance(aud, str) else None
+    except Exception:
+        return None
+
+
 def _detect_tokens() -> tuple[str | None, str | None]:
     rest_key = os.getenv("N8N_REST_API_KEY")
     mcp_token = os.getenv("N8N_MCP_TOKEN")
     legacy = os.getenv("N8N_API_KEY")
 
     if legacy:
-        if not rest_key and legacy.startswith("n8n_api_"):
+        aud = _jwt_aud(legacy) if _is_jwt(legacy) else None
+        if not rest_key and (legacy.startswith("n8n_api_") or aud == "public-api"):
             rest_key = legacy
-        if not mcp_token and _is_jwt(legacy):
+        if not mcp_token and aud == "mcp-server-api":
             mcp_token = legacy
     return rest_key, mcp_token
 
@@ -404,6 +419,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    load_n8n_env()
     args = parse_args()
     n8n_url = os.getenv("N8N_URL")
     if not n8n_url:

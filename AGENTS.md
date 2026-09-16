@@ -12,13 +12,14 @@ Run:
 scripts/n8n status
 ```
 
-This confirms whether MCP token, REST API key, or both are available.
+This confirms whether MCP token, REST API key, or both are available. Local credentials live in `config/n8n.local.env` (copy from `config/n8n.local.env.example`; file is gitignored).
 
 ### Standard commands
 
 - List workflows: `scripts/n8n list --limit 50`
 - Workflow details: `scripts/n8n details --workflow-id <id>`
 - Export workflows: `scripts/n8n export --out /workspace/n8n_export_latest`
+- Deploy workflows: `python3 scripts/deploy_n8n_workflows.py`
 
 ### Guardrails
 

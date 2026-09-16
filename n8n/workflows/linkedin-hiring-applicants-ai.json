@@ -1,0 +1,580 @@
+{
+  "name": "LinkedIn Hiring Applicants AI",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Configuracion\n\nEdita **solo** el nodo `Config`:\n- `unipile_dsn` (copiar del dashboard Unipile, ej: api1.unipile.com)\n- `unipile_port` (copiar del dashboard Unipile, ej: 13111)\n- `unipile_api_key`\n- `unipile_account_id` (acc_xxx)\n- `linkedin_job_id` (4456186543)\n- `openai_api_key` (token ChatGPT)\n- `job_title` y `job_criteria`\n- `google_sheet_id` y `sheet_name`\n\nSin `unipile_port` Unipile devuelve 502 Bad Gateway.\n\nConecta credencial **Google Sheets OAuth2** en los nodos de Sheets.\n\nActiva el workflow y usa **Ejecutar workflow** o espera el cron (30 min).",
+        "height": 320,
+        "width": 460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1480,
+        40
+      ],
+      "id": "sticky-config",
+      "name": "Sticky Note Config"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1480,
+        420
+      ],
+      "id": "manual-trigger",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1480,
+        620
+      ],
+      "id": "schedule-trigger",
+      "name": "Every 30 Minutes"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-unipile-dsn",
+              "name": "unipile_dsn",
+              "value": "api46.unipile.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-unipile-port",
+              "name": "unipile_port",
+              "value": "17682",
+              "type": "string"
+            },
+            {
+              "id": "cfg-unipile-key",
+              "name": "unipile_api_key",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "cfg-unipile-account",
+              "name": "unipile_account_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "cfg-job-id",
+              "name": "linkedin_job_id",
+              "value": "4456186543",
+              "type": "string"
+            },
+            {
+              "id": "cfg-openai-key",
+              "name": "openai_api_key",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "cfg-openai-model",
+              "name": "openai_model",
+              "value": "gpt-4o-mini",
+              "type": "string"
+            },
+            {
+              "id": "cfg-job-title",
+              "name": "job_title",
+              "value": "Co-Founder / Commercial Partner — GCC | AdTech & Media Innovation",
+              "type": "string"
+            },
+            {
+              "id": "cfg-job-criteria",
+              "name": "job_criteria",
+              "value": "MUST-HAVE (si falta alguno → score máximo 4 y recommendation \"descartar\"):\n- Residir actualmente en GCC: Arabia Saudí, UAE, Qatar, Kuwait, Bahrein u Omán\n- Experiencia profesional demostrable en publicidad digital, media, AdTech o publishing (mín. 5 años en roles comerciales/BD)\n- Haber trabajado en al menos una de estas: agencia de medios, agencia de publicidad, publisher, empresa AdTech o negocio digital media relevante en GCC\n- Experiencia en business development, partnerships comerciales o new business (no solo marketing operativo)\n- Mindset emprendedor / equity-based (no perfil que busque solo salario fijo)\n- Inglés de negocios\n\nKNOCKOUT AUTOMÁTICO (score 1-3, \"descartar\"):\n- Ubicación fuera de GCC o no demostrable\n- Solo experiencia en marketing genérico, community manager, SEO junior, ventas retail u otros sectores sin vínculo con advertising/media\n- Sin ninguna experiencia en agencia, publisher, AdTech o empresa reconocida del ecosistema publicitario\n- Perfil claramente junior o recién graduado sin track record comercial\n- CV centrado en tareas operativas sin relación con apertura de mercado, cuentas o partnerships\n\nSEÑALES PREMIUM (necesarias para score 8+):\n- Agencias reconocidas: holding media/publicidad (GroupM, Publicis, Omnicom, Dentsu, Havas, etc.), independientes top GCC\n- Publishers / plataformas media digitales relevantes en la región\n- AdTech, martech, DSP/SSP, data partners, innovation labs de grupos publicitarios\n- Network demostrable con decision-makers de agencias, anunciantes o publishers en GCC\n- Track record cerrando partnerships, cuentas o proyectos comerciales B2B en advertising\n\nNICE-TO-HAVE (no compensan must-haves):\n- Árabe fluido\n- Red establecida en KSA específicamente\n- Experiencia con automation, data, AI aplicada a advertising\n\nREGLAS DE SCORING (distribución esperada):\n- 9-10: top 5% — cumple todos los must-have + experiencia premium verificable + network GCC\n- 7-8: sólido pero con 1-2 dudas — agencia/publisher/adtech claro, BD demostrable\n- 5-6: alineación parcial — sector relacionado pero sin agencia/publisher reconocido o sin BD claro\n- 3-4: débil — marketing genérico, sin ecosistema advertising, o fuera del perfil co-founder\n- 1-2: descartar — knockout o irrelevante\n- Sé conservador: la mayoría de candidatos debería puntuar entre 3 y 6",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sheet-id",
+              "name": "google_sheet_id",
+              "value": "1a6dDwT5VWQH5YMGx1kX-7HVVnozD-bspuzPLThjL1bQ",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sheet-name",
+              "name": "sheet_name",
+              "value": "gid=0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1200,
+        520
+      ],
+      "id": "config-node",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.google_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_name }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -960,
+        520
+      ],
+      "id": "read-existing-ids",
+      "name": "Read Existing IDs",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iTqnN5NwN0dwUViP",
+          "name": "Google ParvusAccount"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://{{ $('Config').item.json.unipile_dsn }}/api/v1/linkedin/jobs/{{ $('Config').item.json.linkedin_job_id }}/applicants",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "account_id",
+              "value": "={{ $('Config').item.json.unipile_account_id }}"
+            },
+            {
+              "name": "service",
+              "value": "CLASSIC"
+            },
+            {
+              "name": "ratings",
+              "value": "UNRATED,MAYBE,GOOD_FIT,NOT_A_FIT"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            },
+            {
+              "name": "port",
+              "value": "={{ $('Config').item.json.unipile_port }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "={{ $('Config').item.json.unipile_api_key }}"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        520
+      ],
+      "id": "fetch-applicants",
+      "name": "Fetch Applicants (Unipile)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst http = $('Fetch Applicants (Unipile)').first().json;\nconst response = http.body ?? http;\nconst statusCode = http.statusCode ?? response?.status ?? 200;\n\nif (statusCode === 502) {\n  throw new Error('Unipile 502 Bad Gateway: revisa unipile_dsn y unipile_port en Config (copialos del dashboard Unipile).');\n}\nif (statusCode === 503 && (response?.type === 'errors/no_client_session' || String(response?.title || '').includes('No client session'))) {\n  throw new Error('Unipile 503: sesion de cuenta no activa. Reconecta la cuenta LinkedIn en Unipile y confirma DSN/puerto/account_id en Config.');\n}\nif (statusCode >= 400) {\n  throw new Error(`Unipile HTTP ${statusCode}: ${JSON.stringify(response).slice(0, 800)}`);\n}\nif (response?.error || response?.title) {\n  throw new Error(`Unipile error: ${response.title || response.error || JSON.stringify(response).slice(0, 800)}`);\n}\n\nconst applicants = Array.isArray(response.items) ? response.items : [];\n\nconst existingRows = $('Read Existing IDs').all().map((item) => item.json);\nconst existingIds = new Set();\n\nfor (const row of existingRows) {\n  const raw = row.application_id ?? row['application_id'] ?? row['Application ID'] ?? row['ID'] ?? Object.values(row)[0];\n  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {\n    existingIds.add(String(raw).trim());\n  }\n}\n\nconst fresh = applicants.filter((applicant) => {\n  const id = String(applicant.id ?? applicant.application_id ?? '').trim();\n  return id && !existingIds.has(id);\n});\n\nif (!fresh.length) {\n  return [];\n}\n\nreturn fresh.map((applicant) => ({\n  json: {\n    applicant,\n    config: cfg,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        520
+      ],
+      "id": "split-filter-new",
+      "name": "Split and Filter New"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $json.config;\nconst applicant = $json.applicant;\n\nconst screening = (applicant.screening_questions || [])\n  .map((q) => `P: ${q.question}\\nR: ${(q.answers || []).join(', ')}`)\n  .join('\\n');\n\nconst experiences = applicant.work_experience || applicant.experiences || [];\nconst education = applicant.education || [];\n\nconst expText = experiences\n  .slice(0, 10)\n  .map((e) => `- ${e.position || e.title || 'Sin cargo'} @ ${e.company || 'Sin empresa'}${e.duration ? ` (${e.duration})` : ''}`)\n  .join('\\n');\n\nconst eduText = education\n  .slice(0, 5)\n  .map((e) => `- ${e.degree || ''} ${e.field_of_study || e.field || ''} (${e.school || ''})`)\n  .join('\\n');\n\nconst prompt = `Evalua este candidato para el puesto \"${cfg.job_title}\".\n\nCONTEXTO DEL ROL:\n- Co-Founder / Commercial Partner equity-based para desarrollar Parvus Media en GCC (prioridad KSA)\n- NO es un empleo con salario fijo: buscamos perfil emprendedor con participación en negocio\n- Industria: AdTech, media, publicidad digital, publishers, innovación marketing\n\nCRITERIOS DEL PUESTO:\n${cfg.job_criteria}\n\nCANDIDATO:\nNombre: ${applicant.name || ''}\nHeadline: ${applicant.headline || ''}\nUbicacion: ${applicant.location || ''}\nPerfil: ${applicant.public_profile_url || applicant.profile_url || ''}\nEmail: ${applicant.email_address || ''}\nTelefono: ${applicant.phone_number || ''}\n\nEXPERIENCIA LABORAL:\n${expText || 'No disponible'}\n\nEDUCACION:\n${eduText || 'No disponible'}\n\nPREGUNTAS DE FILTRO:\n${screening || 'Ninguna'}\n\nINSTRUCCIONES DE EVALUACION (OBLIGATORIAS):\n- Se MUY exigente y conservador. Descarta por defecto salvo evidencia clara de encaje.\n- Prioriza experiencia en agencias de medios/publicidad, publishers, AdTech o empresas reconocidas del sector publicidad digital en GCC.\n- Penaliza fuertemente perfiles de marketing generalista, community, SEO/performance junior o sin trayectoria comercial/BD.\n- No infieras skills, network ni experiencia GCC si no aparecen en el CV.\n- \"entrevistar\" SOLO si score >= 8 Y cumple must-haves sin knockout.\n- \"dudoso\" si hay señales mixtas (score 5-7).\n- \"descartar\" si hay knockout o score <= 4.\n- En gaps, indica especificamente que falta (ej: sin agencia, sin GCC, sin BD, perfil operativo).\n\nResponde SOLO JSON valido con esta estructura exacta:\n{\n  \"score\": 0,\n  \"recommendation\": \"entrevistar|descartar|dudoso\",\n  \"strengths\": [\"por que si 1\", \"por que si 2\"],\n  \"gaps\": [\"por que no 1\", \"por que no 2\"],\n  \"summary\": \"resumen breve\",\n  \"argument\": \"explicacion en 2-3 frases de por que si o por que no\"\n}`;\n\nreturn [\n  {\n    json: {\n      applicant,\n      config: cfg,\n      prompt,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        520
+      ],
+      "id": "prepare-ai-prompt",
+      "name": "Prepare AI Prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.config.openai_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.config.openai_model || 'gpt-4o-mini', temperature: 0.1, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"Eres un reclutador senior especializado en AdTech, media y publicidad digital en GCC. Evaluas con criterio muy estricto para un rol de Co-Founder comercial equity-based. Penalizas perfiles genericos sin experiencia en agencias, publishers o empresas reconocidas del sector. La mayoria de candidatos debe recibir score bajo o medio. Responde unicamente JSON valido en espanol.\" }, { role: 'user', content: $json.prompt } ] }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        520
+      ],
+      "id": "openai-analysis",
+      "name": "OpenAI Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Prepare AI Prompt').item.json;\nconst applicant = source.applicant;\nconst aiRaw = $input.first().json;\n\nlet parsed;\ntry {\n  const content = aiRaw.choices?.[0]?.message?.content || '{}';\n  parsed = JSON.parse(content);\n} catch (error) {\n  parsed = {\n    score: 0,\n    recommendation: 'dudoso',\n    strengths: [],\n    gaps: ['Error parseando respuesta IA'],\n    summary: 'No se pudo interpretar la respuesta del modelo',\n    argument: String(error.message || error),\n  };\n}\n\nconst applicationId = String(applicant.id ?? applicant.application_id ?? '');\nconst appliedAt = applicant.applied_at\n  ? new Date(Number(applicant.applied_at)).toISOString()\n  : '';\n\nreturn [\n  {\n    json: {\n      application_id: applicationId,\n      nombre: applicant.name || '',\n      perfil_url: applicant.public_profile_url || applicant.profile_url || '',\n      headline: applicant.headline || '',\n      email: applicant.email_address || '',\n      telefono: applicant.phone_number || '',\n      fecha_aplicacion: appliedAt,\n      score: parsed.score ?? 0,\n      recomendacion: parsed.recommendation || 'dudoso',\n      por_que_si: (parsed.strengths || []).join(' | '),\n      por_que_no: (parsed.gaps || []).join(' | '),\n      resumen: parsed.summary || '',\n      argumento: parsed.argument || parsed.summary || '',\n      fecha_analisis: new Date().toISOString(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        520
+      ],
+      "id": "parse-ai-response",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.google_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.sheet_name }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "application_id": "={{ $json.application_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "perfil_url": "={{ $json.perfil_url }}",
+            "headline": "={{ $json.headline }}",
+            "email": "={{ $json.email }}",
+            "telefono": "={{ $json.telefono }}",
+            "fecha_aplicacion": "={{ $json.fecha_aplicacion }}",
+            "score": "={{ $json.score }}",
+            "recomendacion": "={{ $json.recomendacion }}",
+            "por_que_si": "={{ $json.por_que_si }}",
+            "por_que_no": "={{ $json.por_que_no }}",
+            "resumen": "={{ $json.resumen }}",
+            "argumento": "={{ $json.argumento }}",
+            "fecha_analisis": "={{ $json.fecha_analisis }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "application_id",
+              "displayName": "application_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "perfil_url",
+              "displayName": "perfil_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telefono",
+              "displayName": "telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_aplicacion",
+              "displayName": "fecha_aplicacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recomendacion",
+              "displayName": "recomendacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "por_que_si",
+              "displayName": "por_que_si",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "por_que_no",
+              "displayName": "por_que_no",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resumen",
+              "displayName": "resumen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "argumento",
+              "displayName": "argumento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_analisis",
+              "displayName": "fecha_analisis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        520
+      ],
+      "id": "append-to-sheet",
+      "name": "Append to Google Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iTqnN5NwN0dwUViP",
+          "name": "Google ParvusAccount"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 30 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read Existing IDs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Applicants (Unipile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing IDs": {
+      "main": [
+        []
+      ]
+    },
+    "Fetch Applicants (Unipile)": {
+      "main": [
+        [
+          {
+            "node": "Split and Filter New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split and Filter New": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "name": "Init Candidatos Sheet Headers",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "init-candidatos-sheet-headers",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "webhook-init",
+      "name": "Webhook",
+      "webhookId": "init-candidatos-sheet-headers"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "h1", "name": "application_id", "value": "application_id", "type": "string"},
+            {"id": "h2", "name": "nombre", "value": "nombre", "type": "string"},
+            {"id": "h3", "name": "perfil_url", "value": "perfil_url", "type": "string"},
+            {"id": "h4", "name": "headline", "value": "headline", "type": "string"},
+            {"id": "h5", "name": "email", "value": "email", "type": "string"},
+            {"id": "h6", "name": "telefono", "value": "telefono", "type": "string"},
+            {"id": "h7", "name": "fecha_aplicacion", "value": "fecha_aplicacion", "type": "string"},
+            {"id": "h8", "name": "score", "value": "score", "type": "string"},
+            {"id": "h9", "name": "recomendacion", "value": "recomendacion", "type": "string"},
+            {"id": "h10", "name": "por_que_si", "value": "por_que_si", "type": "string"},
+            {"id": "h11", "name": "por_que_no", "value": "por_que_no", "type": "string"},
+            {"id": "h12", "name": "resumen", "value": "resumen", "type": "string"},
+            {"id": "h13", "name": "argumento", "value": "argumento", "type": "string"},
+            {"id": "h14", "name": "fecha_analisis", "value": "fecha_analisis", "type": "string"}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "id": "headers-row",
+      "name": "Headers Row"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1a6dDwT5VWQH5YMGx1kX-7HVVnozD-bspuzPLThjL1bQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "application_id": "={{ $json.application_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "perfil_url": "={{ $json.perfil_url }}",
+            "headline": "={{ $json.headline }}",
+            "email": "={{ $json.email }}",
+            "telefono": "={{ $json.telefono }}",
+            "fecha_aplicacion": "={{ $json.fecha_aplicacion }}",
+            "score": "={{ $json.score }}",
+            "recomendacion": "={{ $json.recomendacion }}",
+            "por_que_si": "={{ $json.por_que_si }}",
+            "por_que_no": "={{ $json.por_que_no }}",
+            "resumen": "={{ $json.resumen }}",
+            "argumento": "={{ $json.argumento }}",
+            "fecha_analisis": "={{ $json.fecha_analisis }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [440, 0],
+      "id": "append-headers",
+      "name": "Append Headers",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iTqnN5NwN0dwUViP",
+          "name": "Google ParvusAccount"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Headers Row", "type": "main", "index": 0}]]
+    },
+    "Headers Row": {
+      "main": [[{"node": "Append Headers", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}

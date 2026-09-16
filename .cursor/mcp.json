@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "N8N_": {
+      "type": "streamable-http",
+      "url": "https://pmedia.app.n8n.cloud/mcp-server/http"
+    }
+  }
+}
