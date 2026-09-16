@@ -1,0 +1,138 @@
+{
+  "intro": "Responde tres preguntas. El catálogo se va reduciendo hasta los másteres que mejor encajan contigo.",
+  "intro_screen": {
+    "headline": "Encuentra tu máster en 3 preguntas",
+    "lede": "Sin escribir texto libre: eliges opciones y ves en tiempo real qué programas encajan.",
+    "outcome": "Al final verás tu máster recomendado con un resumen claro.",
+    "cta": "Empezar orientación",
+    "compact_headline": "Tu máster en 3 toques",
+    "compact_lede": "Titulación · objetivo · formato → resultado personalizado"
+  },
+  "steps": [
+    {
+      "id": "background",
+      "title": "¿Qué has estudiado?",
+      "subtitle": "Elige la opción más cercana. Esto descarta programas claramente incompatibles.",
+      "options": [
+        {
+          "id": "health",
+          "label": "Fisioterapia o ciencias de la salud",
+          "short_label": "Salud",
+          "profile": { "education": "physiotherapy", "current_role": "Fisioterapeuta" },
+          "boosts": { "biomechanics": 0.34 },
+          "eliminate": []
+        },
+        {
+          "id": "stem",
+          "label": "Ingeniería, informática o STEM",
+          "short_label": "STEM",
+          "profile": { "education": "software engineering", "current_role": "Perfil tecnológico" },
+          "boosts": { "ai-applied": 0.34 },
+          "eliminate": []
+        },
+        {
+          "id": "business",
+          "label": "ADE, empresa o marketing",
+          "short_label": "Empresa",
+          "profile": { "education": "business administration", "current_role": "Perfil de empresa" },
+          "boosts": { "marketing": 0.34 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "law",
+          "label": "Derecho o abogacía",
+          "short_label": "Derecho",
+          "profile": { "education": "law", "current_role": "Abogado/a" },
+          "boosts": {},
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "other",
+          "label": "Otra titulación",
+          "short_label": "Otra",
+          "profile": { "education": "other" },
+          "boosts": {},
+          "eliminate": []
+        }
+      ]
+    },
+    {
+      "id": "goal",
+      "title": "¿Qué quieres conseguir?",
+      "subtitle": "Elige tu meta y te ayudamos a orientarte mejor.",
+      "options": [
+        {
+          "id": "sports-spec",
+          "label": "Especializarme en deporte y movimiento",
+          "short_label": "Deporte",
+          "profile": { "goal": "specialization", "interests": ["sports", "movement analysis"] },
+          "boosts": { "biomechanics": 0.28 },
+          "eliminate": ["marketing"]
+        },
+        {
+          "id": "apply-ai",
+          "label": "Aplicar inteligencia artificial al trabajo",
+          "short_label": "Aplicar IA",
+          "profile": { "goal": "learn AI", "interests": ["artificial intelligence"] },
+          "boosts": { "ai-applied": 0.28 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "marketing-career",
+          "label": "Crecer en marketing y comunicación",
+          "short_label": "Marketing",
+          "profile": { "goal": "marketing career", "interests": ["brand", "digital marketing"] },
+          "boosts": { "marketing": 0.28 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "tech-law",
+          "label": "Formarme en tecnología y derecho digital",
+          "short_label": "Derecho digital",
+          "profile": { "goal": "learn AI", "interests": ["artificial intelligence", "digital law"] },
+          "boosts": { "ai-applied": 0.30, "marketing": 0.10 },
+          "eliminate": ["biomechanics"]
+        },
+        {
+          "id": "career-change",
+          "label": "Cambiar de sector por completo",
+          "short_label": "Cambio de sector",
+          "profile": { "goal": "career change" },
+          "boosts": { "ai-applied": 0.06, "marketing": 0.06 },
+          "eliminate": []
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "title": "¿Cómo quieres estudiar?",
+      "subtitle": "La modalidad sale del catálogo, no de la IA.",
+      "options": [
+        {
+          "id": "work-study",
+          "label": "Compatibilizarlo con mi trabajo",
+          "short_label": "Con trabajo",
+          "profile": { "constraints": ["combine work and study"] },
+          "boosts": { "ai-applied": 0.08, "biomechanics": 0.08, "marketing": -0.14 },
+          "eliminate": []
+        },
+        {
+          "id": "campus",
+          "label": "Presencial en el campus",
+          "short_label": "Presencial",
+          "profile": { "constraints": [] },
+          "boosts": { "marketing": 0.08 },
+          "eliminate": []
+        },
+        {
+          "id": "either",
+          "label": "Me vale cualquiera",
+          "short_label": "Cualquiera",
+          "profile": {},
+          "boosts": {},
+          "eliminate": []
+        }
+      ]
+    }
+  ]
+}
