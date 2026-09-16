@@ -1,0 +1,230 @@
+{
+  "name": "arg_prosegurlatam_APIFY_Form_UNIFIED",
+  "flow": [
+    {
+      "id": 10,
+      "module": "facebook-lead-ads:NewLeadMultiple",
+      "version": 2,
+      "parameters": {
+        "v": "2",
+        "fields": [
+          "id",
+          "ad_id",
+          "ad_name",
+          "adset_id",
+          "adset_name",
+          "campaign_id",
+          "campaign_name",
+          "created_time",
+          "custom_disclaimer_responses",
+          "field_data",
+          "form_id",
+          "home_listing",
+          "is_organic",
+          "partner_name",
+          "platform",
+          "retailer_item_id",
+          "vehicle"
+        ],
+        "__IMTHOOK__": 2907206
+      },
+      "mapper": {},
+      "onerror": [
+        {
+          "id": 13,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "metadata": {
+            "designer": {
+              "x": -400,
+              "y": 200
+            }
+          }
+        }
+      ],
+      "metadata": {
+        "designer": {
+          "x": -600,
+          "y": 0
+        },
+        "restore": {
+          "parameters": {
+            "__IMTHOOK__": {
+              "data": {
+                "editable": "false"
+              },
+              "label": "arg_prosegurlatam_APIFY_Form - 1589834356082747"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "phonenumber:TransformerParseNumber",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "number": "{{10.data.phone}}",
+        "defaultCountry": "AR"
+      },
+      "onerror": [
+        {
+          "id": 12,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "metadata": {
+            "designer": {
+              "x": -100,
+              "y": 200
+            }
+          }
+        }
+      ],
+      "metadata": {
+        "designer": {
+          "x": -250,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "defaultCountry": {
+              "mode": "chose",
+              "label": "Argentina (AR)"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 29,
+      "module": "json:TransformToJSON",
+      "version": 1,
+      "parameters": {
+        "space": ""
+      },
+      "mapper": {
+        "object": "{{`10`}}"
+      },
+      "onerror": [
+        {
+          "id": 31,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "metadata": {
+            "designer": {
+              "x": 250,
+              "y": 200
+            }
+          }
+        }
+      ],
+      "metadata": {
+        "designer": {
+          "x": 100,
+          "y": 0
+        },
+        "restore": {
+          "parameters": {
+            "space": {
+              "label": "Empty"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 25,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "parameters": {
+        "handleErrors": true,
+        "useNewZLibDeCompress": true
+      },
+      "mapper": {
+        "url": "https://pmedia.app.n8n.cloud/webhook/argentina-prosegur-meta-leads",
+        "serializeUrl": false,
+        "method": "post",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": false,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "",
+        "shareCookies": false,
+        "ca": "",
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false,
+        "followAllRedirects": false,
+        "body": "{\n  \"lead\": {{29.json}},\n  \"phone_e164\": \"{{4.phone}}\",\n  \"params_url\": \"https://www.prosegur.com.ar/landings/lead-ads/lead-ads-argentina.html?utm_source=meta&utm_medium=meta-leadads&utm_campaign=AR_PERFORMANCE_FB_ALARMAS_HOGAR_LEADS-GEN_CONV_AO&utm_product=INTERIOR_LAL-INTERESES_FORMS&utm_offer=PPV_JUL_NINA&utm_brand=54000926&utm_target=performance\",\n  \"aid\": \"ps\",\n  \"formid\": \"{{10.formId}}\"\n}"
+      },
+      "onerror": [
+        {
+          "id": 26,
+          "module": "builtin:Ignore",
+          "version": 1,
+          "metadata": {
+            "designer": {
+              "x": 650,
+              "y": 200
+            }
+          }
+        }
+      ],
+      "metadata": {
+        "designer": {
+          "x": 450,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "method": {
+              "mode": "chose",
+              "label": "POST"
+            },
+            "bodyType": {
+              "label": "Raw"
+            },
+            "headers": {
+              "mode": "chose"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "slots": null,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu1.make.com",
+    "notes": [
+      {
+        "content": "UNIFIED: un solo POST JSON a n8n. Desactivar el escenario viejo con doble HTTP y el workflow n8n Meta&TikTok."
+      }
+    ]
+  }
+}
