@@ -57,3 +57,32 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## Meta Ads (Marketing API MCP)
+
+Repo path: `meta-ads-mcp/`. Docs: `docs/META_ADS_CURSOR.md`.
+
+### When to use
+
+User asks to create, edit, pause, activate, or optimize Meta/Facebook/Instagram ad campaigns from Cursor.
+
+### Required setup
+
+- `META_ACCESS_TOKEN` in Cursor Environment secrets (never in git).
+- `META_AD_ACCOUNT_ID` (default in `.cursor/mcp.json`: `act_149543758710373`).
+- Build MCP: `cd meta-ads-mcp && npm install && npm run build`.
+
+### Agent rules
+
+- Use MCP tools prefixed with `meta_ads_` only.
+- **Writes:** summarize the exact API changes, wait for explicit user confirmation, then call write tools with `confirmed: true`.
+- Default new entities to **PAUSED** unless the user confirms going live.
+- **Never assume** `page_id` or `pixel_id`; take them from the user per campaign or run `meta_ads_list_pages` / `meta_ads_list_pixels` and ask.
+- Do not log or paste access tokens; redact paging URLs in terminal output.
+- Budget changes respect `META_BUDGET_CHANGE_MAX_PCT` (default 20%) on ad set updates and optimization apply.
+
+### Smoke check
+
+```bash
+meta-ads-mcp/scripts/smoke-read.sh
+```
