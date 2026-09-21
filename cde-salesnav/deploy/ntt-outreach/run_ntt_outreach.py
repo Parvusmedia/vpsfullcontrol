@@ -378,7 +378,10 @@ def cmd_inmail(args: argparse.Namespace) -> int:
             skipped += 1
             continue
         text = build_ntt_inmail_message(row)
-        out = send_unipile_inmail(linkedin_url=url, text=text, dry_run=dry)
+        try:
+            out = send_unipile_inmail(linkedin_url=url, text=text, dry_run=dry)
+        except Exception as exc:
+            out = {"ok": False, "error": str(exc)[:500]}
         out["name"] = f"{row.get('first_name')} {row.get('last_name')}".strip()
         out["linkedin_url"] = url
         out["locale"] = ntt_outreach_locale(row)
@@ -387,6 +390,7 @@ def cmd_inmail(args: argparse.Namespace) -> int:
         if out.get("ok") and not dry:
             sent += 1
             already_sent.add(norm)
+            save_sent_inmail_urls(already_sent)
             if sent < limit and wait_max > 0:
                 wait = random.randint(wait_min, wait_max)
                 print(f"wait {wait}s…")
