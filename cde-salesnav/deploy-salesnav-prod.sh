@@ -2,6 +2,10 @@
 # Deploy Sales Navigator section to production (82.223.3.205 via nextconvers-vps)
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+python3 "$SCRIPT_DIR/deploy/sync-salesnav-faq.py"
+bash "$SCRIPT_DIR/deploy/check-salesnav-landing.sh"
+
 REMOTE="parvus-vps"
 PROD="nextconvers-vps"
 DOCROOT="/var/www/vhosts/companydataenrichment.com/httpdocs"

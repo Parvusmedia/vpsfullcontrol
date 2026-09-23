@@ -1,0 +1,21 @@
+name: Sales Nav landing checks
+on:
+  pull_request:
+    paths:
+      - "cde-salesnav/public/salesnav/**"
+      - "cde-salesnav/deploy/**"
+  push:
+    branches: [main]
+    paths:
+      - "cde-salesnav/public/salesnav/**"
+      - "cde-salesnav/deploy/**"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync FAQ fragment and verify landing
+        run: |
+          python3 cde-salesnav/deploy/sync-salesnav-faq.py
+          bash cde-salesnav/deploy/check-salesnav-landing.sh
