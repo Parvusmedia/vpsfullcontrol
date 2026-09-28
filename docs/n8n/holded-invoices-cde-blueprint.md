@@ -1,0 +1,44 @@
+# Blueprint n8n — Holded facturas → Sheets (CDE / Havas)
+
+## Webhook Holded (ya creado)
+
+| Campo | Valor |
+|--------|--------|
+| URL n8n (producción) | `https://pmedia.app.n8n.cloud/webhook/holded-invoices-cde` |
+| Eventos | `invoice.create`, `invoice.approve` |
+| Webhook id Holded | `6aba37d34dda73b56206c392` |
+| Secret | `HOLDED_WEBHOOK_SECRET` en `/opt/apps/private/cde/holded.env` (parvus-vps) |
+
+Verificación firma: header `x-holded-webhook-signature` (HMAC-SHA256 del body raw, prefijo `sha256=`).
+
+## Filtro
+
+Solo procesar si `contact_id` (o `contact.id` en payload) = `6023ce4a0a356d6caf64b163`.
+
+## Google Sheet
+
+- ID: `1IYiaHazczGDWsMIQosu9Ggpws1Lv2JkicCkshnt5-D0`
+- Pestaña `Facturas`: clave `invoice_id` (Append or Update)
+- Pestaña `Routing`: lectura en fase email (approve)
+
+Columnas: ver [holded-facturas-havas-sheet.md](../holded-facturas-havas-sheet.md).
+
+## Flujo sugerido (workflow único)
+
+1. **Webhook** POST (raw body para firma).
+2. **Code** — validar firma con secret del env/credencial n8n.
+3. **Switch** — `x-holded-webhook-event`.
+4. **IF** — contacto objetivo.
+5. **HTTP** (opcional) — `GET /api/v2/invoices/{id}` si faltan líneas/tags.
+6. **Google Sheets** — `invoice.create` → upsert fila, `estado=borrador`.
+7. **Google Sheets** — `invoice.approve` → upsert, `estado=aprobada`, `email_estado=pendiente`.
+8. *(Fase 2)* PDF + SMTP + routing.
+
+## Credenciales n8n
+
+- Holded API: Bearer desde credencial o env (mismo PAT que VPS).
+- Webhook secret: credencial separada (no loguear en ejecuciones).
+
+## Nombre sugerido del workflow
+
+`holded-facturas-havas-cde`
