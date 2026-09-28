@@ -37,7 +37,7 @@ Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
 
 Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never echo the value in chat, commits, or logs. Example template: `cde-salesnav/deploy/icypeas.env.example`.
 
-Holded: `grep HOLDED_API_KEY= /opt/apps/private/cde/holded.env` on `ssh parvus-vps` (or local path on VPS). Example template: `cde-salesnav/deploy/holded.env.example`. Use `Authorization: Bearer` for API v2 (invoices, PDF, webhooks). Webhook activo: eventos `invoice.create` + `invoice.approve` → `HOLDED_WEBHOOK_URL` (ver ejemplo). Blueprint n8n: `docs/n8n/holded-invoices-cde-blueprint.md`. Sheet columnas: `docs/holded-facturas-havas-sheet.md`.
+Holded: `grep HOLDED_API_KEY= /opt/apps/private/cde/holded.env` on `ssh parvus-vps` (or local path on VPS). Example template: `cde-salesnav/deploy/holded.env.example`. Use `Authorization: Bearer` for API v2 (invoices, PDF, webhooks). Webhook activo: eventos `invoice.create` + `invoice.approve` → `HOLDED_WEBHOOK_URL` (ver ejemplo). n8n workflow `holded-facturas-havas-cde` (`jvDmNuv4PqjFGZ7C`): redeploy `python3 scripts/deploy-holded-invoices-n8n.py`. Blueprint: `docs/n8n/holded-invoices-cde-blueprint.md`. Sheet: `docs/holded-facturas-havas-sheet.md`.
 
 **NocoDB catálogo (agent_access):** tabla [accesos](https://mpa.parvusmedia.com/w1yr9d7k/pluyg9y6o3thd5o/m6956l2gfi8d96c/vwb7btk1zh9yc601/accesos-accesos) (`m6956l2gfi8d96c`) — fila `HOLDED_API_KEY` · servicio `cde` · entorno `parvus-vps` · `Fuente` = ruta `holded.env` · `Valor` cifrado `enc:v1:`. Verificación: `python3 /opt/apps/linkedinreport/scripts/check-nocodb-accesos.py` (en VPS o vía SSH).
 

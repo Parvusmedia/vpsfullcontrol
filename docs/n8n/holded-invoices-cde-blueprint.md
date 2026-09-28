@@ -39,6 +39,29 @@ Columnas: ver [holded-facturas-havas-sheet.md](../holded-facturas-havas-sheet.md
 - Holded API: Bearer desde credencial o env (mismo PAT que VPS).
 - Webhook secret: credencial separada (no loguear en ejecuciones).
 
-## Nombre sugerido del workflow
+## Workflow en n8n Cloud (desplegado)
 
-`holded-facturas-havas-cde`
+| Campo | Valor |
+|--------|--------|
+| Nombre | `holded-facturas-havas-cde` |
+| Id | `jvDmNuv4PqjFGZ7C` |
+| Activo | sí |
+| Webhook path | `holded-invoices-cde` |
+
+Nodos: Webhook (raw body) → verificar firma HMAC → filtro `contactId` → switch evento → fila Sheet → **appendOrUpdate** en `Facturas` por `invoice_id`.
+
+### Redesplegar / actualizar
+
+En un host con `holded.env` y API key n8n (p. ej. tras `git pull`):
+
+```bash
+export N8N_BASE_URL=https://pmedia.app.n8n.cloud
+export N8N_API_KEY=n8n_api_...   # o leer desde deployment.local.env en VPS
+python3 scripts/deploy-holded-invoices-n8n.py
+```
+
+El script embebe `HOLDED_WEBHOOK_SECRET` solo en el nodo Code de n8n (no en git).
+
+### Prueba manual
+
+Fila de prueba `test_invoice_n8n_001` / `TEST-N8N-001` en la hoja (puedes borrarla).
