@@ -39,6 +39,8 @@ Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never ec
 
 Holded: `grep HOLDED_API_KEY= /opt/apps/private/cde/holded.env` on `ssh parvus-vps` (or local path on VPS). Example template: `cde-salesnav/deploy/holded.env.example`. Use `Authorization: Bearer` for API v2 (invoices, PDF, webhooks).
 
+**NocoDB catálogo (agent_access):** tabla [accesos](https://mpa.parvusmedia.com/w1yr9d7k/pluyg9y6o3thd5o/m6956l2gfi8d96c/vwb7btk1zh9yc601/accesos-accesos) (`m6956l2gfi8d96c`) — fila `HOLDED_API_KEY` · servicio `cde` · entorno `parvus-vps` · `Fuente` = ruta `holded.env` · `Valor` cifrado `enc:v1:`. Verificación: `python3 /opt/apps/linkedinreport/scripts/check-nocodb-accesos.py` (en VPS o vía SSH).
+
 ## Sales Navigator panel (CDE)
 
 Repo path: `cde-salesnav/`. Production: https://companydataenrichment.com/salesnav/panel/
