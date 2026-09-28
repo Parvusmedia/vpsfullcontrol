@@ -23,11 +23,15 @@ Pega en **A1**:
 prioridad	tipo	valor	emails	asunto	activo
 ```
 
-Ejemplo de regla (fila 2):
+### Regla activa: `telefonicaseguros` (fila 2)
 
-```
-10	tag	Hosting	destino@ejemplo.com	Factura {{numero}}	SI
-```
+| prioridad | tipo | valor | emails |
+|-----------|------|-------|--------|
+| 10 | tag | telefonicaseguros | ana.lopez@havasmn.com; carolina.munoz-manas@havasmn.com; luisa.lopez@havasmn.com; rocio.teijeira@havasmn.com |
+
+Asunto: `Factura {{numero}} - telefonicaseguros`
+
+Factura ejemplo: `6ab4a344919f511bf3067da4` (`FCTRA-2026-180`), contacto Holded `653f9fdfa0105e3d910cbbe7` (segunda ficha Havas; también se acepta `6023ce4a0a356d6caf64b163`).
 
 ## Estado (2026-09-28)
 

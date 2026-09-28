@@ -20,13 +20,19 @@ import urllib.request
 from pathlib import Path
 from uuid import uuid4
 
-HOLDED_CONTACT_ID = "6023ce4a0a356d6caf64b163"
+HOLDED_CONTACT_IDS = (
+    "6023ce4a0a356d6caf64b163",  # HAVAS MEDIA GROUP SPAIN, SAU
+    "653f9fdfa0105e3d910cbbe7",  # HAVAS MEDIA GROUP SPAIN, S.A.U
+)
 SPREADSHEET_ID = "1IYiaHazczGDWsMIQosu9Ggpws1Lv2JkicCkshnt5-D0"
 SHEET_TAB = "Facturas"
+ROUTING_TAB = "Routing"
 WEBHOOK_PATH = "holded-invoices-cde"
 WORKFLOW_NAME = "holded-facturas-havas-cde"
 GOOGLE_SHEETS_CRED_ID = "WMPnjZZ4e80DfuGP"
 GOOGLE_SHEETS_CRED_NAME = "Google Sheets account"
+SMTP_CRED_ID = "EDazhBfvoLHH9nvV"
+SMTP_CRED_NAME = "Hola@ SMTP N8N"
 
 HOLDED_ENV = Path("/opt/apps/private/cde/holded.env")
 
@@ -48,9 +54,10 @@ def _nid() -> str:
     return str(uuid4())
 
 
-def _build_workflow(webhook_secret: str) -> dict:
+def _build_workflow(webhook_secret: str, holded_api_key: str) -> dict:
     # Escape for embedding in JS string
     secret_js = json.dumps(webhook_secret)
+    allowed_js = json.dumps(list(HOLDED_CONTACT_IDS))
 
     verify_js = f"""
 const crypto = require('crypto');
@@ -109,14 +116,14 @@ const tags = Array.isArray(payload.tags) ? payload.tags.join(';') : '';
 
 const base = {
   invoice_id: payload.id || '',
-  numero: payload.documentNumber || '',
+  numero: payload.documentNumber || payload.document_number || '',
   fecha: payload.date || '',
-  vencimiento: payload.dueDate || '',
+  vencimiento: payload.dueDate || payload.due_date || '',
   total: payload.total != null ? String(payload.total) : '',
   moneda: payload.currency || '',
   tags_factura: tags,
   lineas_resumen: lineSummary,
-  contact_id: payload.contactId || '',
+  contact_id: payload.contactId || payload.contact_id || '',
 };
 
 if (event === 'invoice.create') {
@@ -139,7 +146,7 @@ if (event === 'invoice.approve') {
       ...base,
       estado: 'aprobada',
       creada_en: '',
-      aprobada_en: payload.approvedAt || now,
+      aprobada_en: payload.approvedAt || payload.approved_at || now,
       email_estado: 'pendiente',
       destinatarios: '',
       ultimo_error: '',
@@ -148,6 +155,86 @@ if (event === 'invoice.approve') {
 }
 
 return [];
+""".strip()
+
+    filter_client_js = f"""
+const allowed = new Set({allowed_js});
+const cid = $json.payload?.contactId || '';
+if (!allowed.has(cid)) return [];
+return [{{ json: $json }}];
+""".strip()
+
+    match_routing_js = """
+const payload = $('Verify signature').first().json.payload;
+const tags = (payload.tags || []).map((t) =>
+  String(t).replace(/^#/, '').trim().toLowerCase()
+);
+const rules = $input
+  .all()
+  .map((i) => i.json)
+  .filter((r) => r.tipo && String(r.tipo).toLowerCase() !== 'tipo')
+  .filter((r) => String(r.activo || '').toUpperCase() === 'SI')
+  .sort(
+    (a, b) =>
+      Number(a.prioridad || 99) - Number(b.prioridad || 99)
+  );
+
+let match = null;
+for (const rule of rules) {
+  const tipo = String(rule.tipo || '').toLowerCase();
+  const valor = String(rule.valor || '').replace(/^#/, '').trim().toLowerCase();
+  if (tipo === 'tag' && tags.includes(valor)) {
+    match = rule;
+    break;
+  }
+}
+
+const invoiceId = payload.id || '';
+const numero = payload.documentNumber || invoiceId;
+if (!match) {
+  return [{
+    json: {
+      skip: true,
+      invoice_id: invoiceId,
+      email_estado: 'sin_regla',
+      destinatarios: '',
+      ultimo_error: '',
+    },
+  }];
+}
+
+const emails = String(match.emails || '')
+  .split(/[;,]/)
+  .map((e) => e.trim())
+  .filter(Boolean);
+if (!emails.length) {
+  return [{
+    json: {
+      skip: true,
+      invoice_id: invoiceId,
+      email_estado: 'sin_regla',
+      destinatarios: '',
+      ultimo_error: 'regla sin emails',
+    },
+  }];
+}
+
+let subject = String(match.asunto || 'Factura {{numero}}').replace(
+  /\\{\\{numero\\}\\}/g,
+  numero
+);
+
+return [{
+  json: {
+    skip: false,
+    invoice_id: invoiceId,
+    numero,
+    emails,
+    emails_joined: emails.join(','),
+    subject,
+    filename: `Factura_${numero}.pdf`.replace(/[^a-zA-Z0-9._-]+/g, '_'),
+  },
+}];
 """.strip()
 
     webhook_id = _nid()
@@ -175,28 +262,9 @@ return [];
             "name": "Verify signature",
         },
         {
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": True,
-                        "leftValue": "",
-                        "typeValidation": "strict",
-                        "version": 2,
-                    },
-                    "conditions": [
-                        {
-                            "id": _nid(),
-                            "leftValue": "={{ $json.payload.contactId }}",
-                            "rightValue": HOLDED_CONTACT_ID,
-                            "operator": {"type": "string", "operation": "equals"},
-                        }
-                    ],
-                    "combinator": "and",
-                },
-                "options": {},
-            },
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
+            "parameters": {"jsCode": filter_client_js},
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
             "position": [-320, 0],
             "id": _nid(),
             "name": "Cliente Havas",
@@ -334,17 +402,221 @@ return [];
                 }
             },
         },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": True,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2,
+                    },
+                    "conditions": [
+                        {
+                            "id": _nid(),
+                            "leftValue": "={{ $('Verify signature').item.json.event }}",
+                            "rightValue": "invoice.approve",
+                            "operator": {"type": "string", "operation": "equals"},
+                        }
+                    ],
+                    "combinator": "and",
+                },
+                "options": {},
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [620, -80],
+            "id": _nid(),
+            "name": "Es approve",
+        },
+        {
+            "parameters": {
+                "documentId": {
+                    "__rl": True,
+                    "value": SPREADSHEET_ID,
+                    "mode": "id",
+                },
+                "sheetName": {
+                    "__rl": True,
+                    "value": ROUTING_TAB,
+                    "mode": "name",
+                },
+                "options": {},
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [840, -160],
+            "id": _nid(),
+            "name": "Leer Routing",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": GOOGLE_SHEETS_CRED_ID,
+                    "name": GOOGLE_SHEETS_CRED_NAME,
+                }
+            },
+        },
+        {
+            "parameters": {"jsCode": match_routing_js},
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1060, -160],
+            "id": _nid(),
+            "name": "Match routing",
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": True,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2,
+                    },
+                    "conditions": [
+                        {
+                            "id": _nid(),
+                            "leftValue": "={{ $json.skip }}",
+                            "rightValue": True,
+                            "operator": {"type": "boolean", "operation": "false", "singleValue": True},
+                        }
+                    ],
+                    "combinator": "and",
+                },
+                "options": {},
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [1280, -160],
+            "id": _nid(),
+            "name": "Hay destinatarios",
+        },
+        {
+            "parameters": {
+                "url": "=https://api.holded.com/api/v2/invoices/{{ $json.invoice_id }}/pdf",
+                "sendHeaders": True,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": f"=Bearer {holded_api_key}",
+                        }
+                    ]
+                },
+                "options": {"response": {"response": {"responseFormat": "file"}}},
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [1500, -240],
+            "id": _nid(),
+            "name": "PDF Holded",
+        },
+        {
+            "parameters": {
+                "fromEmail": "hola@parvusmedia.com",
+                "toEmail": "={{ $('Match routing').item.json.emails_joined }}",
+                "subject": "={{ $('Match routing').item.json.subject }}",
+                "emailFormat": "text",
+                "text": "=Adjuntamos la factura {{ $('Match routing').item.json.numero }}.",
+                "options": {
+                    "attachmentsUi": {
+                        "attachmentsBinary": [
+                            {
+                                "property": "data",
+                                "fileName": "={{ $('Match routing').item.json.filename }}",
+                            }
+                        ]
+                    }
+                },
+            },
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2.1,
+            "position": [1720, -240],
+            "id": _nid(),
+            "name": "Email factura",
+            "credentials": {
+                "smtp": {"id": SMTP_CRED_ID, "name": SMTP_CRED_NAME}
+            },
+        },
+        {
+            "parameters": {
+                "operation": "appendOrUpdate",
+                "documentId": {
+                    "__rl": True,
+                    "value": SPREADSHEET_ID,
+                    "mode": "id",
+                },
+                "sheetName": {
+                    "__rl": True,
+                    "value": SHEET_TAB,
+                    "mode": "name",
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "invoice_id": "={{ $('Match routing').item.json.invoice_id }}",
+                        "email_estado": "enviado",
+                        "destinatarios": "={{ $('Match routing').item.json.emails_joined }}",
+                        "ultimo_error": "",
+                    },
+                    "matchingColumns": ["invoice_id"],
+                },
+                "options": {},
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [1940, -240],
+            "id": _nid(),
+            "name": "Sheets email OK",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": GOOGLE_SHEETS_CRED_ID,
+                    "name": GOOGLE_SHEETS_CRED_NAME,
+                }
+            },
+        },
+        {
+            "parameters": {
+                "operation": "appendOrUpdate",
+                "documentId": {
+                    "__rl": True,
+                    "value": SPREADSHEET_ID,
+                    "mode": "id",
+                },
+                "sheetName": {
+                    "__rl": True,
+                    "value": SHEET_TAB,
+                    "mode": "name",
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "invoice_id": "={{ $json.invoice_id }}",
+                        "email_estado": "={{ $json.email_estado }}",
+                        "destinatarios": "={{ $json.destinatarios }}",
+                        "ultimo_error": "={{ $json.ultimo_error }}",
+                    },
+                    "matchingColumns": ["invoice_id"],
+                },
+                "options": {},
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [1500, -80],
+            "id": _nid(),
+            "name": "Sheets sin regla",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": GOOGLE_SHEETS_CRED_ID,
+                    "name": GOOGLE_SHEETS_CRED_NAME,
+                }
+            },
+        },
     ]
 
     connections = {
         "Holded Webhook": {"main": [[{"node": "Verify signature", "type": "main", "index": 0}]]},
         "Verify signature": {"main": [[{"node": "Cliente Havas", "type": "main", "index": 0}]]},
-        "Cliente Havas": {
-            "main": [
-                [{"node": "Evento", "type": "main", "index": 0}],
-                [],
-            ]
-        },
+        "Cliente Havas": {"main": [[{"node": "Evento", "type": "main", "index": 0}]]},
         "Evento": {
             "main": [
                 [{"node": "Build row", "type": "main", "index": 0}],
@@ -352,6 +624,25 @@ return [];
             ]
         },
         "Build row": {"main": [[{"node": "Sheets Facturas", "type": "main", "index": 0}]]},
+        "Sheets Facturas": {
+            "main": [[{"node": "Es approve", "type": "main", "index": 0}]]
+        },
+        "Es approve": {
+            "main": [
+                [{"node": "Leer Routing", "type": "main", "index": 0}],
+                [],
+            ]
+        },
+        "Leer Routing": {"main": [[{"node": "Match routing", "type": "main", "index": 0}]]},
+        "Match routing": {"main": [[{"node": "Hay destinatarios", "type": "main", "index": 0}]]},
+        "Hay destinatarios": {
+            "main": [
+                [{"node": "PDF Holded", "type": "main", "index": 0}],
+                [{"node": "Sheets sin regla", "type": "main", "index": 0}],
+            ]
+        },
+        "PDF Holded": {"main": [[{"node": "Email factura", "type": "main", "index": 0}]]},
+        "Email factura": {"main": [[{"node": "Sheets email OK", "type": "main", "index": 0}]]},
     }
 
     return {
@@ -401,11 +692,15 @@ def main() -> int:
 
     holded = _load_holded_env()
     secret = holded.get("HOLDED_WEBHOOK_SECRET") or os.environ.get("HOLDED_WEBHOOK_SECRET")
+    api_key = holded.get("HOLDED_API_KEY") or os.environ.get("HOLDED_API_KEY")
     if not secret or not secret.startswith("whsec_"):
         print("Missing HOLDED_WEBHOOK_SECRET in holded.env", file=sys.stderr)
         return 1
+    if not api_key:
+        print("Missing HOLDED_API_KEY in holded.env", file=sys.stderr)
+        return 1
 
-    body = _build_workflow(secret)
+    body = _build_workflow(secret, api_key)
     existing = _find_workflow_id(base, api_key)
 
     if existing:

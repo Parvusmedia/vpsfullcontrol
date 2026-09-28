@@ -48,7 +48,9 @@ Columnas: ver [holded-facturas-havas-sheet.md](../holded-facturas-havas-sheet.md
 | Activo | sí |
 | Webhook path | `holded-invoices-cde` |
 
-Nodos: Webhook (raw body) → verificar firma HMAC → filtro `contactId` → switch evento → fila Sheet → **appendOrUpdate** en `Facturas` por `invoice_id`.
+Nodos: Webhook (raw body) → firma HMAC → contactos Havas (`6023…` y `653f…`) → evento → Sheet `Facturas` → en **approve**: leer `Routing`, match **tag**, PDF Holded, email SMTP, actualizar `email_estado`.
+
+**OAuth Google Sheets:** si el deploy por API pierde credenciales, en el editor n8n reasigna **Google Sheets account** en los 4 nodos Sheets (limitación API). SMTP: **Hola@ SMTP N8N** en `Email factura`.
 
 ### Redesplegar / actualizar
 
