@@ -31,10 +31,13 @@ This confirms whether MCP token, REST API key, or both are available.
 Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
 
 - **Icypeas API key:** `/opt/apps/private/cde/icypeas.env` (`ICYPEAS_API_KEY`)
+- **Holded API (PAT):** `/opt/apps/private/cde/holded.env` (`HOLDED_API_KEY`, optional `HOLDED_WEBHOOK_SECRET`)
 - **CDE production (Sales Nav):** `/var/www/vhosts/companydataenrichment.com/private/cde/icypeas.env` on `nextconvers-vps`
 - **Mail tier code:** `cde-salesnav/public/api/_icypeas.php` (email-search + poll read)
 
 Read with `grep ICYPEAS_API_KEY= /opt/apps/private/cde/icypeas.env` — never echo the value in chat, commits, or logs. Example template: `cde-salesnav/deploy/icypeas.env.example`.
+
+Holded: `grep HOLDED_API_KEY= /opt/apps/private/cde/holded.env` on `ssh parvus-vps` (or local path on VPS). Example template: `cde-salesnav/deploy/holded.env.example`. Use `Authorization: Bearer` for API v2 (invoices, PDF, webhooks).
 
 ## Sales Navigator panel (CDE)
 
