@@ -29,9 +29,11 @@ Ejemplo de regla (fila 2):
 10	tag	Hosting	destino@ejemplo.com	Factura {{numero}}	SI
 ```
 
-## Si la hoja está en solo lectura
+## Estado (2026-09-28)
 
-Comparte el documento como **Editor** con la cuenta que usará n8n (OAuth) o con `forwardespana@gmail.com` si automatizas vía Zapier. Luego renombra `Hoja 1` → `Facturas` y añade la pestaña `Routing`.
+Pestañas **Facturas** y **Routing** creadas con cabeceras en fila 1 (documento *Facturas HavasMedia*).
+
+Si rehaces la hoja desde cero, comparte como **Editor** la cuenta Google de n8n y aplica las cabeceras de abajo o importa los TSV.
 
 ## Archivos de importación
 
