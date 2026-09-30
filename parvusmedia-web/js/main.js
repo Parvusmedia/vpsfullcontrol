@@ -473,6 +473,14 @@
         statusEl.textContent = "Sending…";
       }
       var data = new FormData(form);
+      if (!data.get("website")) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          event: "contact_form_submit",
+          form_email: String(data.get("email") || "").trim(),
+          page_url: window.location.href,
+        });
+      }
       if (data.get("website")) {
         if (statusEl) {
           statusEl.classList.add("ok");
