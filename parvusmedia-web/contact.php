@@ -12,6 +12,7 @@ header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store');
 
 require_once __DIR__ . '/lib/smtp_mail.php';
+require_once __DIR__ . '/lib/n8n_contact.php';
 
 const CONTACT_TO = 'hello@parvusmedia.com';
 const CAPTCHA_TTL = 600; // 10 minutes
@@ -164,5 +165,11 @@ $sent = parvus_web_send_mail($to, $subject, $body, $email);
 if (!$sent) {
     json_out(500, ['ok' => false, 'error' => 'Mail failed']);
 }
+
+$pageUrl = trim((string)($_SERVER['HTTP_REFERER'] ?? ''));
+if ($pageUrl === '' || !filter_var($pageUrl, FILTER_VALIDATE_URL)) {
+    $pageUrl = 'https://parvusmedia.com/';
+}
+parvus_notify_contact_n8n($email, $pageUrl);
 
 json_out(200, ['ok' => true]);

@@ -22,7 +22,7 @@ scp -q "$ROOT/js/main.js" parvus-vps:"$REMOTE_SRC/js/main.js"
 scp -q "$ROOT/chatgpt-ads/index.html" parvus-vps:"$REMOTE_SRC/chatgpt-ads/index.html"
 scp -q "$ROOT/privacy/index.html" parvus-vps:"$REMOTE_SRC/privacy/index.html"
 scp -q "$ROOT/legal-notice/index.html" parvus-vps:"$REMOTE_SRC/legal-notice/index.html"
-scp -q "$ROOT/lib/env.php" "$ROOT/lib/smtp_mail.php" parvus-vps:"$REMOTE_SRC/lib/"
+scp -q "$ROOT/lib/env.php" "$ROOT/lib/smtp_mail.php" "$ROOT/lib/n8n_contact.php" parvus-vps:"$REMOTE_SRC/lib/"
 
 echo "Rsync to production…"
 ssh parvus-vps bash -s <<EOF
