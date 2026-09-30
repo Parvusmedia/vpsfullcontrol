@@ -166,9 +166,19 @@ if (!$sent) {
     json_out(500, ['ok' => false, 'error' => 'Mail failed']);
 }
 
-$pageUrl = trim((string)($_SERVER['HTTP_REFERER'] ?? ''));
+$pageUrl = trim((string)($_POST['page_url'] ?? ''));
+if ($pageUrl === '' || !filter_var($pageUrl, FILTER_VALIDATE_URL)) {
+    $pageUrl = trim((string)($_SERVER['HTTP_REFERER'] ?? ''));
+}
 if ($pageUrl === '' || !filter_var($pageUrl, FILTER_VALIDATE_URL)) {
     $pageUrl = 'https://parvusmedia.com/';
+}
+$pageHost = strtolower((string)(parse_url($pageUrl, PHP_URL_HOST) ?? ''));
+if (!in_array($pageHost, ['parvusmedia.com', 'www.parvusmedia.com'], true)) {
+    $pageUrl = 'https://parvusmedia.com/';
+}
+if (strlen($pageUrl) > 2048) {
+    $pageUrl = substr($pageUrl, 0, 2048);
 }
 parvus_notify_contact_n8n($email, $pageUrl);
 

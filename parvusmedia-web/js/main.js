@@ -474,6 +474,7 @@
       }
       var data = new FormData(form);
       if (!data.get("website")) {
+        data.set("page_url", window.location.href);
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           event: "contact_form_submit",
