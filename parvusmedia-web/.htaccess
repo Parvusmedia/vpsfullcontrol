@@ -1,0 +1,7 @@
+# Parvus Media landing (v2 staging)
+# Live preview: https://parvusmedia.com/v2/
+# Source: /opt/apps/parvusmedia-web
+# Deploy: rsync to Plesk httpdocs/v2 on 82.223.3.205
+
+Options -Indexes
+DirectoryIndex index.html
