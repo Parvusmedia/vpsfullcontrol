@@ -88,6 +88,11 @@ Lo más simple para Parvus hoy: **dejar el JSON solo en `parvus-vps`** y que el 
 Desde el repo (con SSH a `parvus-vps` o con el JSON en local):
 
 ```bash
+# En parvus-vps (venv creado en /opt/apps/private/parvusmedia-web/venv):
+set -a && source /opt/apps/private/parvusmedia-web/gtm-api.env && set +a
+/opt/apps/private/parvusmedia-web/venv/bin/python3 /ruta/al/repo/scripts/gtm_api.py accounts
+
+# O desde un checkout local con el JSON (solo pruebas):
 export GOOGLE_APPLICATION_CREDENTIALS=/ruta/al/gtm-service-account.json
 pip install -q -r scripts/requirements-gtm.txt
 scripts/gtm accounts
