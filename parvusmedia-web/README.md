@@ -37,6 +37,8 @@ Mail from the contact form goes through Zoho SMTP (`private/cde/mail.env` on Ple
 
 OpenAI Ads pixel is in the page `<head>` (`debug: true` while the campaign is being verified). Conversion API events are posted from `/oai-event.php` using `private/parvusmedia-web/openai-ads.env` (never commit the API key).
 
+Google Tag Manager: container **GTM-T9JWZZ3Q** in page templates. API access for agents: `docs/GTM_API_CURSOR.md` and `deploy/gtm-api.env.example`.
+
 | View | Event |
 |------|--------|
 | `https://parvusmedia.com/` (home landing) | `contents_viewed` |

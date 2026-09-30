@@ -57,3 +57,13 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## Google Tag Manager API (parvusmedia.com)
+
+To list or edit container **GTM-T9JWZZ3Q** via API (service account on VPS):
+
+1. Setup: `docs/GTM_API_CURSOR.md`
+2. Credentials on `parvus-vps`: `/opt/apps/private/parvusmedia-web/gtm-service-account.json` + `gtm-api.env` (from `parvusmedia-web/deploy/gtm-api.env.example`)
+3. Verify: `ssh parvus-vps 'GOOGLE_APPLICATION_CREDENTIALS=/opt/apps/private/parvusmedia-web/gtm-service-account.json /opt/apps/vpsfullcontrol/scripts/gtm accounts'` — or run `scripts/gtm accounts` from a checkout with env loaded
+
+Never commit service-account JSON or paste it in chat.

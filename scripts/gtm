@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# GTM API helper — see docs/GTM_API_CURSOR.md
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="${GTM_API_ENV:-/opt/apps/private/parvusmedia-web/gtm-api.env}"
+
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+if ! python3 -c "import googleapiclient" 2>/dev/null; then
+  pip install -q -r "$ROOT/scripts/requirements-gtm.txt"
+fi
+
+exec python3 "$ROOT/scripts/gtm_api.py" "$@"
