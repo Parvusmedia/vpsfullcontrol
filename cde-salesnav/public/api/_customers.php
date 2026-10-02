@@ -330,6 +330,67 @@ function cde_customer_send_reset_email(string $email, string $token): array
     return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'Mail delivery failed'];
 }
 
+/**
+ * Notify a user that export credits were added to their wallet (admin grant).
+ *
+ * @return array{ok: bool, error?: string}
+ */
+function cde_customer_send_credits_granted_email(string $email, int $granted, int $balance, string $note = ''): array
+{
+    $email = cde_customer_validate_email($email) ?? '';
+    if ($email === '' || $granted <= 0) {
+        return ['ok' => false, 'error' => 'Invalid grant notification'];
+    }
+
+    $panelUrl = cde_customer_site_origin() . '/salesnav/panel/';
+    $grantedFmt = number_format($granted, 0, '.', ',');
+    $balanceFmt = number_format(max(0, $balance), 0, '.', ',');
+    $subject = 'Your CompanyDataEnrichment export credits are ready';
+
+    $lines = [
+        'Hi,',
+        '',
+        'We added ' . $grantedFmt . ' export credits to your CompanyDataEnrichment account (' . $email . ').',
+        'Your current balance: ' . $balanceFmt . ' credits.',
+    ];
+    if ($note !== '') {
+        $lines[] = '';
+        $lines[] = 'Note from our team: ' . $note;
+    }
+    $lines[] = '';
+    $lines[] = 'Open your panel to connect LinkedIn and run exports:';
+    $lines[] = $panelUrl;
+    $lines[] = '';
+    $lines[] = '— CompanyDataEnrichment';
+    $body = implode("\n", $lines);
+
+    $noteHtml = $note !== ''
+        ? '<p style="font-size:14px;color:#4b5563;"><strong>Note from our team:</strong> ' . htmlspecialchars($note, ENT_QUOTES, 'UTF-8') . '</p>'
+        : '';
+    $html = implode("\n", [
+        '<!DOCTYPE html>',
+        '<html lang="en"><head><meta charset="utf-8"><title>Export credits added</title></head>',
+        '<body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5;color:#111827;max-width:560px;margin:0 auto;padding:24px;">',
+        '<p>Hi,</p>',
+        '<p>We added <strong>' . htmlspecialchars($grantedFmt, ENT_QUOTES, 'UTF-8') . ' export credits</strong> to your CompanyDataEnrichment account (<strong>' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</strong>).</p>',
+        '<p>Your current balance: <strong>' . htmlspecialchars($balanceFmt, ENT_QUOTES, 'UTF-8') . ' credits</strong>.</p>',
+        $noteHtml,
+        '<p style="margin:28px 0;"><a href="' . htmlspecialchars($panelUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;background:#0f2d52;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">Open my panel</a></p>',
+        '<p style="font-size:14px;color:#4b5563;">Or copy this link:<br><a href="' . htmlspecialchars($panelUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($panelUrl, ENT_QUOTES, 'UTF-8') . '</a></p>',
+        '<p>— CompanyDataEnrichment</p>',
+        '</body></html>',
+    ]);
+
+    if (!is_readable(__DIR__ . '/_mail.php')) {
+        return ['ok' => false, 'error' => 'Mail transport not configured'];
+    }
+    require_once __DIR__ . '/_mail.php';
+    $from = cde_salesnav_mail_from_for('general');
+    $ok = cde_salesnav_send_general_mail($email, $subject, $body, $from, $html);
+
+    return $ok ? ['ok' => true] : ['ok' => false, 'error' => 'Mail delivery failed'];
+}
+
 function cde_customer_issue_reset_token(string $userId): string
 {
     $token = bin2hex(random_bytes(32));
