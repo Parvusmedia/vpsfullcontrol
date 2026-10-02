@@ -1759,6 +1759,7 @@ async function startStripeCheckout(pack = defaultPackId) {
     await fetchCredits();
     const added = Number(result.credits_added) || Math.max(0, creditBalance - (Number(sessionStorage.getItem("sn_pre_balance")) || 0));
     setAccountNote(t("credits.paidWithEmail", { count: added || creditBalance, email: accountEmail }), "ok");
+    fireOpenAiTopupConversion(result.conversion);
     try {
       sessionStorage.removeItem("sn_pre_balance");
     } catch {
@@ -2002,6 +2003,18 @@ function handleConnectQuery() {
   }
 }
 
+function fireOpenAiTopupConversion(conversion) {
+  if (!conversion || typeof window.cdeOpenAiAdsMeasureTopup !== "function") return;
+  const eventId = String(conversion.event_id || conversion.eventId || "").trim();
+  if (!eventId) return;
+  window.cdeOpenAiAdsMeasureTopup({
+    eventId,
+    amountCents: Number(conversion.amount_cents ?? conversion.amountCents) || 0,
+    currency: conversion.currency || "EUR",
+    packId: conversion.pack_id || conversion.packId || "",
+  });
+}
+
 function handleCreditsQuery() {
   const params = new URLSearchParams(window.location.search);
   const credits = params.get("credits");
@@ -2049,6 +2062,9 @@ async function completeStripeReturn(sessionId) {
         ? t("credits.paidWithEmail", { count: added || creditBalance, email: accountEmail })
         : t("credits.paid"),
       "ok"
+    );
+    fireOpenAiTopupConversion(
+      data.conversion || { event_id: sessionId, amount_cents: 0, currency: "EUR" }
     );
     await retryPendingExportIfReady();
   } catch {
