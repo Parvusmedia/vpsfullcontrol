@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HS Pedido — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__badge">Demo</span>
+        <h1>HS Pedido</h1>
+        <p class="header__sub">Pedido profesional de color y tratamiento</p>
+      </div>
+      <div class="header__salon">
+        <label for="salon-name">Salón / cliente</label>
+        <input id="salon-name" type="text" placeholder="Ej. Peluquería Centro" autocomplete="organization" />
+      </div>
+    </header>
+
+    <main class="main">
+      <nav class="tabs" role="tablist" aria-label="Categorías">
+        <button type="button" class="tabs__btn is-active" data-tab="color" role="tab" aria-selected="true">Color HS</button>
+        <button type="button" class="tabs__btn" data-tab="oxigenada" role="tab">Oxigenada</button>
+        <button type="button" class="tabs__btn" data-tab="decoloracion" role="tab">Decoloración</button>
+        <button type="button" class="tabs__btn" data-tab="cuidado" role="tab">Cuidado</button>
+      </nav>
+
+      <section id="panel-color" class="panel is-visible" role="tabpanel">
+        <p class="panel__hint">Tonos y boosters. Indica unidades por referencia.</p>
+        <div id="list-color" class="product-list"></div>
+      </section>
+
+      <section id="panel-oxigenada" class="panel" role="tabpanel" hidden>
+        <p class="panel__hint">Oxigenada Every Green — volúmenes habituales.</p>
+        <div id="list-oxigenada" class="product-list"></div>
+      </section>
+
+      <section id="panel-decoloracion" class="panel" role="tabpanel" hidden>
+        <div id="list-decoloracion" class="product-list"></div>
+      </section>
+
+      <section id="panel-cuidado" class="panel" role="tabpanel" hidden>
+        <p class="panel__hint">Champús, mascarillas y serums.</p>
+        <div id="list-cuidado" class="product-list"></div>
+      </section>
+    </main>
+
+    <aside class="cart" aria-label="Resumen del pedido">
+      <div class="cart__head">
+        <h2>Tu pedido</h2>
+        <span id="cart-count" class="cart__count">0 líneas</span>
+      </div>
+      <ul id="cart-lines" class="cart__lines"></ul>
+      <p id="cart-empty" class="cart__empty">Añade cantidades en las pestañas de arriba.</p>
+      <div class="cart__actions">
+        <button type="button" id="btn-copy" class="btn btn--secondary" disabled>Copiar pedido</button>
+        <button type="button" id="btn-submit" class="btn btn--primary" disabled>Enviar pedido (demo)</button>
+      </div>
+    </aside>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <dialog id="modal-success" class="modal">
+    <div class="modal__inner">
+      <h3>Pedido registrado (demo)</h3>
+      <p>En producción este paso enviaría el pedido al distribuidor o por WhatsApp/email.</p>
+      <pre id="modal-preview" class="modal__preview"></pre>
+      <button type="button" id="modal-close" class="btn btn--primary">Entendido</button>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
