@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeSpainPhone(raw) {\n  if (raw == null || String(raw).trim() === '') {\n    return { valid: false, reason: 'empty' };\n  }\n  let d = String(raw).replace(/\\D/g, '');\n  if (d.startsWith('0034')) d = d.slice(2);\n  if (d.length === 9 && /^[6789]/.test(d)) d = '34' + d;\n  if (d.length === 11 && d.startsWith('34')) {\n    const national = d.slice(2);\n    if (/^[6789]\\d{8}$/.test(national)) {\n      return { valid: true, phone_digits: d };\n    }\n  }\n  return { valid: false, reason: 'invalid_spain' };\n}\n\nconst expected = $vars.PROSEGUR_PHONE_REGISTER_SECRET;\nconst item = $input.first().json;\nconst headers = item.headers || {};\nconst got = headers['x-prosegur-register-secret'] || headers['X-Prosegur-Register-Secret'];\n\nif (!expected || !got || String(got) !== String(expected)) {\n  return [{ json: { route: 'unauthorized' } }];\n}\n\nconst body = item.body ?? item;\nconst phoneRaw = body.phone;\nconst source = String(body.source || 'unknown').slice(0, 120);\nconst norm = normalizeSpainPhone(phoneRaw);\n\nif (!norm.valid) {\n  return [{ json: { route: 'invalid', reason: norm.reason, source } }];\n}\n\nconst phone_digits = norm.phone_digits;\nconst phone_hash = crypto.createHash('sha256').update(phone_digits, 'utf8').digest('hex');\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    route: 'check_registry',\n    phone_digits,\n    phone_hash,\n    source,\n    claimed_at: now,\n    first_seen_at: now,\n    first_source: source\n  }\n}];"
+        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeSpainPhone(raw) {\n  if (raw == null || String(raw).trim() === '') {\n    return { valid: false, reason: 'empty' };\n  }\n  let d = String(raw).replace(/\\D/g, '');\n  if (d.startsWith('0034')) d = d.slice(2);\n  if (d.length === 9 && /^[6789]/.test(d)) d = '34' + d;\n  if (d.length === 11 && d.startsWith('34')) {\n    const national = d.slice(2);\n    if (/^[6789]\\d{8}$/.test(national)) {\n      return { valid: true, phone_digits: d };\n    }\n  }\n  return { valid: false, reason: 'invalid_spain' };\n}\n\nconst expected = $vars.PROSEGUR_PHONE_REGISTER_SECRET;\nconst item = $input.first().json;\nconst headers = item.headers || {};\nconst got = headers['x-prosegur-register-secret'] || headers['X-Prosegur-Register-Secret'];\n\nif (!expected || !got || String(got) !== String(expected)) {\n  return [{ json: { route: 'unauthorized' } }];\n}\n\nconst body = item.body ?? item;\nconst phoneRaw = body.phone;\nconst source = String(body.source || 'unknown').slice(0, 120);\nconst norm = normalizeSpainPhone(phoneRaw);\n\nif (!norm.valid) {\n  return [{ json: { route: 'invalid', reason: norm.reason, source } }];\n}\n\nconst phone_digits = norm.phone_digits;\nconst phone_hash = crypto.createHash('sha256').update(phone_digits, 'utf8').digest('hex');\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    route: 'register',\n    phone_digits,\n    phone_hash,\n    source,\n    claimed_at: now,\n    first_seen_at: now,\n    first_source: source\n  }\n}];"
       },
       "id": "a1b2c3d4-0002-4000-8000-000000000002",
       "name": "Prepare",
@@ -65,14 +65,14 @@
                 "conditions": [
                   {
                     "leftValue": "={{ $json.route }}",
-                    "rightValue": "check_registry",
+                    "rightValue": "register",
                     "operator": { "type": "string", "operation": "equals" }
                   }
                 ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "check"
+              "outputKey": "register"
             }
           ]
         },
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { status: 'unauthorized', message: 'invalid or missing secret' } }}",
+        "responseBody": "={{ { ok: false, status: 'unauthorized', message: 'invalid or missing secret' } }}",
         "options": { "responseCode": 401 }
       },
       "id": "a1b2c3d4-0004-4000-8000-000000000004",
@@ -99,7 +99,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { status: 'invalid_phone', reason: $json.reason || 'invalid_spain', source: $json.source } }}",
+        "responseBody": "={{ { ok: false, status: 'invalid_phone', reason: $json.reason || 'invalid_spain', source: $json.source } }}",
         "options": { "responseCode": 422 }
       },
       "id": "a1b2c3d4-0005-4000-8000-000000000005",
@@ -110,69 +110,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\nif (!staticData.duplicateEvents) staticData.duplicateEvents = [];\n\nconst prep = $input.first().json;\nconst phone = prep.phone_digits;\nconst now = new Date().toISOString();\n\nif (staticData.phones[phone]) {\n  const ex = staticData.phones[phone];\n  staticData.duplicateEvents.push({\n    event_key: `dup_${phone}_${now}`,\n    phone_digits: phone,\n    received_at: now,\n    source: prep.source,\n    first_source: ex.first_source,\n    first_seen_at: ex.first_seen_at,\n    action: 'duplicate_not_processed'\n  });\n  return [{\n    json: {\n      route: 'duplicate',\n      status: 'duplicate_not_processed',\n      phone_digits: phone,\n      source: prep.source,\n      first_source: ex.first_source,\n      first_seen_at: ex.first_seen_at,\n      message: 'duplicated phone, not processed'\n    }\n  }];\n}\n\nstaticData.phones[phone] = {\n  phone_digits: phone,\n  phone_hash: prep.phone_hash,\n  first_source: prep.source,\n  first_seen_at: prep.first_seen_at,\n  claimed_at: prep.claimed_at,\n  meta_synced_at: ''\n};\n\nreturn [{\n  json: {\n    route: 'claim',\n    status: 'claimed',\n    phone_digits: phone,\n    source: prep.source,\n    claimed_at: prep.claimed_at\n  }\n}];"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\nif (!staticData.duplicateEvents) staticData.duplicateEvents = [];\n\nconst prep = $input.first().json;\nconst phone = prep.phone_digits;\nconst now = new Date().toISOString();\n\nif (staticData.phones[phone]) {\n  const ex = staticData.phones[phone];\n  staticData.duplicateEvents.push({\n    event_key: `dup_${phone}_${now}`,\n    phone_digits: phone,\n    received_at: now,\n    source: prep.source,\n    first_source: ex.first_source,\n    first_seen_at: ex.first_seen_at,\n    action: 'duplicate_not_processed'\n  });\n  return [{\n    json: {\n      ok: true,\n      recorded: true,\n      is_duplicate: true,\n      phone_digits: phone,\n      source: prep.source,\n      first_source: ex.first_source,\n      first_seen_at: ex.first_seen_at\n    }\n  }];\n}\n\nstaticData.phones[phone] = {\n  phone_digits: phone,\n  phone_hash: prep.phone_hash,\n  first_source: prep.source,\n  first_seen_at: prep.first_seen_at,\n  claimed_at: prep.claimed_at,\n  meta_synced_at: ''\n};\n\nreturn [{\n  json: {\n    ok: true,\n    recorded: true,\n    is_duplicate: false,\n    phone_digits: phone,\n    source: prep.source,\n    claimed_at: prep.claimed_at\n  }\n}];"
       },
       "id": "a1b2c3d4-0007-4000-8000-000000000007",
       "name": "Register",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [780, 340]
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.route }}",
-                    "rightValue": "duplicate",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "duplicate"
-            },
-            {
-              "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.route }}",
-                    "rightValue": "claim",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "claim"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "a1b2c3d4-0008-4000-8000-000000000008",
-      "name": "Route claim",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [1040, 340]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": { "responseCode": 400 }
-      },
-      "id": "a1b2c3d4-0010-4000-8000-000000000010",
-      "name": "Respond 400",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [1300, 260]
     },
     {
       "parameters": {
@@ -184,7 +128,7 @@
       "name": "Respond 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1300, 420]
+      "position": [1040, 340]
     }
   ],
   "connections": {
@@ -197,13 +141,7 @@
         [{ "node": "Register", "type": "main", "index": 0 }]
       ]
     },
-    "Register": { "main": [[{ "node": "Route claim", "type": "main", "index": 0 }]] },
-    "Route claim": {
-      "main": [
-        [{ "node": "Respond 400", "type": "main", "index": 0 }],
-        [{ "node": "Respond 200", "type": "main", "index": 0 }]
-      ]
-    }
+    "Register": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "staticData": null,

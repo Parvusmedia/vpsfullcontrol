@@ -1,6 +1,6 @@
 # Prosegur — workflow central `prosegur-phone-register` (fase 1)
 
-Recibe teléfono + proveedor, normaliza (España), consulta el registro y **reserva** el número o devuelve duplicado. **No llama a Meta** (fase 2: `prosegur-meta-audience-push`).
+Recibe teléfono + proveedor, normaliza (España) y **registra siempre** (nuevo o duplicado). Responde **200** con `is_duplicate` para que cada **flujo proveedor** decida si contesta 200/400 al partner. **No llama a Meta** (fase 2). Ver [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md).
 
 ## Persistencia (v1 en n8n Cloud)
 
@@ -60,7 +60,7 @@ Devuelve `editor_url` y `workflow_id`. El MCP (`N8N_MCP_TOKEN` / JWT) solo permi
 Pasos comunes tras importar:
 2. En cada nodo **Data store**, elegir el store correspondiente (`prosegur_meta_phones` / `prosegur_meta_duplicate_events`). Si tras importar la operación no coincide con tu versión de n8n, ajusta: **Get** en `Get phone`, **Create/Set** en `Claim phone` y `Log duplicate`.
 3. En el nodo **Get phone**, activar **Always Output Data** si no viene ya marcado (así el flujo sigue cuando el teléfono no existe).
-4. Configurar `PROSEGUR_PHONE_REGISTER_SECRET` en el proyecto.
+4. Confirmar variable `PROSEGUR_PHONE_REGISTER_SECRET` en n8n (ya creada en el despliegue).
 4. Activar workflow y copiar la **Production URL** del Webhook.
 
 ## Contrato HTTP
@@ -83,44 +83,17 @@ Body:
 
 ### Respuestas
 
-| HTTP | `status` | Significado |
-|------|----------|-------------|
-| 200 | `claimed` | Primera vez; fila creada en `prosegur_meta_phones` |
-| 400 | `duplicate_not_processed` | Ya existía; evento en `prosegur_meta_duplicate_events` |
-| 422 | `invalid_phone` | No pasa validación España |
-| 401 | `unauthorized` | Secreto incorrecto |
+| HTTP | Significado |
+|------|-------------|
+| 200 | Registrado (`is_duplicate` true/false) |
+| 422 | `invalid_phone` |
+| 401 | Secreto incorrecto |
 
-Ejemplo 200:
+Ejemplo nuevo (`is_duplicate: false`) y duplicado (`is_duplicate: true`) en [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md).
 
-```json
-{
-  "status": "claimed",
-  "phone_digits": "34612345678",
-  "source": "proveedor_ejemplo",
-  "claimed_at": "2026-03-01T11:00:00.000Z"
-}
-```
+## Flujos proveedor (200/400 al partner)
 
-Ejemplo 400:
-
-```json
-{
-  "status": "duplicate_not_processed",
-  "phone_digits": "34612345678",
-  "source": "proveedor_B",
-  "first_source": "proveedor_A",
-  "first_seen_at": "2026-03-01T10:00:00.000Z",
-  "message": "duplicated phone, not processed"
-}
-```
-
-## Fase 2 — flujos proveedor (lo haréis vosotros)
-
-Antes de `Respond to Webhook` al proveedor:
-
-1. **HTTP Request** (sync) al workflow central con `phone` + `source`.
-2. Si respuesta **200** y `status === claimed` → **200** al proveedor y seguir procesamiento; luego llamar a push Meta (cuando exista).
-3. Si respuesta **400** → **400** al proveedor con `duplicated phone, not processed` (no procesar lead).
+No lo hace este workflow. Patrón en [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md) (ej. `xzKegSHCbJBlL50o`).
 
 ## Prueba con curl
 
