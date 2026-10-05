@@ -216,9 +216,9 @@ def _detect_tokens() -> tuple[str | None, str | None]:
     legacy = os.getenv("N8N_API_KEY")
 
     if legacy:
-        if not rest_key and legacy.startswith("n8n_api_"):
+        if not rest_key and (legacy.startswith("n8n_api_") or _is_jwt(legacy)):
             rest_key = legacy
-        if not mcp_token and _is_jwt(legacy):
+        if not mcp_token and _is_jwt(legacy) and not rest_key:
             mcp_token = legacy
     return rest_key, mcp_token
 
@@ -496,7 +496,22 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _load_private_env() -> None:
+    env_path = Path.cwd() / "private" / "n8n.env"
+    if not env_path.is_file():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value.strip()
+
+
 def main() -> int:
+    _load_private_env()
     args = parse_args()
     n8n_url = os.getenv("N8N_URL")
     if not n8n_url:

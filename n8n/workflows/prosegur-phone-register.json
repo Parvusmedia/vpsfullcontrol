@@ -110,26 +110,13 @@
     },
     {
       "parameters": {
-        "operation": "get",
-        "key": "={{ $json.phone_digits }}"
-      },
-      "id": "a1b2c3d4-0006-4000-8000-000000000006",
-      "name": "Get phone",
-      "type": "n8n-nodes-base.dataStore",
-      "typeVersion": 1,
-      "position": [780, 340],
-      "notes": "Seleccionar Data store: prosegur_meta_phones",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const prep = $('Prepare').first().json;\nconst item = $input.first().json || {};\nconst existing =\n  item.phone_digits === prep.phone_digits &&\n  (item.claimed_at || item.first_seen_at) &&\n  item.route !== 'check_registry';\n\nif (existing) {\n  const now = new Date().toISOString();\n  return [{\n    json: {\n      route: 'duplicate',\n      phone_digits: prep.phone_digits,\n      source: prep.source,\n      first_source: item.first_source || 'unknown',\n      first_seen_at: item.first_seen_at || item.claimed_at || now,\n      received_at: now,\n      event_key: `dup_${prep.phone_digits}_${now}`\n    }\n  }];\n}\n\nreturn [{ json: { ...prep, route: 'claim' } }];"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\nif (!staticData.duplicateEvents) staticData.duplicateEvents = [];\n\nconst prep = $input.first().json;\nconst phone = prep.phone_digits;\nconst now = new Date().toISOString();\n\nif (staticData.phones[phone]) {\n  const ex = staticData.phones[phone];\n  staticData.duplicateEvents.push({\n    event_key: `dup_${phone}_${now}`,\n    phone_digits: phone,\n    received_at: now,\n    source: prep.source,\n    first_source: ex.first_source,\n    first_seen_at: ex.first_seen_at,\n    action: 'duplicate_not_processed'\n  });\n  return [{\n    json: {\n      route: 'duplicate',\n      status: 'duplicate_not_processed',\n      phone_digits: phone,\n      source: prep.source,\n      first_source: ex.first_source,\n      first_seen_at: ex.first_seen_at,\n      message: 'duplicated phone, not processed'\n    }\n  }];\n}\n\nstaticData.phones[phone] = {\n  phone_digits: phone,\n  phone_hash: prep.phone_hash,\n  first_source: prep.source,\n  first_seen_at: prep.first_seen_at,\n  claimed_at: prep.claimed_at,\n  meta_synced_at: ''\n};\n\nreturn [{\n  json: {\n    route: 'claim',\n    status: 'claimed',\n    phone_digits: phone,\n    source: prep.source,\n    claimed_at: prep.claimed_at\n  }\n}];"
       },
       "id": "a1b2c3d4-0007-4000-8000-000000000007",
-      "name": "Decide",
+      "name": "Register",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1040, 340]
+      "position": [780, 340]
     },
     {
       "parameters": {
@@ -173,57 +160,31 @@
       "name": "Route claim",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [1300, 340]
-    },
-    {
-      "parameters": {
-        "operation": "set",
-        "key": "={{ $json.event_key }}",
-        "value": "={{ { event_key: $json.event_key, phone_digits: $json.phone_digits, received_at: $json.received_at, source: $json.source, first_source: $json.first_source, first_seen_at: $json.first_seen_at, action: 'duplicate_not_processed' } }}"
-      },
-      "id": "a1b2c3d4-0009-4000-8000-000000000009",
-      "name": "Log duplicate",
-      "type": "n8n-nodes-base.dataStore",
-      "typeVersion": 1,
-      "position": [1560, 260],
-      "notes": "Seleccionar Data store: prosegur_meta_duplicate_events"
+      "position": [1040, 340]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { status: 'duplicate_not_processed', phone_digits: $('Decide').item.json.phone_digits, source: $('Decide').item.json.source, first_source: $('Decide').item.json.first_source, first_seen_at: $('Decide').item.json.first_seen_at, message: 'duplicated phone, not processed' } }}",
+        "responseBody": "={{ $json }}",
         "options": { "responseCode": 400 }
       },
       "id": "a1b2c3d4-0010-4000-8000-000000000010",
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1820, 260]
-    },
-    {
-      "parameters": {
-        "operation": "set",
-        "key": "={{ $json.phone_digits }}",
-        "value": "={{ { phone_digits: $json.phone_digits, phone_hash: $json.phone_hash, first_source: $json.first_source, first_seen_at: $json.first_seen_at, claimed_at: $json.claimed_at, meta_synced_at: '' } }}"
-      },
-      "id": "a1b2c3d4-0011-4000-8000-000000000011",
-      "name": "Claim phone",
-      "type": "n8n-nodes-base.dataStore",
-      "typeVersion": 1,
-      "position": [1560, 420],
-      "notes": "Seleccionar Data store: prosegur_meta_phones"
+      "position": [1300, 260]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { status: 'claimed', phone_digits: $('Decide').item.json.phone_digits, source: $('Decide').item.json.source, claimed_at: $('Decide').item.json.claimed_at } }}",
+        "responseBody": "={{ $json }}",
         "options": { "responseCode": 200 }
       },
       "id": "a1b2c3d4-0012-4000-8000-000000000012",
       "name": "Respond 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1820, 420]
+      "position": [1300, 420]
     }
   ],
   "connections": {
@@ -233,21 +194,17 @@
       "main": [
         [{ "node": "Respond 401", "type": "main", "index": 0 }],
         [{ "node": "Respond 422", "type": "main", "index": 0 }],
-        [{ "node": "Get phone", "type": "main", "index": 0 }]
+        [{ "node": "Register", "type": "main", "index": 0 }]
       ]
     },
-    "Get phone": { "main": [[{ "node": "Decide", "type": "main", "index": 0 }]] },
-    "Decide": { "main": [[{ "node": "Route claim", "type": "main", "index": 0 }]] },
+    "Register": { "main": [[{ "node": "Route claim", "type": "main", "index": 0 }]] },
     "Route claim": {
       "main": [
-        [{ "node": "Log duplicate", "type": "main", "index": 0 }],
-        [{ "node": "Claim phone", "type": "main", "index": 0 }]
+        [{ "node": "Respond 400", "type": "main", "index": 0 }],
+        [{ "node": "Respond 200", "type": "main", "index": 0 }]
       ]
-    },
-    "Log duplicate": { "main": [[{ "node": "Respond 400", "type": "main", "index": 0 }]] },
-    "Claim phone": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+    }
   },
-  "pinData": {},
   "settings": { "executionOrder": "v1" },
   "staticData": null,
   "tags": [{ "name": "prosegur" }, { "name": "meta-audience" }]

@@ -2,7 +2,13 @@
 
 Recibe teléfono + proveedor, normaliza (España), consulta el registro y **reserva** el número o devuelve duplicado. **No llama a Meta** (fase 2: `prosegur-meta-audience-push`).
 
-## Data Stores (crear en n8n antes de activar)
+## Persistencia (v1 en n8n Cloud)
+
+El workflow desplegado usa **`$getWorkflowStaticData('global')`** (nodos **Register**): mapa `phones` + lista `duplicateEvents`. No requiere Data Store/Data Table en la instancia (el tipo `dataStore` no está disponible en vuestro cloud).
+
+Más adelante se puede migrar a **Data tables** (`n8n-nodes-base.dataTable`) sin cambiar el contrato HTTP.
+
+## Data Stores / Data tables (referencia futura)
 
 ### 1. `prosegur_meta_phones`
 
@@ -35,7 +41,9 @@ Recibe teléfono + proveedor, normaliza (España), consulta el registro y **rese
 
 ## Importar workflow
 
-**Opción A — REST (agente / CI):** con `N8N_REST_API_KEY` (`n8n_api_...`):
+**Credenciales locales (no commitear):** archivo `private/n8n.env` con `N8N_URL` y `N8N_REST_API_KEY`. `scripts/n8n` lo carga automáticamente si existe.
+
+**Opción A — REST (agente / CI):** con `N8N_REST_API_KEY` (JWT public-api o `n8n_api_...`):
 
 ```bash
 scripts/n8n import --file n8n/workflows/prosegur-phone-register.json --activate
