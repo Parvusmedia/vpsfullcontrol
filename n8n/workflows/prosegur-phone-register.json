@@ -134,8 +134,9 @@
         "operation": "insert",
         "dataTableId": {
           "__rl": true,
-          "mode": "name",
-          "value": "prosegur_phone_events"
+          "mode": "list",
+          "value": "ZI6qiUvYUVzuCJM6",
+          "cachedResultName": "prosegur_phone_events"
         },
         "columns": {
           "mappingMode": "defineBelow",
