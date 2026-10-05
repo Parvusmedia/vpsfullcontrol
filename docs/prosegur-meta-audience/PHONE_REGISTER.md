@@ -35,7 +35,17 @@ Recibe teléfono + proveedor, normaliza (España), consulta el registro y **rese
 
 ## Importar workflow
 
-1. En n8n: **Workflows → Import from File** → [`n8n/workflows/prosegur-phone-register.json`](../../n8n/workflows/prosegur-phone-register.json).
+**Opción A — REST (agente / CI):** con `N8N_REST_API_KEY` (`n8n_api_...`):
+
+```bash
+scripts/n8n import --file n8n/workflows/prosegur-phone-register.json --activate
+```
+
+Devuelve `editor_url` y `workflow_id`. El MCP (`N8N_MCP_TOKEN` / JWT) solo permite buscar y ejecutar workflows, no crearlos.
+
+**Opción B — UI:** **Workflows → Import from File** → [`n8n/workflows/prosegur-phone-register.json`](../../n8n/workflows/prosegur-phone-register.json).
+
+Pasos comunes tras importar:
 2. En cada nodo **Data store**, elegir el store correspondiente (`prosegur_meta_phones` / `prosegur_meta_duplicate_events`). Si tras importar la operación no coincide con tu versión de n8n, ajusta: **Get** en `Get phone`, **Create/Set** en `Claim phone` y `Log duplicate`.
 3. En el nodo **Get phone**, activar **Always Output Data** si no viene ya marcado (así el flujo sigue cuando el teléfono no existe).
 4. Configurar `PROSEGUR_PHONE_REGISTER_SECRET` en el proyecto.

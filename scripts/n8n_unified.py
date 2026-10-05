@@ -85,13 +85,39 @@ class N8NClient:
             url = f"{url}?{query}"
         return self._request("GET", url, headers={"X-N8N-API-KEY": self.rest_key})
 
+    def rest_post(self, path: str, payload: dict[str, Any]) -> tuple[int, Any]:
+        if not self.rest_key:
+            return 0, {"error": "missing_rest_key"}
+        url = f"{self.base_url}{path}"
+        return self._request("POST", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload)
+
+    def rest_patch(self, path: str, payload: dict[str, Any]) -> tuple[int, Any]:
+        if not self.rest_key:
+            return 0, {"error": "missing_rest_key"}
+        url = f"{self.base_url}{path}"
+        return self._request("PATCH", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload)
+
     def _mcp_raw(self, method: str, params: dict[str, Any] | None = None, req_id: str = "1") -> tuple[int, Any]:
         if not self.mcp_token:
             return 0, {"error": "missing_mcp_token"}
         url = f"{self.base_url}/mcp-server/http"
         payload = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
-        headers = {"Authorization": f"Bearer {self.mcp_token}"}
-        return self._request("POST", url, headers=headers, payload=payload)
+        headers = {
+            "Authorization": f"Bearer {self.mcp_token}",
+            "Accept": "application/json, text/event-stream",
+        }
+        status, data = self._request("POST", url, headers=headers, payload=payload)
+        if status != 200:
+            return status, data
+        if isinstance(data, dict) and "result" in data:
+            return status, data
+        if isinstance(data, dict) and isinstance(data.get("raw"), str):
+            parsed = _parse_mcp_sse_payload(data["raw"])
+            if isinstance(parsed, dict):
+                return status, parsed
+        if isinstance(data, str):
+            return status, _parse_mcp_sse_payload(data)
+        return status, data
 
     def mcp_initialize(self) -> tuple[int, Any]:
         params = {
@@ -159,6 +185,16 @@ class N8NClient:
 
 def _print_json(data: Any) -> None:
     print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def _parse_mcp_sse_payload(raw: str) -> Any:
+    for line in raw.splitlines():
+        if line.startswith("data: "):
+            try:
+                return json.loads(line[6:])
+            except json.JSONDecodeError:
+                continue
+    return {"raw": raw}
 
 
 def _extract_rest_list(payload: Any) -> list[dict[str, Any]]:
@@ -360,6 +396,59 @@ def _mcp_export(client: N8NClient, out_dir: Path) -> int:
     return 0
 
 
+def _workflow_import_body(path: Path) -> dict[str, Any]:
+    with path.open(encoding="utf-8") as f:
+        data = json.load(f)
+    allowed = {"name", "nodes", "connections", "settings", "staticData"}
+    body = {k: data[k] for k in allowed if k in data}
+    if "name" not in body:
+        body["name"] = path.stem
+    return body
+
+
+def cmd_import(client: N8NClient, path: str, activate: bool) -> int:
+    wf_path = Path(path)
+    if not wf_path.is_file():
+        _print_json({"error": f"No existe el archivo: {wf_path}"})
+        return 1
+    if not client.rest_key:
+        _print_json(
+            {
+                "error": "Falta N8N_REST_API_KEY (prefijo n8n_api_). El token MCP no puede crear workflows.",
+                "hint": "n8n Cloud → Settings → API → Create API key",
+            }
+        )
+        return 1
+
+    body = _workflow_import_body(wf_path)
+    status, payload = client.rest_post("/api/v1/workflows", body)
+    if status not in (200, 201):
+        _print_json({"error": "create_failed", "http": status, "response": payload})
+        return 1
+
+    wf_id = payload.get("id") if isinstance(payload, dict) else None
+    if not wf_id and isinstance(payload, dict) and isinstance(payload.get("data"), dict):
+        wf_id = payload["data"].get("id")
+
+    result: dict[str, Any] = {
+        "ok": True,
+        "workflow_id": wf_id,
+        "name": body.get("name"),
+        "editor_url": f"{client.base_url}/workflow/{wf_id}" if wf_id else None,
+        "webhook_url": f"{client.base_url}/webhook/prosegur-phone-register",
+        "note": "Tras activar, confirma Production URL en el nodo Webhook y enlaza Data Stores.",
+    }
+
+    if activate and wf_id:
+        act_status, act_payload = client.rest_post(f"/api/v1/workflows/{wf_id}/activate", {})
+        result["activated"] = act_status in (200, 201)
+        if act_status not in (200, 201):
+            result["activate_error"] = act_payload
+
+    _print_json(result)
+    return 0
+
+
 def cmd_export(client: N8NClient, out: str | None) -> int:
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = Path(out) if out else Path.cwd() / f"n8n_export_{timestamp}"
@@ -400,6 +489,10 @@ def parse_args() -> argparse.Namespace:
     export_p = sub.add_parser("export", help="Exportar workflows a JSON.")
     export_p.add_argument("--out", type=str, default=None)
 
+    import_p = sub.add_parser("import", help="Importar workflow JSON vía REST API.")
+    import_p.add_argument("--file", required=True, help="Ruta al JSON exportado.")
+    import_p.add_argument("--activate", action="store_true", help="Activar tras crear.")
+
     return parser.parse_args()
 
 
@@ -421,6 +514,8 @@ def main() -> int:
         return cmd_details(client, args.workflow_id)
     if args.command == "export":
         return cmd_export(client, args.out)
+    if args.command == "import":
+        return cmd_import(client, args.file, args.activate)
 
     _print_json({"error": "Comando no soportado."})
     return 1
