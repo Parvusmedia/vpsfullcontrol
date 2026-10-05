@@ -33,11 +33,15 @@ Más adelante se puede migrar a **Data tables** (`n8n-nodes-base.dataTable`) sin
 | `first_seen_at` | string | Del registro maestro |
 | `action` | string | `duplicate_not_processed` |
 
-## Variables de entorno (n8n Cloud)
+## Secreto del webhook (n8n Variables)
 
-| Variable | Uso |
-|----------|-----|
-| `PROSEGUR_PHONE_REGISTER_SECRET` | Mismo valor en header `X-Prosegur-Register-Secret` |
+En n8n Cloud **no** uses `$env` en Code (bloqueado). El workflow lee:
+
+**`$vars.PROSEGUR_PHONE_REGISTER_SECRET`**
+
+Crear o editar en **Settings → Variables** (clave `PROSEGUR_PHONE_REGISTER_SECRET`). El mismo valor va en el header `X-Prosegur-Register-Secret` de los flujos proveedor.
+
+Tras rotar el secreto: actualizar la variable en n8n y los nodos HTTP de los flujos hijos.
 
 ## Importar workflow
 
