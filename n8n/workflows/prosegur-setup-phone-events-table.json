@@ -1,0 +1,43 @@
+{
+  "name": "prosegur-setup-phone-events-table",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "prosegur_phone_events",
+        "columns": {
+          "column": [
+            { "name": "phone_digits", "type": "string" },
+            { "name": "duplicate_tag", "type": "string" },
+            { "name": "is_duplicate", "type": "string" },
+            { "name": "source", "type": "string" },
+            { "name": "first_source", "type": "string" },
+            { "name": "received_at", "type": "string" },
+            { "name": "first_seen_at", "type": "string" },
+            { "name": "phone_hash", "type": "string" }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Create Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [260, 0]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Create Data Table", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "availableInMCP": true }
+}

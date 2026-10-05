@@ -97,6 +97,12 @@ class N8NClient:
         url = f"{self.base_url}{path}"
         return self._request("PATCH", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload)
 
+    def rest_put(self, path: str, payload: dict[str, Any]) -> tuple[int, Any]:
+        if not self.rest_key:
+            return 0, {"error": "missing_rest_key"}
+        url = f"{self.base_url}{path}"
+        return self._request("PUT", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload)
+
     def _mcp_raw(self, method: str, params: dict[str, Any] | None = None, req_id: str = "1") -> tuple[int, Any]:
         if not self.mcp_token:
             return 0, {"error": "missing_mcp_token"}
@@ -449,6 +455,39 @@ def cmd_import(client: N8NClient, path: str, activate: bool) -> int:
     return 0
 
 
+def cmd_update(client: N8NClient, workflow_id: str, path: str) -> int:
+    wf_path = Path(path)
+    if not wf_path.is_file():
+        _print_json({"error": f"No existe el archivo: {wf_path}"})
+        return 1
+    if not client.rest_key:
+        _print_json({"error": "Falta N8N_REST_API_KEY para actualizar workflows."})
+        return 1
+
+    status_get, existing = client.rest_get(f"/api/v1/workflows/{workflow_id}")
+    if status_get != 200 or not isinstance(existing, dict):
+        _print_json({"error": "workflow_not_found", "http": status_get, "response": existing})
+        return 1
+
+    body = _workflow_import_body(wf_path)
+    body["name"] = body.get("name") or existing.get("name") or wf_path.stem
+    status, payload = client.rest_put(f"/api/v1/workflows/{workflow_id}", body)
+    if status not in (200, 201):
+        _print_json({"error": "update_failed", "http": status, "response": payload})
+        return 1
+
+    _print_json(
+        {
+            "ok": True,
+            "workflow_id": workflow_id,
+            "name": body.get("name"),
+            "editor_url": f"{client.base_url}/workflow/{workflow_id}",
+            "active": existing.get("active"),
+        }
+    )
+    return 0
+
+
 def cmd_export(client: N8NClient, out: str | None) -> int:
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = Path(out) if out else Path.cwd() / f"n8n_export_{timestamp}"
@@ -493,6 +532,10 @@ def parse_args() -> argparse.Namespace:
     import_p.add_argument("--file", required=True, help="Ruta al JSON exportado.")
     import_p.add_argument("--activate", action="store_true", help="Activar tras crear.")
 
+    update_p = sub.add_parser("update", help="Actualizar workflow existente vía REST PUT.")
+    update_p.add_argument("--workflow-id", required=True)
+    update_p.add_argument("--file", required=True)
+
     return parser.parse_args()
 
 
@@ -531,6 +574,8 @@ def main() -> int:
         return cmd_export(client, args.out)
     if args.command == "import":
         return cmd_import(client, args.file, args.activate)
+    if args.command == "update":
+        return cmd_update(client, args.workflow_id, args.file)
 
     _print_json({"error": "Comando no soportado."})
     return 1

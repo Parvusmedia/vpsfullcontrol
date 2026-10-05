@@ -4,11 +4,12 @@ Recibe teléfono + proveedor, normaliza (España) y **registra siempre** (nuevo 
 
 ## Persistencia (v1 en n8n Cloud)
 
-El workflow desplegado usa **`$getWorkflowStaticData('global')`** (nodos **Register**): mapa `phones` + lista `duplicateEvents`. No requiere Data Store/Data Table en la instancia (el tipo `dataStore` no está disponible en vuestro cloud).
+- **Dedup operativo:** **`$getWorkflowStaticData('global')`** (nodo **Register**): mapa `phones` + lista `duplicateEvents`.
+- **Auditoría:** data table **`prosegur_phone_events`** (nodo **Insert Data Table**). Campos `duplicate_tag` (`new` \| `duplicate`) e `is_duplicate` (`no` \| `yes`).
 
-Más adelante se puede migrar a **Data tables** (`n8n-nodes-base.dataTable`) sin cambiar el contrato HTTP.
+Crear la tabla una vez en la UI de n8n (el CRUD de tablas vía nodo/API no está disponible aún en vuestra instancia). Detalle: [DATA_TABLE_PHONE_EVENTS.md](./DATA_TABLE_PHONE_EVENTS.md).
 
-## Data Stores / Data tables (referencia futura)
+## Data Stores / Data tables (referencia)
 
 ### 1. `prosegur_meta_phones`
 

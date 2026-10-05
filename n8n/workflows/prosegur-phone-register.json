@@ -110,13 +110,64 @@
     },
     {
       "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\nif (!staticData.duplicateEvents) staticData.duplicateEvents = [];\n\nconst prep = $input.first().json;\nconst phone = prep.phone_digits;\nconst now = new Date().toISOString();\n\nif (staticData.phones[phone]) {\n  const ex = staticData.phones[phone];\n  staticData.duplicateEvents.push({\n    event_key: `dup_${phone}_${now}`,\n    phone_digits: phone,\n    received_at: now,\n    source: prep.source,\n    first_source: ex.first_source,\n    first_seen_at: ex.first_seen_at,\n    action: 'duplicate_not_processed'\n  });\n  return [{\n    json: {\n      ok: true,\n      recorded: true,\n      is_duplicate: true,\n      phone_digits: phone,\n      source: prep.source,\n      first_source: ex.first_source,\n      first_seen_at: ex.first_seen_at\n    }\n  }];\n}\n\nstaticData.phones[phone] = {\n  phone_digits: phone,\n  phone_hash: prep.phone_hash,\n  first_source: prep.source,\n  first_seen_at: prep.first_seen_at,\n  claimed_at: prep.claimed_at,\n  meta_synced_at: ''\n};\n\nreturn [{\n  json: {\n    ok: true,\n    recorded: true,\n    is_duplicate: false,\n    phone_digits: phone,\n    source: prep.source,\n    claimed_at: prep.claimed_at\n  }\n}];"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\nif (!staticData.duplicateEvents) staticData.duplicateEvents = [];\n\nconst prep = $input.first().json;\nconst phone = prep.phone_digits;\nconst now = new Date().toISOString();\n\nif (staticData.phones[phone]) {\n  const ex = staticData.phones[phone];\n  staticData.duplicateEvents.push({\n    event_key: `dup_${phone}_${now}`,\n    phone_digits: phone,\n    received_at: now,\n    source: prep.source,\n    first_source: ex.first_source,\n    first_seen_at: ex.first_seen_at,\n    action: 'duplicate_not_processed'\n  });\n  return [{\n    json: {\n      ok: true,\n      recorded: true,\n      is_duplicate: true,\n      phone_digits: phone,\n      source: prep.source,\n      first_source: ex.first_source,\n      phone_hash: ex.phone_hash || prep.phone_hash,\n      claimed_at: ex.claimed_at\n    }\n  }];\n}\n\nstaticData.phones[phone] = {\n  phone_digits: phone,\n  phone_hash: prep.phone_hash,\n  first_source: prep.source,\n  first_seen_at: prep.first_seen_at,\n  claimed_at: prep.claimed_at,\n  meta_synced_at: ''\n};\n\nreturn [{\n  json: {\n    ok: true,\n    recorded: true,\n    is_duplicate: false,\n    phone_digits: phone,\n    phone_hash: prep.phone_hash,\n    source: prep.source,\n    claimed_at: prep.claimed_at,\n    first_seen_at: prep.first_seen_at,\n    first_source: prep.source\n  }\n}];"
       },
       "id": "a1b2c3d4-0007-4000-8000-000000000007",
       "name": "Register",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [780, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst receivedAt = new Date().toISOString();\nconst isDup = Boolean(r.is_duplicate);\nreturn [{\n  json: {\n    ...r,\n    duplicate_tag: isDup ? 'duplicate' : 'new',\n    is_duplicate: isDup ? 'yes' : 'no',\n    received_at: receivedAt,\n    first_source: r.first_source || r.source || '',\n    first_seen_at: r.first_seen_at || r.claimed_at || receivedAt,\n    phone_hash: r.phone_hash || ''\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "Prepare audit row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 340]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "prosegur_phone_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_digits": "={{ $json.phone_digits }}",
+            "duplicate_tag": "={{ $json.duplicate_tag }}",
+            "is_duplicate": "={{ $json.is_duplicate }}",
+            "source": "={{ $json.source }}",
+            "first_source": "={{ $json.first_source }}",
+            "received_at": "={{ $json.received_at }}",
+            "first_seen_at": "={{ $json.first_seen_at }}",
+            "phone_hash": "={{ $json.phone_hash }}"
+          },
+          "schema": [
+            { "id": "phone_digits", "displayName": "phone_digits", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "duplicate_tag", "displayName": "duplicate_tag", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "is_duplicate", "displayName": "is_duplicate", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "source", "displayName": "source", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "first_source", "displayName": "first_source", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "received_at", "displayName": "received_at", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "first_seen_at", "displayName": "first_seen_at", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "phone_hash", "displayName": "phone_hash", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0014-4000-8000-000000000014",
+      "name": "Insert Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [1300, 340],
+      "continueOnFail": true,
+      "notes": "Tabla visible: prosegur_phone_events"
     },
     {
       "parameters": {
@@ -128,7 +179,7 @@
       "name": "Respond 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1040, 340]
+      "position": [1560, 340]
     }
   ],
   "connections": {
@@ -141,7 +192,15 @@
         [{ "node": "Register", "type": "main", "index": 0 }]
       ]
     },
-    "Register": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+    "Register": { "main": [[{ "node": "Prepare audit row", "type": "main", "index": 0 }]] },
+    "Prepare audit row": {
+      "main": [
+        [
+          { "node": "Insert Data Table", "type": "main", "index": 0 },
+          { "node": "Respond 200", "type": "main", "index": 0 }
+        ]
+      ]
+    }
   },
   "settings": { "executionOrder": "v1" },
   "staticData": null,
