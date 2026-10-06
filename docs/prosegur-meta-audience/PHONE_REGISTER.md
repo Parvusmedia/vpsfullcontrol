@@ -1,6 +1,12 @@
-# Prosegur — workflow central `prosegur-phone-register` (fase 1)
+# Prosegur — workflow central `prosegur-phone-register`
 
-Recibe teléfono + proveedor, normaliza (España) y **registra siempre** (nuevo o duplicado). Responde **200** con `is_duplicate` para que cada **flujo proveedor** decida si contesta 200/400 al partner. **No llama a Meta** (fase 2). Ver [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md).
+**Modo actual (oct-2026):** sincronización desde **Google Sheets** cada 15 minutos — ver [SHEETS_SYNC.md](./SHEETS_SYNC.md).
+
+El webhook HTTP ya no forma parte de este workflow; la fuente de verdad son las pestañas **Prosegur** y **leadsconhorario_soportesexternos**.
+
+---
+
+## Referencia histórica — webhook (deprecado en este workflow)
 
 ## Persistencia (v1 en n8n Cloud)
 
