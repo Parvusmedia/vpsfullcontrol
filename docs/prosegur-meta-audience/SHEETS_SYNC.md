@@ -34,6 +34,8 @@ El nodo **Read** de Google Sheets **no admite** filtro tipo “fecha ≥ ayer”
 
 Tras la primera ejecución, cada pestaña debería leer del orden de **miles** de filas, no decenas de miles.
 
+Alternativas más eficientes (Apps Script, pestaña QUERY): [SHEETS_INGEST_OPTIONS.md](./SHEETS_INGEST_OPTIONS.md).
+
 ## Cadena del workflow
 
 ```text
