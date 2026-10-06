@@ -10,7 +10,10 @@ Business Manager: `149543758710373`
 2. Excluye teléfonos ya enviados (`meta_synced_at` en la fila o registro en `staticData.syncedPhones` del workflow).
 3. Sube hashes **SHA256** de `phone_digits` (columna `phone_hash`) a Meta vía  
    `POST /v23.0/{audience-id}/users` (lotes de hasta 5000).
-4. Marca `meta_synced_at` en la data table y en memoria del workflow.
+4. Marca `meta_synced_at` y `google_synced_at` en la data table y en memoria del workflow.
+5. **Append** a Google Sheet (Customer Match mirror):  
+   `https://docs.google.com/spreadsheets/d/1jATV1mU0ES_IIRUQlwBzlNpGePyQmEDgWqp4kYdONGw` (pestaña `gid=0`).  
+   Variable opcional: `PROSEGUR_GOOGLE_EXCLUSION_SHEET_ID`.
 
 ## Variables n8n (Settings → Variables)
 

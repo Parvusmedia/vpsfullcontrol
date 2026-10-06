@@ -165,6 +165,77 @@
     },
     {
       "parameters": {
+        "jsCode": "const tableRows = $('Get new phones from table').all()\n  .map((i) => i.json)\n  .filter((r) => r && r.phone_digits);\nconst byPhone = {};\nfor (const r of tableRows) {\n  byPhone[String(r.phone_digits)] = r;\n}\n\nconst sheetNow = new Date().toISOString();\n\nreturn $input.all().map((item) => {\n  const s = item.json;\n  const phone = String(s.phone_digits);\n  const r = byPhone[phone] || {};\n  const phoneE164 = phone.startsWith('+') ? phone : `+${phone}`;\n\n  return {\n    json: {\n      phone_digits: phone,\n      duplicate_tag: r.duplicate_tag || 'new',\n      is_duplicate: r.is_duplicate || 'no',\n      source: r.source || '',\n      first_source: r.first_source || r.source || '',\n      received_at: r.received_at || s.meta_synced_at || sheetNow,\n      first_seen_at: r.first_seen_at || r.received_at || '',\n      phone_hash: s.phone_hash || r.phone_hash || '',\n      meta_synced_at: s.meta_synced_at || sheetNow,\n      Phone: phoneE164,\n      google_synced_at: sheetNow,\n    },\n  };\n});"
+      },
+      "id": "c1a1a1a1-0012-4000-8000-000000000012",
+      "name": "Prepare Google Sheet row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1696, 160]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $vars.PROSEGUR_GOOGLE_EXCLUSION_SHEET_ID || '1jATV1mU0ES_IIRUQlwBzlNpGePyQmEDgWqp4kYdONGw' }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jATV1mU0ES_IIRUQlwBzlNpGePyQmEDgWqp4kYdONGw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_digits": "={{ $json.phone_digits }}",
+            "duplicate_tag": "={{ $json.duplicate_tag }}",
+            "is_duplicate": "={{ $json.is_duplicate }}",
+            "source": "={{ $json.source }}",
+            "first_source": "={{ $json.first_source }}",
+            "received_at": "={{ $json.received_at }}",
+            "first_seen_at": "={{ $json.first_seen_at }}",
+            "phone_hash": "={{ $json.phone_hash }}",
+            "meta_synced_at": "={{ $json.meta_synced_at }}",
+            "Phone": "={{ $json.Phone }}",
+            "google_synced_at": "={{ $json.google_synced_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "phone_digits", "displayName": "phone_digits", "type": "string", "canBeUsedToMatch": true },
+            { "id": "duplicate_tag", "displayName": "duplicate_tag", "type": "string", "canBeUsedToMatch": true },
+            { "id": "is_duplicate", "displayName": "is_duplicate", "type": "string", "canBeUsedToMatch": true },
+            { "id": "source", "displayName": "source", "type": "string", "canBeUsedToMatch": true },
+            { "id": "first_source", "displayName": "first_source", "type": "string", "canBeUsedToMatch": true },
+            { "id": "received_at", "displayName": "received_at", "type": "string", "canBeUsedToMatch": true },
+            { "id": "first_seen_at", "displayName": "first_seen_at", "type": "string", "canBeUsedToMatch": true },
+            { "id": "phone_hash", "displayName": "phone_hash", "type": "string", "canBeUsedToMatch": true },
+            { "id": "meta_synced_at", "displayName": "meta_synced_at", "type": "string", "canBeUsedToMatch": true },
+            { "id": "Phone", "displayName": "Phone", "type": "string", "canBeUsedToMatch": true },
+            { "id": "google_synced_at", "displayName": "google_synced_at", "type": "string", "canBeUsedToMatch": true }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c1a1a1a1-0013-4000-8000-000000000013",
+      "name": "Append Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [1952, 160],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IUffqNWvLrjbinjA",
+          "name": "Pmedia Dvelopment Google"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Customer Match mirror: 1jATV1mU0ES_IIRUQlwBzlNpGePyQmEDgWqp4kYdONGw gid=0"
+    },
+    {
+      "parameters": {
         "resource": "row",
         "operation": "update",
         "dataTableId": {
@@ -186,7 +257,8 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "meta_synced_at": "={{ $json.meta_synced_at }}"
+            "meta_synced_at": "={{ $json.meta_synced_at }}",
+            "google_synced_at": "={{ $json.google_synced_at }}"
           }
         }
       },
@@ -194,9 +266,9 @@
       "name": "Update meta_synced_at",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
-      "position": [1824, 160],
+      "position": [2208, 160],
       "continueOnFail": true,
-      "notes": "Añadir columna meta_synced_at (string) en la data table si no existe"
+      "notes": "Columnas meta_synced_at y google_synced_at en data table"
     },
     {
       "parameters": {
@@ -210,13 +282,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const pending = $('Filter not synced to Meta').first().json.pending_count || 0;\nconst marked = $input.all().length;\nreturn [{\n  json: {\n    ok: true,\n    status: 'synced',\n    pending_count: pending,\n    rows_marked: marked,\n    audience_id: $vars.PROSEGUR_META_CUSTOM_AUDIENCE_ID || '52551337752304',\n  },\n}];"
+        "jsCode": "const pending = $('Filter not synced to Meta').first().json.pending_count || 0;\nconst marked = $('Prepare Google Sheet row').all().length;\nreturn [{\n  json: {\n    ok: true,\n    status: 'synced',\n    pending_count: pending,\n    rows_marked: marked,\n    sheets_appended: marked,\n    audience_id: $vars.PROSEGUR_META_CUSTOM_AUDIENCE_ID || '52551337752304',\n    google_sheet_id: $vars.PROSEGUR_GOOGLE_EXCLUSION_SHEET_ID || '1jATV1mU0ES_IIRUQlwBzlNpGePyQmEDgWqp4kYdONGw',\n  },\n}];"
       },
       "id": "c1a1a1a1-0011-4000-8000-000000000011",
       "name": "Summary synced",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2080, 160]
+      "position": [2464, 160]
     }
   ],
   "connections": {
@@ -245,7 +317,15 @@
       "main": [[{ "node": "Mark synced", "type": "main", "index": 0 }]]
     },
     "Mark synced": {
-      "main": [[{ "node": "Update meta_synced_at", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Prepare Google Sheet row", "type": "main", "index": 0 }]]
+    },
+    "Prepare Google Sheet row": {
+      "main": [
+        [
+          { "node": "Update meta_synced_at", "type": "main", "index": 0 },
+          { "node": "Append Google Sheet", "type": "main", "index": 0 }
+        ]
+      ]
     },
     "Update meta_synced_at": {
       "main": [[{ "node": "Summary synced", "type": "main", "index": 0 }]]
