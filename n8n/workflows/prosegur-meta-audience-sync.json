@@ -255,6 +255,7 @@
     "executionOrder": "v1",
     "timezone": "Europe/Madrid",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "errorWorkflow": "e1XnUCiGOtnaoJVB"
   }
 }

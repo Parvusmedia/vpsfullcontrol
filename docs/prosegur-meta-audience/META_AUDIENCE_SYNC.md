@@ -42,6 +42,12 @@ scripts/n8n import --file n8n/workflows/prosegur-meta-audience-sync.json --activ
 - **Cron:** `0 5 * * *` (05:00 Europe/Madrid), después del push diario del Sheet (~01:00–02:00).
 - **Prueba:** Manual Trigger en el editor.
 
+## Alertas si falla
+
+El workflow usa el **Error Workflow** compartido **`Workflow con Error Alerta X Email`** (`e1XnUCiGOtnaoJVB`): mismo patrón que otros flujos Prosegur/Meta. Si una ejecución termina en error (p. ej. nodo **Meta add users**), n8n dispara ese subflujo y envía email a las direcciones configuradas allí (`etichauer@gmail.com`, `emiliano@parvusmedia.com`).
+
+Para cambiar destinatarios o el asunto, edita el workflow de alertas en n8n, no el sync de Prosegur.
+
 ## Comprobar en Meta
 
 Ads Manager → Audiencias → `MPA_Lead_Exclusion (3rdparty)` → tamaño de la audiencia (puede tardar en actualizarse).
