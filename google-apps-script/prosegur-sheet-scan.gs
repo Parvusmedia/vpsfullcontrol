@@ -14,7 +14,7 @@
  * Probar fechas: prosegurTestParseDates
  */
 
-var SHEET_TABS = ['Prosegur', 'leadsconhorario_soportesexternos'];
+var DEFAULT_WEBHOOK_URL = 'https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register';
 var TAIL_ROWS = 500;
 var LOOKBACK_HOURS = 24;
 var DEDUP_PROP = 'prosegur_sent_phone_digits_v1';
@@ -190,10 +190,10 @@ function dedupeBatchByPhone_(rows) {
 
 function prosegurDailySheetPush() {
   var props = PropertiesService.getScriptProperties();
-  var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL');
+  var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
   var secret = props.getProperty('PROSEGUR_N8N_SECRET');
-  if (!webhook || !secret) {
-    throw new Error('Configura PROSEGUR_N8N_WEBHOOK_URL y PROSEGUR_N8N_SECRET en Script properties');
+  if (!secret) {
+    throw new Error('Configura PROSEGUR_N8N_SECRET en Script properties (PROSEGUR_PHONE_REGISTER_SECRET en n8n)');
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();

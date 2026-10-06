@@ -23,7 +23,7 @@ Comparativa para **`1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4`** (pestañas *
    - Guardar **`lastRowProcessed`** en `PropertiesService` (cursor).
    - Leer solo filas `(lastRowProcessed + 1) … getLastRow()`.
    - Opcional: descartar filas con `Fecha` &lt; now − 24 h.
-3. **POST** JSON a n8n (`/webhook/prosegur-sheet-ingest`) con header secreto y array de `{ telefono, source, sheet_tab, row_number, fecha }`.
+3. **POST** JSON a n8n (`https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register`) con header `X-Prosegur-Register-Secret` y body `{ phone, source }` (un POST por teléfono tras dedup).
 4. **n8n**: webhook → normalizar → dedup (`staticData`) → insert data table (misma lógica que hoy, **sin** nodos Google Sheets Read).
 
 Ventajas:
@@ -52,7 +52,7 @@ Válido como paso intermedio. Variable `$vars.PROSEGUR_SHEETS_TAIL_ROWS` (defaul
 
 ## Migración sugerida
 
-1. Añadir workflow **`prosegur-sheet-ingest-webhook`** (batch) o reactivar rama webhook en el central.
+1. Desplegar Apps Script + trigger diario (el central **`prosegur-phone-register`** ya expone el webhook).
 2. Desplegar Apps Script + trigger horario; probar con `dryRun` en logs.
 3. Comparar conteos con el workflow actual 1–2 días.
 4. Desactivar schedule **Read Prosegur / Read leadsconhorario** en `IlydJZl4v1fomiyY`.
