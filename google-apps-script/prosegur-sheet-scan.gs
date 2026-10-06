@@ -1,101 +1,291 @@
 /**
- * Prosegur — escaneo incremental de leads (Prosegur + leadsconhorario_soportesexternos)
+ * Prosegur — lectura diaria (últimas 500 filas × 2 pestañas) → webhook n8n
  *
- * Instalar: Extensiones → Apps Script en el spreadsheet
- * 1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4
+ * Spreadsheet: 1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4
+ * Pestañas: Prosegur, leadsconhorario_soportesexternos
  *
- * Script properties (Project settings → Script properties):
- *   PROSEGUR_N8N_WEBHOOK_URL  = https://pmedia.app.n8n.cloud/webhook/prosegur-sheet-ingest
- *   PROSEGUR_N8N_SECRET        = (mismo valor que n8n Variables / header)
+ * Script properties (⚙ Project settings → Script properties):
+ *   PROSEGUR_N8N_WEBHOOK_URL = https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register
+ *   PROSEGUR_N8N_SECRET      = (valor de n8n Variable PROSEGUR_PHONE_REGISTER_SECRET)
  *
- * Trigger: time-driven, cada hora (o cada 15 min).
+ * Trigger: time-driven → Day timer → 1am–2am (o la hora que prefieras).
+ *
+ * Ejecutar una vez a mano: prosegurDailySheetPush
+ * Probar fechas: prosegurTestParseDates
  */
 
-var SHEETS = [
-  { name: 'Prosegur', propKey: 'lastRow_Prosegur' },
-  { name: 'leadsconhorario_soportesexternos', propKey: 'lastRow_leadsconhorario' },
-];
+var SHEET_TABS = ['Prosegur', 'leadsconhorario_soportesexternos'];
+var TAIL_ROWS = 500;
+var LOOKBACK_HOURS = 24;
+var DEDUP_PROP = 'prosegur_sent_phone_digits_v1';
 
-var LOOKBACK_MS = 24 * 60 * 60 * 1000;
-/** Si el cursor falla, no leer más de esta cola de filas. */
-var MAX_TAIL_ROWS = 2000;
+/**
+ * Ejemplos soportados en columna Fecha:
+ *   05-10-2026 18:32
+ *   06-10-2026 9:20
+ *   05-10-2026
+ *   2026-10-05T18:34:44.829+02:00
+ *   (también Date nativo de Google Sheets)
+ */
+function parseProsegurFecha(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
 
-function prosegurHourlyScan() {
+  var s = String(value).trim();
+  if (!s) {
+    return null;
+  }
+
+  // ISO-8601 con zona: 2026-10-05T18:34:44.829+02:00
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    var iso = new Date(s);
+    return isNaN(iso.getTime()) ? null : iso;
+  }
+
+  // dd-MM-yyyy [HH:mm] (hora opcional, día/mes con 1-2 dígitos)
+  var eu = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
+  if (eu) {
+    var day = parseInt(eu[1], 10);
+    var mon = parseInt(eu[2], 10);
+    var yr = parseInt(eu[3], 10);
+    var hr = eu[4] !== undefined ? parseInt(eu[4], 10) : 0;
+    var min = eu[5] !== undefined ? parseInt(eu[5], 10) : 0;
+    var local = new Date(yr, mon - 1, day, hr, min, 0, 0);
+    return isNaN(local.getTime()) ? null : local;
+  }
+
+  // yyyy-MM-dd HH:mm:ss (por si aparece)
+  var ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (ymd) {
+    var d2 = new Date(
+      parseInt(ymd[1], 10),
+      parseInt(ymd[2], 10) - 1,
+      parseInt(ymd[3], 10),
+      ymd[4] !== undefined ? parseInt(ymd[4], 10) : 0,
+      ymd[5] !== undefined ? parseInt(ymd[5], 10) : 0,
+      ymd[6] !== undefined ? parseInt(ymd[6], 10) : 0,
+      0
+    );
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  var fallback = new Date(s);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+/** Misma regla que n8n (España). Devuelve phone_digits o null. */
+function normalizeSpainPhoneDigits(raw) {
+  if (raw === null || raw === undefined || String(raw).trim() === '') {
+    return null;
+  }
+  var d = String(raw).replace(/\D/g, '');
+  if (d.indexOf('0034') === 0) {
+    d = d.substring(2);
+  }
+  if (d.length === 9 && /^[6789]/.test(d)) {
+    d = '34' + d;
+  }
+  if (d.length === 11 && d.indexOf('34') === 0) {
+    var national = d.substring(2);
+    if (/^[6789]\d{8}$/.test(national)) {
+      return d;
+    }
+  }
+  return null;
+}
+
+function loadSentPhones_() {
+  var raw = PropertiesService.getScriptProperties().getProperty(DEDUP_PROP);
+  if (!raw) {
+    return {};
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveSentPhones_(map) {
+  PropertiesService.getScriptProperties().setProperty(DEDUP_PROP, JSON.stringify(map));
+}
+
+function collectRowsFromSheet_(sheet, sheetTab, cutoff) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var startRow = Math.max(2, lastRow - TAIL_ROWS + 1);
+  var width = sheet.getLastColumn();
+  var headers = sheet.getRange(1, 1, 1, width).getValues()[0];
+  var colFecha = headers.indexOf('Fecha');
+  var colTel = headers.indexOf('telefono');
+  var colSource = headers.indexOf('source');
+  if (colTel < 0) {
+    Logger.log('Tab %s: falta columna telefono', sheetTab);
+    return [];
+  }
+
+  var numRows = lastRow - startRow + 1;
+  var values = sheet.getRange(startRow, 1, numRows, width).getValues();
+  var out = [];
+
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var rowNumber = startRow + i;
+    var rawTel = row[colTel];
+    if (rawTel === '' || rawTel === null || rawTel === undefined) {
+      continue;
+    }
+
+    var parsedDate = colFecha >= 0 ? parseProsegurFecha(row[colFecha]) : null;
+    if (!parsedDate || parsedDate.getTime() < cutoff.getTime()) {
+      continue;
+    }
+
+    var digits = normalizeSpainPhoneDigits(rawTel);
+    if (!digits) {
+      continue;
+    }
+
+    var source =
+      colSource >= 0 && row[colSource] !== '' && row[colSource] != null
+        ? String(row[colSource])
+        : sheetTab;
+
+    out.push({
+      sheet_tab: sheetTab,
+      row_number: rowNumber,
+      phone_digits: digits,
+      telefono: String(rawTel),
+      source: String(source).slice(0, 120),
+      fecha_ms: parsedDate.getTime(),
+      fecha_iso: parsedDate.toISOString(),
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Dedup en memoria: un lead por phone_digits (el de Fecha más antigua en la ventana).
+ */
+function dedupeBatchByPhone_(rows) {
+  var best = {};
+  rows.forEach(function (r) {
+    var prev = best[r.phone_digits];
+    if (!prev || r.fecha_ms < prev.fecha_ms) {
+      best[r.phone_digits] = r;
+    }
+  });
+  return Object.keys(best).map(function (k) {
+    return best[k];
+  });
+}
+
+function prosegurDailySheetPush() {
   var props = PropertiesService.getScriptProperties();
   var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL');
   var secret = props.getProperty('PROSEGUR_N8N_SECRET');
   if (!webhook || !secret) {
-    throw new Error('Faltan PROSEGUR_N8N_WEBHOOK_URL o PROSEGUR_N8N_SECRET en Script properties');
+    throw new Error('Configura PROSEGUR_N8N_WEBHOOK_URL y PROSEGUR_N8N_SECRET en Script properties');
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var batch = [];
-  var cutoff = new Date(Date.now() - LOOKBACK_MS);
+  var cutoff = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000);
+  var allRows = [];
 
-  SHEETS.forEach(function (cfg) {
-    var sheet = ss.getSheetByName(cfg.name);
-    if (!sheet) return;
-
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return;
-
-    var stored = parseInt(props.getProperty(cfg.propKey) || '1', 10);
-    var startRow = Math.max(2, Math.min(stored + 1, lastRow - MAX_TAIL_ROWS));
-    if (startRow > lastRow) return;
-
-    var width = sheet.getLastColumn();
-    var headers = sheet.getRange(1, 1, 1, width).getValues()[0];
-    var colFecha = headers.indexOf('Fecha');
-    var colTel = headers.indexOf('telefono');
-    var colSource = headers.indexOf('source');
-    if (colTel < 0) return;
-
-    var numRows = lastRow - startRow + 1;
-    var values = sheet.getRange(startRow, 1, numRows, width).getValues();
-
-    for (var i = 0; i < values.length; i++) {
-      var row = values[i];
-      var rowNumber = startRow + i;
-      var fecha = colFecha >= 0 ? row[colFecha] : null;
-      if (fecha instanceof Date && fecha < cutoff) continue;
-      if (!(fecha instanceof Date) && fecha) {
-        var parsed = new Date(fecha);
-        if (!isNaN(parsed.getTime()) && parsed < cutoff) continue;
-      }
-
-      var telefono = row[colTel];
-      if (telefono === '' || telefono == null) continue;
-
-      batch.push({
-        sheet_tab: cfg.name,
-        row_number: rowNumber,
-        telefono: String(telefono),
-        source: colSource >= 0 ? String(row[colSource] || cfg.name) : cfg.name,
-        fecha: fecha instanceof Date ? fecha.toISOString() : String(fecha || ''),
-      });
+  SHEET_TABS.forEach(function (tabName) {
+    var sheet = ss.getSheetByName(tabName);
+    if (!sheet) {
+      Logger.log('No existe pestaña: %s', tabName);
+      return;
     }
-
-    props.setProperty(cfg.propKey, String(lastRow));
+    var chunk = collectRowsFromSheet_(sheet, tabName, cutoff);
+    Logger.log('%s: %s filas en ventana %sh (cola %s)', tabName, chunk.length, LOOKBACK_HOURS, TAIL_ROWS);
+    allRows = allRows.concat(chunk);
   });
 
-  if (batch.length === 0) {
-    Logger.log('prosegurHourlyScan: nothing to send');
-    return;
-  }
-
-  var payload = JSON.stringify({ leads: batch, sent_at: new Date().toISOString() });
-  var res = UrlFetchApp.fetch(webhook, {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { 'X-Prosegur-Register-Secret': secret },
-    payload: payload,
-    muteHttpExceptions: true,
+  var uniqueInBatch = dedupeBatchByPhone_(allRows);
+  var sentMap = loadSentPhones_();
+  var toSend = uniqueInBatch.filter(function (r) {
+    return !sentMap[r.phone_digits];
   });
 
   Logger.log(
-    'prosegurHourlyScan: sent %s rows, HTTP %s %s',
-    batch.length,
-    res.getResponseCode(),
-    res.getContentText().slice(0, 500)
+    'Total ventana=%s | únicos batch=%s | ya enviados antes=%s | a enviar=%s',
+    allRows.length,
+    uniqueInBatch.length,
+    uniqueInBatch.length - toSend.length,
+    toSend.length
   );
+
+  if (toSend.length === 0) {
+    return;
+  }
+
+  var ok = 0;
+  var fail = 0;
+
+  toSend.forEach(function (lead) {
+    var payload = JSON.stringify({
+      phone: lead.telefono,
+      source: lead.source,
+    });
+    var res = UrlFetchApp.fetch(webhook, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'X-Prosegur-Register-Secret': secret },
+      payload: payload,
+      muteHttpExceptions: true,
+    });
+    var code = res.getResponseCode();
+    if (code >= 200 && code < 300) {
+      sentMap[lead.phone_digits] = new Date().toISOString();
+      ok++;
+    } else {
+      fail++;
+      Logger.log(
+        'FAIL %s row %s HTTP %s %s',
+        lead.phone_digits,
+        lead.row_number,
+        code,
+        res.getContentText().slice(0, 200)
+      );
+    }
+    Utilities.sleep(150);
+  });
+
+  saveSentPhones_(sentMap);
+  Logger.log('prosegurDailySheetPush done: ok=%s fail=%s', ok, fail);
+}
+
+/** Ejecutar desde el editor para validar parseProsegurFecha. */
+function prosegurTestParseDates() {
+  var samples = [
+    '05-10-2026 18:32',
+    '2026-10-05T18:34:44.829+02:00',
+    '2026-10-05T19:04:06.350+02:00',
+    '05-10-2026 19:07',
+    '05-10-2026',
+    '2026-10-05T19:53:49.253+02:00',
+    '06-10-2026 9:20',
+    '2026-10-06T09:31:43.822+02:00',
+    '06-10-2026',
+  ];
+  samples.forEach(function (s) {
+    var d = parseProsegurFecha(s);
+    Logger.log('%s → %s', s, d ? d.toISOString() : 'NULL');
+  });
+}
+
+/** Borrar dedup persistente (solo mantenimiento). */
+function prosegurResetSentPhones() {
+  PropertiesService.getScriptProperties().deleteProperty(DEDUP_PROP);
+  Logger.log('Cleared %s', DEDUP_PROP);
 }

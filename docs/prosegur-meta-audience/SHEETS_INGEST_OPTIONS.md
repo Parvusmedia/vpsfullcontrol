@@ -32,7 +32,7 @@ Ventajas:
 - Dedup y data table siguen centralizados en un solo workflow.
 - Puedes bajar el schedule n8n o **desactivar** el workflow solo-lectura-Sheet cuando el script esté estable.
 
-Script de ejemplo en el repo: [`google-apps-script/prosegur-sheet-scan.gs`](../../google-apps-script/prosegur-sheet-scan.gs).
+Script de ejemplo en el repo: [`google-apps-script/prosegur-sheet-scan.gs`](../../google-apps-script/prosegur-sheet-scan.gs) (`prosegurDailySheetPush`: cola **500** filas, ventana **24 h**, dedup, webhook `prosegur-phone-register`).
 
 ---
 
