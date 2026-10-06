@@ -1,6 +1,6 @@
 # Data table `prosegur_phone_events`
 
-Auditoría visible de cada llamada al webhook central **prosegur-phone-register**: una fila por evento, con etiqueta de duplicado.
+Registro visible de **teléfonos nuevos** del webhook **prosegur-phone-register**: **una fila por `phone_digits`**. Los reintentos (duplicados) **no** insertan fila; el webhook responde 200 con `duplicate_tag=duplicate`.
 
 ## Columnas
 
