@@ -23,7 +23,8 @@
             { "name": "first_source", "type": "string" },
             { "name": "received_at", "type": "string" },
             { "name": "first_seen_at", "type": "string" },
-            { "name": "phone_hash", "type": "string" }
+            { "name": "phone_hash", "type": "string" },
+            { "name": "meta_synced_at", "type": "string" }
           ]
         }
       },

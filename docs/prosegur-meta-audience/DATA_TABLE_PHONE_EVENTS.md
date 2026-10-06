@@ -14,6 +14,7 @@ Registro visible de **teléfonos nuevos** del webhook **prosegur-phone-register*
 | `received_at` | string | ISO-8601 de esta llamada |
 | `first_seen_at` | string | ISO-8601 del primer registro |
 | `phone_hash` | string | SHA256 de `phone_digits` |
+| `meta_synced_at` | string | ISO-8601 cuando se subió a Meta (vacío = pendiente). Ver [META_AUDIENCE_SYNC.md](./META_AUDIENCE_SYNC.md). |
 
 La deduplicación operativa sigue en **`$getWorkflowStaticData('global')`** (nodo **Register**). La data table es copia de auditoría; no sustituye el registro maestro hasta una migración futura.
 
