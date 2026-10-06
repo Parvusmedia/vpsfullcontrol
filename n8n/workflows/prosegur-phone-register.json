@@ -49,7 +49,21 @@
           "cachedResultName": "Prosegur",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4/edit#gid=0"
         },
-        "options": {}
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange",
+              "headerRow": 1,
+              "firstDataRow": "={{ $('Prep read range').item.json.prosegur_first_row }}"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "SERIAL_NUMBER"
+            }
+          }
+        }
       },
       "id": "b1000001-0003-4000-8000-000000000003",
       "name": "Read Prosegur",
@@ -64,7 +78,8 @@
           "id": "IUffqNWvLrjbinjA",
           "name": "Pmedia Dvelopment Google"
         }
-      }
+      },
+      "notes": "Solo cola (~4000 filas) desde Prep read range"
     },
     {
       "parameters": {
@@ -96,7 +111,21 @@
           "cachedResultName": "leadsconhorario_soportesexternos",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4/edit#gid=412852702"
         },
-        "options": {}
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange",
+              "headerRow": 1,
+              "firstDataRow": "={{ $('Prep read range').item.json.leadsconhorario_first_row }}"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "SERIAL_NUMBER"
+            }
+          }
+        }
       },
       "id": "b1000001-0005-4000-8000-000000000005",
       "name": "Read leadsconhorario",
@@ -111,7 +140,8 @@
           "id": "IUffqNWvLrjbinjA",
           "name": "Pmedia Dvelopment Google"
         }
-      }
+      },
+      "notes": "Solo cola (~4000 filas) desde Prep read range"
     },
     {
       "parameters": {
@@ -293,6 +323,33 @@
         280
       ],
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sheetHighWater) staticData.sheetHighWater = {};\n\n// Filas a leer desde el final (24h + margen). Ajustable v\u00eda $vars.PROSEGUR_SHEETS_TAIL_ROWS\nconst tailRaw = $vars.PROSEGUR_SHEETS_TAIL_ROWS;\nconst TAIL = Math.max(500, Math.min(15000, Number(tailRaw) || 4000));\n\n// Si nunca hemos le\u00eddo, arrancamos cerca del final conocido del sheet (oct-2025)\nconst floorDefaults = {\n  Prosegur: 44000,\n  leadsconhorario_soportesexternos: 9000,\n};\n\nfunction firstDataRow(tab) {\n  const hw = Number(staticData.sheetHighWater[tab] || 0);\n  const floor = Number(floorDefaults[tab] || 2);\n  const anchor = hw > 0 ? hw : floor;\n  return Math.max(2, anchor - TAIL);\n}\n\nreturn [{\n  json: {\n    tail_rows: TAIL,\n    prosegur_first_row: firstDataRow('Prosegur'),\n    leadsconhorario_first_row: firstDataRow('leadsconhorario_soportesexternos'),\n    prosegur_high_water: staticData.sheetHighWater.Prosegur || null,\n    leadsconhorario_high_water: staticData.sheetHighWater['leadsconhorario_soportesexternos'] || null,\n  },\n}];\n"
+      },
+      "id": "b1000001-0014-4000-8000-000000000014",
+      "name": "Prep read range",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        300
+      ],
+      "notes": "Limita lectura a cola del sheet (tail rows), no 48k filas"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.sheetHighWater) staticData.sheetHighWater = {};\n\nfor (const item of $input.all()) {\n  const tab = item.json.sheet_tab;\n  const rn = Number(item.json.row_number ?? item.json.rowNumber);\n  if (!tab || !Number.isFinite(rn)) continue;\n  staticData.sheetHighWater[tab] = Math.max(staticData.sheetHighWater[tab] || 0, rn);\n}\n\nreturn $input.all();\n"
+      },
+      "id": "b1000001-0015-4000-8000-000000000015",
+      "name": "Update high water",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        300
+      ]
     }
   ],
   "connections": {
@@ -300,12 +357,7 @@
       "main": [
         [
           {
-            "node": "Read Prosegur",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read leadsconhorario",
+            "node": "Prep read range",
             "type": "main",
             "index": 0
           }
@@ -316,12 +368,7 @@
       "main": [
         [
           {
-            "node": "Read Prosegur",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read leadsconhorario",
+            "node": "Prep read range",
             "type": "main",
             "index": 0
           }
@@ -376,7 +423,7 @@
       "main": [
         [
           {
-            "node": "Filter 24h rows",
+            "node": "Update high water",
             "type": "main",
             "index": 0
           }
@@ -422,6 +469,33 @@
         [
           {
             "node": "Insert Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep read range": {
+      "main": [
+        [
+          {
+            "node": "Read Prosegur",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read leadsconhorario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update high water": {
+      "main": [
+        [
+          {
+            "node": "Filter 24h rows",
             "type": "main",
             "index": 0
           }

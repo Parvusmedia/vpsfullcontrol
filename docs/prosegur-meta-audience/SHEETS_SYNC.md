@@ -22,6 +22,18 @@ Columnas usadas: **`Fecha`**, **`telefono`**, **`source`** (si falta `source`, s
 - **Últimas 24 horas** respecto a la hora de ejecución (timezone del workflow: `Europe/Madrid`).
 - `Fecha` admite ISO, serial de Google Sheets o `dd/mm/yyyy`.
 
+## Volumen de lectura (Google Sheets)
+
+**No** se lee el sheet entero en cada ciclo (~48k + ~13k filas): eso ralentiza n8n y consume cuota de la API de Google.
+
+El nodo **Read** de Google Sheets **no admite** filtro tipo “fecha ≥ ayer” (solo igualdad exacta por columna). Por eso:
+
+1. **`Prep read range`**: calcula `firstDataRow` = última fila conocida − **cola** (por defecto **4000** filas; variable opcional `$vars.PROSEGUR_SHEETS_TAIL_ROWS`).
+2. **`Update high water`**: guarda el `row_number` máximo visto para acotar mejor la cola en la siguiente ejecución.
+3. **`Filter 24h rows`**: dentro de esa cola, solo pasan filas con `Fecha` en las últimas 24 h.
+
+Tras la primera ejecución, cada pestaña debería leer del orden de **miles** de filas, no decenas de miles.
+
 ## Cadena del workflow
 
 ```text
