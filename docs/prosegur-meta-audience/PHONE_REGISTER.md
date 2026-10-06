@@ -1,0 +1,119 @@
+# Prosegur — workflow central `prosegur-phone-register`
+
+**Modo actual (oct-2026):** sincronización desde **Google Sheets** cada 15 minutos — ver [SHEETS_SYNC.md](./SHEETS_SYNC.md).
+
+El webhook HTTP ya no forma parte de este workflow; la fuente de verdad son las pestañas **Prosegur** y **leadsconhorario_soportesexternos**.
+
+---
+
+## Referencia histórica — webhook (deprecado en este workflow)
+
+## Persistencia (v1 en n8n Cloud)
+
+- **Dedup operativo:** **`$getWorkflowStaticData('global')`** (nodo **Register**): mapa `phones` + lista `duplicateEvents`.
+- **Auditoría:** data table **`prosegur_phone_events`** (nodo **Insert Data Table**). Campos `duplicate_tag` (`new` \| `duplicate`) e `is_duplicate` (`no` \| `yes`).
+
+Crear la tabla una vez en la UI de n8n (el CRUD de tablas vía nodo/API no está disponible aún en vuestra instancia). Detalle: [DATA_TABLE_PHONE_EVENTS.md](./DATA_TABLE_PHONE_EVENTS.md).
+
+## Data Stores / Data tables (referencia)
+
+### 1. `prosegur_meta_phones`
+
+| Campo | Tipo | Notas |
+|-------|------|--------|
+| `phone_digits` | string | **Clave única**, ej. `34612345678` |
+| `phone_hash` | string | SHA256 del `phone_digits` (Meta) |
+| `first_source` | string | Primer proveedor/flujo |
+| `first_seen_at` | string | ISO-8601 |
+| `claimed_at` | string | ISO-8601 (misma reserva) |
+| `meta_synced_at` | string | Vacío hasta fase Meta |
+
+### 2. `prosegur_meta_duplicate_events`
+
+| Campo | Tipo | Notas |
+|-------|------|--------|
+| `event_key` | string | **Clave única**, ej. `dup_34612345678_2026-03-01T12:00:00.000Z` |
+| `phone_digits` | string | |
+| `received_at` | string | ISO-8601 |
+| `source` | string | Proveedor que reintentó |
+| `first_source` | string | Del registro maestro |
+| `first_seen_at` | string | Del registro maestro |
+| `action` | string | `duplicate_not_processed` |
+
+## Secreto del webhook (n8n Variables)
+
+En n8n Cloud **no** uses `$env` en Code (bloqueado). El workflow lee:
+
+**`$vars.PROSEGUR_PHONE_REGISTER_SECRET`**
+
+Crear o editar en **Settings → Variables** (clave `PROSEGUR_PHONE_REGISTER_SECRET`). El mismo valor va en el header `X-Prosegur-Register-Secret` de los flujos proveedor.
+
+Tras rotar el secreto: actualizar la variable en n8n y los nodos HTTP de los flujos hijos.
+
+## Importar workflow
+
+**Credenciales locales (no commitear):** archivo `private/n8n.env` con `N8N_URL` y `N8N_REST_API_KEY`. `scripts/n8n` lo carga automáticamente si existe.
+
+**Opción A — REST (agente / CI):** con `N8N_REST_API_KEY` (JWT public-api o `n8n_api_...`):
+
+```bash
+scripts/n8n import --file n8n/workflows/prosegur-phone-register.json --activate
+```
+
+Devuelve `editor_url` y `workflow_id`. El MCP (`N8N_MCP_TOKEN` / JWT) solo permite buscar y ejecutar workflows, no crearlos.
+
+**Opción B — UI:** **Workflows → Import from File** → [`n8n/workflows/prosegur-phone-register.json`](../../n8n/workflows/prosegur-phone-register.json).
+
+Pasos comunes tras importar:
+2. En cada nodo **Data store**, elegir el store correspondiente (`prosegur_meta_phones` / `prosegur_meta_duplicate_events`). Si tras importar la operación no coincide con tu versión de n8n, ajusta: **Get** en `Get phone`, **Create/Set** en `Claim phone` y `Log duplicate`.
+3. En el nodo **Get phone**, activar **Always Output Data** si no viene ya marcado (así el flujo sigue cuando el teléfono no existe).
+4. Confirmar variable `PROSEGUR_PHONE_REGISTER_SECRET` en n8n (ya creada en el despliegue).
+4. Activar workflow y copiar la **Production URL** del Webhook.
+
+## Contrato HTTP
+
+**POST** `…/webhook/prosegur-phone-register` (path según n8n)
+
+Headers:
+
+- `Content-Type: application/json`
+- `X-Prosegur-Register-Secret: <secreto>`
+
+Body:
+
+```json
+{
+  "phone": "612 345 678",
+  "source": "proveedor_ejemplo"
+}
+```
+
+### Respuestas
+
+| HTTP | Significado |
+|------|-------------|
+| 200 | Registrado (`is_duplicate` true/false) |
+| 422 | `invalid_phone` |
+| 401 | Secreto incorrecto |
+
+Ejemplo nuevo (`is_duplicate: false`) y duplicado (`is_duplicate: true`) en [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md).
+
+## Flujos proveedor (200/400 al partner)
+
+No lo hace este workflow. Patrón en [PROVIDER_FLOWS.md](./PROVIDER_FLOWS.md) (ej. `xzKegSHCbJBlL50o`).
+
+## Prueba con curl
+
+```bash
+curl -sS -X POST "$PROSEGUR_REGISTER_WEBHOOK_URL" \
+  -H "Content-Type: application/json" \
+  -H "X-Prosegur-Register-Secret: $PROSEGUR_PHONE_REGISTER_SECRET" \
+  -d '{"phone":"612345678","source":"curl_test"}'
+```
+
+Repetir el mismo comando: debe devolver **400** y `duplicate_not_processed`.
+
+## Meta (referencia, fase 2)
+
+- Audiencia: `52551337752304` (MPA_Lead_Exclusion 3rdparty)
+- BM: `149543758710373`

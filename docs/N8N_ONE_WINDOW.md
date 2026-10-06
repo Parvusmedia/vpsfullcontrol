@@ -26,6 +26,7 @@ Comandos disponibles:
 - `list [--limit 50] [--query texto]`: lista workflows.
 - `details --workflow-id <id>`: muestra detalle.
 - `export [--out ruta]`: exporta workflows a JSON.
+- `import --file ruta.json [--activate]`: crea workflow vía REST (`N8N_REST_API_KEY` requerida).
 
 ## Ejemplos
 
