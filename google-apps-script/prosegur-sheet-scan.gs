@@ -11,6 +11,10 @@
  * Ejecutar debug: prosegurDebugStepByStep()  (o prosegurDryRun, mismo efecto)
  * Ver logs: Apps Script → Ejecuciones → clic en la fila → Registro (Cloud)
  * Probar fechas: prosegurTestParseDates
+ *
+ * Backfill único (últimas 500 filas × pestaña, sin ventana 24h, ignora dedup script + memoria n8n):
+ *   prosegurBackfillLast500Once()
+ * Alternativa solo dedup script: prosegurResetSentPhones() + prosegurDailySheetPush (sigue filtro 24h y dedup n8n).
  */
 
 var DEFAULT_WEBHOOK_URL = 'https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register';
@@ -212,7 +216,7 @@ function collectRowsFromSheet_(sheet, sheetTab, cutoff, debug) {
       samplePush('skip_fecha_unparseable', rowNumber, 'Fecha="' + rawFecha + '" tel=' + rawTel);
       continue;
     }
-    if (parsedDate.getTime() < cutoff.getTime()) {
+    if (cutoff !== null && parsedDate.getTime() < cutoff.getTime()) {
       stats.skip_fecha_before_cutoff++;
       if (debug && samples.skip_fecha_before_cutoff.length < DEBUG_SAMPLES_PER_REASON) {
         samplePush(
@@ -489,6 +493,85 @@ function applyBatchResultsToSentMap_(sentMap, results) {
   return { ok: ok, fail: fail, invalid: invalid };
 }
 
+function prosegurPostBatchToN8n_(webhook, batchBody, sentMap) {
+  Logger.log(
+    'POST batch_id=%s leads=%s backfill=%s',
+    batchBody.batch_id,
+    batchBody.leads.length,
+    batchBody.backfill === true
+  );
+
+  var res = UrlFetchApp.fetch(webhook, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(batchBody),
+    muteHttpExceptions: true,
+  });
+  var code = res.getResponseCode();
+  var text = res.getContentText();
+
+  if (code < 200 || code >= 300) {
+    Logger.log('FAIL batch HTTP %s %s', code, text.slice(0, 500));
+    return null;
+  }
+
+  var body;
+  try {
+    body = JSON.parse(text);
+  } catch (e) {
+    Logger.log('FAIL batch: respuesta no JSON: %s', text.slice(0, 500));
+    return null;
+  }
+
+  var counts = applyBatchResultsToSentMap_(sentMap, body.results);
+  saveSentPhones_(sentMap);
+  Logger.log(
+    '=== FIN batch: batch_id=%s stats=%s marked_ok=%s invalid=%s other_fail=%s ===',
+    body.batch_id || batchBody.batch_id,
+    JSON.stringify(body.stats || {}),
+    counts.ok,
+    counts.invalid,
+    counts.fail
+  );
+  return body;
+}
+
+/** Últimas TAIL_ROWS por pestaña, sin filtro 24h; ignora prosegur_sent_phone_digits_v1. */
+function prosegurCollectBackfillRows_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var allRows = [];
+  SHEET_TABS.forEach(function (tabName) {
+    var sheet = ss.getSheetByName(tabName);
+    if (!sheet) {
+      return;
+    }
+    allRows = allRows.concat(collectRowsFromSheet_(sheet, tabName, null, false));
+  });
+  return dedupeBatchByPhone_(allRows);
+}
+
+/**
+ * Carga única en data table tras borrar pruebas: reenvía teléfonos válidos de la cola 500.
+ * Envía backfill:true → n8n ignora staticData (solo dedup vs data table + duplicados en batch).
+ */
+function prosegurBackfillLast500Once() {
+  var props = PropertiesService.getScriptProperties();
+  var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
+  var toSend = prosegurCollectBackfillRows_();
+  Logger.log('=== BACKFILL últimas %s filas/pestaña (sin 24h) ===', TAIL_ROWS);
+  Logger.log('Teléfonos únicos: %s', toSend.length);
+
+  if (toSend.length === 0) {
+    Logger.log('=== FIN backfill: nada que enviar ===');
+    return;
+  }
+
+  var batchBody = buildProsegurBatchPayload_(toSend);
+  batchBody.batch_id = 'backfill-' + batchBody.batch_id;
+  batchBody.backfill = true;
+  prosegurPostBatchToN8n_(webhook, batchBody, loadSentPhones_());
+}
+
 function prosegurDailySheetPush() {
   var props = PropertiesService.getScriptProperties();
   var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
@@ -506,44 +589,7 @@ function prosegurDailySheetPush() {
   }
 
   var batchBody = buildProsegurBatchPayload_(toSend);
-  Logger.log(
-    'POST batch_id=%s leads=%s',
-    batchBody.batch_id,
-    batchBody.leads.length
-  );
-
-  var res = UrlFetchApp.fetch(webhook, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(batchBody),
-    muteHttpExceptions: true,
-  });
-  var code = res.getResponseCode();
-  var text = res.getContentText();
-
-  if (code < 200 || code >= 300) {
-    Logger.log('FAIL batch HTTP %s %s', code, text.slice(0, 500));
-    return;
-  }
-
-  var body;
-  try {
-    body = JSON.parse(text);
-  } catch (e) {
-    Logger.log('FAIL batch: respuesta no JSON: %s', text.slice(0, 500));
-    return;
-  }
-
-  var counts = applyBatchResultsToSentMap_(sentMap, body.results);
-  saveSentPhones_(sentMap);
-  Logger.log(
-    '=== FIN batch push: batch_id=%s stats=%s marked_ok=%s invalid=%s other_fail=%s ===',
-    body.batch_id || batchBody.batch_id,
-    JSON.stringify(body.stats || {}),
-    counts.ok,
-    counts.invalid,
-    counts.fail
-  );
+  prosegurPostBatchToN8n_(webhook, batchBody, sentMap);
 }
 
 /** Ejecutar desde el editor para validar parseProsegurFecha. */
