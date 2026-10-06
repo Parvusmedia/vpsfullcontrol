@@ -4,9 +4,7 @@
  * Spreadsheet: 1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4
  * Pestañas: Prosegur, leadsconhorario_soportesexternos
  *
- * Script properties (⚙ Project settings → Script properties):
- *   PROSEGUR_N8N_WEBHOOK_URL = https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register
- *   PROSEGUR_N8N_SECRET      = (valor de n8n Variable PROSEGUR_PHONE_REGISTER_SECRET)
+ * Script properties (opcional): PROSEGUR_N8N_WEBHOOK_URL (default: prosegur-phone-register)
  *
  * Trigger: time-driven → Day timer → 1am–2am (o la hora que prefieras).
  *
@@ -280,7 +278,6 @@ function dedupeBatchByPhone_(rows) {
 
 function prosegurCollectSummary_(dryRun) {
   var props = PropertiesService.getScriptProperties();
-  var secret = props.getProperty('PROSEGUR_N8N_SECRET');
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var cutoff = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000);
   var allRows = [];
@@ -309,7 +306,6 @@ function prosegurCollectSummary_(dryRun) {
     '=== prosegur ' + (dryRun ? 'DRY-RUN' : 'PUSH') + ' ===',
     'Spreadsheet: ' + ss.getName(),
     'Cutoff 24h: ' + cutoff.toISOString(),
-    'Secret configurado: ' + (secret ? 'sí' : 'NO — añade PROSEGUR_N8N_SECRET'),
     'Webhook: ' + (props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL),
   ].concat(tabStats).concat([
     'Filas en ventana (total): ' + allRows.length,
@@ -324,7 +320,7 @@ function prosegurCollectSummary_(dryRun) {
     });
   }
 
-  return { lines: lines, toSend: toSend, secret: secret, sentMap: sentMap };
+  return { lines: lines, toSend: toSend, sentMap: sentMap };
 }
 
 /** Solo diagnóstico: no llama al webhook. Ver registro (Executions → tu run → Registro). */
@@ -339,7 +335,6 @@ function prosegurDryRun() {
 function prosegurDebugStepByStep(verboseSamples) {
   verboseSamples = verboseSamples !== false;
   var props = PropertiesService.getScriptProperties();
-  var secret = props.getProperty('PROSEGUR_N8N_SECRET');
   var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var cutoff = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000);
@@ -352,7 +347,6 @@ function prosegurDebugStepByStep(verboseSamples) {
   Logger.log('TAIL_ROWS=%s LOOKBACK_HOURS=%s', TAIL_ROWS, LOOKBACK_HOURS);
   Logger.log('Cutoff >= %s', cutoff.toISOString());
   Logger.log('Webhook: %s', webhook);
-  Logger.log('PROSEGUR_N8N_SECRET: %s', secret ? 'CONFIGURADO' : 'FALTA — Script properties');
 
   var allRows = [];
   var sentMap = loadSentPhones_();
@@ -422,9 +416,7 @@ function prosegurDebugStepByStep(verboseSamples) {
   }
 
   Logger.log('========== PASO 5: conclusión ==========');
-  if (!secret) {
-    Logger.log('BLOQUEO: añade PROSEGUR_N8N_SECRET antes de prosegurDailySheetPush');
-  } else if (toSend.length === 0) {
+  if (toSend.length === 0) {
     Logger.log('Nada que enviar. Revisa contadores PASO 2 (¿cutoff? ¿Fecha? ¿dedup?)');
     Logger.log('Prueba prosegurResetSentPhones() si el dedup script bloquea todo.');
   } else {
@@ -459,10 +451,6 @@ function prosegurDailySheetPush() {
     Logger.log(line);
   });
 
-  if (!summary.secret) {
-    throw new Error('Configura PROSEGUR_N8N_SECRET en Script properties (PROSEGUR_PHONE_REGISTER_SECRET en n8n)');
-  }
-
   var toSend = summary.toSend;
   var sentMap = summary.sentMap;
 
@@ -482,7 +470,6 @@ function prosegurDailySheetPush() {
     var res = UrlFetchApp.fetch(webhook, {
       method: 'post',
       contentType: 'application/json',
-      headers: { 'X-Prosegur-Register-Secret': summary.secret },
       payload: payload,
       muteHttpExceptions: true,
     });
