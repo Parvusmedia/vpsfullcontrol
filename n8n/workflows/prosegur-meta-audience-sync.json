@@ -128,7 +128,7 @@
           "parameters": [
             {
               "name": "access_token",
-              "value": "={{ $vars.PROSEGUR_META_ACCESS_TOKEN }}"
+              "value": "={{ $vars.meta_systemusertoken_Adsmanager_PmediaES_Agent }}"
             },
             {
               "name": "payload",
@@ -151,7 +151,7 @@
       "typeVersion": 4.2,
       "position": [1312, 160],
       "continueOnFail": false,
-      "notes": "Requiere $vars.PROSEGUR_META_ACCESS_TOKEN con permisos ads_management"
+      "notes": "Token: $vars.meta_systemusertoken_Adsmanager_PmediaES_Agent (ads_management)"
     },
     {
       "parameters": {

@@ -16,7 +16,7 @@ Business Manager: `149543758710373`
 
 | Variable | Valor |
 |----------|--------|
-| `PROSEGUR_META_ACCESS_TOKEN` | System user o token larga duración con `ads_management` y acceso al BM |
+| `meta_systemusertoken_Adsmanager_PmediaES_Agent` | System user Ads Manager Pmedia ES (ya existente en n8n Variables) |
 | `PROSEGUR_META_CUSTOM_AUDIENCE_ID` | Opcional; por defecto `52551337752304` |
 
 No commitear el token. Rotar en Meta si se filtra.
@@ -50,6 +50,6 @@ Ads Manager → Audiencias → `MPA_Lead_Exclusion (3rdparty)` → tamaño de la
 
 | Síntoma | Causa |
 |---------|--------|
-| `Invalid OAuth access token` | Variable `PROSEGUR_META_ACCESS_TOKEN` vacía o caducada |
+| `Invalid OAuth access token` | Variable `meta_systemusertoken_Adsmanager_PmediaES_Agent` vacía o caducada |
 | `Permissions error` | Token sin acceso al BM / audiencia |
 | `num_invalid_entries` > 0 | Hash o formato de teléfono no aceptado por Meta (revisar normalización España) |
