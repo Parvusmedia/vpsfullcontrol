@@ -10,11 +10,13 @@
  *
  * Trigger: time-driven → Day timer → 1am–2am (o la hora que prefieras).
  *
- * Ejecutar una vez a mano: prosegurDailySheetPush
+ * Ejecutar una vez a mano: prosegurDryRun (solo logs) o prosegurDailySheetPush
+ * Ver logs: Apps Script → Ejecuciones → clic en la fila → Registro (Cloud)
  * Probar fechas: prosegurTestParseDates
  */
 
 var DEFAULT_WEBHOOK_URL = 'https://pmedia.app.n8n.cloud/webhook/prosegur-phone-register';
+var SHEET_TABS = ['Prosegur', 'leadsconhorario_soportesexternos'];
 var TAIL_ROWS = 500;
 var LOOKBACK_HOURS = 24;
 var DEDUP_PROP = 'prosegur_sent_phone_digits_v1';
@@ -188,26 +190,24 @@ function dedupeBatchByPhone_(rows) {
   });
 }
 
-function prosegurDailySheetPush() {
+function prosegurCollectSummary_(dryRun) {
   var props = PropertiesService.getScriptProperties();
-  var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
   var secret = props.getProperty('PROSEGUR_N8N_SECRET');
-  if (!secret) {
-    throw new Error('Configura PROSEGUR_N8N_SECRET en Script properties (PROSEGUR_PHONE_REGISTER_SECRET en n8n)');
-  }
-
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var cutoff = new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000);
   var allRows = [];
+  var tabStats = [];
 
   SHEET_TABS.forEach(function (tabName) {
     var sheet = ss.getSheetByName(tabName);
     if (!sheet) {
-      Logger.log('No existe pestaña: %s', tabName);
+      tabStats.push(tabName + ': NO EXISTE');
       return;
     }
     var chunk = collectRowsFromSheet_(sheet, tabName, cutoff);
-    Logger.log('%s: %s filas en ventana %sh (cola %s)', tabName, chunk.length, LOOKBACK_HOURS, TAIL_ROWS);
+    tabStats.push(
+      tabName + ': lastRow=' + sheet.getLastRow() + ' ventana24h=' + chunk.length + ' (cola ' + TAIL_ROWS + ')'
+    );
     allRows = allRows.concat(chunk);
   });
 
@@ -217,15 +217,54 @@ function prosegurDailySheetPush() {
     return !sentMap[r.phone_digits];
   });
 
-  Logger.log(
-    'Total ventana=%s | únicos batch=%s | ya enviados antes=%s | a enviar=%s',
-    allRows.length,
-    uniqueInBatch.length,
-    uniqueInBatch.length - toSend.length,
-    toSend.length
-  );
+  var lines = [
+    '=== prosegur ' + (dryRun ? 'DRY-RUN' : 'PUSH') + ' ===',
+    'Spreadsheet: ' + ss.getName(),
+    'Cutoff 24h: ' + cutoff.toISOString(),
+    'Secret configurado: ' + (secret ? 'sí' : 'NO — añade PROSEGUR_N8N_SECRET'),
+    'Webhook: ' + (props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL),
+  ].concat(tabStats).concat([
+    'Filas en ventana (total): ' + allRows.length,
+    'Teléfonos únicos en batch: ' + uniqueInBatch.length,
+    'Ya enviados (dedup script): ' + (uniqueInBatch.length - toSend.length),
+    'A enviar ahora: ' + toSend.length,
+  ]);
+
+  if (toSend.length > 0 && toSend.length <= 5) {
+    toSend.forEach(function (r) {
+      lines.push('  → ' + r.phone_digits + ' row ' + r.row_number + ' ' + r.source);
+    });
+  }
+
+  return { lines: lines, toSend: toSend, secret: secret, sentMap: sentMap };
+}
+
+/** Solo diagnóstico: no llama al webhook. Ver registro (Executions → tu run → Registro). */
+function prosegurDryRun() {
+  var s = prosegurCollectSummary_(true);
+  s.lines.forEach(function (line) {
+    Logger.log(line);
+  });
+  Logger.log('=== FIN dry-run ===');
+}
+
+function prosegurDailySheetPush() {
+  var props = PropertiesService.getScriptProperties();
+  var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
+  var summary = prosegurCollectSummary_(false);
+  summary.lines.forEach(function (line) {
+    Logger.log(line);
+  });
+
+  if (!summary.secret) {
+    throw new Error('Configura PROSEGUR_N8N_SECRET en Script properties (PROSEGUR_PHONE_REGISTER_SECRET en n8n)');
+  }
+
+  var toSend = summary.toSend;
+  var sentMap = summary.sentMap;
 
   if (toSend.length === 0) {
+    Logger.log('=== FIN: nada que enviar ===');
     return;
   }
 
@@ -240,7 +279,7 @@ function prosegurDailySheetPush() {
     var res = UrlFetchApp.fetch(webhook, {
       method: 'post',
       contentType: 'application/json',
-      headers: { 'X-Prosegur-Register-Secret': secret },
+      headers: { 'X-Prosegur-Register-Secret': summary.secret },
       payload: payload,
       muteHttpExceptions: true,
     });
@@ -262,7 +301,7 @@ function prosegurDailySheetPush() {
   });
 
   saveSentPhones_(sentMap);
-  Logger.log('prosegurDailySheetPush done: ok=%s fail=%s', ok, fail);
+  Logger.log('=== FIN push: ok=%s fail=%s ===', ok, fail);
 }
 
 /** Ejecutar desde el editor para validar parseProsegurFecha. */
