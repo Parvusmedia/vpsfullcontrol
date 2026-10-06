@@ -1,33 +1,5 @@
 {
-  "name": "prosegur-phone-register",
-  "staticData": {
-    "node:Every 15 minutes": {
-      "recurrenceRules": []
-    },
-    "global": {
-      "phones": {
-        "34600999887": {
-          "phone_digits": "34600999887",
-          "phone_hash": "425f99b4fae9bae6a1db95cc6f395b439b011a637346aac624b9f4a69e2f9c59",
-          "first_source": "dedup_test_1",
-          "first_seen_at": "2026-10-06T09:59:43.396Z",
-          "claimed_at": "2026-10-06T09:59:43.396Z",
-          "meta_synced_at": ""
-        }
-      },
-      "duplicateEvents": [
-        {
-          "event_key": "dup_34600999887_2026-10-06T09:59:43.781Z",
-          "phone_digits": "34600999887",
-          "received_at": "2026-10-06T09:59:43.781Z",
-          "source": "dedup_test_2",
-          "first_source": "dedup_test_1",
-          "first_seen_at": "2026-10-06T09:59:43.396Z",
-          "action": "duplicate_not_processed"
-        }
-      ]
-    }
-  },
+  "tags": [],
   "nodes": [
     {
       "parameters": {
@@ -42,21 +14,21 @@
       "typeVersion": 2,
       "position": [
         0,
-        304
+        256
       ],
       "webhookId": "prosegur-phone-register"
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeSpainPhone(raw) {\n  if (raw == null || String(raw).trim() === '') {\n    return { valid: false, reason: 'empty' };\n  }\n  let d = String(raw).replace(/\\D/g, '');\n  if (d.startsWith('0034')) d = d.slice(2);\n  if (d.length === 9 && /^[6789]/.test(d)) d = '34' + d;\n  if (d.length === 11 && d.startsWith('34')) {\n    const national = d.slice(2);\n    if (/^[6789]\\d{8}$/.test(national)) {\n      return { valid: true, phone_digits: d };\n    }\n  }\n  return { valid: false, reason: 'invalid_spain' };\n}\n\nconst item = $input.first().json;\nconst body = item.body ?? item;\nconst phoneRaw = body.phone;\nconst source = String(body.source || 'unknown').slice(0, 120);\nconst norm = normalizeSpainPhone(phoneRaw);\n\nif (!norm.valid) {\n  return [{ json: { route: 'invalid', reason: norm.reason, source } }];\n}\n\nconst phone_digits = norm.phone_digits;\nconst phone_hash = crypto.createHash('sha256').update(phone_digits, 'utf8').digest('hex');\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    route: 'register',\n    phone_digits,\n    phone_hash,\n    source,\n    claimed_at: now,\n    first_seen_at: now,\n    first_source: source\n  }\n}];\n"
+        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeSpainPhone(raw) {\n  if (raw == null || String(raw).trim() === '') {\n    return { valid: false, reason: 'empty' };\n  }\n  let d = String(raw).replace(/\\D/g, '');\n  if (d.startsWith('0034')) d = d.slice(2);\n  if (d.length === 9 && /^[6789]/.test(d)) d = '34' + d;\n  if (d.length === 11 && d.startsWith('34')) {\n    const national = d.slice(2);\n    if (/^[6789]\\d{8}$/.test(national)) {\n      return { valid: true, phone_digits: d };\n    }\n  }\n  return { valid: false, reason: 'invalid_spain' };\n}\n\nconst item = $input.first().json;\nconst body = item.body ?? item;\n\nif (Array.isArray(body.leads)) {\n  const batch_id = String(body.batch_id || `batch_${Date.now()}`).slice(0, 120);\n  const invalid_items = [];\n  const leads = [];\n\n  body.leads.forEach((L, index) => {\n    const row = L || {};\n    const phoneRaw = row.phone ?? row.telefono;\n    const source = String(row.source || 'unknown').slice(0, 120);\n    const norm = normalizeSpainPhone(phoneRaw);\n    if (!norm.valid) {\n      invalid_items.push({\n        index,\n        status: 'invalid',\n        reason: norm.reason,\n        source,\n        phone: phoneRaw,\n      });\n      return;\n    }\n    const phone_digits = norm.phone_digits;\n    const phone_hash = crypto.createHash('sha256').update(phone_digits, 'utf8').digest('hex');\n    const now = new Date().toISOString();\n    leads.push({\n      index,\n      phone_digits,\n      phone_hash,\n      source,\n      row_number: row.row_number,\n      sheet_tab: row.sheet_tab,\n      claimed_at: now,\n      first_seen_at: now,\n      first_source: source,\n    });\n  });\n\n  if (leads.length === 0 && body.leads.length > 0) {\n    return [{ json: { route: 'invalid', reason: 'all_invalid', batch_id, invalid_items } }];\n  }\n\n  return [{ json: { route: 'batch', batch_id, leads, invalid_items } }];\n}\n\nconst phoneRaw = body.phone;\nconst source = String(body.source || 'unknown').slice(0, 120);\nconst norm = normalizeSpainPhone(phoneRaw);\n\nif (!norm.valid) {\n  return [{ json: { route: 'invalid', reason: norm.reason, source } }];\n}\n\nconst phone_digits = norm.phone_digits;\nconst phone_hash = crypto.createHash('sha256').update(phone_digits, 'utf8').digest('hex');\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    route: 'register',\n    phone_digits,\n    phone_hash,\n    source,\n    claimed_at: now,\n    first_seen_at: now,\n    first_source: source,\n  },\n}];"
       },
       "id": "a1b2c3d4-0002-4000-8000-000000000002",
       "name": "Prepare",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        272,
-        304
+        224,
+        256
       ]
     },
     {
@@ -128,6 +100,28 @@
               },
               "renameOutput": true,
               "outputKey": "register"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "batch",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "batch"
             }
           ]
         },
@@ -138,8 +132,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        528,
-        304
+        448,
+        240
       ]
     },
     {
@@ -155,8 +149,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        784,
-        80
+        672,
+        64
       ]
     },
     {
@@ -172,8 +166,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        784,
-        208
+        672,
+        256
       ]
     },
     {
@@ -185,8 +179,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        352
+        896,
+        448
       ]
     },
     {
@@ -198,8 +192,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1312,
-        280
+        1344,
+        352
       ]
     },
     {
@@ -306,7 +300,7 @@
       "typeVersion": 1.1,
       "position": [
         1568,
-        280
+        352
       ],
       "continueOnFail": true,
       "notes": "Tabla visible: prosegur_phone_events"
@@ -324,8 +318,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1824,
-        280
+        1792,
+        352
       ]
     },
     {
@@ -356,8 +350,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        784,
-        480
+        672,
+        448
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
@@ -392,8 +386,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1040,
-        352
+        1120,
+        448
       ]
     },
     {
@@ -409,8 +403,84 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
+        1344,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "ZI6qiUvYUVzuCJM6",
+          "cachedResultName": "prosegur_phone_events"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone_digits",
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "a1b2c3d4-0018-4000-8000-000000000018",
+      "name": "Load registry from table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        640
+      ],
+      "alwaysOutputData": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.phones) staticData.phones = {};\n\nconst prep = $('Prepare').first().json;\nconst batch_id = prep.batch_id;\nconst leads = prep.leads || [];\nconst invalid_items = prep.invalid_items || [];\nconst now = new Date().toISOString();\n\nconst tableRows = $('Load registry from table').all()\n  .map((i) => i.json)\n  .filter((r) => r && r.phone_digits);\nconst tableByPhone = {};\nfor (const row of tableRows) {\n  if (!tableByPhone[row.phone_digits]) tableByPhone[row.phone_digits] = row;\n}\n\nconst seenInBatch = new Set();\nconst results = [...invalid_items];\nconst insert_rows = [];\n\nfunction duplicateResult(lead, existing) {\n  return {\n    index: lead.index,\n    status: 'duplicate',\n    phone_digits: lead.phone_digits,\n    source: lead.source,\n    first_source: existing.first_source || lead.first_source,\n    phone_hash: existing.phone_hash || lead.phone_hash,\n    duplicate_tag: 'duplicate',\n    is_duplicate: 'yes',\n    message: 'duplicate_not_processed',\n  };\n}\n\nfor (const lead of leads) {\n  const phone = lead.phone_digits;\n\n  if (seenInBatch.has(phone)) {\n    const ex = staticData.phones[phone] || {\n      first_source: lead.first_source,\n      phone_hash: lead.phone_hash,\n    };\n    results.push(duplicateResult(lead, ex));\n    continue;\n  }\n  seenInBatch.add(phone);\n\n  if (staticData.phones[phone]) {\n    results.push(duplicateResult(lead, staticData.phones[phone]));\n    continue;\n  }\n\n  const tableRow = tableByPhone[phone];\n  if (tableRow) {\n    const existing = {\n      phone_hash: tableRow.phone_hash || lead.phone_hash,\n      first_source: tableRow.first_source || tableRow.source || lead.source,\n      first_seen_at: tableRow.first_seen_at || tableRow.received_at,\n      claimed_at: tableRow.first_seen_at || tableRow.received_at,\n    };\n    staticData.phones[phone] = {\n      phone_digits: phone,\n      phone_hash: existing.phone_hash,\n      first_source: existing.first_source,\n      first_seen_at: existing.first_seen_at || lead.first_seen_at,\n      claimed_at: existing.claimed_at || lead.claimed_at,\n      meta_synced_at: '',\n    };\n    results.push(duplicateResult(lead, existing));\n    continue;\n  }\n\n  staticData.phones[phone] = {\n    phone_digits: phone,\n    phone_hash: lead.phone_hash,\n    first_source: lead.source,\n    first_seen_at: lead.first_seen_at,\n    claimed_at: lead.claimed_at,\n    meta_synced_at: '',\n  };\n\n  const receivedAt = now;\n  results.push({\n    index: lead.index,\n    status: 'new',\n    phone_digits: phone,\n    source: lead.source,\n    first_source: lead.source,\n    duplicate_tag: 'new',\n    is_duplicate: 'no',\n    phone_hash: lead.phone_hash,\n    first_seen_at: lead.first_seen_at,\n    received_at: receivedAt,\n  });\n\n  insert_rows.push({\n    phone_digits: phone,\n    duplicate_tag: 'new',\n    is_duplicate: 'no',\n    source: lead.source,\n    first_source: lead.source,\n    received_at: receivedAt,\n    first_seen_at: lead.first_seen_at,\n    phone_hash: lead.phone_hash,\n  });\n}\n\nconst stats = {\n  input: leads.length + invalid_items.length,\n  new: results.filter((r) => r.status === 'new').length,\n  duplicate: results.filter((r) => r.status === 'duplicate').length,\n  invalid: results.filter((r) => r.status === 'invalid').length,\n  inserted: insert_rows.length,\n};\n\nreturn [{\n  json: {\n    ok: true,\n    batch_id,\n    stats,\n    results,\n    insert_rows,\n  },\n}];"
+      },
+      "id": "a1b2c3d4-0019-4000-8000-000000000019",
+      "name": "Register batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "insert_rows",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0020-4000-8000-000000000020",
+      "name": "Split insert rows",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
         1312,
-        480
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: $json.ok, batch_id: $json.batch_id, stats: $json.stats, results: $json.results } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a1b2c3d4-0021-4000-8000-000000000021",
+      "name": "Respond 200 batch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        560
       ]
     }
   ],
@@ -456,6 +526,13 @@
         [
           {
             "node": "Get phone in table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load registry from table",
             "type": "main",
             "index": 0
           }
@@ -523,13 +600,51 @@
           }
         ]
       ]
+    },
+    "Load registry from table": {
+      "main": [
+        [
+          {
+            "node": "Register batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register batch": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 batch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split insert rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split insert rows": {
+      "main": [
+        [
+          {
+            "node": "Insert Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
+  "name": "prosegur-phone-register",
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false,
     "timezone": "Europe/Madrid"
-  },
-  "tags": []
+  }
 }

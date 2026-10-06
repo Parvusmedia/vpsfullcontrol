@@ -43,15 +43,49 @@ Archivo: [`n8n/workflows/prosegur-phone-register.json`](../../n8n/workflows/pros
 
 Cadena de auditoría:
 
-`Register` → **Prepare audit row** (calcula `duplicate_tag` / `is_duplicate`) → **Insert Data Table** (`continueOnFail: true`) → respuesta **200** en paralelo (no depende del insert).
+`Register` (staticData + lookup en data table) → **Only new phone** → si es nuevo: **Prepare audit row** → **Insert Data Table** → **Respond 200**. Si es duplicado: **Respond 200 duplicate** (sin insert).
 
 Si la tabla no existe, el webhook **sigue respondiendo 200**; el nodo Insert registra error en la ejecución (`Could not find the data table`).
+
+## Contrato HTTP (batch — Apps Script diario)
+
+**POST** `…/webhook/prosegur-phone-register`
+
+```json
+{
+  "batch_id": "gas-2026-10-06T08:00:00",
+  "leads": [
+    {
+      "phone": "612345678",
+      "source": "Prosegur",
+      "row_number": 13003,
+      "sheet_tab": "Prosegur"
+    }
+  ]
+}
+```
+
+Respuesta **200**:
+
+```json
+{
+  "ok": true,
+  "batch_id": "…",
+  "stats": { "input": 10, "new": 8, "duplicate": 1, "invalid": 1, "inserted": 8 },
+  "results": [
+    { "index": 0, "status": "new", "phone_digits": "34612345678", "duplicate_tag": "new" },
+    { "index": 1, "status": "duplicate", "phone_digits": "34699999999", "message": "duplicate_not_processed" }
+  ]
+}
+```
+
+Sigue admitiendo un lead suelto `{ "phone", "source" }` (compatibilidad).
 
 ## Comprobar
 
 Tras crear la tabla, dos POST al webhook con el mismo teléfono deben generar:
 
-1. Fila con `duplicate_tag=new`, `is_duplicate=no`
-2. Fila con `duplicate_tag=duplicate`, `is_duplicate=yes`
+1. **Una** fila con `duplicate_tag=new`, `is_duplicate=no`
+2. Segunda llamada: **sin** fila nueva; JSON con `duplicate_tag=duplicate`, `message=duplicate_not_processed`
 
 Ver filas en **Data tables → prosegur_phone_events** o en el historial de ejecuciones del nodo **Insert Data Table**.

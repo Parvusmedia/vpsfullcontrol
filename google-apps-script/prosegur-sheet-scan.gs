@@ -1,5 +1,5 @@
 /**
- * Prosegur — lectura diaria (últimas 500 filas × 2 pestañas) → webhook n8n
+ * Prosegur — lectura diaria (últimas 500 filas × 2 pestañas) → webhook n8n (batch JSON)
  *
  * Spreadsheet: 1Fna1muuArgG_eaehXPAyl9AnRm6VOjcQc6JyO05-y_4
  * Pestañas: Prosegur, leadsconhorario_soportesexternos
@@ -407,9 +407,9 @@ function prosegurDebugStepByStep(verboseSamples) {
   skippedSent.slice(0, DEBUG_SAMPLES_PER_REASON).forEach(function (r) {
     Logger.log('  ya enviado: %s row %s (guardado %s)', r.phone_digits, r.row_number, sentMap[r.phone_digits]);
   });
-  Logger.log('Listos para POST n8n: %s', toSend.length);
+  Logger.log('Listos para POST n8n (1 batch): %s teléfonos', toSend.length);
   toSend.slice(0, 15).forEach(function (r) {
-    Logger.log('  → POST phone=%s source=%s row=%s tab=%s', r.telefono, r.source, r.row_number, r.sheet_tab);
+    Logger.log('  → lead phone=%s source=%s row=%s tab=%s', r.telefono, r.source, r.row_number, r.sheet_tab);
   });
   if (toSend.length > 15) {
     Logger.log('  … y %s más', toSend.length - 15);
@@ -443,6 +443,52 @@ function prosegurDryRunLegacy() {
   Logger.log('=== FIN dry-run ===');
 }
 
+function buildProsegurBatchPayload_(toSend) {
+  var tz = Session.getScriptTimeZone();
+  var batchId =
+    'gas-' + Utilities.formatDate(new Date(), tz, "yyyy-MM-dd'T'HH:mm:ss");
+  var leads = toSend.map(function (lead) {
+    return {
+      phone: lead.telefono,
+      source: lead.source,
+      row_number: lead.row_number,
+      sheet_tab: lead.sheet_tab,
+    };
+  });
+  return {
+    batch_id: batchId,
+    leads: leads,
+  };
+}
+
+/** Marca sentMap según results[] del webhook batch (new + duplicate = procesado). */
+function applyBatchResultsToSentMap_(sentMap, results) {
+  if (!results || !results.length) {
+    return { ok: 0, fail: 0, invalid: 0 };
+  }
+  var ok = 0;
+  var fail = 0;
+  var invalid = 0;
+  var now = new Date().toISOString();
+  results.forEach(function (r) {
+    if (!r || !r.phone_digits) {
+      if (r && r.status === 'invalid') {
+        invalid++;
+      }
+      return;
+    }
+    if (r.status === 'new' || r.status === 'duplicate') {
+      sentMap[r.phone_digits] = now;
+      ok++;
+    } else if (r.status === 'invalid') {
+      invalid++;
+    } else {
+      fail++;
+    }
+  });
+  return { ok: ok, fail: fail, invalid: invalid };
+}
+
 function prosegurDailySheetPush() {
   var props = PropertiesService.getScriptProperties();
   var webhook = props.getProperty('PROSEGUR_N8N_WEBHOOK_URL') || DEFAULT_WEBHOOK_URL;
@@ -459,39 +505,45 @@ function prosegurDailySheetPush() {
     return;
   }
 
-  var ok = 0;
-  var fail = 0;
+  var batchBody = buildProsegurBatchPayload_(toSend);
+  Logger.log(
+    'POST batch_id=%s leads=%s',
+    batchBody.batch_id,
+    batchBody.leads.length
+  );
 
-  toSend.forEach(function (lead) {
-    var payload = JSON.stringify({
-      phone: lead.telefono,
-      source: lead.source,
-    });
-    var res = UrlFetchApp.fetch(webhook, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: payload,
-      muteHttpExceptions: true,
-    });
-    var code = res.getResponseCode();
-    if (code >= 200 && code < 300) {
-      sentMap[lead.phone_digits] = new Date().toISOString();
-      ok++;
-    } else {
-      fail++;
-      Logger.log(
-        'FAIL %s row %s HTTP %s %s',
-        lead.phone_digits,
-        lead.row_number,
-        code,
-        res.getContentText().slice(0, 200)
-      );
-    }
-    Utilities.sleep(150);
+  var res = UrlFetchApp.fetch(webhook, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(batchBody),
+    muteHttpExceptions: true,
   });
+  var code = res.getResponseCode();
+  var text = res.getContentText();
 
+  if (code < 200 || code >= 300) {
+    Logger.log('FAIL batch HTTP %s %s', code, text.slice(0, 500));
+    return;
+  }
+
+  var body;
+  try {
+    body = JSON.parse(text);
+  } catch (e) {
+    Logger.log('FAIL batch: respuesta no JSON: %s', text.slice(0, 500));
+    return;
+  }
+
+  var counts = applyBatchResultsToSentMap_(sentMap, body.results);
   saveSentPhones_(sentMap);
-  Logger.log('=== FIN push: ok=%s fail=%s ===', ok, fail);
+  Logger.log(
+    '=== FIN batch push: batch_id=%s stats=%s marked_ok=%s invalid=%s other_fail=%s ===',
+    body.batch_id || batchBody.batch_id,
+    JSON.stringify(body.stats || {}),
+    counts.ok,
+    counts.invalid,
+    counts.fail
+  );
 }
 
 /** Ejecutar desde el editor para validar parseProsegurFecha. */
