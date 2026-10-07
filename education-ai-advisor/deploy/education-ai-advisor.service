@@ -1,0 +1,18 @@
+[Unit]
+Description=Education AI Student Advisor API
+After=network.target
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/education-ai-advisor/backend
+Environment=AI_MODE=mock
+Environment=EDU_DATA_DIR=/opt/apps/education-ai-advisor/backend/storage
+EnvironmentFile=-/opt/apps/education-ai-advisor/.env
+ExecStart=/opt/apps/education-ai-advisor/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8022 --proxy-headers
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

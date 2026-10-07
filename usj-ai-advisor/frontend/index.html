@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Universidad San Jorge · Orientador en display</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+</head>
+<body class="demo-hub">
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Universidad San Jorge</span>
+        <strong>Concepto</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount demo-map-mount-top"></div>
+
+    <header class="hero hub-hero">
+      <p class="kicker">Paso 1 · Concepto</p>
+      <h1>Orientación automática dentro del anuncio display</h1>
+      <p class="lede">Este recorrido muestra cómo un creativo HTML5 puede cualificar interesados en másteres sin sacarlos del banner: perfil, recomendación y conversión en el mismo espacio publicitario.</p>
+    </header>
+
+    <section class="concept-card">
+      <p class="kicker">El orientador, dentro del anuncio</p>
+      <h2>No es una landing aparte</h2>
+      <p>El usuario responde tres preguntas guiadas dentro del propio creativo (300×600 o 970×250). El catálogo se reduce en tiempo real hasta uno o varios másteres y ve por qué encaja cada opción, con puntuación y elegibilidad.</p>
+      <ul class="concept-list">
+        <li>Titulación y perfil profesional</li>
+        <li>Objetivo formativo</li>
+        <li>Modalidad preferida</li>
+      </ul>
+    </section>
+
+    <section class="logic-split">
+      <article class="logic-card">
+        <p class="kicker">Motor principal</p>
+        <h3>Secuencia guiada + catálogo</h3>
+        <p>Las respuestas activan reglas sobre un catálogo estructurado de másteres. El sistema descarta programas incompatibles, pondera el encaje y nunca inventa titulaciones que no existen.</p>
+      </article>
+      <article class="logic-card">
+        <p class="kicker">Capa opcional de IA</p>
+        <h3>Explicación y dudas</h3>
+        <p>La inteligencia artificial puede redactar el porqué del match o responder preguntas, siempre anclada a hechos aprobados del catálogo. No sustituye las reglas de admisión.</p>
+      </article>
+    </section>
+
+    <p class="demo-start-wrap hub-cta">
+      <a class="btn demo-start" href="/ad/">Ver ejemplo en vivo · paso 2</a>
+    </p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script>
+    USJ.mountDemoChrome();
+    document.querySelectorAll(".demo-start").forEach(function (a) {
+      a.href = USJ.appendPresent(a.getAttribute("href"));
+    });
+  </script>
+</body>
+</html>

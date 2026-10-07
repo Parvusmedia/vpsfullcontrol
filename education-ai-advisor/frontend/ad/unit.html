@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>EDU</title>
+  <style>
+    @font-face { font-family: InterAd; src: url("/ad/fonts/inter-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+    @font-face { font-family: InterAd; src: url("/ad/fonts/inter-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+    @font-face { font-family: InterAd; src: url("/ad/fonts/inter-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root {
+      --navy: #0a1b33;
+      --navy-2: #122844;
+      --gold: #c4a35a;
+      --gold-soft: #e8d4a8;
+      --white: #fff;
+      --panel: #fff;
+      --btn: #f4f6f8;
+      --ink: #0a1b33;
+      --muted: #5c6775;
+      --line: #d9dee6;
+      --radius: 8px;
+      --radius-sm: 6px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; width: 100%; overflow: hidden; background: var(--navy); }
+    body { font-family: InterAd, "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+    button, input { font-family: inherit; }
+    .unit { height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--panel); }
+
+    .hero {
+      position: relative; flex: none; color: #fff;
+      background: var(--navy) center/cover no-repeat;
+      padding: 12px 16px;
+    }
+    .hero:after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .mark { width: 20px; height: 24px; flex: none; }
+    .brand { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600; line-height: 1.35; opacity: .9; }
+    .brand b { display: block; font-size: 13px; letter-spacing: .16em; font-weight: 700; opacity: 1; }
+    .kicker { margin: 10px 0 0; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+
+    .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; background: var(--panel); overflow: hidden; }
+    .navline { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; min-height: 24px; flex-shrink: 0; }
+    .back, .back-ph { width: 24px; height: 24px; flex: none; }
+    .back {
+      border: 0; background: transparent; color: var(--navy); padding: 0;
+      font-size: 16px; line-height: 24px; cursor: pointer; font-weight: 600;
+    }
+    .progress { display: flex; gap: 4px; flex: 1; }
+    .progress i { display: block; height: 3px; flex: 1; background: var(--line); border-radius: 99px; }
+    .progress i.on { background: var(--navy); }
+    .count { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--muted); }
+
+    h1 { margin: 0 0 8px; font-size: 18px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; }
+    .sub { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+    .remain { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+    .tag { font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--navy); background: var(--btn); padding: 4px 8px; border-radius: var(--radius-sm); }
+
+    .roadmap { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .roadmap li {
+      padding: 8px 10px; background: var(--btn); border: 1px solid var(--line); border-radius: var(--radius);
+    }
+    .roadmap b { display: block; font-size: 12px; font-weight: 700; line-height: 1.25; margin-bottom: 2px; }
+    .roadmap span { display: block; font-size: 11px; line-height: 1.35; color: var(--muted); }
+
+    .sect-h {
+      margin: 0 0 4px; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .result-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .result-name { margin: 0 0 8px; font-size: 17px; line-height: 1.2; }
+    .summary { margin: 0 0 10px; font-size: 12px; line-height: 1.35; }
+
+    .opts { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
+    .opt {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; min-height: 44px; padding: 0 14px;
+      border: 1px solid var(--line); background: var(--btn);
+      color: var(--ink); text-align: left; font-size: 13px; font-weight: 600;
+      line-height: 1.25;       cursor: pointer; border-radius: var(--radius);
+    }
+    .opt:after { content: "›"; color: var(--gold); font-size: 18px; font-weight: 400; margin-left: 8px; }
+    .opt:hover, .opt:focus { background: #fff; border-color: var(--navy); outline: none; }
+
+    .row { display: flex; gap: 8px; margin-top: auto; flex-shrink: 0; }
+    .cta {
+      flex: 1; min-height: 44px; border: 0; background: var(--navy); color: #fff;
+      font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      cursor: pointer; border-radius: var(--radius);
+    }
+    .cta:hover { background: var(--navy-2); }
+    .cta.sm { min-height: 34px; font-size: 10px; letter-spacing: .06em; text-transform: none; font-weight: 600; }
+    .cta.outline { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    .cta-stack { display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex-shrink: 0; }
+
+    .score { margin: 0 0 2px; font-size: 32px; font-weight: 700; letter-spacing: -.03em; color: var(--navy); line-height: 1; }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
+    .pill { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 3px 7px; border-radius: var(--radius-sm); }
+
+    .leadbox { display: none; flex-direction: column; gap: 6px; margin-top: auto; flex-shrink: 0; }
+    .leadbox.open { display: flex; }
+    .leadbox input {
+      width: 100%; min-height: 34px; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 0 10px; font-size: 12px; background: var(--btn);
+    }
+    .lead-ok { font-size: 11px; color: var(--navy); margin: 0; line-height: 1.35; }
+
+    .sz-300x600 .hero { height: 120px; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px 16px; background-image: linear-gradient(180deg, rgba(10,27,51,.2) 0%, rgba(10,27,51,.82) 100%), url("/ad/img/campus-arch.jpg"); }
+    .sz-300x600.is-intro .hero { height: 120px; }
+    .sz-300x600 .opt { flex: 1; max-height: 52px; }
+    .sz-300x600 .roadmap span { display: none; }
+    .sz-300x600.is-intro .outcome { display: none; }
+
+    .sz-970x250 { flex-direction: row; height: 100%; }
+    .sz-970x250 .hero { width: 280px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px; background-image: linear-gradient(180deg, rgba(10,27,51,.15), rgba(10,27,51,.78)), url("/ad/img/campus-wide.jpg"); }
+    .sz-970x250 .panel { width: 690px; height: 100%; min-height: 0; padding: 12px 18px 12px 20px; }
+    .sz-970x250 h1 { font-size: 20px; }
+    .sz-970x250 .roadmap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .sz-970x250 .roadmap li { padding: 10px; }
+    .sz-970x250 .opts { display: grid; gap: 6px; align-content: stretch; flex: 1; min-height: 0; }
+    .sz-970x250 .opts-c5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .sz-970x250 .opts-c4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .sz-970x250 .opts-c3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+    .sz-970x250 .opt {
+      width: auto; min-height: 0; height: 100%; padding: 6px 10px;
+      font-size: 11px; line-height: 1.28; white-space: normal; align-items: center;
+    }
+    .sz-970x250 .opt:after { font-size: 15px; flex-shrink: 0; margin-left: 6px; }
+    .sz-970x250.is-step .panel { display: flex; flex-direction: column; padding: 10px 18px 10px 20px; }
+    .sz-970x250.is-step .navline { margin-bottom: 6px; min-height: 20px; }
+    .sz-970x250.is-step h1 { font-size: 16px; margin: 0 0 4px; line-height: 1.2; }
+    .sz-970x250.is-step .sub { font-size: 11px; margin: 0 0 6px; line-height: 1.35; }
+    .sz-970x250.is-step .remain { display: none; }
+    .sz-970x250.is-intro .panel { display: flex; flex-direction: column; gap: 0; padding: 14px 18px 12px 20px; }
+    .sz-970x250.is-intro h1 { font-size: 22px; margin: 0 0 6px; line-height: 1.15; flex-shrink: 0; }
+    .sz-970x250.is-intro .intro-lede { font-size: 13px; line-height: 1.4; margin: 0 0 10px; flex-shrink: 0; max-width: 52em; }
+    .sz-970x250.is-intro .roadmap { margin: 0 0 10px; gap: 8px; flex: 1; min-height: 0; align-content: start; }
+    .sz-970x250.is-intro .roadmap li { padding: 8px 10px; }
+    .sz-970x250.is-intro .roadmap b { font-size: 12px; margin: 0 0 3px; line-height: 1.2; }
+    .sz-970x250.is-intro .roadmap span { display: block; font-size: 10px; line-height: 1.3; }
+    .sz-970x250.is-intro .outcome { display: none; }
+    .sz-970x250.is-intro .intro-foot { margin-top: auto; flex-shrink: 0; padding-top: 2px; }
+    .sz-970x250.is-intro .row { margin: 0; }
+    .sz-970x250.is-intro .cta { min-height: 38px; font-size: 11px; letter-spacing: .1em; max-width: 260px; }
+    .sz-970x250.is-result .result-main { display: grid; grid-template-columns: 1fr auto; gap: 12px 20px; align-items: start; flex: 1; min-height: 0; }
+    .sz-970x250.is-result .result-copy { min-width: 0; }
+    .sz-970x250.is-result .score { font-size: 36px; text-align: right; margin: 0; }
+    .sz-970x250.is-result .cta-stack { flex-direction: row; flex-wrap: wrap; margin-top: 0; align-self: end; }
+    .sz-970x250.is-result .cta.sm { flex: 1; min-width: 130px; }
+    .sz-970x250.is-result .leadbox { flex-direction: row; flex-wrap: wrap; align-self: end; }
+    .sz-970x250.is-result .leadbox input { flex: 1; min-width: 120px; }
+  </style>
+</head>
+<body>
+  <div class="unit" id="unit"></div>
+  <script src="/shared.js"></script>
+  <script>
+    (function () {
+      var size = new URLSearchParams(location.search).get("size") || "300x600";
+      if (size === "300x250") size = "300x600";
+      var wide = size === "970x250";
+      var unit = document.getElementById("unit");
+      var answers = {};
+      var spec = null;
+      var step = 0;
+      var lastPayload = null;
+      var names = { "ai-applied": "Applied AI", marketing: "Marketing", biomechanics: "Biomechanics" };
+      var LOGO =
+        "<div class=\"logo\">" +
+        "<svg class=\"mark\" viewBox=\"0 0 24 28\" aria-hidden=\"true\"><path d=\"M12 1.2 L22 5.2 V14.2 C22 20.8 12 26.6 12 26.6 C12 26.6 2 20.8 2 14.2 V5.2 Z\" fill=\"#fff\" fill-opacity=\".1\" stroke=\"#c4a35a\" stroke-width=\"1.2\"/><path d=\"M12 6 V21 M7 12.5 H17\" stroke=\"#f3c1c1\" stroke-width=\"2\" stroke-linecap=\"square\"/></svg>" +
+        "<div class=\"brand\">Demo University<b>EDU</b></div></div>";
+
+      function api(path, body) {
+        if (body) return EDU.api(path, { method: "POST", body: JSON.stringify(body) });
+        return EDU.api(path);
+      }
+      function introCopy() { return (spec && spec.intro_screen) || {}; }
+      function labelOf(opt) { return opt.label; }
+      function optsGridClass(n) {
+        if (!wide) return "opts";
+        if (n >= 5) return "opts opts-c5";
+        if (n === 4) return "opts opts-c4";
+        return "opts opts-c3";
+      }
+      function stepHint(s, i) {
+        var hints = ["We filter out incompatible programmes", "We help you orient better", "We adjust by study mode"];
+        return s.subtitle || hints[i] || "";
+      }
+      function staticHero(extra) {
+        return "<div class=\"hero\">" + LOGO + (extra || "") + "</div>";
+      }
+      function navHtml(at, opts) {
+        opts = opts || {};
+        var n = (spec && spec.steps.length) || 3;
+        var dots = "";
+        for (var i = 0; i < n; i++) dots += "<i" + (i <= at ? " class=\"on\"" : "") + "></i>";
+        var back = (!opts.noBack && (at > 0 || opts.toIntro))
+          ? "<button type=\"button\" class=\"back\" id=\"back\" aria-label=\"Back\">←</button>"
+          : "<span class=\"back-ph\"></span>";
+        var count = opts.hideCount ? "" : "<span class=\"count\">0" + (at + 1) + " / 0" + n + "</span>";
+        return "<div class=\"navline\">" + back + "<div class=\"progress\">" + dots + "</div>" + count + "</div>";
+      }
+      function roadmapHtml() {
+        return "<ol class=\"roadmap\">" + (spec.steps || []).map(function (s, i) {
+          return "<li><b>" + s.title + "</b><span>" + stepHint(s, i) + "</span></li>";
+        }).join("") + "</ol>";
+      }
+      function paintRemain(data) {
+        return (data.remaining || []).map(function (row) {
+          return "<span class=\"tag\">" + (names[row.programme_id] || row.programme) + "</span>";
+        }).join("");
+      }
+      function shortSummary(b) {
+        return (b.reasons || []).slice(0, 2).join(" · ");
+      }
+      function resultLabel(payload) {
+        return payload.has_strong_match ? "Best fit" : "Closest option";
+      }
+      function resultCore(b, payload) {
+        var label = resultLabel(payload);
+        var pills = "<div class=\"pills\"><span class=\"pill\">" + (b.modality_es || "") + "</span><span class=\"pill\">" + (b.eligibility || "") + "</span></div>";
+        var summary = shortSummary(b);
+        if (wide) {
+          return "<div class=\"result-main\">" +
+            "<div class=\"result-copy\">" +
+              "<p class=\"sect-h\">" + label + "</p>" +
+              "<h1 class=\"result-name\">" + b.programme + "</h1>" +
+              pills +
+              (summary ? "<p class=\"sub summary\">" + summary + "</p>" : "") +
+            "</div>" +
+            "<p class=\"score\">" + b.score_pct + "%</p>" +
+          "</div>";
+        }
+        return "<div class=\"result-body\">" +
+          "<p class=\"sect-h\">" + label + "</p>" +
+          "<p class=\"score\">" + b.score_pct + "%</p>" +
+          "<h1 class=\"result-name\">" + b.programme + "</h1>" +
+          pills +
+          (summary ? "<p class=\"sub summary\">" + summary + "</p>" : "") +
+        "</div>";
+      }
+      function ctaBlock() {
+        return "<div class=\"cta-stack\" id=\"ctas\">" +
+          "<button type=\"button\" class=\"cta sm\" id=\"wa\">Continue on WhatsApp</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"lead\">Leave my details</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"again\">Start over</button>" +
+        "</div>" +
+        "<div class=\"leadbox\" id=\"leadbox\">" +
+          "<p class=\"sect-h\">Leave your details</p>" +
+          "<input type=\"text\" id=\"lname\" placeholder=\"Name\" autocomplete=\"name\">" +
+          "<input type=\"email\" id=\"lemail\" placeholder=\"Email\" autocomplete=\"email\">" +
+          "<input type=\"tel\" id=\"lphone\" placeholder=\"Phone (optional)\" autocomplete=\"tel\">" +
+          "<button type=\"button\" class=\"cta sm\" id=\"leadsend\">Send</button>" +
+          "<button type=\"button\" class=\"cta sm outline\" id=\"leadback\">Back</button>" +
+          "<p class=\"lead-ok\" id=\"leadok\" hidden>Thank you. An EDU advisor will contact you.</p>" +
+        "</div>";
+      }
+      function waCtx(payload) {
+        return { programme: payload && payload.best && payload.best.programme, labels: (payload && payload.guide_labels) || [] };
+      }
+      function bindResultActions(payload) {
+        bindWhatsApp("wa", payload);
+        document.getElementById("again").onclick = showIntro;
+        var ctas = document.getElementById("ctas");
+        var leadbox = document.getElementById("leadbox");
+        document.getElementById("lead").onclick = function () {
+          EDU.track("lead_started", { surface: "ad", size: size, channel: "form" });
+          var body = document.querySelector(".result-body, .result-main");
+          if (body) body.style.display = "none";
+          ctas.style.display = "none";
+          leadbox.classList.add("open");
+        };
+        document.getElementById("leadback").onclick = function () {
+          var body = document.querySelector(".result-body, .result-main");
+          if (body) body.style.display = "";
+          leadbox.classList.remove("open");
+          ctas.style.display = "";
+        };
+        document.getElementById("leadsend").onclick = function () {
+          var name = (document.getElementById("lname").value || "").trim();
+          var email = (document.getElementById("lemail").value || "").trim();
+          if (!name || !email) return;
+          var phone = (document.getElementById("lphone").value || "").trim();
+          api("/api/lead", {
+            name: name,
+            email: email,
+            phone: phone,
+            profile: { answers: answers, parser: "guide" },
+            recommendation: payload.best,
+            alternatives: payload.alternatives || [],
+            questions_asked: [],
+            priority: (payload.guide_labels || []).join(" · "),
+            signals: { lead_submitted: true, from_ad: true, size: size }
+          }).then(function () {
+            document.getElementById("leadok").hidden = false;
+            document.getElementById("leadsend").disabled = true;
+            EDU.track("lead_submitted", { surface: "ad", size: size });
+          }).catch(function () {
+            document.getElementById("leadok").textContent = "Could not send. Try WhatsApp instead.";
+            document.getElementById("leadok").hidden = false;
+          });
+        };
+      }
+      function bindWhatsApp(id, payload) {
+        var btn = document.getElementById(id);
+        if (btn) btn.onclick = function () { EDU.openWhatsApp(waCtx(payload)); };
+      }
+      function bindBack(toIntro) {
+        var b = document.getElementById("back");
+        if (!b) return;
+        b.onclick = function () {
+          if (toIntro) { showIntro(); return; }
+          var ids = spec.steps.map(function (s) { return s.id; });
+          delete answers[ids[step]];
+          step -= 1;
+          delete answers[ids[step]];
+          showStep();
+        };
+      }
+
+      function showIntro() {
+        answers = {};
+        step = 0;
+        lastPayload = null;
+        unit.className = "unit sz-" + size + " is-intro";
+        var copy = introCopy();
+        var lede = wide ? (copy.lede || copy.compact_lede || "") : (copy.lede || "");
+        unit.innerHTML =
+          staticHero("<p class=\"kicker\">Graduate advisor</p>") +
+          "<div class=\"panel\">" +
+          "<h1>" + (copy.headline || "Find your programme in 3 steps") + "</h1>" +
+          "<p class=\"sub intro-lede\">" + lede + "</p>" +
+          roadmapHtml() +
+          "<div class=\"intro-foot\">" +
+          "<p class=\"sub outcome\">" + (copy.outcome || "") + "</p>" +
+          "<div class=\"row\"><button type=\"button\" class=\"cta\" id=\"start\">" + (copy.cta || "Start") + "</button></div>" +
+          "</div></div>";
+        document.getElementById("start").onclick = function () {
+          EDU.track("guide_started", { surface: "ad", size: size });
+          showStep();
+        };
+      }
+
+      function showStep() {
+        unit.className = "unit sz-" + size + " is-step";
+        var s = spec.steps[step];
+        var sub = stepHint(s, step);
+        unit.innerHTML =
+          staticHero("<p class=\"kicker\">Step " + (step + 1) + " of " + spec.steps.length + "</p>") +
+          "<div class=\"panel\">" + navHtml(step, { toIntro: step === 0 }) +
+          "<h1>" + s.title + "</h1>" +
+          (sub ? "<p class=\"sub\">" + sub + "</p>" : "") +
+          "<div class=\"remain\" id=\"remain\"></div>" +
+          "<div class=\"" + optsGridClass(s.options.length) + "\" id=\"opts\"></div></div>";
+        s.options.forEach(function (opt) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "opt";
+          btn.textContent = labelOf(opt);
+          btn.onclick = function () { choose(s.id, opt.id); };
+          document.getElementById("opts").appendChild(btn);
+        });
+        bindBack(step === 0);
+        api("/api/guide", { answers: answers }).then(function (d) {
+          var el = document.getElementById("remain");
+          if (el) el.innerHTML = paintRemain(d);
+        }).catch(function () {});
+      }
+
+      function choose(id, option) {
+        answers[id] = option;
+        EDU.track("priority_selected", { surface: "ad", size: size, step: id, option: option });
+        if (step < spec.steps.length - 1) { step += 1; showStep(); return; }
+        EDU.track("profile_submitted", { surface: "ad" });
+        api("/api/guide", { answers: answers }).then(showResult).catch(function () { showResult({ fallback: true }); });
+      }
+
+      function showResult(payload) {
+        lastPayload = payload;
+        EDU.track("recommendation_generated", { surface: "ad", id: payload.best && payload.best.programme_id });
+        unit.className = "unit sz-" + size + " is-result";
+        if (!payload.best) {
+          unit.innerHTML = staticHero() +
+            "<div class=\"panel\">" +
+            "<h1>Let's talk on WhatsApp</h1>" +
+            "<p class=\"sub\">Speak with an EDU advisor for more information.</p>" +
+            "<div class=\"cta-stack\"><button type=\"button\" class=\"cta sm\" id=\"wa\">Continue on WhatsApp</button>" +
+            "<button type=\"button\" class=\"cta sm outline\" id=\"again\">Start over</button></div></div>";
+          bindWhatsApp("wa", payload);
+          document.getElementById("again").onclick = showIntro;
+          return;
+        }
+        var b = payload.best;
+        unit.innerHTML =
+          staticHero() +
+          "<div class=\"panel\">" + navHtml(2, { noBack: true }) +
+          resultCore(b, payload) + ctaBlock() + "</div>";
+        bindResultActions(payload);
+      }
+
+      api("/api/guide").then(function (s) { spec = s; showIntro(); }).catch(function () {
+        unit.className = "unit sz-" + size;
+        unit.innerHTML = staticHero() + "<div class=\"panel\"><h1>Find your programme</h1><button type=\"button\" class=\"cta sm\" id=\"wa\">Continue on WhatsApp</button></div>";
+        bindWhatsApp("wa", {});
+      });
+    })();
+  </script>
+</body>
+</html>

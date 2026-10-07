@@ -1,0 +1,26 @@
+name: plesk-dns-education-advisor
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/education-demo-8776
+      - main
+    paths:
+      - "education-ai-advisor/scripts/plesk-add-a-record.sh"
+      - ".github/workflows/plesk-dns-education-advisor.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dns:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create educationdemo.pmediaplus.com A record
+        run: |
+          set -euo pipefail
+          sudo cp education-ai-advisor/scripts/plesk-add-a-record.sh /usr/local/sbin/plesk-add-education-advisor
+          sudo chmod 755 /usr/local/sbin/plesk-add-education-advisor
+          sudo DNS_HOST=educationdemo /usr/local/sbin/plesk-add-education-advisor

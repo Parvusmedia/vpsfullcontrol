@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Graduate advisor — Demo University</title>
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <span>Demo University</span>
+        <strong>Graduate advisor</strong>
+      </div>
+    </nav>
+
+    <div id="demo-map-mount" class="demo-map-mount"></div>
+    <div id="demo-here-mount"></div>
+
+    <header class="hero hero-step">
+      <p class="kicker">Same engine · web reference</p>
+      <h1>Find the programme that fits you</h1>
+      <p class="lede">Expanded version of the advisor embedded in the ad. The three questions and fit logic are the same.</p>
+    </header>
+
+    <section class="wizard-card" id="wizard">
+      <div id="intro-panel"></div>
+      <div id="flow-panel" hidden>
+        <div class="step-progress" id="step-progress" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p class="progress" id="progress">Question 1 of 3</p>
+        <div class="remaining" id="remaining"></div>
+        <h2 id="qtitle" class="qtitle"></h2>
+        <p class="lede" id="qsub"></p>
+        <div class="choices" id="choices"></div>
+        <button class="btn ghost" id="back" hidden>Back</button>
+      </div>
+    </section>
+
+    <section class="panel" id="results"></section>
+    <pre class="debug" id="debug" hidden></pre>
+    <div id="demo-linear-mount"></div>
+    <p class="footnote">Informational guidance based on the graduate programme catalogue. Not an offer of admission or a commitment to enrol.</p>
+  </div>
+  <script src="/shared.js"></script>
+  <script src="/demo.js"></script>
+  <script src="/app.js"></script>
+  <script>EDU.mountDemoChrome();</script>
+</body>
+</html>
