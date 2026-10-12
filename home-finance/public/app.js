@@ -69,8 +69,93 @@
 
   function setDefaultMonth() {
     const el = $("#month-select");
-    if (el) el.value = currentMonth();
+    const m = currentMonth();
+    if (el) el.value = m;
+    const pf = $("#period-from");
+    const pt = $("#period-to");
+    if (pf && !pf.value) pf.value = m;
+    if (pt && !pt.value) pt.value = m;
     syncYearFromMonth();
+    updatePeriodLabel();
+  }
+
+  function periodBounds() {
+    let from = $("#period-from")?.value || currentMonth();
+    let to = $("#period-to")?.value || from;
+    if (from > to) {
+      const tmp = from;
+      from = to;
+      to = tmp;
+      if ($("#period-from")) $("#period-from").value = from;
+      if ($("#period-to")) $("#period-to").value = to;
+    }
+    return { from, to };
+  }
+
+  function monthsInRange(from, to) {
+    const months = [];
+    const [y1, m1] = from.split("-").map(Number);
+    const [y2, m2] = to.split("-").map(Number);
+    let y = y1;
+    let m = m1;
+    while (y < y2 || (y === y2 && m <= m2)) {
+      months.push(`${y}-${String(m).padStart(2, "0")}`);
+      m += 1;
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+    }
+    return months;
+  }
+
+  function txsInPeriod() {
+    const { from, to } = periodBounds();
+    return filterTxs(
+      allTransactions.filter((t) => {
+        const mo = t.month || (t.date || "").slice(0, 7);
+        return mo >= from && mo <= to;
+      })
+    );
+  }
+
+  function formatPeriodLabel() {
+    const { from, to } = periodBounds();
+    if (from === to) return `Mes ${from}`;
+    return `${from} → ${to} (${monthsInRange(from, to).length} meses)`;
+  }
+
+  function updatePeriodLabel() {
+    const el = $("#period-label");
+    if (el) el.textContent = `Mostrando: ${formatPeriodLabel()}. Los totales y gráficos usan este rango.`;
+  }
+
+  function applyPeriodPreset(preset) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const cur = `${y}-${String(m).padStart(2, "0")}`;
+    let from = cur;
+    let to = cur;
+    if (preset === "month") {
+      from = to = currentMonth();
+    } else if (preset === "last3") {
+      const d = new Date(y, m - 1 - 2, 1);
+      from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      to = cur;
+    } else if (preset === "last12") {
+      const d = new Date(y, m - 1 - 11, 1);
+      from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      to = cur;
+    } else if (preset === "ytd") {
+      from = `${y}-01`;
+      to = cur;
+    }
+    if ($("#period-from")) $("#period-from").value = from;
+    if ($("#period-to")) $("#period-to").value = to;
+    if ($("#month-select")) $("#month-select").value = to;
+    updatePeriodLabel();
+    renderAll();
   }
 
   function syncYearFromMonth() {
@@ -168,6 +253,15 @@
     return m ? parseInt(m[1], 10) : 0;
   }
 
+  function sheetFlowKind(sheetName) {
+    const n = String(sheetName)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    if (/ingreso|ingresos|salario|nomina|nominas|sueldo|entrada/.test(n)) return "ingreso";
+    return "gasto";
+  }
+
   function isSkipConcept(concept) {
     const c = String(concept).trim();
     if (!c) return true;
@@ -234,14 +328,29 @@
         const amount = parseAmount(raw);
         if (amount === 0) continue;
         const date = `${year}-${String(month).padStart(2, "0")}-01`;
-        transactions.push({
-          date,
-          concept,
-          amount: amount > 0 ? -Math.abs(amount) : amount,
-          category: "",
-          account: sheetName,
-          tags: ["casa-matriz"],
-        });
+        const abs = Math.abs(amount);
+        const flow = sheetFlowKind(sheetName);
+        if (flow === "ingreso") {
+          transactions.push({
+            date,
+            concept,
+            amount: abs,
+            type: "ingreso",
+            category: "Ingresos",
+            account: sheetName,
+            tags: ["casa-matriz", "ingreso"],
+          });
+        } else {
+          transactions.push({
+            date,
+            concept,
+            amount: -abs,
+            type: "gasto",
+            category: "",
+            account: sheetName,
+            tags: ["casa-matriz", "gasto"],
+          });
+        }
       }
     }
 
@@ -298,13 +407,43 @@
     const fileLabel = fileName ? `«${fileName}» · ` : "";
     if (parsed.isPivot) {
       showPivotImport(
-        `${fileLabel}pestaña «${sheetName}». Formato matriz (conceptos × meses). ${parsed.pivotParts?.join(" ") || ""}`,
+        `${fileLabel}pestaña «${sheetName}». Matriz conceptos × meses. ${
+          sheetFlowKind(sheetName) === "ingreso"
+            ? "Detectada como INGRESOS (importes positivos)."
+            : "Detectada como GASTOS (importes negativos)."
+        } ${parsed.pivotParts?.join(" ") || ""}`,
         parsedRows
       );
     } else {
       showColumnImport(parsedHeaders);
     }
     $("#import-result").textContent = `${parsedRows.length} filas listas — solo pestaña «${sheetName}».`;
+  }
+
+  function applyAllWorkbookSheets(wb, fileName) {
+    const parts = [];
+    const allRows = [];
+    let ingresoCount = 0;
+    let gastoCount = 0;
+    for (const sheetName of wb.SheetNames) {
+      const parsed = parseSingleSheet(wb, sheetName);
+      if (!parsed?.isPivot || !parsed.rows?.length) continue;
+      allRows.push(...parsed.rows);
+      if (sheetFlowKind(sheetName) === "ingreso") ingresoCount += parsed.rows.length;
+      else gastoCount += parsed.rows.length;
+      parts.push(`«${sheetName}» (${parsed.rows.length})`);
+    }
+    if (allRows.length < 3) {
+      $("#import-result").textContent =
+        "No hay hojas matriz válidas. Usa «Cargar esta pestaña» o revisa el formato del Excel.";
+      return;
+    }
+    const fileLabel = fileName ? `«${fileName}» · ` : "";
+    showPivotImport(
+      `${fileLabel}Todas las pestañas matriz: ${allRows.length} movimientos (${ingresoCount} líneas ingreso, ${gastoCount} gasto). ${parts.join(" · ")}`,
+      allRows
+    );
+    $("#import-result").textContent = `${allRows.length} filas listas — ingresos + gastos de ${parts.length} pestaña(s).`;
   }
 
   async function loadExcelFile(file) {
@@ -493,7 +632,7 @@
   }
 
   function txsForMonth(month) {
-    return allTransactions.filter((t) => t.month === month);
+    return allTransactions.filter((t) => (t.month || (t.date || "").slice(0, 7)) === month);
   }
 
   function prevMonth(month) {
@@ -556,31 +695,34 @@
   }
 
   function renderKpis() {
-    const month = currentMonth();
-    const year = month.slice(0, 4);
-    const cur = filterTxs(txsForMonth(month));
-    const prev = filterTxs(txsForMonth(prevMonth(month)));
+    const { from, to } = periodBounds();
+    const cur = txsInPeriod();
+    const monthCount = monthsInRange(from, to).length;
     const expenses = sumExpenses(cur);
     const income = sumIncome(cur);
-    const prevExp = sumExpenses(prev);
-    const delta = prevExp > 0 ? ((expenses - prevExp) / prevExp) * 100 : 0;
+    const flow = income - expenses;
     const unclassified = cur.filter((t) => t.category === "Otros" && t.amount < 0).length;
-    const days = new Date(month + "-01");
-    const dim = new Date(days.getFullYear(), days.getMonth() + 1, 0).getDate();
-    const daily = expenses / dim;
     const { fixed, variable } = sumFixedVariable(cur);
-    const yearExp = sumYearExpenses(year);
+    const avgMonthExp = monthCount > 0 ? expenses / monthCount : 0;
+
+    let prevDelta = "";
+    if (from === to) {
+      const prev = filterTxs(txsForMonth(prevMonth(from)));
+      const prevExp = sumExpenses(prev);
+      const delta = prevExp > 0 ? ((expenses - prevExp) / prevExp) * 100 : 0;
+      prevDelta = `<div class="kpi"><div class="kpi-label">vs mes anterior</div><div class="kpi-value">${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%</div><div class="kpi-sub">en gastos</div></div>`;
+    }
 
     $("#kpi-grid").innerHTML = `
-      <div class="kpi"><div class="kpi-label">Gastos del mes</div><div class="kpi-value negative">${formatEur(expenses)}</div></div>
-      <div class="kpi"><div class="kpi-label">Ingresos</div><div class="kpi-value positive">${formatEur(income)}</div></div>
-      <div class="kpi"><div class="kpi-label">Balance</div><div class="kpi-value ${income - expenses >= 0 ? "positive" : "negative"}">${formatEur(income - expenses)}</div></div>
-      <div class="kpi"><div class="kpi-label">Gastos fijos</div><div class="kpi-value">${formatEur(fixed)}</div><div class="kpi-sub">vs variable ${formatEur(variable)}</div></div>
-      <div class="kpi"><div class="kpi-label">Año ${year}</div><div class="kpi-value negative">${formatEur(yearExp)}</div><div class="kpi-sub">gastos acumulados</div></div>
-      <div class="kpi"><div class="kpi-label">vs mes anterior</div><div class="kpi-value">${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%</div><div class="kpi-sub">en gastos</div></div>
-      <div class="kpi"><div class="kpi-label">Media / día</div><div class="kpi-value">${formatEur(daily)}</div></div>
+      <div class="kpi"><div class="kpi-label">Ingresos (periodo)</div><div class="kpi-value positive">${formatEur(income)}</div></div>
+      <div class="kpi"><div class="kpi-label">Gastos (periodo)</div><div class="kpi-value negative">${formatEur(expenses)}</div></div>
+      <div class="kpi"><div class="kpi-label">Flujo / tesorería</div><div class="kpi-value ${flow >= 0 ? "positive" : "negative"}">${formatEur(flow)}</div><div class="kpi-sub">ingresos − gastos</div></div>
+      <div class="kpi"><div class="kpi-label">Media gasto / mes</div><div class="kpi-value">${formatEur(avgMonthExp)}</div><div class="kpi-sub">${monthCount} mes(es)</div></div>
+      <div class="kpi"><div class="kpi-label">Gastos fijos</div><div class="kpi-value">${formatEur(fixed)}</div><div class="kpi-sub">variable ${formatEur(variable)}</div></div>
+      ${prevDelta}
       <div class="kpi"><div class="kpi-label">Sin clasificar</div><div class="kpi-value">${unclassified}</div><div class="kpi-sub">categoría Otros</div></div>
     `;
+    updatePeriodLabel();
     renderReminder();
   }
 
@@ -592,8 +734,8 @@
   }
 
   function renderCharts() {
-    const month = currentMonth();
-    const cur = filterTxs(txsForMonth(month)).filter(isExpenseTx);
+    const { from, to } = periodBounds();
+    const cur = txsInPeriod().filter(isExpenseTx);
 
     const byCat = {};
     cur.forEach((t) => {
@@ -637,23 +779,22 @@
       },
     });
 
-    const months = [];
-    const [y, m] = month.split("-").map(Number);
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(y, m - 1 - i, 1);
-      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-    }
+    const months = monthsInRange(from, to);
     const trend = months.map((mo) => sumExpenses(txsForMonth(mo)));
+    const trendIncome = months.map((mo) => sumIncome(txsForMonth(mo)));
 
     destroyChart("trend");
     charts.trend = new Chart($("#chart-trend"), {
       type: "line",
       data: {
         labels: months,
-        datasets: [{ label: "Gastos", data: trend, borderColor: "#3dd6c3", tension: 0.3, fill: false }],
+        datasets: [
+          { label: "Gastos", data: trend, borderColor: "#f07178", tension: 0.3, fill: false },
+          { label: "Ingresos", data: trendIncome, borderColor: "#7fd99a", tension: 0.3, fill: false },
+        ],
       },
       options: {
-        plugins: { legend: { display: false } },
+        plugins: { legend: { labels: { color: "#8fa3b8" } } },
         scales: {
           x: { ticks: { color: "#8fa3b8", maxRotation: 45 }, grid: { color: "#2f3d4f" } },
           y: { ticks: { color: "#8fa3b8" }, grid: { color: "#2f3d4f" } },
@@ -661,7 +802,31 @@
       },
     });
 
-    const monthBudgets = budgets[month] || {};
+    destroyChart("cashflow");
+    const cfCanvas = $("#chart-cashflow");
+    if (cfCanvas && months.length) {
+      const flow = months.map((mo, i) => trendIncome[i] - trend[i]);
+      charts.cashflow = new Chart(cfCanvas, {
+        type: "bar",
+        data: {
+          labels: months,
+          datasets: [
+            { label: "Ingresos", data: trendIncome, backgroundColor: "#7fd99a" },
+            { label: "Gastos", data: trend.map((v) => -v), backgroundColor: "#f07178" },
+            { label: "Flujo neto", data: flow, type: "line", borderColor: "#3dd6c3", backgroundColor: "transparent", yAxisID: "y" },
+          ],
+        },
+        options: {
+          plugins: { legend: { labels: { color: "#8fa3b8" } } },
+          scales: {
+            x: { stacked: true, ticks: { color: "#8fa3b8" }, grid: { color: "#2f3d4f" } },
+            y: { stacked: true, ticks: { color: "#8fa3b8" }, grid: { color: "#2f3d4f" } },
+          },
+        },
+      });
+    }
+
+    const monthBudgets = budgets[to] || budgets[from] || {};
     const budgetCats = Object.keys(monthBudgets).filter((c) => monthBudgets[c] > 0);
     const budgetLabels = budgetCats.length ? budgetCats : catLabels.slice(0, 6);
     const budgetSpent = budgetLabels.map((c) => byCat[c] || 0);
@@ -734,10 +899,9 @@
   }
 
   function renderMovements() {
-    const month = currentMonth();
     const q = ($("#search-movements")?.value || "").toLowerCase();
     const onlyUncl = $("#filter-unclassified")?.checked;
-    let list = filterTxs(txsForMonth(month));
+    let list = txsInPeriod();
     if (q) list = list.filter((t) => t.concept.toLowerCase().includes(q));
     if (onlyUncl) list = list.filter((t) => t.category === "Otros");
     list.sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -800,8 +964,8 @@
   }
 
   function exportMonthCsv() {
-    const month = currentMonth();
-    let list = filterTxs(txsForMonth(month));
+    const { from, to } = periodBounds();
+    let list = txsInPeriod();
     const header = ["fecha", "concepto", "importe", "categoria", "etiquetas", "tipo", "cuenta"];
     const lines = [header.join(";")];
     list.forEach((t) => {
@@ -814,7 +978,7 @@
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `hogar-finanzas-${month}.csv`;
+    a.download = `hogar-finanzas-${from}_${to}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -1009,6 +1173,10 @@
       if (!sheetName) return;
       applyWorkbookSheet(pendingWb, sheetName, pendingFileName);
     });
+    $("#sheet-all-btn")?.addEventListener("click", () => {
+      if (!pendingWb) return;
+      applyAllWorkbookSheets(pendingWb, pendingFileName);
+    });
 
     $("#fetch-sheet-btn").addEventListener("click", async () => {
       const url = $("#sheet-url").value.trim();
@@ -1058,8 +1226,16 @@
   });
 
   $("#month-select")?.addEventListener("change", () => {
+    const m = currentMonth();
+    if ($("#period-from")) $("#period-from").value = m;
+    if ($("#period-to")) $("#period-to").value = m;
     syncYearFromMonth();
     renderAll();
+  });
+  $("#period-from")?.addEventListener("change", renderAll);
+  $("#period-to")?.addEventListener("change", renderAll);
+  $$("[data-preset]").forEach((btn) => {
+    btn.addEventListener("click", () => applyPeriodPreset(btn.dataset.preset));
   });
   $("#year-select")?.addEventListener("change", () => {
     const y = $("#year-select").value;

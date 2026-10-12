@@ -251,6 +251,50 @@ body.is-authed .app {
   margin-top: 0.2rem;
 }
 
+.period-card {
+  margin-bottom: 1rem;
+}
+
+.period-card .period-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.period-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.25rem;
+}
+
+.period-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.period-controls input[type="month"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+}
+
+.period-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.period-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -416,6 +460,13 @@ body.is-authed .app {
 
 .sheet-picker .field {
   max-width: 360px;
+}
+
+.sheet-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .reminder-banner {

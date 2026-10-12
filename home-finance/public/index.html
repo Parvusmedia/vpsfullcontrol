@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=7" defer></script>
 </head>
 <body>
   <div id="gate" class="gate" hidden>
@@ -57,13 +57,27 @@
     <main>
       <section id="panel-dashboard" class="panel" data-panel="dashboard">
         <div id="monthly-reminder" class="reminder-banner" hidden></div>
+        <div class="period-bar card period-card">
+          <h2 class="period-title">Periodo del resumen</h2>
+          <div class="period-controls">
+            <label><span>Desde</span><input type="month" id="period-from" /></label>
+            <label><span>Hasta</span><input type="month" id="period-to" /></label>
+            <div class="period-presets" role="group" aria-label="Atajos de periodo">
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="month">Mes actual</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="last3">3 meses</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="last12">12 meses</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="ytd">Año en curso</button>
+            </div>
+          </div>
+          <p class="lede period-hint" id="period-label"></p>
+        </div>
         <div class="dashboard-filters">
           <input type="search" id="filter-tag" placeholder="Filtrar por etiqueta (ej. vacaciones)" />
         </div>
         <div class="kpi-grid" id="kpi-grid"></div>
         <div class="charts-grid">
           <article class="card chart-card">
-            <h2>Gasto por categoría</h2>
+            <h2>Gasto por categoría (periodo)</h2>
             <canvas id="chart-categories" height="220"></canvas>
           </article>
           <article class="card chart-card">
@@ -71,11 +85,15 @@
             <canvas id="chart-merchants" height="220"></canvas>
           </article>
           <article class="card chart-card chart-wide">
-            <h2>Presupuesto vs gasto (mes)</h2>
+            <h2>Flujo mensual (ingresos vs gastos)</h2>
+            <canvas id="chart-cashflow" height="140"></canvas>
+          </article>
+          <article class="card chart-card chart-wide">
+            <h2>Presupuesto vs gasto</h2>
             <canvas id="chart-budget" height="140"></canvas>
           </article>
           <article class="card chart-card chart-wide">
-            <h2>Evolución (12 meses)</h2>
+            <h2>Evolución del periodo</h2>
             <canvas id="chart-trend" height="120"></canvas>
           </article>
         </div>
@@ -91,16 +109,19 @@
           </div>
           <div id="sheet-picker-section" class="sheet-picker" hidden>
             <h3>Elegir pestaña del Excel</h3>
-            <p class="lede">Este archivo tiene varias hojas. Solo se importará la que selecciones.</p>
+            <p class="lede">Varias hojas: elige una, o importa todas las matrices de una vez. Las pestañas cuyo nombre contiene «ingresos» (u otros sinónimos) se tratan como <strong>ingresos</strong>; el resto como <strong>gastos</strong>.</p>
             <label class="field">
               <span>Pestaña</span>
               <select id="sheet-select"></select>
             </label>
-            <button type="button" class="btn btn-primary" id="sheet-apply-btn">Cargar esta pestaña</button>
+            <div class="sheet-picker-actions">
+              <button type="button" class="btn btn-primary" id="sheet-apply-btn">Cargar esta pestaña</button>
+              <button type="button" class="btn btn-secondary" id="sheet-all-btn">Importar todas las pestañas (matriz)</button>
+            </div>
           </div>
           <div id="pivot-section" hidden>
             <h3>Formato matriz (conceptos × meses)</h3>
-            <p class="lede" id="pivot-summary">Se detectó una hoja tipo presupuesto: primera columna = conceptos, columnas = meses (ENERO… DICIEMBRE). Cada importe genera un gasto el día 1 del mes.</p>
+            <p class="lede" id="pivot-summary">Matriz conceptos × meses: cada celda con importe genera un movimiento el día 1 del mes. Pestaña de ingresos → suma; resto → gastos.</p>
             <button type="button" class="btn btn-primary" id="import-pivot-btn">Importar matriz</button>
           </div>
           <div id="map-section" hidden>

@@ -115,6 +115,7 @@ function hf_default_store(): array
         ],
         'fixed_categories' => ['Hogar y suministros', 'Suscripciones', 'Finanzas'],
         'categories' => [
+            'Ingresos',
             'Alimentación',
             'Hogar y suministros',
             'Transporte',
