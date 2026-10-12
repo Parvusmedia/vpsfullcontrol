@@ -1,0 +1,8 @@
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  DirectoryIndex index.html
+</IfModule>
