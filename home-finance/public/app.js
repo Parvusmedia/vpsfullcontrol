@@ -927,7 +927,7 @@
     body.querySelectorAll(".cat-edit").forEach((sel) => {
       sel.addEventListener("change", async (e) => {
         const tr = e.target.closest("tr");
-        await patchTx(tr.dataset.id, { category: e.target.value });
+        await patchTx(tr.dataset.id, { category: e.target.value }, { remember: true });
       });
     });
     body.querySelectorAll(".tag-edit").forEach((inp) => {
@@ -939,11 +939,15 @@
     });
   }
 
-  async function patchTx(id, patch) {
+  async function patchTx(id, patch, opts = {}) {
     await api("/api/transactions.php", { method: "PATCH", body: JSON.stringify({ id, ...patch }) });
+    if (patch.category) {
+      await loadStore();
+    }
     await refreshTransactions();
     renderKpis();
     renderCharts();
+    renderMovements();
   }
 
   function renderRules() {

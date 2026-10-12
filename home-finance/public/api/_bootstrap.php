@@ -172,6 +172,51 @@ function hf_normalize_concept(string $s): string
     return preg_replace('/\s+/', ' ', $s) ?? $s;
 }
 
+/** Patrón regex para recordar la categoría de un concepto en futuras importaciones. */
+function hf_rule_pattern_from_concept(string $concept): string
+{
+    $n = hf_normalize_concept($concept);
+    if ($n === '') {
+        return '';
+    }
+    $words = preg_split('/\s+/', $n) ?: [];
+    $len = function_exists('mb_strlen') ? mb_strlen($n, 'UTF-8') : strlen($n);
+    // Etiquetas cortas de la matriz (Gym, HIPOTECA, …): coincidencia exacta del concepto.
+    if ($len <= 48 && count($words) <= 6) {
+        return '^' . preg_quote($n, '/') . '$';
+    }
+    $first = $words[0] ?? '';
+    if ($first !== '' && strlen($first) >= 3) {
+        return preg_quote($first, '/');
+    }
+    $slice = function_exists('mb_substr') ? mb_substr($n, 0, 40, 'UTF-8') : substr($n, 0, 40);
+
+    return preg_quote($slice, '/');
+}
+
+function hf_upsert_rule(array &$rules, string $pattern, string $category, array $tags = []): void
+{
+    if ($pattern === '' || $category === '') {
+        return;
+    }
+    foreach ($rules as $i => $rule) {
+        if (!is_array($rule)) {
+            continue;
+        }
+        if (strcasecmp((string) ($rule['pattern'] ?? ''), $pattern) === 0) {
+            $rules[$i]['category'] = $category;
+            $rules[$i]['tags'] = array_values(array_map('strval', $tags));
+
+            return;
+        }
+    }
+    $rules[] = [
+        'pattern' => $pattern,
+        'category' => $category,
+        'tags' => array_values(array_map('strval', $tags)),
+    ];
+}
+
 function hf_apply_rules(array $tx, array $rules): array
 {
     if (($tx['category'] ?? '') !== '' && ($tx['category'] ?? '') !== 'Otros') {

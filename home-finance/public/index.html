@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css?v=5" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-  <script src="app.js?v=7" defer></script>
+  <script src="app.js?v=8" defer></script>
 </head>
 <body>
   <div id="gate" class="gate" hidden>
@@ -145,6 +145,7 @@
 
       <section id="panel-movements" class="panel" data-panel="movements" hidden>
         <article class="card">
+          <p class="lede movements-hint">Si cambias la categoría de un concepto (p. ej. Gym → Salud), se recordará en la próxima importación del Excel.</p>
           <div class="toolbar">
             <input type="search" id="search-movements" placeholder="Buscar concepto…" />
             <label class="check-inline">
@@ -174,7 +175,7 @@
       <section id="panel-rules" class="panel" data-panel="rules" hidden>
         <article class="card">
           <h2>Reglas automáticas</h2>
-          <p class="lede">Patrón en el concepto (regex simple, sin barras) → categoría. Se aplican al importar.</p>
+          <p class="lede">Al cambiar la categoría en Movimientos se guarda una regla aquí (ej. Gym → Salud). También puedes añadir patrones manualmente; se aplican al importar.</p>
           <form id="rule-form" class="rule-form">
             <input type="text" name="pattern" placeholder="ej. mercadona|carrefour" required />
             <select name="category" id="rule-category-select"></select>

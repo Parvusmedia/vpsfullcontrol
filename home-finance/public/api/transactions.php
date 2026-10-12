@@ -36,27 +36,37 @@ try {
                 continue;
             }
             if (isset($body['category'])) {
-                $store['transactions'][$i]['category'] = (string) $body['category'];
+                $newCategory = (string) $body['category'];
+                $concept = (string) ($store['transactions'][$i]['concept'] ?? '');
+                $conceptNorm = hf_normalize_concept($concept);
+                $store['transactions'][$i]['category'] = $newCategory;
+
+                if ($newCategory !== '' && $newCategory !== 'Otros' && $conceptNorm !== '') {
+                    $pattern = (string) ($body['rule_pattern'] ?? '');
+                    if ($pattern === '') {
+                        $pattern = hf_rule_pattern_from_concept($concept);
+                    }
+                    $tagsForRule = $store['transactions'][$i]['tags'] ?? [];
+                    if (!is_array($tagsForRule)) {
+                        $tagsForRule = [];
+                    }
+                    hf_upsert_rule($store['rules'], $pattern, $newCategory, $tagsForRule);
+
+                    foreach ($store['transactions'] as $j => $tx) {
+                        if (!is_array($tx)) {
+                            continue;
+                        }
+                        if (hf_normalize_concept((string) ($tx['concept'] ?? '')) === $conceptNorm) {
+                            $store['transactions'][$j]['category'] = $newCategory;
+                        }
+                    }
+                }
             }
             if (isset($body['tags']) && is_array($body['tags'])) {
                 $store['transactions'][$i]['tags'] = array_values(array_map('strval', $body['tags']));
             }
             if (isset($body['type'])) {
                 $store['transactions'][$i]['type'] = (string) $body['type'];
-            }
-            if (isset($body['save_rule']) && $body['save_rule'] === true) {
-                $pattern = (string) ($body['rule_pattern'] ?? '');
-                if ($pattern === '' && isset($store['transactions'][$i]['concept'])) {
-                    $words = preg_split('/\s+/', hf_normalize_concept((string) $store['transactions'][$i]['concept'])) ?: [];
-                    $pattern = $words[0] ?? '';
-                }
-                if ($pattern !== '') {
-                    $store['rules'][] = [
-                        'pattern' => $pattern,
-                        'category' => (string) ($store['transactions'][$i]['category'] ?? 'Otros'),
-                        'tags' => $store['transactions'][$i]['tags'] ?? [],
-                    ];
-                }
             }
             $found = true;
             break;
