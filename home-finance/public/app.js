@@ -645,6 +645,7 @@
     budgets = data.budgets || {};
     fixedCategories = data.fixed_categories || [];
     fillCategorySelects();
+    renderCategoriesList();
     renderRules();
     renderBudgetForm();
     renderFixedCategories();
@@ -853,9 +854,60 @@
 
   }
 
+  function categoriesSorted(extra) {
+    const set = new Set(categories);
+    if (extra) set.add(extra);
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }
+
   function fillCategorySelects() {
-    const opts = categories.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-    $("#rule-category-select").innerHTML = opts;
+    const opts = categoriesSorted()
+      .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
+      .join("");
+    const sel = $("#rule-category-select");
+    if (sel) sel.innerHTML = opts;
+  }
+
+  function renderCategoriesList() {
+    const ul = $("#categories-list");
+    if (!ul) return;
+    ul.innerHTML = categoriesSorted()
+      .map(
+        (c) =>
+          `<li><span>${escapeHtml(c)}</span><button type="button" data-cat="${escapeHtml(c)}" title="Quitar de la lista">×</button></li>`
+      )
+      .join("");
+    ul.querySelectorAll("button[data-cat]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.cat;
+        const inUse = allTransactions.some((t) => t.category === name);
+        if (inUse && !confirm(`«${name}» sigue en movimientos. ¿Quitarla solo del desplegable?`)) return;
+        categories = categories.filter((c) => c !== name);
+        await api("/api/store.php", { method: "PUT", body: JSON.stringify({ categories }) });
+        fillCategorySelects();
+        renderCategoriesList();
+        renderBudgetForm();
+        renderFixedCategories();
+        renderMovements();
+      });
+    });
+  }
+
+  async function addCategory(name) {
+    const n = String(name || "").trim();
+    if (!n) return;
+    if (categories.some((c) => c.toLowerCase() === n.toLowerCase())) {
+      alert(`La categoría «${n}» ya existe.`);
+      return;
+    }
+    categories = categoriesSorted([...categories, n]);
+    await api("/api/store.php", { method: "PUT", body: JSON.stringify({ categories }) });
+    fillCategorySelects();
+    renderCategoriesList();
+    renderBudgetForm();
+    renderFixedCategories();
+    const inp = $("#category-name-input");
+    if (inp) inp.value = "";
   }
 
   function escapeHtml(s) {
@@ -908,7 +960,7 @@
     body.innerHTML = list
       .map((t) => {
         const amtClass = t.amount < 0 ? "amount-expense" : "amount-income";
-        const catOpts = categories
+        const catOpts = categoriesSorted(t.category)
           .map((c) => `<option value="${escapeHtml(c)}" ${c === t.category ? "selected" : ""}>${escapeHtml(c)}</option>`)
           .join("");
         const tags = (t.tags || []).join(", ");
@@ -1211,6 +1263,12 @@
       showGate();
     });
   }
+
+  $("#category-add-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await addCategory(fd.get("name"));
+  });
 
   $("#rule-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
