@@ -12,14 +12,15 @@ function hf_env_path(): string
     }
     $candidates = [
         '/opt/apps/private/home-finance/app.env',
+        '/var/www/vhosts/parvusmedia.com/private/home-finance/app.env',
         dirname(__DIR__, 2) . '/private/home-finance/app.env',
     ];
     foreach ($candidates as $path) {
-        if (is_readable($path)) {
+        if (@is_readable($path)) {
             return $path;
         }
     }
-    return $candidates[0];
+    return '/var/www/vhosts/parvusmedia.com/private/home-finance/app.env';
 }
 
 function hf_load_env_file(string $path): void
@@ -33,10 +34,10 @@ function hf_load_env_file(string $path): void
     }
     foreach ($lines as $line) {
         $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#')) {
+        if ($line === '' || (isset($line[0]) && $line[0] === '#')) {
             continue;
         }
-        if (!str_contains($line, '=')) {
+        if (strpos($line, '=') === false) {
             continue;
         }
         [$key, $value] = explode('=', $line, 2);
@@ -57,7 +58,7 @@ function hf_data_dir(): string
     if (is_string($dir) && $dir !== '') {
         return rtrim($dir, '/');
     }
-    return '/opt/apps/private/home-finance/data';
+    return '/var/www/vhosts/parvusmedia.com/private/home-finance/data';
 }
 
 function hf_api_token(): string
