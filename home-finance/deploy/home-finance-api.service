@@ -1,0 +1,16 @@
+[Unit]
+Description=Hogar Finanzas API
+After=network.target
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/home-finance
+Environment=HOME_FINANCE_ENV=/opt/apps/private/home-finance/app.env
+ExecStart=/usr/bin/python3 /opt/apps/home-finance/server/home_finance_api.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

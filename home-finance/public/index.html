@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hogar · Finanzas</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=6" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+  <script src="app.js?v=12" defer></script>
+</head>
+<body>
+  <div id="gate" class="gate" hidden>
+    <div class="gate-card">
+      <h1>Hogar Finanzas</h1>
+      <p>Introduce tu clave de acceso (la misma que configuraste en el servidor).</p>
+      <form id="gate-form">
+        <label>
+          <span>Clave</span>
+          <input type="password" id="gate-token" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+      <p id="gate-error" class="gate-error" hidden></p>
+    </div>
+  </div>
+
+  <div id="app" class="app" hidden>
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Hogar Finanzas</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button type="button" class="tab is-active" data-tab="dashboard" role="tab" aria-selected="true">Resumen</button>
+        <button type="button" class="tab" data-tab="import" role="tab">Importar</button>
+        <button type="button" class="tab" data-tab="movements" role="tab">Movimientos</button>
+        <button type="button" class="tab" data-tab="rules" role="tab">Reglas y presupuesto</button>
+      </nav>
+      <div class="top-actions">
+        <label class="month-picker">
+          <span class="sr-only">Mes</span>
+          <input type="month" id="month-select" />
+        </label>
+        <label class="year-picker">
+          <span class="sr-only">Año</span>
+          <select id="year-select" aria-label="Año"></select>
+        </label>
+        <button type="button" class="btn btn-ghost" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="panel-dashboard" class="panel" data-panel="dashboard">
+        <div id="monthly-reminder" class="reminder-banner" hidden></div>
+        <div class="period-bar card period-card">
+          <h2 class="period-title">Periodo del resumen</h2>
+          <div class="period-controls">
+            <label><span>Desde</span><input type="month" id="period-from" /></label>
+            <label><span>Hasta</span><input type="month" id="period-to" /></label>
+            <div class="period-presets" role="group" aria-label="Atajos de periodo">
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="month">Mes actual</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="last3">3 meses</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="last12">12 meses</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-preset="ytd">Año en curso</button>
+            </div>
+          </div>
+          <p class="lede period-hint" id="period-label"></p>
+        </div>
+        <div class="dashboard-filters">
+          <input type="search" id="filter-tag" placeholder="Filtrar por etiqueta (ej. vacaciones)" />
+        </div>
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="charts-grid">
+          <article class="card chart-card">
+            <h2>Gasto por categoría (periodo)</h2>
+            <canvas id="chart-categories" height="220"></canvas>
+          </article>
+          <article class="card chart-card">
+            <h2>Top comercios / conceptos</h2>
+            <canvas id="chart-merchants" height="220"></canvas>
+          </article>
+          <article class="card chart-card chart-wide">
+            <h2>Flujo mensual (ingresos vs gastos)</h2>
+            <canvas id="chart-cashflow" height="140"></canvas>
+          </article>
+          <article class="card chart-card chart-wide">
+            <h2>Evolución del periodo</h2>
+            <canvas id="chart-trend" height="120"></canvas>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-import" class="panel" data-panel="import" hidden>
+        <article class="card">
+          <h2>Subir Excel o CSV</h2>
+          <p class="lede">Arrastra un fichero del banco o usa la plantilla. Después mapea las columnas una vez; el sistema recuerda el mapeo en este navegador.</p>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple hidden />
+            <p>Suelta uno o varios ficheros aquí o <button type="button" class="link-btn" id="pick-file">elige archivos</button></p>
+          </div>
+          <div id="sheet-picker-section" class="sheet-picker" hidden>
+            <h3>Elegir pestaña del Excel</h3>
+            <p class="lede">Varias hojas: elige una, o importa todas las matrices de una vez. Las pestañas cuyo nombre contiene «ingresos» (u otros sinónimos) se tratan como <strong>ingresos</strong>; el resto como <strong>gastos</strong>.</p>
+            <label class="field">
+              <span>Pestaña</span>
+              <select id="sheet-select"></select>
+            </label>
+            <div class="sheet-picker-actions">
+              <button type="button" class="btn btn-primary" id="sheet-apply-btn">Cargar esta pestaña</button>
+              <button type="button" class="btn btn-secondary" id="sheet-all-btn">Importar todas las pestañas (matriz)</button>
+            </div>
+          </div>
+          <div id="pivot-section" hidden>
+            <h3>Formato matriz (conceptos × meses)</h3>
+            <p class="lede" id="pivot-summary">Matriz conceptos × meses: cada celda con importe genera un movimiento el día 1 del mes. Pestaña de ingresos → suma; resto → gastos.</p>
+            <button type="button" class="btn btn-primary" id="import-pivot-btn">Importar matriz</button>
+          </div>
+          <div id="map-section" hidden>
+            <h3>Mapeo de columnas</h3>
+            <p class="lede">Formato clásico del banco: una fila por movimiento.</p>
+            <div class="map-grid" id="map-grid"></div>
+            <button type="button" class="btn btn-primary" id="import-file-btn">Importar movimientos</button>
+          </div>
+          <p id="import-result" class="import-result" aria-live="polite"></p>
+        </article>
+        <article class="card">
+          <h2>Google Sheet (opcional)</h2>
+          <p class="lede">Publica la hoja en web (CSV) o pega el enlace de exportación <code>export?format=csv</code>.</p>
+          <label class="field">
+            <span>URL de la hoja</span>
+            <input type="url" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/…/export?format=csv" />
+          </label>
+          <button type="button" class="btn btn-secondary" id="fetch-sheet-btn">Cargar hoja</button>
+        </article>
+      </section>
+
+      <section id="panel-movements" class="panel" data-panel="movements" hidden>
+        <article class="card">
+          <p class="lede movements-hint">Si cambias la categoría de un concepto (p. ej. Gym → Salud), se recordará en la próxima importación del Excel.</p>
+          <div class="toolbar">
+            <input type="search" id="search-movements" placeholder="Buscar concepto…" />
+            <label class="check-inline">
+              <input type="checkbox" id="filter-unclassified" />
+              Solo sin clasificar (Otros)
+            </label>
+            <input type="search" id="filter-tag-movements" placeholder="Etiqueta…" />
+            <button type="button" class="btn btn-secondary" id="export-csv-btn">Exportar CSV del mes</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="movements-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th>Importe</th>
+                  <th>Categoría</th>
+                  <th>Etiquetas</th>
+                </tr>
+              </thead>
+              <tbody id="movements-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="panel-rules" class="panel" data-panel="rules" hidden>
+        <article class="card">
+          <h2>Categorías</h2>
+          <p class="lede">Añade nombres que quieras ver en el desplegable al clasificar movimientos y reglas (ej. Ocio, Mascotas, Colegio).</p>
+          <form id="category-add-form" class="category-add-form">
+            <input type="text" name="name" id="category-name-input" placeholder="Nueva categoría" required maxlength="80" />
+            <button type="submit" class="btn btn-primary">Añadir categoría</button>
+          </form>
+          <ul id="categories-list" class="categories-list"></ul>
+        </article>
+        <article class="card">
+          <h2>Reglas automáticas</h2>
+          <p class="lede">Al cambiar la categoría en Movimientos se guarda una regla aquí (ej. Gym → Salud). También puedes añadir patrones manualmente; se aplican al importar.</p>
+          <form id="rule-form" class="rule-form">
+            <input type="text" name="pattern" placeholder="ej. mercadona|carrefour" required />
+            <select name="category" id="rule-category-select"></select>
+            <input type="text" name="tags" placeholder="etiquetas opcionales, separadas por coma" />
+            <button type="submit" class="btn btn-primary">Añadir regla</button>
+          </form>
+          <ul id="rules-list" class="rules-list"></ul>
+          <div class="rule-actions">
+            <button type="button" class="btn btn-secondary" id="reapply-rules-btn">Reclasificar con reglas (mes actual)</button>
+            <button type="button" class="btn btn-ghost" id="reapply-rules-all-btn">Reclasificar todo (solo Otros)</button>
+          </div>
+        </article>
+        <article class="card">
+          <h2>Presupuesto mensual</h2>
+          <p class="lede">Importe previsto por categoría para el mes seleccionado en la cabecera.</p>
+          <div id="budget-grid" class="budget-grid"></div>
+          <button type="button" class="btn btn-primary" id="save-budgets-btn">Guardar presupuesto</button>
+        </article>
+        <article class="card">
+          <h2>Gastos fijos</h2>
+          <p class="lede">Categorías que cuentan como gasto fijo en el resumen (hipoteca, suministros, suscripciones…).</p>
+          <div id="fixed-categories" class="fixed-cats"></div>
+          <button type="button" class="btn btn-secondary" id="save-fixed-btn">Guardar categorías fijas</button>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
