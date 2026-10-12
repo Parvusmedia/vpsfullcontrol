@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hogar · Finanzas</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+  <script src="app.js?v=1" defer></script>
+</head>
+<body>
+  <div id="gate" class="gate" hidden>
+    <div class="gate-card">
+      <h1>Hogar Finanzas</h1>
+      <p>Introduce tu clave de acceso (la misma que configuraste en el servidor).</p>
+      <form id="gate-form">
+        <label>
+          <span>Clave</span>
+          <input type="password" id="gate-token" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+      <p id="gate-error" class="gate-error" hidden></p>
+    </div>
+  </div>
+
+  <div id="app" class="app" hidden>
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Hogar Finanzas</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button type="button" class="tab is-active" data-tab="dashboard" role="tab" aria-selected="true">Resumen</button>
+        <button type="button" class="tab" data-tab="import" role="tab">Importar</button>
+        <button type="button" class="tab" data-tab="movements" role="tab">Movimientos</button>
+        <button type="button" class="tab" data-tab="rules" role="tab">Reglas</button>
+      </nav>
+      <div class="top-actions">
+        <label class="month-picker">
+          <span class="sr-only">Mes</span>
+          <input type="month" id="month-select" />
+        </label>
+        <button type="button" class="btn btn-ghost" id="logout-btn">Salir</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="panel-dashboard" class="panel" data-panel="dashboard">
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="charts-grid">
+          <article class="card chart-card">
+            <h2>Gasto por categoría</h2>
+            <canvas id="chart-categories" height="220"></canvas>
+          </article>
+          <article class="card chart-card">
+            <h2>Top comercios / conceptos</h2>
+            <canvas id="chart-merchants" height="220"></canvas>
+          </article>
+          <article class="card chart-card chart-wide">
+            <h2>Evolución (últimos meses)</h2>
+            <canvas id="chart-trend" height="120"></canvas>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-import" class="panel" data-panel="import" hidden>
+        <article class="card">
+          <h2>Subir Excel o CSV</h2>
+          <p class="lede">Arrastra un fichero del banco o usa la plantilla. Después mapea las columnas una vez; el sistema recuerda el mapeo en este navegador.</p>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden />
+            <p>Suelta el fichero aquí o <button type="button" class="link-btn" id="pick-file">elige archivo</button></p>
+          </div>
+          <div id="map-section" hidden>
+            <h3>Mapeo de columnas</h3>
+            <div class="map-grid" id="map-grid"></div>
+            <button type="button" class="btn btn-primary" id="import-file-btn">Importar movimientos</button>
+            <p id="import-result" class="import-result" aria-live="polite"></p>
+          </div>
+        </article>
+        <article class="card">
+          <h2>Google Sheet (opcional)</h2>
+          <p class="lede">Publica la hoja en web (CSV) o pega el enlace de exportación <code>export?format=csv</code>.</p>
+          <label class="field">
+            <span>URL de la hoja</span>
+            <input type="url" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/…/export?format=csv" />
+          </label>
+          <button type="button" class="btn btn-secondary" id="fetch-sheet-btn">Cargar hoja</button>
+        </article>
+      </section>
+
+      <section id="panel-movements" class="panel" data-panel="movements" hidden>
+        <article class="card">
+          <div class="toolbar">
+            <input type="search" id="search-movements" placeholder="Buscar concepto…" />
+            <label class="check-inline">
+              <input type="checkbox" id="filter-unclassified" />
+              Solo sin clasificar (Otros)
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="movements-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th>Importe</th>
+                  <th>Categoría</th>
+                  <th>Etiquetas</th>
+                </tr>
+              </thead>
+              <tbody id="movements-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="panel-rules" class="panel" data-panel="rules" hidden>
+        <article class="card">
+          <h2>Reglas automáticas</h2>
+          <p class="lede">Patrón en el concepto (regex simple, sin barras) → categoría. Se aplican al importar.</p>
+          <form id="rule-form" class="rule-form">
+            <input type="text" name="pattern" placeholder="ej. mercadona|carrefour" required />
+            <select name="category" id="rule-category-select"></select>
+            <input type="text" name="tags" placeholder="etiquetas opcionales, separadas por coma" />
+            <button type="submit" class="btn btn-primary">Añadir regla</button>
+          </form>
+          <ul id="rules-list" class="rules-list"></ul>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
