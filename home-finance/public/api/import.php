@@ -44,7 +44,12 @@ try {
         $account = trim((string) ($row['account'] ?? ''));
         $type = (string) ($row['type'] ?? '');
         if ($type === '') {
-            $type = $amount >= 0 ? 'ingreso' : 'gasto';
+            $conceptLower = function_exists('mb_strtolower') ? mb_strtolower($concept, 'UTF-8') : strtolower($concept);
+            if (preg_match('/traspaso|transferencia entre/i', $conceptLower)) {
+                $type = 'transferencia';
+            } else {
+                $type = $amount >= 0 ? 'ingreso' : 'gasto';
+            }
         }
         $category = trim((string) ($row['category'] ?? ''));
         $tags = $row['tags'] ?? [];

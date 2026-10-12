@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <link rel="stylesheet" href="styles.css?v=3" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-  <script src="app.js?v=2" defer></script>
+  <script src="app.js?v=3" defer></script>
 </head>
 <body>
   <div id="gate" class="gate" hidden>
@@ -39,12 +39,16 @@
         <button type="button" class="tab is-active" data-tab="dashboard" role="tab" aria-selected="true">Resumen</button>
         <button type="button" class="tab" data-tab="import" role="tab">Importar</button>
         <button type="button" class="tab" data-tab="movements" role="tab">Movimientos</button>
-        <button type="button" class="tab" data-tab="rules" role="tab">Reglas</button>
+        <button type="button" class="tab" data-tab="rules" role="tab">Reglas y presupuesto</button>
       </nav>
       <div class="top-actions">
         <label class="month-picker">
           <span class="sr-only">Mes</span>
           <input type="month" id="month-select" />
+        </label>
+        <label class="year-picker">
+          <span class="sr-only">Año</span>
+          <select id="year-select" aria-label="Año"></select>
         </label>
         <button type="button" class="btn btn-ghost" id="logout-btn">Salir</button>
       </div>
@@ -52,6 +56,10 @@
 
     <main>
       <section id="panel-dashboard" class="panel" data-panel="dashboard">
+        <div id="monthly-reminder" class="reminder-banner" hidden></div>
+        <div class="dashboard-filters">
+          <input type="search" id="filter-tag" placeholder="Filtrar por etiqueta (ej. vacaciones)" />
+        </div>
         <div class="kpi-grid" id="kpi-grid"></div>
         <div class="charts-grid">
           <article class="card chart-card">
@@ -63,7 +71,11 @@
             <canvas id="chart-merchants" height="220"></canvas>
           </article>
           <article class="card chart-card chart-wide">
-            <h2>Evolución (últimos meses)</h2>
+            <h2>Presupuesto vs gasto (mes)</h2>
+            <canvas id="chart-budget" height="140"></canvas>
+          </article>
+          <article class="card chart-card chart-wide">
+            <h2>Evolución (12 meses)</h2>
             <canvas id="chart-trend" height="120"></canvas>
           </article>
         </div>
@@ -74,8 +86,8 @@
           <h2>Subir Excel o CSV</h2>
           <p class="lede">Arrastra un fichero del banco o usa la plantilla. Después mapea las columnas una vez; el sistema recuerda el mapeo en este navegador.</p>
           <div class="dropzone" id="dropzone">
-            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden />
-            <p>Suelta el fichero aquí o <button type="button" class="link-btn" id="pick-file">elige archivo</button></p>
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple hidden />
+            <p>Suelta uno o varios ficheros aquí o <button type="button" class="link-btn" id="pick-file">elige archivos</button></p>
           </div>
           <div id="map-section" hidden>
             <h3>Mapeo de columnas</h3>
@@ -103,6 +115,8 @@
               <input type="checkbox" id="filter-unclassified" />
               Solo sin clasificar (Otros)
             </label>
+            <input type="search" id="filter-tag-movements" placeholder="Etiqueta…" />
+            <button type="button" class="btn btn-secondary" id="export-csv-btn">Exportar CSV del mes</button>
           </div>
           <div class="table-wrap">
             <table class="data-table" id="movements-table">
@@ -132,6 +146,22 @@
             <button type="submit" class="btn btn-primary">Añadir regla</button>
           </form>
           <ul id="rules-list" class="rules-list"></ul>
+          <div class="rule-actions">
+            <button type="button" class="btn btn-secondary" id="reapply-rules-btn">Reclasificar con reglas (mes actual)</button>
+            <button type="button" class="btn btn-ghost" id="reapply-rules-all-btn">Reclasificar todo (solo Otros)</button>
+          </div>
+        </article>
+        <article class="card">
+          <h2>Presupuesto mensual</h2>
+          <p class="lede">Importe previsto por categoría para el mes seleccionado en la cabecera.</p>
+          <div id="budget-grid" class="budget-grid"></div>
+          <button type="button" class="btn btn-primary" id="save-budgets-btn">Guardar presupuesto</button>
+        </article>
+        <article class="card">
+          <h2>Gastos fijos</h2>
+          <p class="lede">Categorías que cuentan como gasto fijo en el resumen (hipoteca, suministros, suscripciones…).</p>
+          <div id="fixed-categories" class="fixed-cats"></div>
+          <button type="button" class="btn btn-secondary" id="save-fixed-btn">Guardar categorías fijas</button>
         </article>
       </section>
     </main>

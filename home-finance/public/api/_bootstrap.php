@@ -105,10 +105,15 @@ function hf_default_store(): array
     return [
         'transactions' => [],
         'rules' => [
-            ['pattern' => 'mercadona|carrefour|consum|lidl|aldi|eroski', 'category' => 'Alimentación', 'tags' => []],
-            ['pattern' => 'netflix|spotify|hbo|disney|amazon prime', 'category' => 'Suscripciones', 'tags' => []],
-            ['pattern' => 'repsol|cepsa|petroprix|uber|cabify|renfe|emt|metro', 'category' => 'Transporte', 'tags' => []],
+            ['pattern' => 'mercadona|carrefour|consum|lidl|aldi|eroski|dia|alcampo', 'category' => 'Alimentación', 'tags' => []],
+            ['pattern' => 'netflix|spotify|hbo|disney|amazon prime|movistar|vodafone|orange|yoigo', 'category' => 'Suscripciones', 'tags' => []],
+            ['pattern' => 'repsol|cepsa|petroprix|uber|cabify|renfe|emt|metro|bicing|taxi', 'category' => 'Transporte', 'tags' => []],
+            ['pattern' => 'endesa|iberdrola|naturgy|agua|canal de isabel', 'category' => 'Hogar y suministros', 'tags' => []],
+            ['pattern' => 'farmacia|sanitas|adeslas|quirón|mapfre', 'category' => 'Salud', 'tags' => []],
+            ['pattern' => 'amazon|el corte inglés|zalando|zara', 'category' => 'Ropa', 'tags' => []],
+            ['pattern' => 'traspaso|transferencia entre cuentas', 'category' => 'Finanzas', 'tags' => []],
         ],
+        'fixed_categories' => ['Hogar y suministros', 'Suscripciones', 'Finanzas'],
         'categories' => [
             'Alimentación',
             'Hogar y suministros',
@@ -122,6 +127,7 @@ function hf_default_store(): array
             'Otros',
         ],
         'budgets' => [],
+        'fixed_categories' => ['Hogar y suministros', 'Suscripciones', 'Finanzas'],
     ];
 }
 
@@ -183,6 +189,9 @@ function hf_apply_rules(array $tx, array $rules): array
         $re = '/' . str_replace('/', '\\/', $pattern) . '/iu';
         if (@preg_match($re, $concept) === 1) {
             $tx['category'] = $category;
+            if (preg_match('/traspaso|transferencia/i', $concept)) {
+                $tx['type'] = 'transferencia';
+            }
             if (!empty($rule['tags']) && is_array($rule['tags'])) {
                 $existing = $tx['tags'] ?? [];
                 if (!is_array($existing)) {

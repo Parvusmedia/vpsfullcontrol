@@ -13,7 +13,8 @@ try {
         echo json_encode([
             'categories' => $store['categories'],
             'rules' => $store['rules'],
-            'budgets' => $store['budgets'],
+            'budgets' => $store['budgets'] ?? [],
+            'fixed_categories' => $store['fixed_categories'] ?? [],
             'transaction_count' => count($store['transactions']),
         ]);
         exit;
@@ -30,6 +31,9 @@ try {
         }
         if (isset($body['budgets']) && is_array($body['budgets'])) {
             $store['budgets'] = $body['budgets'];
+        }
+        if (isset($body['fixed_categories']) && is_array($body['fixed_categories'])) {
+            $store['fixed_categories'] = array_values(array_map('strval', $body['fixed_categories']));
         }
         hf_write_store($store);
         echo json_encode(['ok' => true]);
