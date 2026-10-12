@@ -851,33 +851,6 @@
       });
     }
 
-    const monthBudgets = budgets[to] || budgets[from] || {};
-    const budgetCats = Object.keys(monthBudgets).filter((c) => monthBudgets[c] > 0);
-    const budgetLabels = budgetCats.length ? budgetCats : catLabels.slice(0, 6);
-    const budgetSpent = budgetLabels.map((c) => byCat[c] || 0);
-    const budgetPlanned = budgetLabels.map((c) => Number(monthBudgets[c] || 0));
-
-    destroyChart("budget");
-    const budgetCanvas = $("#chart-budget");
-    if (budgetCanvas) {
-      charts.budget = new Chart(budgetCanvas, {
-        type: "bar",
-        data: {
-          labels: budgetLabels,
-          datasets: [
-            { label: "Presupuesto", data: budgetPlanned, backgroundColor: "#5c9ead" },
-            { label: "Gasto real", data: budgetSpent, backgroundColor: "#3dd6c3" },
-          ],
-        },
-        options: {
-          plugins: { legend: { labels: { color: "#8fa3b8" } } },
-          scales: {
-            x: { ticks: { color: "#8fa3b8" }, grid: { color: "#2f3d4f" } },
-            y: { ticks: { color: "#8fa3b8" }, grid: { color: "#2f3d4f" } },
-          },
-        },
-      });
-    }
   }
 
   function fillCategorySelects() {
