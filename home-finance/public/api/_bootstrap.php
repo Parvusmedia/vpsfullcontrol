@@ -217,6 +217,91 @@ function hf_upsert_rule(array &$rules, string $pattern, string $category, array 
     ];
 }
 
+function hf_semantic_matrix_key(array $tx): string
+{
+    $month = (string) ($tx['month'] ?? hf_month_key((string) ($tx['date'] ?? '')));
+    $concept = hf_normalize_concept((string) ($tx['concept'] ?? ''));
+    $abs = number_format(abs((float) ($tx['amount'] ?? 0)), 2, '.', '');
+
+    return $month . '|' . $concept . '|' . $abs;
+}
+
+function hf_tx_is_ingreso_row(array $tx): bool
+{
+    if (($tx['type'] ?? '') === 'ingreso') {
+        return true;
+    }
+    $tags = $tx['tags'] ?? [];
+    if (is_array($tags) && in_array('ingreso', $tags, true)) {
+        return true;
+    }
+    if ((float) ($tx['amount'] ?? 0) > 0 && ($tx['category'] ?? '') === 'Ingresos') {
+        return true;
+    }
+
+    return false;
+}
+
+/** Quita pares +/- del mismo concepto/mes (matriz ingresos + hoja año). */
+function hf_clean_matrix_duplicates(array &$store): int
+{
+    $groups = [];
+    foreach ($store['transactions'] as $i => $tx) {
+        if (!is_array($tx)) {
+            continue;
+        }
+        $key = hf_semantic_matrix_key($tx);
+        $groups[$key][] = $i;
+    }
+    $drop = [];
+    foreach ($groups as $indices) {
+        if (count($indices) < 2) {
+            continue;
+        }
+        $bestI = $indices[0];
+        $bestScore = -1;
+        foreach ($indices as $i) {
+            $tx = $store['transactions'][$i];
+            if (!is_array($tx)) {
+                continue;
+            }
+            $score = 0;
+            $amt = (float) ($tx['amount'] ?? 0);
+            if ($amt > 0) {
+                $score += 10;
+            }
+            if (hf_tx_is_ingreso_row($tx)) {
+                $score += 5;
+            }
+            if (($tx['category'] ?? '') === 'Ingresos') {
+                $score += 2;
+            }
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestI = $i;
+            }
+        }
+        foreach ($indices as $i) {
+            if ($i !== $bestI) {
+                $drop[$i] = true;
+            }
+        }
+    }
+    if ($drop === []) {
+        return 0;
+    }
+    $removed = count($drop);
+    $store['transactions'] = array_values(array_filter(
+        $store['transactions'],
+        static function ($tx, $i) use ($drop) {
+            return !isset($drop[$i]);
+        },
+        ARRAY_FILTER_USE_BOTH
+    ));
+
+    return $removed;
+}
+
 function hf_apply_rules(array $tx, array $rules): array
 {
     if (($tx['category'] ?? '') !== '' && ($tx['category'] ?? '') !== 'Otros') {

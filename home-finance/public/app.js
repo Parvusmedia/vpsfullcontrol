@@ -270,6 +270,42 @@
     return false;
   }
 
+  /** Filas de ingreso dentro de la matriz anual (también aparecen en pestaña ingresos). */
+  function isMatrixIncomeConcept(concept) {
+    const c = String(concept)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+    if (/^ingresos?\b/.test(c)) return true;
+    if (/\b(salario|nomina|nominas|sueldo)\b/.test(c)) return true;
+    return false;
+  }
+
+  function pushMatrixTx(transactions, { date, concept, abs, sheetName, asIncome }) {
+    if (asIncome) {
+      transactions.push({
+        date,
+        concept,
+        amount: abs,
+        type: "ingreso",
+        category: "Ingresos",
+        account: sheetName,
+        tags: ["casa-matriz", "ingreso"],
+      });
+    } else {
+      transactions.push({
+        date,
+        concept,
+        amount: -abs,
+        type: "gasto",
+        category: "",
+        account: sheetName,
+        tags: ["casa-matriz", "gasto"],
+      });
+    }
+  }
+
   /** Excel tipo "Gastos Casa": filas = conceptos, columnas = meses */
   function parsePivotMatrix(matrix, sheetName) {
     if (!matrix || matrix.length < 2) return null;
@@ -329,28 +365,9 @@
         if (amount === 0) continue;
         const date = `${year}-${String(month).padStart(2, "0")}-01`;
         const abs = Math.abs(amount);
-        const flow = sheetFlowKind(sheetName);
-        if (flow === "ingreso") {
-          transactions.push({
-            date,
-            concept,
-            amount: abs,
-            type: "ingreso",
-            category: "Ingresos",
-            account: sheetName,
-            tags: ["casa-matriz", "ingreso"],
-          });
-        } else {
-          transactions.push({
-            date,
-            concept,
-            amount: -abs,
-            type: "gasto",
-            category: "",
-            account: sheetName,
-            tags: ["casa-matriz", "gasto"],
-          });
-        }
+        const sheetFlow = sheetFlowKind(sheetName);
+        const asIncome = sheetFlow === "ingreso" || isMatrixIncomeConcept(concept);
+        pushMatrixTx(transactions, { date, concept, abs, sheetName, asIncome });
       }
     }
 
@@ -601,6 +618,14 @@
     try {
       await loadStore();
       await refreshTransactions();
+      try {
+        const dedupe = await api("/api/dedupe-mirrors.php", { method: "POST" });
+        if (dedupe.removed > 0) {
+          await refreshTransactions();
+        }
+      } catch {
+        /* optional cleanup */
+      }
       showApp();
       renderAll();
     } catch (e) {

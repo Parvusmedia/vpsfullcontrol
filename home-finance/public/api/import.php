@@ -68,6 +68,11 @@ try {
             'month' => hf_month_key($date),
         ];
         $tx = hf_apply_rules($tx, $store['rules']);
+        if (($tx['type'] ?? '') === 'ingreso' || hf_tx_is_ingreso_row($tx)) {
+            if (($tx['category'] ?? '') === '' || ($tx['category'] ?? '') === 'Otros') {
+                $tx['category'] = 'Ingresos';
+            }
+        }
         $id = hf_tx_id($tx);
         if (isset($existingIds[$id])) {
             $skipped++;
@@ -79,11 +84,14 @@ try {
         $added++;
     }
 
+    $deduped = hf_clean_matrix_duplicates($store);
+
     hf_write_store($store);
     echo json_encode([
         'ok' => true,
         'added' => $added,
         'skipped' => $skipped,
+        'deduped' => $deduped,
         'total' => count($store['transactions']),
     ]);
 } catch (Throwable $e) {
