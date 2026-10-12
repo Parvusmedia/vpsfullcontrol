@@ -414,6 +414,75 @@ body.is-authed .app {
   font-size: 0.9rem;
 }
 
+.reminder-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(61, 214, 195, 0.1);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+
+.dashboard-filters {
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-filters input {
+  width: min(320px, 100%);
+  font: inherit;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.budget-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.budget-row input {
+  font: inherit;
+  padding: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.fixed-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.rule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 .rules-list button {
   font: inherit;
   background: none;

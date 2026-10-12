@@ -11,6 +11,24 @@
   let allTransactions = [];
   let parsedRows = [];
   let parsedHeaders = [];
+  let pivotImport = false;
+  let pivotMeta = "";
+
+  const SPANISH_MONTHS = {
+    enero: 1,
+    febrero: 2,
+    marzo: 3,
+    abril: 4,
+    mayo: 5,
+    junio: 6,
+    julio: 7,
+    agosto: 8,
+    septiembre: 9,
+    setiembre: 9,
+    octubre: 10,
+    noviembre: 11,
+    diciembre: 12,
+  };
   let charts = {};
   let budgets = {};
   let fixedCategories = [];
@@ -131,6 +149,134 @@
       return d.toISOString().slice(0, 10);
     }
     return "";
+  }
+
+  function monthFromHeader(cell) {
+    if (cell === null || cell === undefined) return 0;
+    if (typeof cell === "number" && cell >= 1 && cell <= 12) return cell;
+    const s = String(cell).trim().toLowerCase().replace(/\./g, "");
+    if (SPANISH_MONTHS[s]) return SPANISH_MONTHS[s];
+    const ym = s.match(/^(\d{4})-(\d{2})$/);
+    if (ym) return parseInt(ym[2], 10);
+    return 0;
+  }
+
+  function yearFromSheetName(name) {
+    const m = String(name).match(/(20\d{2})/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  function isSkipConcept(concept) {
+    const c = String(concept).trim();
+    if (!c) return true;
+    if (/^total|suma|subtotal|media/i.test(c)) return true;
+    if (/^20\d{2}$/.test(c)) return true;
+    return false;
+  }
+
+  /** Excel tipo "Gastos Casa": filas = conceptos, columnas = meses */
+  function parsePivotMatrix(matrix, sheetName) {
+    if (!matrix || matrix.length < 2) return null;
+
+    let year = yearFromSheetName(sheetName);
+    let headerRow = -1;
+    let monthColumns = [];
+    let conceptCol = 0;
+
+    for (let r = 0; r < Math.min(8, matrix.length); r++) {
+      const row = matrix[r] || [];
+      const found = [];
+      for (let c = 0; c < row.length; c++) {
+        const mn = monthFromHeader(row[c]);
+        if (mn) found.push({ col: c, month: mn });
+      }
+      if (found.length >= 3) {
+        headerRow = r;
+        monthColumns = found;
+        const y0 = row[0];
+        if (typeof y0 === "number" && y0 >= 2000 && y0 <= 2100) year = y0;
+        conceptCol = found[0].col >= 2 ? 1 : 0;
+        break;
+      }
+    }
+
+    if (headerRow < 0 && matrix[0]) {
+      const a0 = matrix[0][0];
+      if (typeof a0 === "number" && a0 >= 2000 && a0 <= 2100) {
+        year = a0;
+        headerRow = 0;
+        conceptCol = 0;
+        for (let c = 1; c < matrix[0].length; c++) {
+          const mn = monthFromHeader(matrix[0][c]);
+          if (mn) monthColumns.push({ col: c, month: mn });
+        }
+      }
+    }
+
+    if (!year || monthColumns.length < 3) return null;
+
+    const transactions = [];
+    for (let r = headerRow + 1; r < matrix.length; r++) {
+      const row = matrix[r] || [];
+      let concept = row[conceptCol];
+      if (concept === null || concept === undefined) {
+        if (conceptCol === 0 && row[1]) concept = row[1];
+        else continue;
+      }
+      concept = String(concept).trim();
+      if (isSkipConcept(concept)) continue;
+
+      for (const { col, month } of monthColumns) {
+        const raw = row[col];
+        if (raw === null || raw === undefined || raw === "") continue;
+        const amount = parseAmount(raw);
+        if (amount === 0) continue;
+        const date = `${year}-${String(month).padStart(2, "0")}-01`;
+        transactions.push({
+          date,
+          concept,
+          amount: amount > 0 ? -Math.abs(amount) : amount,
+          category: "",
+          account: sheetName,
+          tags: ["casa-matriz"],
+        });
+      }
+    }
+
+    if (transactions.length < 3) return null;
+    return { transactions, year, sheetName };
+  }
+
+  function parseWorkbookPivot(wb) {
+    const transactions = [];
+    const parts = [];
+    for (const name of wb.SheetNames) {
+      const sheet = wb.Sheets[name];
+      const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      const parsed = parsePivotMatrix(matrix, name);
+      if (parsed?.transactions?.length) {
+        transactions.push(...parsed.transactions);
+        parts.push(`${name} (${parsed.year}, ${parsed.transactions.length} mov.)`);
+      }
+    }
+    return { transactions, parts };
+  }
+
+  function showPivotImport(summary, rows) {
+    pivotImport = true;
+    parsedRows = rows;
+    parsedHeaders = [];
+    $("#map-section").hidden = true;
+    const ps = $("#pivot-section");
+    if (ps) ps.hidden = false;
+    const el = $("#pivot-summary");
+    if (el) el.textContent = summary;
+  }
+
+  function showColumnImport(headers) {
+    pivotImport = false;
+    $("#pivot-section").hidden = true;
+    renderMapUI(headers);
   }
 
   function guessHeader(headers, patterns) {
@@ -687,40 +833,74 @@
     }
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    const pivot = parseWorkbookPivot(wb);
+    if (pivot.transactions.length >= 3) {
+      return {
+        headers: [],
+        rows: pivot.transactions,
+        isPivot: true,
+        pivotParts: pivot.parts,
+      };
+    }
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     const headers = rows.length ? Object.keys(rows[0]) : [];
-    return { headers, rows };
+    return { headers, rows, isPivot: false };
   }
 
   async function mergeFiles(files) {
     parsedRows = [];
     parsedHeaders = [];
+    let anyPivot = false;
+    const parts = [];
     for (const file of files) {
-      const { headers, rows } = await parseFileToRows(file);
-      if (!parsedHeaders.length) parsedHeaders = headers;
-      parsedRows.push(...rows);
+      const parsed = await parseFileToRows(file);
+      if (parsed.isPivot) {
+        anyPivot = true;
+        parts.push(...(parsed.pivotParts || []));
+        parsedRows.push(...parsed.rows);
+      } else {
+        if (!parsedHeaders.length) parsedHeaders = parsed.headers;
+        parsedRows.push(...parsed.rows);
+      }
     }
-    if (parsedHeaders.length) renderMapUI(parsedHeaders);
+    if (anyPivot && parsedRows.length >= 3) {
+      showPivotImport(
+        `Varias hojas/ficheros en formato matriz. Total: ${parsedRows.length} movimientos. ${parts.join(" · ")}`,
+        parsedRows
+      );
+    } else if (parsedHeaders.length) showColumnImport(parsedHeaders);
     $("#import-result").textContent = `${parsedRows.length} filas listas (${files.length} fichero(s)).`;
   }
 
   async function handleFile(file) {
-    const { headers, rows } = await parseFileToRows(file);
-    parsedHeaders = headers;
-    parsedRows = rows;
-    renderMapUI(parsedHeaders);
+    const parsed = await parseFileToRows(file);
+    parsedHeaders = parsed.headers;
+    parsedRows = parsed.rows;
+    if (parsed.isPivot) {
+      showPivotImport(
+        `Formato matriz detectado en «${file.name}». ${parsed.pivotParts?.join(" · ") || ""} Total: ${parsedRows.length} movimientos.`,
+        parsedRows
+      );
+    } else {
+      showColumnImport(parsedHeaders);
+    }
     $("#import-result").textContent = `${parsedRows.length} filas listas para importar.`;
   }
 
   async function importParsed() {
-    const map = readMapFromUI();
-    const hasAmount = map.amount || map.debit || map.credit;
-    if (!map.date || !map.concept || !hasAmount) {
-      $("#import-result").textContent = "Selecciona fecha, concepto e importe (o columnas cargo/abono).";
-      return;
+    let rows;
+    if (pivotImport) {
+      rows = parsedRows;
+    } else {
+      const map = readMapFromUI();
+      const hasAmount = map.amount || map.debit || map.credit;
+      if (!map.date || !map.concept || !hasAmount) {
+        $("#import-result").textContent = "Selecciona fecha, concepto e importe (o columnas cargo/abono).";
+        return;
+      }
+      rows = rowsToTransactions(parsedRows, map);
     }
-    const rows = rowsToTransactions(parsedRows, map);
     const res = await api("/api/import.php", { method: "POST", body: JSON.stringify({ rows }) });
     $("#import-result").textContent = `Importados: ${res.added}. Duplicados omitidos: ${res.skipped}. Total en base: ${res.total}.`;
     await refreshTransactions();
@@ -748,9 +928,12 @@
       if (files.length === 1) handleFile(files[0]);
       else if (files.length > 1) mergeFiles(files);
     });
-    $("#import-file-btn").addEventListener("click", () => importParsed().catch((e) => {
-      $("#import-result").textContent = e.message || "Error al importar";
-    }));
+    const runImport = () =>
+      importParsed().catch((e) => {
+        $("#import-result").textContent = e.message || "Error al importar";
+      });
+    $("#import-file-btn").addEventListener("click", runImport);
+    $("#import-pivot-btn")?.addEventListener("click", runImport);
 
     $("#fetch-sheet-btn").addEventListener("click", async () => {
       const url = $("#sheet-url").value.trim();
