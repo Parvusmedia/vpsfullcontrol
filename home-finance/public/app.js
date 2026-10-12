@@ -13,6 +13,8 @@
   let parsedHeaders = [];
   let pivotImport = false;
   let pivotMeta = "";
+  let pendingWb = null;
+  let pendingFileName = "";
 
   const SPANISH_MONTHS = {
     enero: 1,
@@ -247,26 +249,81 @@
     return { transactions, year, sheetName };
   }
 
-  function parseWorkbookPivot(wb) {
-    const transactions = [];
-    const parts = [];
-    for (const name of wb.SheetNames) {
-      const sheet = wb.Sheets[name];
-      const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-      const parsed = parsePivotMatrix(matrix, name);
-      if (parsed?.transactions?.length) {
-        transactions.push(...parsed.transactions);
-        parts.push(`${name} (${parsed.year}, ${parsed.transactions.length} mov.)`);
-      }
+  function parseSingleSheet(wb, sheetName) {
+    const sheet = wb.Sheets[sheetName];
+    if (!sheet) return null;
+    const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+    const pivot = parsePivotMatrix(matrix, sheetName);
+    if (pivot?.transactions?.length >= 3) {
+      return {
+        isPivot: true,
+        rows: pivot.transactions,
+        pivotParts: [`${sheetName} (año ${pivot.year}, ${pivot.transactions.length} mov.)`],
+      };
     }
-    return { transactions, parts };
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    const headers = rows.length ? Object.keys(rows[0]) : [];
+    return { isPivot: false, rows, headers };
+  }
+
+  function hideImportPanels() {
+    $("#map-section").hidden = true;
+    $("#pivot-section").hidden = true;
+    $("#sheet-picker-section").hidden = true;
+  }
+
+  function showSheetPicker(sheetNames, fileName) {
+    hideImportPanels();
+    const sec = $("#sheet-picker-section");
+    const sel = $("#sheet-select");
+    if (!sec || !sel) return;
+    sec.hidden = false;
+    sel.innerHTML = sheetNames.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+    const prefer =
+      sheetNames.find((n) => /^20\d{2}$/.test(String(n).trim())) ||
+      sheetNames.find((n) => /2026/.test(n)) ||
+      sheetNames[sheetNames.length - 1];
+    if (prefer) sel.value = prefer;
+    $("#import-result").textContent = `«${fileName}»: elige una de las ${sheetNames.length} pestañas.`;
+  }
+
+  function applyWorkbookSheet(wb, sheetName, fileName) {
+    const parsed = parseSingleSheet(wb, sheetName);
+    if (!parsed) {
+      $("#import-result").textContent = "No se pudo leer la pestaña seleccionada.";
+      return;
+    }
+    parsedRows = parsed.rows;
+    parsedHeaders = parsed.headers || [];
+    const fileLabel = fileName ? `«${fileName}» · ` : "";
+    if (parsed.isPivot) {
+      showPivotImport(
+        `${fileLabel}pestaña «${sheetName}». Formato matriz (conceptos × meses). ${parsed.pivotParts?.join(" ") || ""}`,
+        parsedRows
+      );
+    } else {
+      showColumnImport(parsedHeaders);
+    }
+    $("#import-result").textContent = `${parsedRows.length} filas listas — solo pestaña «${sheetName}».`;
+  }
+
+  async function loadExcelFile(file) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    pendingWb = wb;
+    pendingFileName = file.name;
+    if (wb.SheetNames.length > 1) {
+      showSheetPicker(wb.SheetNames, file.name);
+      return;
+    }
+    applyWorkbookSheet(wb, wb.SheetNames[0], file.name);
   }
 
   function showPivotImport(summary, rows) {
     pivotImport = true;
     parsedRows = rows;
     parsedHeaders = [];
-    $("#map-section").hidden = true;
+    hideImportPanels();
     const ps = $("#pivot-section");
     if (ps) ps.hidden = false;
     const el = $("#pivot-summary");
@@ -275,7 +332,7 @@
 
   function showColumnImport(headers) {
     pivotImport = false;
-    $("#pivot-section").hidden = true;
+    hideImportPanels();
     renderMapUI(headers);
   }
 
@@ -829,26 +886,32 @@
         });
         return row;
       });
-      return { headers, rows };
+      return { headers, rows, isPivot: false };
     }
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array", cellDates: true });
-    const pivot = parseWorkbookPivot(wb);
-    if (pivot.transactions.length >= 3) {
-      return {
-        headers: [],
-        rows: pivot.transactions,
-        isPivot: true,
-        pivotParts: pivot.parts,
-      };
+    if (wb.SheetNames.length > 1) {
+      return { needsSheetPick: true };
     }
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    const headers = rows.length ? Object.keys(rows[0]) : [];
-    return { headers, rows, isPivot: false };
+    const parsed = parseSingleSheet(wb, wb.SheetNames[0]);
+    return parsed || { headers: [], rows: [], isPivot: false };
+  }
+
+  async function excelHasMultipleSheets(file) {
+    if (!/\.xlsx?$/i.test(file.name)) return false;
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+    return wb.SheetNames.length > 1;
   }
 
   async function mergeFiles(files) {
+    for (const file of files) {
+      if (await excelHasMultipleSheets(file)) {
+        $("#import-result").textContent =
+          "Si el Excel tiene varias pestañas, súbelo solo (un fichero) para elegir la hoja.";
+        await loadExcelFile(file);
+        return;
+      }
+    }
     parsedRows = [];
     parsedHeaders = [];
     let anyPivot = false;
@@ -874,12 +937,18 @@
   }
 
   async function handleFile(file) {
+    pendingWb = null;
+    hideImportPanels();
+    if (/\.xlsx?$/i.test(file.name)) {
+      await loadExcelFile(file);
+      return;
+    }
     const parsed = await parseFileToRows(file);
-    parsedHeaders = parsed.headers;
-    parsedRows = parsed.rows;
+    parsedHeaders = parsed.headers || [];
+    parsedRows = parsed.rows || [];
     if (parsed.isPivot) {
       showPivotImport(
-        `Formato matriz detectado en «${file.name}». ${parsed.pivotParts?.join(" · ") || ""} Total: ${parsedRows.length} movimientos.`,
+        `Formato matriz en «${file.name}». ${parsed.pivotParts?.join(" · ") || ""} Total: ${parsedRows.length} movimientos.`,
         parsedRows
       );
     } else {
@@ -934,6 +1003,12 @@
       });
     $("#import-file-btn").addEventListener("click", runImport);
     $("#import-pivot-btn")?.addEventListener("click", runImport);
+    $("#sheet-apply-btn")?.addEventListener("click", () => {
+      if (!pendingWb) return;
+      const sheetName = $("#sheet-select")?.value;
+      if (!sheetName) return;
+      applyWorkbookSheet(pendingWb, sheetName, pendingFileName);
+    });
 
     $("#fetch-sheet-btn").addEventListener("click", async () => {
       const url = $("#sheet-url").value.trim();

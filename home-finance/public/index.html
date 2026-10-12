@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css?v=3" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <div id="gate" class="gate" hidden>
@@ -88,6 +88,15 @@
           <div class="dropzone" id="dropzone">
             <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple hidden />
             <p>Suelta uno o varios ficheros aquí o <button type="button" class="link-btn" id="pick-file">elige archivos</button></p>
+          </div>
+          <div id="sheet-picker-section" class="sheet-picker" hidden>
+            <h3>Elegir pestaña del Excel</h3>
+            <p class="lede">Este archivo tiene varias hojas. Solo se importará la que selecciones.</p>
+            <label class="field">
+              <span>Pestaña</span>
+              <select id="sheet-select"></select>
+            </label>
+            <button type="button" class="btn btn-primary" id="sheet-apply-btn">Cargar esta pestaña</button>
           </div>
           <div id="pivot-section" hidden>
             <h3>Formato matriz (conceptos × meses)</h3>

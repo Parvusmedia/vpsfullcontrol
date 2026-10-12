@@ -414,6 +414,10 @@ body.is-authed .app {
   font-size: 0.9rem;
 }
 
+.sheet-picker .field {
+  max-width: 360px;
+}
+
 .reminder-banner {
   display: flex;
   flex-wrap: wrap;
