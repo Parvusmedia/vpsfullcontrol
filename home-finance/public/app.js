@@ -136,8 +136,15 @@
   }
 
   function showGate(msg) {
-    $("#gate").hidden = false;
-    $("#app").hidden = true;
+    document.body.classList.remove("is-authed");
+    const gate = $("#gate");
+    const app = $("#app");
+    gate.hidden = false;
+    gate.classList.add("is-visible");
+    gate.setAttribute("aria-hidden", "false");
+    app.hidden = true;
+    app.classList.remove("is-visible");
+    app.setAttribute("aria-hidden", "true");
     const err = $("#gate-error");
     if (msg) {
       err.textContent = msg;
@@ -145,11 +152,21 @@
     } else {
       err.hidden = true;
     }
+    $("#gate-token")?.focus();
   }
 
   function showApp() {
-    $("#gate").hidden = true;
-    $("#app").hidden = false;
+    document.body.classList.add("is-authed");
+    const gate = $("#gate");
+    const app = $("#app");
+    gate.hidden = true;
+    gate.classList.remove("is-visible");
+    gate.setAttribute("aria-hidden", "true");
+    const form = $("#gate-form");
+    if (form) form.reset();
+    app.hidden = false;
+    app.classList.add("is-visible");
+    app.setAttribute("aria-hidden", "false");
   }
 
   async function bootstrap() {
