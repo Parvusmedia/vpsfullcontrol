@@ -24,7 +24,7 @@ try {
         $body = hf_json_body();
         $store = hf_read_store();
         if (isset($body['categories']) && is_array($body['categories'])) {
-            $store['categories'] = array_values(array_filter(array_map('strval', $body['categories'])));
+            $store['categories'] = hf_normalize_category_list($body['categories']);
         }
         if (isset($body['rules']) && is_array($body['rules'])) {
             $store['rules'] = $body['rules'];

@@ -97,7 +97,12 @@ function hf_read_store(): array
     if (!is_array($data)) {
         return hf_default_store();
     }
-    return array_merge(hf_default_store(), $data);
+    $store = array_merge(hf_default_store(), $data);
+    if (isset($store['categories']) && is_array($store['categories'])) {
+        $store['categories'] = hf_normalize_category_list($store['categories']);
+    }
+
+    return $store;
 }
 
 function hf_default_store(): array
@@ -163,6 +168,23 @@ function hf_tx_id(array $row): string
         (string) ($row['account'] ?? ''),
     ];
     return hash('sha256', implode('|', $parts));
+}
+
+function hf_normalize_category_list(array $list): array
+{
+    $out = [];
+    foreach ($list as $item) {
+        if (!is_string($item)) {
+            continue;
+        }
+        $name = trim($item);
+        if ($name === '' || $name === 'Array') {
+            continue;
+        }
+        $out[] = $name;
+    }
+
+    return array_values(array_unique($out));
 }
 
 function hf_normalize_concept(string $s): string

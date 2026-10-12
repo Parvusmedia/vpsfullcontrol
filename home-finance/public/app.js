@@ -900,14 +900,18 @@
       alert(`La categoría «${n}» ya existe.`);
       return;
     }
-    categories = categoriesSorted([...categories, n]);
-    await api("/api/store.php", { method: "PUT", body: JSON.stringify({ categories }) });
-    fillCategorySelects();
-    renderCategoriesList();
-    renderBudgetForm();
-    renderFixedCategories();
-    const inp = $("#category-name-input");
-    if (inp) inp.value = "";
+    categories.push(n);
+    categories = categoriesSorted();
+    try {
+      await api("/api/store.php", { method: "PUT", body: JSON.stringify({ categories }) });
+      await loadStore();
+      const inp = $("#category-name-input");
+      if (inp) inp.value = "";
+    } catch (err) {
+      categories = categories.filter((c) => c !== n);
+      alert(err.message === "unauthorized" ? "Sesión caducada. Vuelve a entrar." : "No se pudo guardar la categoría.");
+      throw err;
+    }
   }
 
   function escapeHtml(s) {
@@ -1267,7 +1271,11 @@
   $("#category-add-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    await addCategory(fd.get("name"));
+    try {
+      await addCategory(fd.get("name"));
+    } catch {
+      /* addCategory ya avisa */
+    }
   });
 
   $("#rule-form")?.addEventListener("submit", async (e) => {
