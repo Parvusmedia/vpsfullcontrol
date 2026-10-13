@@ -57,3 +57,19 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## Windsor MCP (Google Ads / marketing)
+
+Use Windsor MCP for live Google Ads and other marketing data. Repo config: `.cursor/mcp.json` (Team MCP `windsor` must stay enabled).
+
+### Auth (Cloud Agents and every environment)
+
+- Set environment secret **`WINDSOR_API_KEY`** (Windsor.ai dashboard → API key). Cloud Agents use `${env:WINDSOR_API_KEY}` in `.cursor/mcp.json`; do not commit the key.
+- Connect **Google Ads** in Windsor.ai before querying.
+
+### Analysis workflow
+
+1. `get_connectors` — confirm `google_ads` and account IDs.
+2. `get_options` / `get_fields` for that connector — validate metric and dimension IDs.
+3. `get_data` — e.g. `last_30d` at campaign level: spend, clicks, conversions, conversion value, impressions.
+4. Propose improvements from the numbers (wasted spend, CPA/ROAS vs account baseline, budget skew). Use `execute_action` only after explicit user confirmation.
