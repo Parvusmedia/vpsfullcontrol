@@ -9,32 +9,61 @@ from pathlib import Path
 
 NOCO_URL = "https://mpa.parvusmedia.com/api/v2/tables/mieilgjtcw04jjr/records"
 
-EMAIL = "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}"
-PHONE = "{{ifempty(1.data.phone_number; 1.data.`número_de_teléfono`; 1.data.`numéro_de_téléphone`)}}"
-FULL_NAME = (
-    "{{ifempty(1.data.full_name; 1.data.nombre_y_apellidos; "
-    "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))}}"
-)
-PROVINCE = (
-    "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
-    "1.data.`localisation_d’élevage`)}}"
-)
-HERD = (
-    "{{ifempty(1.data.`¿cuántos_animales_tienes?`[]; "
-    "1.data.`how_many_animals_do_you_have?`[]; "
-    "1.data.`quantos_animais_você_tem?`[]; "
-    "1.data.`combien_d’animaux_avez-vous_?`[]; "
-    "1.data.`número_de_animales:`[])}}"
-)
-LIVESTOCK = (
-    "{{ifempty(1.data.`¿qué_tipo_de_ganado_tienes?`[]; "
-    "1.data.`what_type_of_livestock_do_you_own?`[]; "
-    "1.data.`qual_o_tipo_de_gado_que_possui?`[]; "
-    "1.data.`quel_type_de_bétail_avez-vous_?`[])}}"
-)
+# Arrays must use join(); FR slugs use typographic apostrophe (’) as in Meta forms.
+_IML_ES = {
+    "EMAIL": "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}",
+    "PHONE": "{{ifempty(1.data.phone_number; 1.data.`número_de_teléfono`; 1.data.`numéro_de_téléphone`)}}",
+    "FULL_NAME": (
+        "{{ifempty(1.data.full_name; 1.data.nombre_y_apellidos; "
+        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))}}"
+    ),
+    "PROVINCE": (
+        "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
+        "1.data.`localisation_d’élevage`)}}"
+    ),
+    "HERD": (
+        "{{ifempty("
+        "join(1.data.`¿cuántos_animales_tienes?`[]; \", \"); "
+        "join(1.data.`how_many_animals_do_you_have?`[]; \", \"); "
+        "join(1.data.`quantos_animais_você_tem?`[]; \", \"); "
+        "join(1.data.`combien_d’animaux_avez-vous_?`[]; \", \"); "
+        "join(1.data.`número_de_animales:`[]; \", \"))}}"
+    ),
+    "LIVESTOCK": (
+        "{{ifempty("
+        "join(1.data.`¿qué_tipo_de_ganado_tienes?`[]; \", \"); "
+        "join(1.data.`what_type_of_livestock_do_you_own?`[]; \", \"); "
+        "join(1.data.`qual_o_tipo_de_gado_que_possui?`[]; \", \"); "
+        "join(1.data.`quel_type_de_bétail_avez-vous_?`[]; \", \"))}}"
+    ),
+}
+
+_IML_FR = {
+    "EMAIL": "{{1.data.`e-mail`}}",
+    "PHONE": "{{1.data.`numéro_de_téléphone`}}",
+    "FULL_NAME": "{{trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`)}}",
+    "PROVINCE": "{{1.data.`localisation_d’élevage`}}",
+    "HERD": "{{join(1.data.`combien_d’animaux_avez-vous_?`[]; \", \")}}",
+    "LIVESTOCK": "{{join(1.data.`quel_type_de_bétail_avez-vous_?`[]; \", \")}}",
+}
+
+
+def _iml(scenario_id: str) -> dict[str, str]:
+    if scenario_id in ("7951407", "7952998"):
+        return _IML_FR
+    return _IML_ES
 
 
 def noco_post_body(scenario_id: str) -> str:
+    m = _iml(scenario_id)
+    EMAIL, PHONE, FULL_NAME, PROVINCE, HERD, LIVESTOCK = (
+        m["EMAIL"],
+        m["PHONE"],
+        m["FULL_NAME"],
+        m["PROVINCE"],
+        m["HERD"],
+        m["LIVESTOCK"],
+    )
     lines = [
         "{",
         f'  "leadgen_id": "{{{{1.leadgenId}}}}",',

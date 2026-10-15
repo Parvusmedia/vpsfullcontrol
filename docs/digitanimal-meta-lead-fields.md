@@ -89,6 +89,23 @@ Independientemente del slug Meta, la hoja usa siempre:
    - Actualizar escenario y esta doc si hay slug nuevo.
    - Confirmar 3 operaciones (trigger + parse teléfono + Sheets) cuando hay teléfono.
 
+## Normalización → columnas Noco
+
+Meta guarda respuestas en `1.data.<slug>` (slug = pregunta traducida). Noco usa columnas fijas: `email`, `phone`, `full_name`, `province`, `herd_count`, `livestock_type`.
+
+| Columna Noco | Slugs Meta (orden de coalesce) |
+|--------------|--------------------------------|
+| `email` | `email`, `correo_electrónico`, `e-mail` |
+| `phone` | `phone_number`, `número_de_teléfono`, `numéro_de_téléphone` |
+| `full_name` | `full_name`, `nombre_y_apellidos`, o `prénom` + `nom_de_famille` |
+| `province` | `province`, `provincia`, `region`, `localisation_d’élevage` |
+| `herd_count` | ES/EN/PT/FR slugs de “cuántos animales…” (valor = join de array) |
+| `livestock_type` | ES/EN/PT/FR slugs de tipo de ganado (join de array) |
+
+**Make (producción):** escenario **FR/IT** (`7951407`, `7952998`) mapea **solo slugs FR** (como el módulo Sheets). **ES** (`7950608`) usa `ifempty` multi-idioma; arrays con `join(...[]; ", ")` — no usar `1.data.key[]` dentro de `ifempty` sin `join`.
+
+**Backfill / scripts:** `scripts/digitanimal_field_aliases.py` + `digitanimal_noco_record.record_from_make_bundle()`; aplicar a filas existentes con `scripts/noco_normalize_from_meta.py` (lee `meta_payload_json.data`).
+
 ## Espejo NocoDB (`meta_leads`)
 
 Tras el trigger Meta, los tres escenarios insertan en Noco (módulos **6** JSON + **7** HTTP) y siguen con Sheets:

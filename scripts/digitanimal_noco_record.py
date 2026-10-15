@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from digitanimal_field_aliases import CANONICAL_FROM_SLUG, build_slug_index, pick
+
 
 def _data(bundle: dict[str, Any]) -> dict[str, Any]:
     d = bundle.get("data")
@@ -41,35 +43,27 @@ def _full_name(data: dict[str, Any]) -> str | None:
     return None
 
 
+def _full_name_from_index(idx: dict[str, Any]) -> str | None:
+    direct = pick(idx, *CANONICAL_FROM_SLUG["full_name"])
+    if direct:
+        return str(direct)
+    prenom = pick(idx, *CANONICAL_FROM_SLUG["first_name"])
+    nom = pick(idx, *CANONICAL_FROM_SLUG["last_name"])
+    if prenom or nom:
+        return " ".join(x for x in (prenom, nom) if x).strip() or None
+    return None
+
+
 def record_from_make_bundle(bundle: dict[str, Any], scenario_id: str) -> dict[str, Any]:
     """Map facebook-lead-ads NewLeadMultiple output to Noco column names."""
     data = _data(bundle)
-    phone = _first(
-        data.get("phone_number"),
-        data.get("número_de_teléfono"),
-        data.get("numéro_de_téléphone"),
-    )
-    email = _first(data.get("email"), data.get("correo_electrónico"), data.get("e-mail"))
-    province = _first(
-        data.get("province"),
-        data.get("provincia"),
-        data.get("region"),
-        data.get("localisation_d’élevage"),
-    )
-    herd = _first(
-        data.get("¿cuántos_animales_tienes?"),
-        data.get("how_many_animals_do_you_have?"),
-        data.get("quantos_animais_você_tem?"),
-        data.get("combien_d’animaux_avez-vous_?"),
-        data.get("número_de_animales:"),
-    )
-    livestock = _first(
-        data.get("¿qué_tipo_de_ganado_tienes?"),
-        data.get("what_type_of_livestock_do_you_own?"),
-        data.get("qual_o_tipo_de_gado_que_possui?"),
-        data.get("quel_type_de_bétail_avez-vous_?"),
-    )
-    name = _full_name(data)
+    idx = build_slug_index(data)
+    phone = pick(idx, *CANONICAL_FROM_SLUG["phone"])
+    email = pick(idx, *CANONICAL_FROM_SLUG["email"])
+    province = pick(idx, *CANONICAL_FROM_SLUG["province"])
+    herd = pick(idx, *CANONICAL_FROM_SLUG["herd_count"])
+    livestock = pick(idx, *CANONICAL_FROM_SLUG["livestock_type"])
+    name = _full_name(data) or _full_name_from_index(idx)
     page_id = bundle.get("pageId")
     leadgen = bundle.get("leadgenId")
     return {
