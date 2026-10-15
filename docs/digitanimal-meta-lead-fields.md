@@ -87,6 +87,18 @@ Independientemente del slug Meta, la hoja usa siempre:
    - Actualizar escenario y esta doc si hay slug nuevo.
    - Confirmar 3 operaciones (trigger + parse teléfono + Sheets) cuando hay teléfono.
 
+## Espejo NocoDB (`meta_leads`)
+
+Tras el trigger Meta, los tres escenarios insertan en Noco (módulos **6** JSON + **7** HTTP) y siguen con Sheets:
+
+| País | Escenario | Orden flow (inicio) |
+|------|-----------|---------------------|
+| ES | 7950608 | 1 → 6 → 7 → router (Sheets) |
+| FR | 7951407 | 1 → 6 → 7 → teléfono → Sheets |
+| IT | 7952998 | 1 → 6 → 7 → Sheets |
+
+Scripts: `scripts/patch_make_noco_meta_leads.py`, `scripts/make_noco_sync_scenarios.py`. Token Noco vía env `NOCO_TOKEN` al parchear (migrar a Make Key en UI).
+
 ## Fix aplicado — España (7950608)
 
 Router «Tiene teléfono / Sin teléfono» usa el coalesce anterior en filtro y en **Parse phone number**. Replay del lead que fallaba (`ceed6443…`) → **`9ff0519982a44a6abf0d3269db115a46`**, **SUCCESS**, **3 operaciones** (rama con parse).

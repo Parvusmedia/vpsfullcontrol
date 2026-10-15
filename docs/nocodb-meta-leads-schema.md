@@ -90,6 +90,6 @@ Serializar el output del trigger (todo el bundle `1`) a JSON en Make (p. ej. mó
 
 ## Próximos pasos
 
-1. Añadir en escenarios Make **7950608**, **7951407**, **7952998** un módulo HTTP → Noco tras normalizar campos (mantener Sheets si hace falta).
+1. **Hecho:** escenarios Make **7950608**, **7951407**, **7952998** incluyen módulos **6** (`json:TransformToJSON` del bundle `{{1}}`) y **7** (HTTP POST → Noco) antes de Sheets/teléfono. Parche: `scripts/patch_make_noco_meta_leads.py` + `scripts/make_noco_sync_scenarios.py`. El campo `meta_payload_json` en el POST se afinará en un paso aparte (el JSON embebido en body raw provocaba 422 en Noco).
 2. Webhook Noco → BigQuery (fuente CRM).
 3. Unificar forms Meta hacia slugs estándar (`email`, `phone_number`, `full_name`) para reducir coalesce.
