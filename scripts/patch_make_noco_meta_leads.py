@@ -9,7 +9,6 @@ from pathlib import Path
 
 NOCO_URL = "https://mpa.parvusmedia.com/api/v2/tables/mieilgjtcw04jjr/records"
 
-# Shared IML (Meta field_data coalesce)
 EMAIL = "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}"
 PHONE = "{{ifempty(1.data.phone_number; 1.data.`número_de_teléfono`; 1.data.`numéro_de_téléphone`)}}"
 FULL_NAME = (
@@ -36,7 +35,6 @@ LIVESTOCK = (
 
 
 def noco_post_body(scenario_id: str) -> str:
-    """POST row without meta_payload_json (avoids 422 from empty embedded JSON in one shot)."""
     lines = [
         "{",
         f'  "leadgen_id": "{{{{1.leadgenId}}}}",',
@@ -70,7 +68,6 @@ def noco_post_body(scenario_id: str) -> str:
 
 
 def noco_meta_patch_body() -> str:
-    """PATCH meta_payload_json with full Meta trigger bundle (module 1 output)."""
     lines = [
         "{",
         '  "Id": {{7.data.Id}},',
@@ -148,8 +145,39 @@ def http_patch_meta_module(xc_token: str) -> dict:
     }
 
 
+def _is_noco_http(module: dict) -> bool:
+    if module.get("module") != "http:ActionSendData":
+        return False
+    url = (module.get("mapper") or {}).get("url") or ""
+    return "mieilgjtcw04jjr" in url
+
+
+def _is_noco_router(module: dict) -> bool:
+    if module.get("module") != "builtin:BasicRouter" or module.get("id") != 7:
+        return False
+    for route in module.get("routes") or []:
+        for step in route.get("flow") or []:
+            if _is_noco_http(step):
+                return True
+    return False
+
+
 def strip_noco_modules(flow: list) -> list:
-    return [m for m in flow if m.get("id") not in (6, 7, 8)]
+    if not flow:
+        return flow
+    out = [flow[0]]
+    i = 1
+    while i < len(flow):
+        m = flow[i]
+        if _is_noco_http(m) or _is_noco_router(m):
+            i += 1
+            continue
+        if m.get("module") == "json:TransformToJSON":
+            i += 1
+            continue
+        break
+    out.extend(flow[i:])
+    return out
 
 
 def insert_after_trigger(flow: list, xc_token: str, scenario_id: str) -> list:
