@@ -1,6 +1,6 @@
 # Digitanimal — Meta Lead Ads: slugs de campos y nomenclatura
 
-**Guía para quien crea formularios en Meta (marketing / ads):** [digitanimal-guia-formularios-meta.md](./digitanimal-guia-formularios-meta.md) — lista cerrada de campos, checklist y valores de opciones (oct 2026, Excel `correlacion-campos-formularios.xlsx`).
+**Guía para quien crea formularios en Meta:** [digitanimal-guia-formularios-meta.md](./digitanimal-guia-formularios-meta.md).
 
 Carpeta Make: **Digitanimal** (`folderId` **404390**, team **38243**).
 
