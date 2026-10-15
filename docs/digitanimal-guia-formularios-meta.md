@@ -2,20 +2,24 @@
 
 Al crear o duplicar un formulario, sigue estas reglas en **todos** los países.
 
+**Empieza duplicando** el último formulario ya validado de ese país (o el patrón acordado con operaciones). No crees un formulario vacío salvo campaña nueva con campos distintos.
+
 **Nombre del formulario:** termina siempre con el país: `_ES`, `_PT`, `_FR`, `_IT`, `_GR`, `_RO`, `_HR` o `_UK`. No preguntes el país dentro del formulario. El idioma que elijas en Meta **no** indica el mercado (p. ej. Italia puede estar en español latino).
 
 **Texto visible:** idioma del ganadero. **Nombre interno del campo** (cuando Meta lo permita): inglés, minúsculas, sin tildes.
 
 ## Campos estándar
 
-| Pregunta | Cómo añadirla en Meta | Nombre del campo |
-|----------|------------------------|------------------|
-| Email | Tipo **Email** (no pregunta personalizada) | `email` |
-| Teléfono | Tipo **Phone number** (no “Número de teléfono” personalizado) | `phone_number` |
-| Nombre y apellidos | Tipo **Full name** (también en Francia; no nombre y apellido por separado) | `full_name` |
-| Provincia / región | Tipo **Province** (no texto libre tipo “localización”) | `province` |
-| Tipo de ganado | Personalizada, **opciones** | `livestock_type` |
-| N.º de animales | Personalizada, **opciones** (tramos, no cifra libre) | `animal_count` |
+
+| Pregunta           | Cómo añadirla en Meta                                                      | Nombre del campo |
+| ------------------ | -------------------------------------------------------------------------- | ---------------- |
+| Email              | Tipo **Email** (no pregunta personalizada)                                 | `email`          |
+| Teléfono           | Tipo **Phone number** (no “Número de teléfono” personalizado)              | `phone_number`   |
+| Nombre y apellidos | Tipo **Full name** (también en Francia; no nombre y apellido por separado) | `full_name`      |
+| Provincia / región | Tipo **Province** (no texto libre tipo “localización”)                     | `province`       |
+| Tipo de ganado     | Personalizada, **opciones**                                                | `livestock_type` |
+| N.º de animales    | Personalizada, **opciones** (tramos, no cifra libre)                       | `animal_count`   |
+
 
 Opciones de **tipo de ganado** (texto traducido; claves internas si puedes fijarlas): bovino → `cattle`, ovino → `sheep`, caprino → `goats`, equino → `horses`, otros → `other`.
 
