@@ -79,9 +79,16 @@ Columnas sistema Noco: `id`, `created_at`, `updated_at`, …
 {{ifempty(1.data.`¿qué_tipo_de_ganado_tienes?`[]; 1.data.`what_type_of_livestock_do_you_own?`[]; 1.data.`qual_o_tipo_de_gado_que_possui?`[]; 1.data.`quel_type_de_bétail_avez-vous_?`[])}}
 ```
 
-**JSON crudo Meta**
+**JSON crudo Meta (`meta_payload_json`)**
 
-Serializar el output del trigger (todo el bundle `1`) a JSON en Make (p. ej. módulo *JSON > Create JSON* o función `json`/`toString` según versión) y enviar al campo `meta_payload_json`.
+En Make (HTTP v3, body raw), no mezclar `{{6.json}}` / `{{1}}` en el mismo POST: Noco devuelve **422** si el campo JSON queda vacío (`""`). Flujo actual:
+
+1. **Módulo 7** — `POST` fila sin `meta_payload_json` (columnas mapeadas).
+2. **Módulo 8** — `PATCH` con `Id` = `{{7.data.Id}}` y `meta_payload_json` = objeto armado desde el bundle del trigger (`leadgenId`, `formId`, `data`: `{{1.data}}`, etc.).
+
+Parche: `scripts/patch_make_noco_meta_leads.py`.
+
+**Backfill histórico (sin replay Make):** el MCP de Make no expone I/O por módulo en ejecuciones antiguas; **replay** re-ejecuta el escenario. Para filas ya en Sheets: export CSV → `scripts/noco_backfill_from_sheets_csv.py` (no incluye JSON Meta completo, solo columnas del sheet). Para `meta_payload_json` completo en histórico hace falta **replay** por lote (ops) o otra fuente (p. ej. logs Meta).
 
 ## API
 
@@ -90,6 +97,6 @@ Serializar el output del trigger (todo el bundle `1`) a JSON en Make (p. ej. mó
 
 ## Próximos pasos
 
-1. **Hecho:** escenarios Make **7950608**, **7951407**, **7952998** incluyen módulos **6** (`json:TransformToJSON` del bundle `{{1}}`) y **7** (HTTP POST → Noco) antes de Sheets/teléfono. Parche: `scripts/patch_make_noco_meta_leads.py` + `scripts/make_noco_sync_scenarios.py`. El campo `meta_payload_json` en el POST se afinará en un paso aparte (el JSON embebido en body raw provocaba 422 en Noco).
+1. **Hecho:** escenarios **7950608**, **7951407**, **7952998** — módulos **7** (POST Noco) + **8** (PATCH `meta_payload_json`) antes de Sheets/teléfono. Scripts: `patch_make_noco_meta_leads.py`, `make_apply_noco_updates.py`.
 2. Webhook Noco → BigQuery (fuente CRM).
 3. Unificar forms Meta hacia slugs estándar (`email`, `phone_number`, `full_name`) para reducir coalesce.

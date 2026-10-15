@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Insert NocoDB mirror steps (TransformToJSON + HTTP POST) into Digitanimal Make scenarios."""
+"""Insert NocoDB mirror steps (HTTP POST + PATCH meta payload) into Digitanimal Make scenarios."""
 from __future__ import annotations
 
 import copy
@@ -35,8 +35,8 @@ LIVESTOCK = (
 )
 
 
-def noco_body(scenario_id: str) -> str:
-    """Raw JSON body for HTTP module (Make inserts {{6.json}} as nested object)."""
+def noco_post_body(scenario_id: str) -> str:
+    """POST row without meta_payload_json (avoids 422 from empty embedded JSON in one shot)."""
     lines = [
         "{",
         f'  "leadgen_id": "{{{{1.leadgenId}}}}",',
@@ -69,61 +69,94 @@ def noco_body(scenario_id: str) -> str:
     return "\n".join(lines)
 
 
-def json_module() -> dict:
+def noco_meta_patch_body() -> str:
+    """PATCH meta_payload_json with full Meta trigger bundle (module 1 output)."""
+    lines = [
+        "{",
+        '  "Id": {{7.data.Id}},',
+        '  "meta_payload_json": {',
+        '    "leadgenId": "{{1.leadgenId}}",',
+        '    "formId": "{{1.formId}}",',
+        '    "pageId": "{{1.pageId}}",',
+        '    "dateCreated": "{{1.dateCreated}}",',
+        '    "platform": "{{1.platform}}",',
+        '    "isOrganic": {{if(1.isOrganic; true; false)}},',
+        '    "campaignId": "{{1.campaignId}}",',
+        '    "campaignName": "{{1.campaignName}}",',
+        '    "adsetId": "{{1.adsetId}}",',
+        '    "adsetName": "{{1.adsetName}}",',
+        '    "adId": "{{1.adId}}",',
+        '    "adName": "{{1.adName}}",',
+        '    "adgroupId": "{{1.adgroupId}}",',
+        '    "homeListing": "{{1.homeListing}}",',
+        '    "partnerName": "{{1.partnerName}}",',
+        '    "retailerItemId": "{{1.retailerItemId}}",',
+        '    "data": {{1.data}}',
+        "  }",
+        "}",
+    ]
+    return "\n".join(lines)
+
+
+def _http_mapper(xc_token: str, method: str, data: str) -> dict:
     return {
-        "id": 6,
-        "module": "json:TransformToJSON",
-        "version": 1,
-        "parameters": {},
-        "mapper": {"object": "{{1}}"},
-        "metadata": {"designer": {"x": -880, "y": -320}},
+        "url": NOCO_URL,
+        "method": method,
+        "serializeUrl": False,
+        "headers": [
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "xc-token", "value": xc_token},
+        ],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": True,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "",
+        "shareCookies": False,
+        "ca": "",
+        "rejectUnauthorized": True,
+        "followRedirect": True,
+        "useQuerystring": False,
+        "gzip": True,
+        "useMtls": False,
+        "contentType": "application/json",
+        "data": data,
+        "followAllRedirects": False,
     }
 
 
-def http_module(xc_token: str, scenario_id: str) -> dict:
+def http_post_module(xc_token: str, scenario_id: str) -> dict:
     return {
         "id": 7,
         "module": "http:ActionSendData",
         "version": 3,
         "parameters": {"handleErrors": True},
-        "mapper": {
-            "url": NOCO_URL,
-            "method": "post",
-            "serializeUrl": False,
-            "headers": [
-                {"name": "Content-Type", "value": "application/json"},
-                {"name": "xc-token", "value": xc_token},
-            ],
-            "qs": [],
-            "bodyType": "raw",
-            "parseResponse": True,
-            "authUser": "",
-            "authPass": "",
-            "timeout": "",
-            "shareCookies": False,
-            "ca": "",
-            "rejectUnauthorized": True,
-            "followRedirect": True,
-            "useQuerystring": False,
-            "gzip": True,
-            "useMtls": False,
-            "contentType": "application/json",
-            "data": noco_body(scenario_id),
-            "followAllRedirects": False,
-        },
+        "mapper": _http_mapper(xc_token, "post", noco_post_body(scenario_id)),
         "metadata": {"designer": {"x": -620, "y": -320}},
     }
 
 
+def http_patch_meta_module(xc_token: str) -> dict:
+    return {
+        "id": 8,
+        "module": "http:ActionSendData",
+        "version": 3,
+        "parameters": {"handleErrors": True},
+        "mapper": _http_mapper(xc_token, "patch", noco_meta_patch_body()),
+        "metadata": {"designer": {"x": -460, "y": -320}},
+    }
+
+
 def strip_noco_modules(flow: list) -> list:
-    return [m for m in flow if m.get("id") not in (6, 7)]
+    return [m for m in flow if m.get("id") not in (6, 7, 8)]
 
 
 def insert_after_trigger(flow: list, xc_token: str, scenario_id: str) -> list:
     flow = strip_noco_modules(flow)
     if not flow or flow[0].get("id") != 1:
         raise ValueError("Expected module 1 as Meta trigger")
-    out = [flow[0], json_module(), http_module(xc_token, scenario_id)]
+    out = [flow[0], http_post_module(xc_token, scenario_id), http_patch_meta_module(xc_token)]
     out.extend(flow[1:])
     return out
 
