@@ -26,8 +26,9 @@ _IML_NOCO = {
     ),
     "HERD": (
         "{{ifempty("
-        "join(1.data.`¿cuántos_animales_tienes?`; \", \"); "
+        "join(1.data.animal_count; \", \"); "
         "join(1.data.`how_many_animals_do_you_have?`; \", \"); "
+        "join(1.data.`¿cuántos_animales_tienes?`; \", \"); "
         "join(1.data.`quantos_animais_você_tem?`; \", \"); "
         "join(1.data.`combien_d’animaux_avez-vous_?`; \", \"); "
         "join(1.data.`número_de_animales:`; \", \"); "
@@ -37,8 +38,9 @@ _IML_NOCO = {
     ),
     "LIVESTOCK": (
         "{{ifempty("
-        "join(1.data.`¿qué_tipo_de_ganado_tienes?`; \", \"); "
+        "join(1.data.livestock_type; \", \"); "
         "join(1.data.`what_type_of_livestock_do_you_own?`; \", \"); "
+        "join(1.data.`¿qué_tipo_de_ganado_tienes?`; \", \"); "
         "join(1.data.`qual_o_tipo_de_gado_que_possui?`; \", \"); "
         "join(1.data.`quel_type_de_bétail_avez-vous_?`; \", \"); "
         "join(1.data.`τι_είδους_ζώα_έχεις;`; \", \"); "
@@ -241,10 +243,36 @@ def refresh_noco_post_body(flow: list, scenario_id: str, xc_token: str) -> bool:
     return False
 
 
+def _walk_modules(flow: list) -> list[dict]:
+    out: list[dict] = []
+    for m in flow:
+        out.append(m)
+        if m.get("module") == "builtin:BasicRouter":
+            for route in m.get("routes") or []:
+                out.extend(_walk_modules(route.get("flow") or []))
+    return out
+
+
+def refresh_sheets_herd_livestock(flow: list) -> None:
+    """Align Google Sheets cant-animales / tipo_animal with Noco coalesce IML."""
+    herd, livestock = _IML_NOCO["HERD"], _IML_NOCO["LIVESTOCK"]
+    for m in _walk_modules(flow):
+        if m.get("module") != "google-sheets:addRow":
+            continue
+        values = (m.get("mapper") or {}).get("values")
+        if not isinstance(values, dict):
+            continue
+        if "cant-animales" in values:
+            values["cant-animales"] = herd
+        if "tipo_animal" in values:
+            values["tipo_animal"] = livestock
+
+
 def refresh_noco_in_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
     bp = copy.deepcopy(blueprint)
     if not refresh_noco_post_body(bp["flow"], scenario_id, xc_token):
         bp["flow"] = insert_after_trigger(bp["flow"], xc_token, scenario_id)
+    refresh_sheets_herd_livestock(bp["flow"])
     return bp
 
 

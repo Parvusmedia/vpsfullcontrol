@@ -20,8 +20,9 @@ CANONICAL_FROM_SLUG: dict[str, tuple[str, ...]] = {
         "τοποθεσία_της_κτηνοτροφικής_μονάδας",
     ),
     "herd_count": (
-        "¿cuántos_animales_tienes?",
+        "animal_count",
         "how_many_animals_do_you_have?",
+        "¿cuántos_animales_tienes?",
         "quantos_animais_você_tem?",
         "combien_d’animaux_avez-vous_?",
         "número_de_animales:",
@@ -30,8 +31,9 @@ CANONICAL_FROM_SLUG: dict[str, tuple[str, ...]] = {
         "numero_di_animali",
     ),
     "livestock_type": (
-        "¿qué_tipo_de_ganado_tienes?",
+        "livestock_type",
         "what_type_of_livestock_do_you_own?",
+        "¿qué_tipo_de_ganado_tienes?",
         "qual_o_tipo_de_gado_que_possui?",
         "quel_type_de_bétail_avez-vous_?",
         "τι_είδους_ζώα_έχεις;",

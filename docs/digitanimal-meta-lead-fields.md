@@ -115,7 +115,7 @@ Meta guarda respuestas en `1.data.<slug>` (slug = pregunta traducida). Noco usa 
 
 **Make (producción):** los tres escenarios (**7950608**, **7951407**, **7952998**) usan el mismo coalesce multi-idioma en el POST Noco (módulo 7). Para arrays Meta usar `join(1.data.\`slug\`; ", ")` — **no** `join(1.data.\`slug\`[]; …)` (devuelve vacío en HTTP Noco).
 
-Formularios observados oct 2026: ES `930350286773221`, PT `4155466354724737`, EL `1995539671207390`, FR `2174360319708766`.
+Formularios observados oct 2026: ES `930350286773221`, PT `4155466354724737`, EL `1995539671207390`, FR `2174360319708766`, INEA Baleares `1787294379178073` (slugs Meta EN: `animal_count`, `livestock_type` arrays).
 
 **Backfill / scripts:** `scripts/digitanimal_field_aliases.py` + `digitanimal_noco_record.record_from_make_bundle()`; aplicar a filas existentes con `scripts/noco_normalize_from_meta.py` (lee `meta_payload_json.data`).
 
