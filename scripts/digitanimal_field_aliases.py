@@ -8,8 +8,8 @@ from typing import Any
 # Canonical field → exact slugs observed in production (Unicode apostrophe U+2019 in FR keys)
 CANONICAL_FROM_SLUG: dict[str, tuple[str, ...]] = {
     "email": ("email", "correo_electrónico", "e-mail"),
-    "phone": ("phone_number", "número_de_teléfono", "numéro_de_téléphone"),
-    "full_name": ("full_name", "nombre_y_apellidos"),
+    "phone": ("phone_number", "phone", "número_de_teléfono", "numéro_de_téléphone"),
+    "full_name": ("full_name", "full name", "nombre_y_apellidos"),
     "first_name": ("prénom", "prenom", "first_name"),
     "last_name": ("nom_de_famille", "last_name"),
     "province": (
@@ -26,6 +26,8 @@ CANONICAL_FROM_SLUG: dict[str, tuple[str, ...]] = {
         "combien_d’animaux_avez-vous_?",
         "número_de_animales:",
         "πόσα_ζώα_έχετε;",
+        "quanti_animali_hai?",
+        "numero_di_animali",
     ),
     "livestock_type": (
         "¿qué_tipo_de_ganado_tienes?",
@@ -33,6 +35,8 @@ CANONICAL_FROM_SLUG: dict[str, tuple[str, ...]] = {
         "qual_o_tipo_de_gado_que_possui?",
         "quel_type_de_bétail_avez-vous_?",
         "τι_είδους_ζώα_έχεις;",
+        "che_tipo_di_bestiame_hai?",
+        "tipo_di_animale",
     ),
 }
 

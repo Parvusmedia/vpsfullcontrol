@@ -62,7 +62,18 @@ La API `executions_get-detail` en este entorno **no devolvió I/O por módulo**;
 
 ### Italia
 
-Escenario clonado de FR (campos FR, hoja `meta_DigitanimalFR`, sin parser de teléfono). Al publicar formulario IT, **definir slugs italianos** o reutilizar tipos predefinidos Meta en inglés.
+Formularios IT observados (oct 2026) usan slugs Meta predefinidos con **espacio** en el nombre:
+
+| Slug Meta | Uso |
+|-----------|-----|
+| `full name` | nombre completo (no `full_name`) |
+| `phone` | teléfono (no `phone_number`) |
+| `correo_electrónico` / `email` | email |
+| `provincia` | provincia |
+| `quanti_animali_hai?` / `numero_di_animali` | cabezas (arrays) |
+| `che_tipo_di_bestiame_hai?` / `tipo_di_animale` | tipo ganado (arrays) |
+
+Escenario **7952998**: Noco coalesce multi-idioma + hoja **`meta_DigitanimalIT`** + parse teléfono `IT`.
 
 ## Columnas canónicas (destino Sheets)
 
@@ -96,11 +107,11 @@ Meta guarda respuestas en `1.data.<slug>` (slug = pregunta traducida). Noco usa 
 | Columna Noco | Slugs Meta (orden de coalesce) |
 |--------------|--------------------------------|
 | `email` | `email`, `correo_electrónico`, `e-mail` |
-| `phone` | `phone_number`, `número_de_teléfono`, `numéro_de_téléphone` |
-| `full_name` | `full_name`, `nombre_y_apellidos`, o `prénom` + `nom_de_famille` |
+| `phone` | `phone_number`, `phone`, `número_de_teléfono`, `numéro_de_téléphone` |
+| `full_name` | `full_name`, `full name`, `nombre_y_apellidos`, o `prénom` + `nom_de_famille` |
 | `province` | `province`, `provincia`, `region`, `localisation_d’élevage`, `τοποθεσία_της_κτηνοτροφικής_μονάδας` (formulario griego) |
-| `herd_count` | ES/EN/PT/FR/EL slugs de “cuántos animales…” (valor = `join(1.data.\`slug\`; ", ")`) |
-| `livestock_type` | ES/EN/PT/FR/EL slugs de tipo de ganado (mismo `join`) |
+| `herd_count` | ES/EN/PT/FR/EL/IT slugs de “cuántos animales…” (valor = `join(1.data.\`slug\`; ", ")`) |
+| `livestock_type` | ES/EN/PT/FR/EL/IT slugs de tipo de ganado (mismo `join`) |
 
 **Make (producción):** los tres escenarios (**7950608**, **7951407**, **7952998**) usan el mismo coalesce multi-idioma en el POST Noco (módulo 7). Para arrays Meta usar `join(1.data.\`slug\`; ", ")` — **no** `join(1.data.\`slug\`[]; …)` (devuelve vacío en HTTP Noco).
 

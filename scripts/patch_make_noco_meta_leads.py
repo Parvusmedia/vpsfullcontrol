@@ -12,9 +12,12 @@ NOCO_URL = "https://mpa.parvusmedia.com/api/v2/tables/mieilgjtcw04jjr/records"
 # Meta multi-select fields are arrays: join(1.data.`slug`; ", ") — not `slug`[] inside join().
 _IML_NOCO = {
     "EMAIL": "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}",
-    "PHONE": "{{ifempty(1.data.phone_number; 1.data.`número_de_teléfono`; 1.data.`numéro_de_téléphone`)}}",
+    "PHONE": (
+        "{{ifempty(1.data.phone_number; 1.data.phone; 1.data.`número_de_teléfono`; "
+        "1.data.`numéro_de_téléphone`)}}"
+    ),
     "FULL_NAME": (
-        "{{ifempty(1.data.full_name; 1.data.nombre_y_apellidos; "
+        "{{ifempty(1.data.full_name; 1.data.`full name`; 1.data.nombre_y_apellidos; "
         "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))}}"
     ),
     "PROVINCE": (
@@ -28,7 +31,9 @@ _IML_NOCO = {
         "join(1.data.`quantos_animais_você_tem?`; \", \"); "
         "join(1.data.`combien_d’animaux_avez-vous_?`; \", \"); "
         "join(1.data.`número_de_animales:`; \", \"); "
-        "join(1.data.`πόσα_ζώα_έχετε;`; \", \"))}}"
+        "join(1.data.`πόσα_ζώα_έχετε;`; \", \"); "
+        "join(1.data.`quanti_animali_hai?`; \", \"); "
+        "join(1.data.`numero_di_animali`; \", \"))}}"
     ),
     "LIVESTOCK": (
         "{{ifempty("
@@ -36,7 +41,9 @@ _IML_NOCO = {
         "join(1.data.`what_type_of_livestock_do_you_own?`; \", \"); "
         "join(1.data.`qual_o_tipo_de_gado_que_possui?`; \", \"); "
         "join(1.data.`quel_type_de_bétail_avez-vous_?`; \", \"); "
-        "join(1.data.`τι_είδους_ζώα_έχεις;`; \", \"))}}"
+        "join(1.data.`τι_είδους_ζώα_έχεις;`; \", \"); "
+        "join(1.data.`che_tipo_di_bestiame_hai?`; \", \"); "
+        "join(1.data.`tipo_di_animale`; \", \"))}}"
     ),
 }
 
