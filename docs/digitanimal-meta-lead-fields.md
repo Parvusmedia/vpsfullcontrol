@@ -10,7 +10,7 @@ Escenarios:
 |------|-----------|-----|-------------|
 | ES | Digitanimal_Spain_Meta-LeadAds | 7950608 | `meta_DigitanimalES` |
 | FR | Digitanimal_FR_Meta-LeadAds | 7951407 | `meta_DigitanimalFR` |
-| IT | Digitanimal_IT_Meta-LeadAds | 7952998 | *(revisar: hoy apunta a FR)* |
+| IT | Digitanimal_IT_Meta-LeadAds | 7952998 | `meta_DigitanimalIT` |
 
 ## Cómo Meta nombra los campos en Make
 
@@ -137,7 +137,17 @@ Router «Tiene teléfono / Sin teléfono» usa el coalesce anterior en filtro y 
 
 Scripts locales: `scripts/patch_digitanimal_spain_phone_coalesce.py`.
 
+## Hoja `meta_DigitanimalFR` — filas que no son campaña Francia
+
+**Qué esperabas:** solo leads de formularios de la **página Meta Francia** (`page_id` **1323667177812599**), escenario Make **7951407** (hook **3901501**).
+
+**Por qué ves otras filas:** el escenario **italiano** (**7952998**) se clonó del francés y, durante un tiempo, el módulo Google Sheets seguía apuntando a **`meta_DigitanimalFR`** aunque el webhook era el de la **página IT** (`100420486184506`). Esos leads son reales (p. ej. Calabria, nombres de campaña en español/italiano), pero **nunca pasaron por la página FR** — estaban en la pestaña equivocada por configuración Make, no porque Meta mezclara países en un mismo hook.
+
+**Estado actual (oct 2026):** solo **7951407** escribe en `meta_DigitanimalFR`; **7952998** → `meta_DigitanimalIT`. Noco distingue bien por `make_scenario_id` / `page_id`. Las filas “raras” en FR son **históricas** (antes del cambio + posibles replays).
+
+**Limpieza recomendada:** borrar o mover en Sheets las filas cuyo `source` / columna equivalente no sea `meta_1323667177812599`, o regenerar la pestaña desde Noco (`scripts/digitanimal_sheets_export_from_noco.py --scenario 7951407`) en un entorno con `GOOGLE_APPLICATION_CREDENTIALS`.
+
 ## Pendientes recomendados
 
-- **FR (7951407):** añadir router + coalesce `phone_number` / `numéro_de_téléphone`; revisar province (`localisation_d’élevage` vs columna province).
-- **IT (7952998):** hoja `meta_DigitanimalIT`, campos IT o predefinidos Meta, parser teléfono `IT`.
+- **FR (7951407):** añadir router + coalesce `phone_number` / `numéro_de_téléphone`; revisar province (`localisation_d’élevage` vs columna province); alinear mapeo Sheets con columnas con nombre (como IT/ES) en lugar de índices `0`–`18`.
+- **Sheets:** limpiar filas IT/otros países en `meta_DigitanimalFR` (ver sección anterior).
