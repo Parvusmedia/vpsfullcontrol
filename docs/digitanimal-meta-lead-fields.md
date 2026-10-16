@@ -145,7 +145,20 @@ Scripts locales: `scripts/patch_digitanimal_spain_phone_coalesce.py`.
 
 **Estado actual (oct 2026):** solo **7951407** escribe en `meta_DigitanimalFR`; **7952998** → `meta_DigitanimalIT`. Noco distingue bien por `make_scenario_id` / `page_id`. Las filas “raras” en FR son **históricas** (antes del cambio + posibles replays).
 
-**Limpieza recomendada:** borrar o mover en Sheets las filas cuyo `source` / columna equivalente no sea `meta_1323667177812599`, o regenerar la pestaña desde Noco (`scripts/digitanimal_sheets_export_from_noco.py --scenario 7951407`) en un entorno con `GOOGLE_APPLICATION_CREDENTIALS`.
+**Regenerar las tres pestañas (sin duplicados, por `page_id`):**
+
+```bash
+export NOCO_TOKEN=...
+# Vista previa
+python3 scripts/digitanimal_sheets_regenerate_from_noco.py --dry-run
+# Export JSON (sin credenciales Google)
+python3 scripts/digitanimal_sheets_regenerate_from_noco.py --export-json /tmp/matrices.json
+# Escribir en Sheets (cuenta de servicio con acceso al spreadsheet)
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json
+python3 scripts/digitanimal_sheets_regenerate_from_noco.py --write
+```
+
+Criterio: una fila por `leadgen_id` (Noco Id más alto gana); pestaña = `page_id` Meta (**ES** `1057071361086931`, **FR** `1323667177812599`, **IT** `100420486184506`). Columnas canónicas: mismas que `digitanimal_sheets_export_from_noco.py`.
 
 ## Pendientes recomendados
 
