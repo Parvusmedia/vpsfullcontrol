@@ -11,7 +11,7 @@ import os
 import sys
 from pathlib import Path
 
-from patch_make_noco_meta_leads import patch_blueprint
+from patch_make_noco_meta_leads import refresh_noco_in_blueprint
 
 SCENARIO_IDS = ("7950608", "7951407", "7952998")
 
@@ -29,7 +29,7 @@ def main() -> None:
             continue
         data = json.loads(path.read_text(encoding="utf-8"))
         blueprint = data.get("blueprint", data)
-        patched = patch_blueprint(blueprint, token, sid)
+        patched = refresh_noco_in_blueprint(blueprint, token, sid)
         out = Path(f"/tmp/scenarios_update_{sid}_args.json")
         out.write_text(
             json.dumps({"scenarioId": int(sid), "blueprint": patched}, ensure_ascii=False),

@@ -98,11 +98,13 @@ Meta guarda respuestas en `1.data.<slug>` (slug = pregunta traducida). Noco usa 
 | `email` | `email`, `correo_electrónico`, `e-mail` |
 | `phone` | `phone_number`, `número_de_teléfono`, `numéro_de_téléphone` |
 | `full_name` | `full_name`, `nombre_y_apellidos`, o `prénom` + `nom_de_famille` |
-| `province` | `province`, `provincia`, `region`, `localisation_d’élevage` |
-| `herd_count` | ES/EN/PT/FR slugs de “cuántos animales…” (valor = join de array) |
-| `livestock_type` | ES/EN/PT/FR slugs de tipo de ganado (join de array) |
+| `province` | `province`, `provincia`, `region`, `localisation_d’élevage`, `τοποθεσία_της_κτηνοτροφικής_μονάδας` (formulario griego) |
+| `herd_count` | ES/EN/PT/FR/EL slugs de “cuántos animales…” (valor = `join(1.data.\`slug\`; ", ")`) |
+| `livestock_type` | ES/EN/PT/FR/EL slugs de tipo de ganado (mismo `join`) |
 
-**Make (producción):** escenario **FR/IT** (`7951407`, `7952998`) mapea **solo slugs FR** (como el módulo Sheets). **ES** (`7950608`) usa `ifempty` multi-idioma; arrays con `join(...[]; ", ")` — no usar `1.data.key[]` dentro de `ifempty` sin `join`.
+**Make (producción):** los tres escenarios (**7950608**, **7951407**, **7952998**) usan el mismo coalesce multi-idioma en el POST Noco (módulo 7). Para arrays Meta usar `join(1.data.\`slug\`; ", ")` — **no** `join(1.data.\`slug\`[]; …)` (devuelve vacío en HTTP Noco).
+
+Formularios observados oct 2026: ES `930350286773221`, PT `4155466354724737`, EL `1995539671207390`, FR `2174360319708766`.
 
 **Backfill / scripts:** `scripts/digitanimal_field_aliases.py` + `digitanimal_noco_record.record_from_make_bundle()`; aplicar a filas existentes con `scripts/noco_normalize_from_meta.py` (lee `meta_payload_json.data`).
 

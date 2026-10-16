@@ -9,8 +9,8 @@ from pathlib import Path
 
 NOCO_URL = "https://mpa.parvusmedia.com/api/v2/tables/mieilgjtcw04jjr/records"
 
-# Arrays must use join(); FR slugs use typographic apostrophe (’) as in Meta forms.
-_IML_ES = {
+# Meta multi-select fields are arrays: join(1.data.`slug`; ", ") — not `slug`[] inside join().
+_IML_NOCO = {
     "EMAIL": "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}",
     "PHONE": "{{ifempty(1.data.phone_number; 1.data.`número_de_teléfono`; 1.data.`numéro_de_téléphone`)}}",
     "FULL_NAME": (
@@ -19,39 +19,31 @@ _IML_ES = {
     ),
     "PROVINCE": (
         "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
-        "1.data.`localisation_d’élevage`)}}"
+        "1.data.`localisation_d’élevage`; 1.data.`τοποθεσία_της_κτηνοτροφικής_μονάδας`)}}"
     ),
     "HERD": (
         "{{ifempty("
-        "join(1.data.`¿cuántos_animales_tienes?`[]; \", \"); "
-        "join(1.data.`how_many_animals_do_you_have?`[]; \", \"); "
-        "join(1.data.`quantos_animais_você_tem?`[]; \", \"); "
-        "join(1.data.`combien_d’animaux_avez-vous_?`[]; \", \"); "
-        "join(1.data.`número_de_animales:`[]; \", \"))}}"
+        "join(1.data.`¿cuántos_animales_tienes?`; \", \"); "
+        "join(1.data.`how_many_animals_do_you_have?`; \", \"); "
+        "join(1.data.`quantos_animais_você_tem?`; \", \"); "
+        "join(1.data.`combien_d’animaux_avez-vous_?`; \", \"); "
+        "join(1.data.`número_de_animales:`; \", \"); "
+        "join(1.data.`πόσα_ζώα_έχετε;`; \", \"))}}"
     ),
     "LIVESTOCK": (
         "{{ifempty("
-        "join(1.data.`¿qué_tipo_de_ganado_tienes?`[]; \", \"); "
-        "join(1.data.`what_type_of_livestock_do_you_own?`[]; \", \"); "
-        "join(1.data.`qual_o_tipo_de_gado_que_possui?`[]; \", \"); "
-        "join(1.data.`quel_type_de_bétail_avez-vous_?`[]; \", \"))}}"
+        "join(1.data.`¿qué_tipo_de_ganado_tienes?`; \", \"); "
+        "join(1.data.`what_type_of_livestock_do_you_own?`; \", \"); "
+        "join(1.data.`qual_o_tipo_de_gado_que_possui?`; \", \"); "
+        "join(1.data.`quel_type_de_bétail_avez-vous_?`; \", \"); "
+        "join(1.data.`τι_είδους_ζώα_έχεις;`; \", \"))}}"
     ),
-}
-
-_IML_FR = {
-    "EMAIL": "{{1.data.`e-mail`}}",
-    "PHONE": "{{1.data.`numéro_de_téléphone`}}",
-    "FULL_NAME": "{{trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`)}}",
-    "PROVINCE": "{{1.data.`localisation_d’élevage`}}",
-    "HERD": "{{join(1.data.`combien_d’animaux_avez-vous_?`[]; \", \")}}",
-    "LIVESTOCK": "{{join(1.data.`quel_type_de_bétail_avez-vous_?`[]; \", \")}}",
 }
 
 
 def _iml(scenario_id: str) -> dict[str, str]:
-    if scenario_id in ("7951407", "7952998"):
-        return _IML_FR
-    return _IML_ES
+    del scenario_id  # same coalesce for ES / FR / IT → Noco
+    return _IML_NOCO
 
 
 def noco_post_body(scenario_id: str) -> str:
@@ -224,6 +216,31 @@ def patch_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
     return bp
 
 
+def refresh_noco_post_body(flow: list, scenario_id: str, xc_token: str) -> bool:
+    """Update module 7 Noco POST JSON in place (keeps layout / token headers)."""
+    body = noco_post_body(scenario_id)
+    for m in flow:
+        if m.get("id") != 7 or m.get("module") != "http:ActionSendData":
+            continue
+        url = (m.get("mapper") or {}).get("url") or ""
+        if "mieilgjtcw04jjr" not in url:
+            continue
+        mapper = m.setdefault("mapper", {})
+        mapper["data"] = body
+        for h in mapper.get("headers") or []:
+            if h.get("name") == "xc-token":
+                h["value"] = xc_token
+        return True
+    return False
+
+
+def refresh_noco_in_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
+    bp = copy.deepcopy(blueprint)
+    if not refresh_noco_post_body(bp["flow"], scenario_id, xc_token):
+        bp["flow"] = insert_after_trigger(bp["flow"], xc_token, scenario_id)
+    return bp
+
+
 def main() -> None:
     if len(sys.argv) < 4:
         print(
@@ -237,7 +254,7 @@ def main() -> None:
     out = Path(sys.argv[4]) if len(sys.argv) > 4 else None
     data = json.loads(src.read_text(encoding="utf-8"))
     blueprint = data.get("blueprint", data)
-    patched = patch_blueprint(blueprint, token, scenario_id)
+    patched = refresh_noco_in_blueprint(blueprint, token, scenario_id)
     if out:
         out.write_text(json.dumps(patched, ensure_ascii=False, indent="\t"), encoding="utf-8")
         print(out)
