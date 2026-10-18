@@ -48,6 +48,17 @@ La API `executions_get-detail` en este entorno **no devolvió I/O por módulo**;
 |-----------|--------|
 | `número_de_teléfono` | Mismo dato que teléfono; **no** `phone_number` |
 
+### España — campaña **Leads_Báscula_ESP** (formulario `833329243095118`)
+
+| Slug Meta | Uso en Noco / Sheets |
+|-----------|----------------------|
+| `nombre_y_apellidos` | **Nombre completo** (no viene `full_name`; Make/Noco deben mapear este slug primero) |
+| `email` | email |
+| `número_de_teléfono` / `phone_number` | teléfono |
+| `province` | province |
+| `¿cuántos_animales_tienes?` / variantes báscula | cant-animales |
+| `¿qué_tipo_de_ganado_tienes?` / variantes | tipo_animal |
+
 ### Francia — formulario `1099884246301839` (sample + producción)
 
 | Slug Meta | Uso en Sheets |

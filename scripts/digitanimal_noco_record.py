@@ -33,14 +33,17 @@ def _join_list(val: Any) -> str | None:
 
 
 def _full_name(data: dict[str, Any]) -> str | None:
+    nom_apellidos = data.get("nombre_y_apellidos")
+    if isinstance(nom_apellidos, str) and nom_apellidos.strip():
+        return nom_apellidos.strip()
     prenom = data.get("prénom") or data.get("prenom")
     nom = data.get("nom_de_famille")
-    direct = _first(data.get("full_name"), data.get("nombre_y_apellidos"))
-    if prenom:
-        family = _first(nom, direct)
+    if prenom and str(prenom).strip():
+        family = _first(nom, data.get("full_name"), data.get("full name"))
         if family:
             return " ".join(x for x in (str(prenom).strip(), str(family).strip()) if x).strip() or None
         return str(prenom).strip() or None
+    direct = _first(data.get("full_name"), data.get("full name"))
     if direct:
         return str(direct)
     if prenom or nom:
@@ -49,14 +52,17 @@ def _full_name(data: dict[str, Any]) -> str | None:
 
 
 def _full_name_from_index(idx: dict[str, Any]) -> str | None:
+    nom_apellidos = pick(idx, "nombre_y_apellidos")
+    if nom_apellidos and str(nom_apellidos).strip():
+        return str(nom_apellidos).strip()
     prenom = pick(idx, *CANONICAL_FROM_SLUG["first_name"])
     nom = pick(idx, *CANONICAL_FROM_SLUG["last_name"])
-    direct = pick(idx, *CANONICAL_FROM_SLUG["full_name"])
-    if prenom:
-        family = _first(nom, direct)
+    if prenom and str(prenom).strip():
+        family = _first(nom, pick(idx, "full_name", "full name"))
         if family:
             return " ".join(x for x in (str(prenom).strip(), str(family).strip()) if x).strip() or None
         return str(prenom).strip() or None
+    direct = pick(idx, *CANONICAL_FROM_SLUG["full_name"])
     if direct:
         return str(direct)
     if prenom or nom:

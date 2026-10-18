@@ -17,10 +17,12 @@ _IML_NOCO = {
         "1.data.`numéro_de_téléphone`)}}"
     ),
     "FULL_NAME": (
-        "{{if(1.data.`prénom`; trim(1.data.`prénom` & \" \" & "
-        "ifempty(1.data.`nom_de_famille`; ifempty(1.data.full_name; 1.data.`full name`))); "
-        "ifempty(1.data.full_name; 1.data.`full name`; 1.data.nombre_y_apellidos; "
-        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`)))}}"
+        "{{ifempty(1.data.nombre_y_apellidos; "
+        "if(1.data.`prénom` != \"\"; "
+        "trim(1.data.`prénom` & \" \" & ifempty(1.data.`nom_de_famille`; "
+        "ifempty(1.data.full_name; 1.data.`full name`))); "
+        "ifempty(1.data.full_name; 1.data.`full name`; "
+        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))))}}"
     ),
     "PROVINCE": (
         "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
@@ -273,10 +275,32 @@ def refresh_sheets_herd_livestock(flow: list) -> None:
             values["tipo_animal"] = livestock
 
 
+def _refresh_meta_patch_body(flow: list, xc_token: str) -> bool:
+    for m in flow:
+        if m.get("id") != 8 or not _is_noco_http(m):
+            continue
+        if (m.get("mapper") or {}).get("method") != "patch":
+            continue
+        m["mapper"] = _http_mapper(xc_token, "patch", noco_meta_patch_body())
+        return True
+    return False
+
+
+def ensure_meta_patch_module(flow: list, xc_token: str) -> None:
+    if _refresh_meta_patch_body(flow, xc_token):
+        return
+    for i, m in enumerate(flow):
+        if m.get("id") == 7 and _is_noco_http(m):
+            flow.insert(i + 1, http_patch_meta_module(xc_token))
+            return
+
+
 def refresh_noco_in_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
     bp = copy.deepcopy(blueprint)
     if not refresh_noco_post_body(bp["flow"], scenario_id, xc_token):
         bp["flow"] = insert_after_trigger(bp["flow"], xc_token, scenario_id)
+    else:
+        ensure_meta_patch_module(bp["flow"], xc_token)
     refresh_sheets_herd_livestock(bp["flow"])
     return bp
 
