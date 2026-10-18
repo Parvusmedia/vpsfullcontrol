@@ -17,8 +17,10 @@ _IML_NOCO = {
         "1.data.`numéro_de_téléphone`)}}"
     ),
     "FULL_NAME": (
-        "{{ifempty(1.data.full_name; 1.data.`full name`; 1.data.nombre_y_apellidos; "
-        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))}}"
+        "{{if(1.data.`prénom`; trim(1.data.`prénom` & \" \" & "
+        "ifempty(1.data.`nom_de_famille`; ifempty(1.data.full_name; 1.data.`full name`))); "
+        "ifempty(1.data.full_name; 1.data.`full name`; 1.data.nombre_y_apellidos; "
+        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`)))}}"
     ),
     "PROVINCE": (
         "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
@@ -256,12 +258,15 @@ def _walk_modules(flow: list) -> list[dict]:
 def refresh_sheets_herd_livestock(flow: list) -> None:
     """Align Google Sheets cant-animales / tipo_animal with Noco coalesce IML."""
     herd, livestock = _IML_NOCO["HERD"], _IML_NOCO["LIVESTOCK"]
+    name = _IML_NOCO["FULL_NAME"]
     for m in _walk_modules(flow):
         if m.get("module") != "google-sheets:addRow":
             continue
         values = (m.get("mapper") or {}).get("values")
         if not isinstance(values, dict):
             continue
+        if "name" in values:
+            values["name"] = name
         if "cant-animales" in values:
             values["cant-animales"] = herd
         if "tipo_animal" in values:

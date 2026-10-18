@@ -53,8 +53,9 @@ La API `executions_get-detail` en este entorno **no devolvió I/O por módulo**;
 | Slug Meta | Uso en Sheets |
 |-----------|----------------|
 | `e-mail` | email |
-| `prénom` | name (solo nombre; no se concatena `nom_de_famille` en el escenario) |
-| `nom_de_famille` | *(presente en sample, no mapeado)* |
+| `prénom` | Si existe, **name / full_name** = `prénom` + (`nom_de_famille` o `full_name` si el apellido no viene separado) |
+| `nom_de_famille` | Apellido cuando Meta lo envía aparte |
+| `full_name` | En formularios FR a veces solo trae el **apellido**; no usar solo `ifempty(full_name; …)` si hay `prénom` |
 | `numéro_de_téléphone` | parse → `phone`; columna province recibe copia del raw en mapping actual |
 | `localisation_d’élevage` | *(sample; no mapeado a province en FR)* |
 | `combien_d’animaux_avez-vous_?` | cant-animales |
