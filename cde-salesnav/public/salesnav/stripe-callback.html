@@ -20,6 +20,7 @@
 </head>
 <body>
   <p id="msg">Finishing payment…</p>
+  <script src="/salesnav/openai-ads.js?v=1"></script>
   <script>
     (function () {
       var params = new URLSearchParams(location.search);
@@ -67,12 +68,22 @@
             finish({ type: "salesnav-stripe", ok: false, error: out.data.error || "complete_failed" });
             return;
           }
+          if (out.data.conversion && window.cdeOpenAiAdsMeasureTopup) {
+            var c = out.data.conversion;
+            window.cdeOpenAiAdsMeasureTopup({
+              eventId: c.event_id || sessionId,
+              amountCents: c.amount_cents || 0,
+              currency: c.currency || "EUR",
+              packId: c.pack_id || "",
+            });
+          }
           finish({
             type: "salesnav-stripe",
             ok: true,
             balance: out.data.balance,
             credits_added: out.data.credits_added,
             email: out.data.email,
+            conversion: out.data.conversion,
           });
         })
         .catch(function () {
