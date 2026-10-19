@@ -66,7 +66,7 @@ La API `executions_get-detail` en este entorno **no devolvió I/O por módulo**;
 | `e-mail` | email |
 | `prénom` | Si existe, **name / full_name** = `prénom` + (`nom_de_famille` o `full_name` si el apellido no viene separado) |
 | `nom_de_famille` | Apellido cuando Meta lo envía aparte |
-| `full_name` | En formularios FR a veces solo trae el **apellido**; no usar solo `ifempty(full_name; …)` si hay `prénom` |
+| `full_name` | En formularios FR a veces solo trae el **apellido**; no usar solo `ifempty(full_name; …)` si hay `prénom`. En Make, evitar `if(prénom != "")` sin comprobar existencia: en ES (sin `prénom`) puede devolver vacío y saltarse `full_name`. Usar `ifempty(trim(prénom & …); ifempty(full_name; …))`. |
 | `numéro_de_téléphone` | parse → `phone`; columna province recibe copia del raw en mapping actual |
 | `localisation_d’élevage` | *(sample; no mapeado a province en FR)* |
 | `combien_d’animaux_avez-vous_?` | cant-animales |

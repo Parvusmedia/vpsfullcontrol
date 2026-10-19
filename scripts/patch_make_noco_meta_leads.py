@@ -18,8 +18,7 @@ _IML_NOCO = {
     ),
     "FULL_NAME": (
         "{{ifempty(1.data.nombre_y_apellidos; "
-        "if(1.data.`prénom` != \"\"; "
-        "trim(1.data.`prénom` & \" \" & ifempty(1.data.`nom_de_famille`; "
+        "ifempty(trim(1.data.`prénom` & \" \" & ifempty(1.data.`nom_de_famille`; "
         "ifempty(1.data.full_name; 1.data.`full name`))); "
         "ifempty(1.data.full_name; 1.data.`full name`; "
         "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))))}}"
@@ -102,9 +101,13 @@ def noco_post_body(scenario_id: str) -> str:
 
 
 def noco_meta_patch_body() -> str:
+    email, full_name = _IML_NOCO["EMAIL"], _IML_NOCO["FULL_NAME"]
     lines = [
         "{",
         '  "Id": {{7.data.Id}},',
+        f'  "full_name": "{full_name}",',
+        f'  "email": "{email}",',
+        f'  "title": "{full_name}",',
         '  "meta_payload_json": {',
         '    "leadgenId": "{{1.leadgenId}}",',
         '    "formId": "{{1.formId}}",',
