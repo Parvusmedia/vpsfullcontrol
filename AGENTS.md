@@ -1,5 +1,24 @@
 # AGENTS.md
 
+## Meta Ads (Marketing API)
+
+When a user request involves Meta/Facebook ads, lead forms, campaigns, or Business Manager IDs, use:
+
+```bash
+scripts/meta status
+```
+
+Setup (partner Parvus → cliente): `deploy/META_ADS_SETUP.md`. Env template: `deploy/meta.env.example`.
+
+Standard commands:
+
+- List pages: `scripts/meta list-pages`
+- Campaign (PAUSED): `scripts/meta create-campaign --name "..."`
+- Ad set (PAUSED): `scripts/meta create-adset --campaign-id <id> --page-id <id> --name "..."`
+- Lead form (DRAFT): `scripts/meta create-form --page-id <id> --name "..."`
+
+Use `--dry-run` before live creates. Do not print `META_ACCESS_TOKEN` or commit secrets.
+
 ## n8n default workflow (this repository)
 
 When a user request is related to n8n (for example: "n8n", "workflow", workflow IDs, exports, MCP, REST API), use the unified helper command in this repository instead of calling n8n endpoints directly.
