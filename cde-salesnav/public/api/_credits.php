@@ -279,6 +279,106 @@ function cde_credits_parse_tiers(array $payload): array
     ];
 }
 
+/** Profiles billed for preflight (cap by list size when known). */
+function cde_credits_effective_export_profiles(int $limit, ?int $sourceProfileCount = null): int
+{
+    $limit = max(0, min($limit, defined('CDE_TASKS_MAX_LIMIT') ? CDE_TASKS_MAX_LIMIT : 2000));
+    if ($sourceProfileCount !== null && $sourceProfileCount > 0) {
+        return max(1, min($limit, $sourceProfileCount));
+    }
+
+    return $limit > 0 ? $limit : 1;
+}
+
+/**
+ * Upper-bound credit cost before export (assumes mail hits for every row when Mail tier is on).
+ *
+ * @param array{basic?: bool, enriched?: bool, mail?: bool} $tiers
+ */
+function cde_credits_estimate_max_export_cost(int $profiles, array $tiers): int
+{
+    if ($profiles <= 0) {
+        return 0;
+    }
+    $stub = array_fill(0, $profiles, ['work_email' => 'preflight@local']);
+
+    return cde_credits_export_cost($stub, $tiers);
+}
+
+function cde_credits_insufficient_export_message(int $profiles, int $required, int $balance): string
+{
+    return sprintf(
+        'Insufficient export credits for up to %d profiles (up to %d credits required; balance %d). Top up to continue.',
+        $profiles,
+        $required,
+        $balance
+    );
+}
+
+/**
+ * Suggest the smallest credit pack that covers the shortfall.
+ *
+ * @return array{credits_shortfall: int, topup: array{pack_id: string, credits: int, amount_cents: int, label: string}}
+ */
+function cde_credits_export_topup_offer(int $estimatedCost, int $balance): array
+{
+    $shortfall = max(0, $estimatedCost - $balance);
+    $packs = cde_credits_packs();
+    $chosenId = null;
+    $chosen = null;
+    foreach ($packs as $id => $pack) {
+        if ((int) $pack['credits'] >= $shortfall) {
+            $chosenId = (string) $id;
+            $chosen = $pack;
+            break;
+        }
+    }
+    if ($chosen === null) {
+        $chosenId = (string) array_key_last($packs);
+        $chosen = $packs[$chosenId];
+    }
+
+    return [
+        'credits_shortfall' => $shortfall,
+        'topup' => [
+            'pack_id' => $chosenId,
+            'credits' => (int) $chosen['credits'],
+            'amount_cents' => (int) $chosen['amount_cents'],
+            'label' => (string) $chosen['label'],
+        ],
+    ];
+}
+
+/**
+ * @param list<array<string, mixed>> $rows
+ * @param array{basic?: bool, enriched?: bool, mail?: bool} $tiers
+ * @return array{profiles: int, profile_credits: int, enriched_credits: int, emails_found: int, email_credits: int, total: int}
+ */
+function cde_credits_export_breakdown(array $rows, array $tiers): array
+{
+    $profiles = count($rows);
+    $enrichedCredits = !empty($tiers['enriched']) ? (int) ceil($profiles * 0.4) : 0;
+    $emailsFound = 0;
+    if (!empty($tiers['mail'])) {
+        foreach ($rows as $row) {
+            if (trim((string) ($row['work_email'] ?? '')) !== '') {
+                $emailsFound++;
+            }
+        }
+    }
+    $emailCredits = !empty($tiers['mail']) ? $emailsFound : 0;
+    $total = cde_credits_export_cost($rows, $tiers);
+
+    return [
+        'profiles' => $profiles,
+        'profile_credits' => $profiles,
+        'enriched_credits' => $enrichedCredits,
+        'emails_found' => $emailsFound,
+        'email_credits' => $emailCredits,
+        'total' => $total,
+    ];
+}
+
 /**
  * Cost in credits for an export (Basic=1, +Enriched=0.4/lead, +Mail=1/email found).
  *
