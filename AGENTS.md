@@ -15,9 +15,10 @@ Standard commands:
 - List pages: `scripts/meta list-pages`
 - Campaign (PAUSED): `scripts/meta create-campaign --name "..."`
 - Ad set (PAUSED): `scripts/meta create-adset --campaign-id <id> --page-id <id> --name "..."`
-- Lead form (DRAFT): `scripts/meta create-form --page-id <id> --name "..."`
+- Read form: `scripts/meta get-form --page-id <id> --form-id <id>`
+- Duplicate form spec (prefer UI Draft forms): `scripts/meta duplicate-form --page-id <id> --source-form-id <id> --name "..." --follow-up-url <url> --prepare-only`
 
-Use `--dry-run` before live creates. Do not print `META_ACCESS_TOKEN` or commit secrets.
+Do **not** create lead forms via API unless the user explicitly accepts ACTIVE/Restricted forms. Default: `--prepare-only` + duplicate in Ads Manager *Draft forms*. Use `--dry-run` before live API creates. Do not print `META_ACCESS_TOKEN` or commit secrets.
 
 ## n8n default workflow (this repository)
 

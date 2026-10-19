@@ -265,6 +265,45 @@ def _default_form_questions() -> list[dict[str, str]]:
     ]
 
 
+def _page_access_token(client: MetaGraphClient, page_id: str) -> str | None:
+    status, payload = client.request(
+        "GET",
+        "/me/accounts",
+        params={"fields": "id,access_token", "limit": 100},
+    )
+    if status != 200 or not isinstance(payload, dict):
+        return None
+    for page in payload.get("data", []):
+        if isinstance(page, dict) and page.get("id") == page_id and page.get("access_token"):
+            return str(page["access_token"])
+    return None
+
+
+def _questions_for_create(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for q in questions:
+        qtype = q.get("type")
+        if qtype == "CUSTOM":
+            out.append(
+                {
+                    "type": "CUSTOM",
+                    "key": q["key"],
+                    "label": q["label"],
+                    "options": [{"key": o["key"], "value": o["value"]} for o in q.get("options", [])],
+                }
+            )
+        elif qtype:
+            out.append({"type": qtype})
+    return out
+
+
+def _privacy_policy_block(url: str) -> dict[str, str]:
+    return {
+        "url": url,
+        "link_text": "Consulta la Política de privacidad de digitanimal.",
+    }
+
+
 def _load_form_questions(template_path: str | None) -> list[dict[str, Any]]:
     if not template_path:
         return _default_form_questions()
@@ -276,6 +315,147 @@ def _load_form_questions(template_path: str | None) -> list[dict[str, Any]]:
     raise ValueError("Plantilla de formulario inválida: esperaba lista o {questions: [...]}")
 
 
+def _post_leadgen_form(
+    client: MetaGraphClient,
+    page_id: str,
+    body: dict[str, Any],
+    page_token: str,
+) -> tuple[int, Any]:
+    path = f"/{page_id}/leadgen_forms"
+    full = dict(body)
+    full["access_token"] = page_token
+    data = urllib.parse.urlencode(full, doseq=True).encode("utf-8")
+    req = urllib.request.Request(
+        f"{client.base}{path}",
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as response:
+            raw = response.read().decode("utf-8")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        try:
+            return exc.code, json.loads(exc.read().decode("utf-8"))
+        except Exception:
+            return exc.code, {"error": "http_error"}
+
+
+def cmd_get_form(client: MetaGraphClient, page_id: str, form_id: str) -> int:
+    page_token = _page_access_token(client, page_id)
+    if not page_token:
+        _print_json({"error": f"No hay page access token para page_id={page_id}."})
+        return 1
+    fields = (
+        "id,name,status,locale,created_time,questions,privacy_policy_url,"
+        "thank_you_page,legal_content,follow_up_action_url"
+    )
+    status, payload = client.request("GET", f"/{form_id}", params={"fields": fields})
+    # GET form works with system token sometimes; retry with page token via urlopen
+    if status != 200:
+        params = {"fields": fields, "access_token": page_token}
+        url = f"{client.base}/{form_id}?{urllib.parse.urlencode(params)}"
+        with urllib.request.urlopen(url, timeout=60) as response:
+            payload = json.loads(response.read())
+            status = response.status
+    _print_json({"http_status": status, "form": payload})
+    return 0 if status == 200 else 1
+
+
+def cmd_duplicate_form(
+    client: MetaGraphClient,
+    cfg: dict[str, str],
+    page_id: str,
+    source_form_id: str,
+    name: str,
+    follow_up_url: str | None,
+    exact_name: bool,
+    prepare_only: bool,
+    dry_run: bool,
+) -> int:
+    page_token = _page_access_token(client, page_id)
+    if not page_token:
+        _print_json({"error": f"No hay page access token para page_id={page_id}."})
+        return 1
+
+    fields = "questions,thank_you_page,locale,privacy_policy_url,legal_content,follow_up_action_url"
+    params = {"fields": fields, "access_token": page_token}
+    url = f"{client.base}/{source_form_id}?{urllib.parse.urlencode(params)}"
+    with urllib.request.urlopen(url, timeout=60) as response:
+        source = json.loads(response.read())
+
+    privacy = (
+        (cfg["privacy_policy_url"] or "").strip()
+        or (source.get("privacy_policy_url") or "").strip()
+        or (source.get("legal_content", {}) or {}).get("privacy_policy", {}).get("url", "")
+    )
+    if not privacy:
+        _print_json({"error": "Falta URL de privacidad (META_PRIVACY_POLICY_URL)."})
+        return 1
+
+    follow_up = (follow_up_url or source.get("follow_up_action_url") or "").strip()
+    if not follow_up:
+        _print_json({"error": "Falta --follow-up-url o follow_up en el formulario origen."})
+        return 1
+
+    questions_out = _questions_for_create(source.get("questions", []))
+    ty = source.get("thank_you_page") or {}
+    thank_you = {
+        "title": ty.get("title", "Muchas Gracias."),
+        "body": ty.get("body", ""),
+        "button_text": ty.get("button_text", "Ver sitio web"),
+        "button_type": ty.get("button_type", "VIEW_WEBSITE"),
+        "website_url": follow_up,
+        "enable_messenger": ty.get("enable_messenger", False),
+    }
+    form_name = name.strip() if exact_name else _draft_name(name)
+    body = {
+        "name": form_name,
+        "locale": source.get("locale", "es_ES"),
+        "status": "DRAFT",
+        "questions": json.dumps(questions_out, ensure_ascii=False),
+        "thank_you_page": json.dumps(thank_you, ensure_ascii=False),
+        "follow_up_action_url": follow_up,
+        "privacy_policy": json.dumps(_privacy_policy_block(privacy), ensure_ascii=False),
+    }
+
+    spec = {
+        "page_id": page_id,
+        "source_form_id": source_form_id,
+        "requested_status": "DRAFT",
+        "body": body,
+        "meta_api_note": (
+            "La Graph API suele publicar el formulario como ACTIVE (Sharing: Restricted) "
+            "aunque status=DRAFT. Para borrador editable usa la pestaña Draft forms en Ads Manager: "
+            "duplicar el form origen y aplicar estos cambios."
+        ),
+    }
+
+    if prepare_only or dry_run:
+        _print_json({"prepare_only": prepare_only or dry_run, **spec})
+        return 0
+
+    status, payload = _post_leadgen_form(client, page_id, body, page_token)
+    actual_status: str | None = None
+    if status == 200 and isinstance(payload, dict) and payload.get("id"):
+        verify_params = {"fields": "id,name,status", "access_token": page_token}
+        verify_url = f"{client.base}/{payload['id']}?{urllib.parse.urlencode(verify_params)}"
+        with urllib.request.urlopen(verify_url, timeout=60) as response:
+            verified = json.loads(response.read())
+            actual_status = verified.get("status")
+
+    _print_json(
+        {
+            "http_status": status,
+            "result": payload,
+            "actual_status": actual_status,
+            "warning": spec["meta_api_note"] if actual_status and actual_status != "DRAFT" else None,
+        }
+    )
+    return 0 if status == 200 and isinstance(payload, dict) and payload.get("id") else 1
+
+
 def cmd_create_form(
     client: MetaGraphClient,
     cfg: dict[str, str],
@@ -283,6 +463,9 @@ def cmd_create_form(
     name: str,
     template_path: str | None,
     privacy_url: str | None,
+    follow_up_url: str | None,
+    exact_name: bool,
+    prepare_only: bool,
     dry_run: bool,
 ) -> int:
     privacy = (privacy_url or cfg["privacy_policy_url"] or "").strip()
@@ -295,25 +478,54 @@ def cmd_create_form(
         )
         return 1
 
+    follow_up = (follow_up_url or os.getenv("META_DEFAULT_FOLLOW_UP_URL", "")).strip()
+    if not follow_up and not prepare_only:
+        _print_json(
+            {
+                "error": "Falta follow-up URL.",
+                "hint": "META_DEFAULT_FOLLOW_UP_URL o --follow-up-url",
+            }
+        )
+        return 1
+
     try:
         questions = _load_form_questions(template_path)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         _print_json({"error": str(exc)})
         return 1
 
+    questions_out = _questions_for_create(questions)
+    form_name = name.strip() if exact_name else _draft_name(name)
     body = {
-        "name": _draft_name(name),
+        "name": form_name,
         "status": "DRAFT",
-        "privacy_policy_url": privacy,
-        "questions": json.dumps(questions),
         "locale": "es_ES",
+        "questions": json.dumps(questions_out, ensure_ascii=False),
+        "privacy_policy": json.dumps(_privacy_policy_block(privacy), ensure_ascii=False),
     }
-    path = f"/{page_id}/leadgen_forms"
-    if dry_run:
-        _print_json({"dry_run": True, "path": path, "body": body})
+    if follow_up:
+        body["follow_up_action_url"] = follow_up
+        body["thank_you_page"] = json.dumps(
+            {
+                "title": "Muchas Gracias.",
+                "body": "",
+                "button_text": "Ver sitio web",
+                "button_type": "VIEW_WEBSITE",
+                "website_url": follow_up,
+            },
+            ensure_ascii=False,
+        )
+
+    if prepare_only or dry_run:
+        _print_json({"prepare_only": prepare_only or dry_run, "page_id": page_id, "body": body})
         return 0
 
-    status, payload = client.request("POST", path, body=body)
+    page_token = _page_access_token(client, page_id)
+    if not page_token:
+        _print_json({"error": f"No hay page access token para page_id={page_id}."})
+        return 1
+
+    status, payload = _post_leadgen_form(client, page_id, body, page_token)
     _print_json({"http_status": status, "result": payload})
     return 0 if status == 200 and isinstance(payload, dict) and payload.get("id") else 1
 
@@ -343,12 +555,32 @@ def parse_args() -> argparse.Namespace:
     adset.add_argument("--country", default="ES")
     adset.add_argument("--dry-run", action="store_true")
 
-    form = sub.add_parser("create-form", help="Crear lead form en status DRAFT.")
+    form = sub.add_parser("create-form", help="Crear lead form (preferir --prepare-only; ver META_ADS_SETUP.md).")
     form.add_argument("--page-id", required=True)
     form.add_argument("--name", required=True)
     form.add_argument("--template", help="JSON con questions (ver deploy/meta_lead_form.example.json).")
     form.add_argument("--privacy-url")
+    form.add_argument("--follow-up-url")
+    form.add_argument("--exact-name", action="store_true", help="No añadir prefijo [CURSOR-DRAFT].")
+    form.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Solo devolver spec JSON (recomendado: duplicar en pestaña Draft forms).",
+    )
     form.add_argument("--dry-run", action="store_true")
+
+    get_form = sub.add_parser("get-form", help="Leer un lead form por ID.")
+    get_form.add_argument("--page-id", required=True)
+    get_form.add_argument("--form-id", required=True)
+
+    dup = sub.add_parser("duplicate-form", help="Duplicar lead form desde un ID origen.")
+    dup.add_argument("--page-id", required=True)
+    dup.add_argument("--source-form-id", required=True)
+    dup.add_argument("--name", required=True)
+    dup.add_argument("--follow-up-url")
+    dup.add_argument("--exact-name", action="store_true")
+    dup.add_argument("--prepare-only", action="store_true")
+    dup.add_argument("--dry-run", action="store_true")
 
     return parser.parse_args()
 
@@ -378,6 +610,20 @@ def main() -> int:
             args.country,
             args.dry_run,
         )
+    if args.command == "get-form":
+        return cmd_get_form(client, args.page_id, args.form_id)
+    if args.command == "duplicate-form":
+        return cmd_duplicate_form(
+            client,
+            cfg,
+            args.page_id,
+            args.source_form_id,
+            args.name,
+            args.follow_up_url,
+            args.exact_name,
+            args.prepare_only,
+            args.dry_run,
+        )
     if args.command == "create-form":
         return cmd_create_form(
             client,
@@ -386,6 +632,9 @@ def main() -> int:
             args.name,
             args.template,
             args.privacy_url,
+            args.follow_up_url,
+            args.exact_name,
+            args.prepare_only,
             args.dry_run,
         )
 

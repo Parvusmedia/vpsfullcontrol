@@ -56,8 +56,11 @@ scripts/meta create-form --page-id <PAGE_ID> --name "Formulario landing" --templ
 Convenciones:
 
 - Campañas y ad sets se crean en **`PAUSED`** (equivalente operativo a borrador).
-- Formularios se crean con **`status=DRAFT`** en Ads Manager.
-- Los nombres llevan prefijo `[CURSOR-DRAFT]` para localizarlos.
+- **Formularios de leads:** la Graph API **no respeta** `status=DRAFT` en la práctica: un form completo queda **`ACTIVE`** y suele mostrar **Sharing: Restricted**, sin pasar por la pestaña *Draft forms* ni ser editable como un borrador creado en la UI.  
+  **Flujo recomendado:** en Ads Manager → **Draft forms** → *Duplicate* del form origen → nombre/URL → publicar cuando esté listo.  
+  Desde Cursor: `scripts/meta duplicate-form ... --prepare-only` genera el spec (nombre, preguntas, follow-up) para aplicarlo al duplicar en la UI.  
+  Solo usar `duplicate-form` sin `--prepare-only` si aceptas un form **ACTIVE** vía API.
+- Los nombres llevan prefijo `[CURSOR-DRAFT]` salvo `--exact-name`.
 
 ## 4. App Review
 
