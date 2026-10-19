@@ -9,6 +9,15 @@ Escenarios:
 | País | Escenario | ID | Hoja Google |
 |------|-----------|-----|-------------|
 | ES | Digitanimal_Spain_Meta-LeadAds | 7950608 | `meta_DigitanimalES` |
+
+### Sincronizar Google Sheets con Noco
+
+Si Noco está bien pero la hoja tiene `name` vacío (mismo bug de IML `prénom` en Make) o filas desfasadas:
+
+- Rellenar solo **`name`** vacíos por `leadid`: `scripts/digitanimal_sheets_repair_names_from_noco.py --scenario 7950608 --write`
+- Reescribir pestaña(s) desde Noco: `scripts/digitanimal_sheets_regenerate_from_noco.py --write`
+
+Requiere `NOCO_TOKEN` y `GOOGLE_APPLICATION_CREDENTIALS` con acceso de edición al spreadsheet `1uYhrrc9ovN_47BGJPf-FDaPI8k3uukeQn6db-1rsruw`.
 | FR | Digitanimal_FR_Meta-LeadAds | 7951407 | `meta_DigitanimalFR` |
 | IT | Digitanimal_IT_Meta-LeadAds | 7952998 | `meta_DigitanimalIT` |
 
