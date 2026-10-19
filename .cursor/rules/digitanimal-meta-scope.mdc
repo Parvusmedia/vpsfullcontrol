@@ -1,0 +1,22 @@
+---
+description: Limita trabajo Meta/Marketing API al cliente Digitanimal (BM y activos allowlist).
+globs:
+  - scripts/meta
+  - scripts/meta_ads.py
+  - deploy/META_ADS_SETUP.md
+  - deploy/meta*.json
+  - deploy/meta*.example
+alwaysApply: true
+---
+
+# Alcance Meta — solo Digitanimal
+
+En este repositorio, cuando el tema es **Meta / Facebook Ads / lead forms / Marketing API**:
+
+- Trabaja **únicamente** sobre activos del cliente **Digitanimal** (`META_CLIENT_BUSINESS_ID` / `META_AD_ACCOUNT_ID` en secrets).
+- **Páginas permitidas:** solo IDs en `deploy/meta_digitanimal_allowlist.json` (ES, PT, IT, EN, FR de Digitanimal).
+- **Prohibido** crear, leer, modificar o listar forms/campañas/ad sets en otras páginas o cuentas visibles con el mismo token (p. ej. Parvus_ES, HogarTec, Prosegur), salvo que el usuario pida explícitamente salir de este alcance y desactive `META_SCOPE=digitanimal`.
+
+Usa siempre `scripts/meta` (nunca curl ad hoc a Graph). El CLI aplica la allowlist cuando `META_SCOPE=digitanimal` (recomendado en secrets del Cloud Agent).
+
+Lead forms: preferir duplicar en **Draft forms** en Ads Manager; no publicar por API salvo petición explícita.

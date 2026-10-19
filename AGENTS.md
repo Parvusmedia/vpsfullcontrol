@@ -8,6 +8,8 @@ When a user request involves Meta/Facebook ads, lead forms, campaigns, or Busine
 scripts/meta status
 ```
 
+**Alcance Digitanimal (obligatorio en chats de este cliente):** solo el BM y la ad account de Digitanimal configurados en secrets (`META_CLIENT_BUSINESS_ID`, `META_AD_ACCOUNT_ID`) y páginas en `deploy/meta_digitanimal_allowlist.json`. Mantén `META_SCOPE=digitanimal`. No uses otras cuentas/páginas del token (Parvus_ES, HogarTec, Prosegur, etc.) salvo petición explícita y `META_SCOPE=off`.
+
 Setup (partner Parvus → cliente): `deploy/META_ADS_SETUP.md`. Env template: `deploy/meta.env.example`.
 
 Standard commands:

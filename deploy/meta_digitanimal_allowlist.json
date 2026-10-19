@@ -1,0 +1,19 @@
+{
+  "scope": "digitanimal",
+  "client_name": "Digitanimal",
+  "client_business_id": "461966487998679",
+  "page_ids": [
+    "1057071361086931",
+    "1236249229575192",
+    "100420486184506",
+    "111324243840340",
+    "1323667177812599"
+  ],
+  "page_labels": {
+    "1057071361086931": "digitanimal (ES)",
+    "1236249229575192": "Digitanimal Portugal",
+    "100420486184506": "Digitanimal Italia",
+    "111324243840340": "digitanimal English",
+    "1323667177812599": "digitanimal France"
+  }
+}

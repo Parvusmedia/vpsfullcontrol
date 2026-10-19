@@ -21,7 +21,19 @@ Como agencia con activos compartidos en tu BM de Parvus:
 
 Guarda el token fuera de git (ver `deploy/meta.env.example`).
 
-## 2. Variables en el entorno del Cloud Agent
+## 2. Alcance solo Digitanimal
+
+En el Cloud Agent de este cliente, define:
+
+```bash
+META_SCOPE=digitanimal
+META_CLIENT_BUSINESS_ID=<digitanimal_bm_id>
+META_AD_ACCOUNT_ID=<digitanimal_ad_account_id>
+```
+
+El CLI rechaza otras ad accounts y `page_id` fuera de `deploy/meta_digitanimal_allowlist.json`. Comprueba con `scripts/meta scope` y `scripts/meta list-pages` (solo muestra páginas Digitanimal).
+
+## 3. Variables en el entorno del Cloud Agent
 
 En el environment de Cursor (secrets), o en un fichero que solo exista en el pod/VPS:
 

@@ -24,6 +24,13 @@ from pathlib import Path
 from typing import Any
 
 DRAFT_NAME_PREFIX = "[CURSOR-DRAFT]"
+ALLOWLIST_PATH = Path(__file__).resolve().parent.parent / "deploy" / "meta_digitanimal_allowlist.json"
+
+
+class MetaScopeError(Exception):
+    def __init__(self, message: str, **details: Any) -> None:
+        super().__init__(message)
+        self.details = details
 
 
 class MetaGraphClient:
@@ -113,6 +120,66 @@ def _draft_name(name: str) -> str:
     return f"{DRAFT_NAME_PREFIX} {name}"
 
 
+def _load_digitanimal_allowlist() -> dict[str, Any]:
+    if not ALLOWLIST_PATH.is_file():
+        return {}
+    return json.loads(ALLOWLIST_PATH.read_text(encoding="utf-8"))
+
+
+def _scope_mode() -> str:
+    explicit = os.getenv("META_SCOPE", "").strip().lower()
+    if explicit in {"off", "all", "none", "disabled"}:
+        return "off"
+    if explicit in {"digitanimal", "client"}:
+        return "digitanimal"
+    client_bm = os.getenv("META_CLIENT_BUSINESS_ID", "").strip()
+    allowlist = _load_digitanimal_allowlist()
+    if client_bm and allowlist.get("client_business_id") == client_bm:
+        return "digitanimal"
+    return "off"
+
+
+def _scope_rules() -> dict[str, Any] | None:
+    if _scope_mode() != "digitanimal":
+        return None
+    rules = _load_digitanimal_allowlist()
+    if not rules.get("client_business_id") or not rules.get("page_ids"):
+        return None
+    return rules
+
+
+def _assert_scope_ad_account(cfg: dict[str, str]) -> None:
+    rules = _scope_rules()
+    if not rules:
+        return
+    if not cfg.get("ad_account_id", "").strip():
+        raise MetaScopeError(
+            "META_AD_ACCOUNT_ID requerido en alcance Digitanimal.",
+            hint="Usa la ad account de Digitanimal en secrets.",
+        )
+    expected_bm = str(rules.get("client_business_id", ""))
+    configured_bm = (cfg.get("client_business_id") or "").strip()
+    if expected_bm and configured_bm and configured_bm != expected_bm:
+        raise MetaScopeError(
+            "META_CLIENT_BUSINESS_ID no coincide con el alcance Digitanimal.",
+            expected_client_business_id=expected_bm,
+            provided_client_business_id=configured_bm,
+        )
+
+
+def _assert_scope_page_id(page_id: str) -> None:
+    rules = _scope_rules()
+    if not rules:
+        return
+    allowed: set[str] = {str(pid) for pid in rules.get("page_ids", [])}
+    if page_id not in allowed:
+        raise MetaScopeError(
+            "page_id fuera del alcance Digitanimal.",
+            allowed_page_ids=sorted(allowed),
+            provided_page_id=page_id,
+        )
+
+
 def _config_from_env() -> dict[str, str]:
     token = os.getenv("META_ACCESS_TOKEN", "").strip()
     ad_account = os.getenv("META_AD_ACCOUNT_ID", "").strip()
@@ -125,6 +192,7 @@ def _config_from_env() -> dict[str, str]:
         "privacy_policy_url": privacy,
         "client_business_id": os.getenv("META_CLIENT_BUSINESS_ID", "").strip(),
         "partner_business_id": os.getenv("META_PARTNER_BUSINESS_ID", "").strip(),
+        "scope_mode": _scope_mode(),
     }
 
 
@@ -141,7 +209,31 @@ def _require_client(cfg: dict[str, str]) -> MetaGraphClient | None:
     return MetaGraphClient(cfg["token"], cfg["graph_version"])
 
 
+def cmd_scope(cfg: dict[str, str]) -> int:
+    rules = _scope_rules()
+    payload: dict[str, Any] = {
+        "scope_mode": cfg.get("scope_mode", _scope_mode()),
+        "allowlist_file": str(ALLOWLIST_PATH),
+        "enforced": rules is not None,
+    }
+    if rules:
+        payload["digitanimal"] = {
+            "client_business_id": rules.get("client_business_id"),
+            "ad_account_id_env": "META_AD_ACCOUNT_ID",
+            "page_ids": rules.get("page_ids"),
+            "page_labels": rules.get("page_labels"),
+        }
+    _print_json(payload)
+    return 0
+
+
 def cmd_status(client: MetaGraphClient, cfg: dict[str, str]) -> int:
+    try:
+        _assert_scope_ad_account(cfg)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
+        return 1
+
     status, debug = client.request("GET", "/debug_token", params={"input_token": cfg["token"]})
     me_status, me = client.request("GET", "/me", params={"fields": "id,name"})
     ad_status, ad_info = (0, {})
@@ -165,6 +257,7 @@ def cmd_status(client: MetaGraphClient, cfg: dict[str, str]) -> int:
             "debug_token": {"http_status": status, "data": debug},
             "me": {"http_status": me_status, "data": me},
             "ad_account": {"http_status": ad_status, "data": ad_info},
+            "scope": {"mode": cfg.get("scope_mode"), "enforced": _scope_rules() is not None},
         }
     )
     if status != 200 or me_status != 200:
@@ -185,6 +278,23 @@ def cmd_list_pages(client: MetaGraphClient) -> int:
         return 1
     pages = payload.get("data", []) if isinstance(payload, dict) else []
     safe = [{"id": p.get("id"), "name": p.get("name")} for p in pages if isinstance(p, dict)]
+    rules = _scope_rules()
+    if rules:
+        allowed = {str(pid) for pid in rules.get("page_ids", [])}
+        labels = rules.get("page_labels") or {}
+        safe = [p for p in safe if p.get("id") in allowed]
+        for p in safe:
+            p["scope_label"] = labels.get(p.get("id"), "")
+        hidden = len(pages) - len(safe)
+        _print_json(
+            {
+                "scope": "digitanimal",
+                "count": len(safe),
+                "pages": safe,
+                "hidden_non_digitanimal_pages": hidden,
+            }
+        )
+        return 0
     _print_json({"count": len(safe), "pages": safe})
     return 0
 
@@ -196,6 +306,12 @@ def cmd_create_campaign(
     objective: str,
     dry_run: bool,
 ) -> int:
+    try:
+        _assert_scope_ad_account(cfg)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
+        return 1
+
     if not cfg["ad_account_id"]:
         _print_json({"error": "Falta META_AD_ACCOUNT_ID."})
         return 1
@@ -232,6 +348,12 @@ def cmd_create_adset(
         return 1
     if not page_id:
         _print_json({"error": "Falta --page-id (requerido para promoted_object en leads)."})
+        return 1
+    try:
+        _assert_scope_ad_account(cfg)
+        _assert_scope_page_id(page_id)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
         return 1
 
     daily_budget = max(100, int(daily_budget_eur * 100))
@@ -343,6 +465,12 @@ def _post_leadgen_form(
 
 
 def cmd_get_form(client: MetaGraphClient, page_id: str, form_id: str) -> int:
+    try:
+        _assert_scope_page_id(page_id)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
+        return 1
+
     page_token = _page_access_token(client, page_id)
     if not page_token:
         _print_json({"error": f"No hay page access token para page_id={page_id}."})
@@ -374,6 +502,13 @@ def cmd_duplicate_form(
     prepare_only: bool,
     dry_run: bool,
 ) -> int:
+    try:
+        _assert_scope_ad_account(cfg)
+        _assert_scope_page_id(page_id)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
+        return 1
+
     page_token = _page_access_token(client, page_id)
     if not page_token:
         _print_json({"error": f"No hay page access token para page_id={page_id}."})
@@ -468,6 +603,13 @@ def cmd_create_form(
     prepare_only: bool,
     dry_run: bool,
 ) -> int:
+    try:
+        _assert_scope_ad_account(cfg)
+        _assert_scope_page_id(page_id)
+    except MetaScopeError as exc:
+        _print_json({"error": str(exc), **exc.details})
+        return 1
+
     privacy = (privacy_url or cfg["privacy_policy_url"] or "").strip()
     if not privacy:
         _print_json(
@@ -540,6 +682,7 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("status", help="Validar token y acceso a la ad account.")
+    sub.add_parser("scope", help="Mostrar alcance activo (Digitanimal allowlist).")
     sub.add_parser("list-pages", help="Páginas accesibles con el token (elegir page_id).")
 
     camp = sub.add_parser("create-campaign", help="Crear campaña PAUSED.")
@@ -593,6 +736,8 @@ def main() -> int:
     if client is None:
         return 1
 
+    if args.command == "scope":
+        return cmd_scope(cfg)
     if args.command == "status":
         return cmd_status(client, cfg)
     if args.command == "list-pages":
