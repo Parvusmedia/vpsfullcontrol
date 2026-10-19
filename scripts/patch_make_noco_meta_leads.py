@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+"""Insert NocoDB mirror steps (HTTP POST + PATCH meta payload) into Digitanimal Make scenarios."""
+from __future__ import annotations
+
+import copy
+import json
+import sys
+from pathlib import Path
+
+NOCO_URL = "https://mpa.parvusmedia.com/api/v2/tables/mieilgjtcw04jjr/records"
+
+# Meta multi-select fields are arrays: join(1.data.`slug`; ", ") — not `slug`[] inside join().
+_IML_NOCO = {
+    "EMAIL": "{{ifempty(1.data.email; 1.data.`correo_electrónico`; 1.data.`e-mail`)}}",
+    "PHONE": (
+        "{{ifempty(1.data.phone_number; 1.data.phone; 1.data.`número_de_teléfono`; "
+        "1.data.`numéro_de_téléphone`)}}"
+    ),
+    "FULL_NAME": (
+        "{{ifempty(1.data.nombre_y_apellidos; "
+        "ifempty(trim(1.data.`prénom` & \" \" & ifempty(1.data.`nom_de_famille`; "
+        "ifempty(1.data.full_name; 1.data.`full name`))); "
+        "ifempty(1.data.full_name; 1.data.`full name`; "
+        "trim(1.data.`prénom` & \" \" & 1.data.`nom_de_famille`))))}}"
+    ),
+    "PROVINCE": (
+        "{{ifempty(1.data.province; 1.data.provincia; 1.data.region; "
+        "1.data.`localisation_d’élevage`; 1.data.`τοποθεσία_της_κτηνοτροφικής_μονάδας`)}}"
+    ),
+    "HERD": (
+        "{{ifempty("
+        "join(1.data.animal_count; \", \"); "
+        "join(1.data.`how_many_animals_do_you_have?`; \", \"); "
+        "join(1.data.`¿cuántos_animales_tienes?`; \", \"); "
+        "join(1.data.`quantos_animais_você_tem?`; \", \"); "
+        "join(1.data.`combien_d’animaux_avez-vous_?`; \", \"); "
+        "join(1.data.`número_de_animales:`; \", \"); "
+        "join(1.data.`πόσα_ζώα_έχετε;`; \", \"); "
+        "join(1.data.`quanti_animali_hai?`; \", \"); "
+        "join(1.data.`numero_di_animali`; \", \"))}}"
+    ),
+    "LIVESTOCK": (
+        "{{ifempty("
+        "join(1.data.livestock_type; \", \"); "
+        "join(1.data.`what_type_of_livestock_do_you_own?`; \", \"); "
+        "join(1.data.`¿qué_tipo_de_ganado_tienes?`; \", \"); "
+        "join(1.data.`qual_o_tipo_de_gado_que_possui?`; \", \"); "
+        "join(1.data.`quel_type_de_bétail_avez-vous_?`; \", \"); "
+        "join(1.data.`τι_είδους_ζώα_έχεις;`; \", \"); "
+        "join(1.data.`che_tipo_di_bestiame_hai?`; \", \"); "
+        "join(1.data.`tipo_di_animale`; \", \"))}}"
+    ),
+}
+
+
+def _iml(scenario_id: str) -> dict[str, str]:
+    del scenario_id  # same coalesce for ES / FR / IT → Noco
+    return _IML_NOCO
+
+
+def noco_post_body(scenario_id: str) -> str:
+    m = _iml(scenario_id)
+    EMAIL, PHONE, FULL_NAME, PROVINCE, HERD, LIVESTOCK = (
+        m["EMAIL"],
+        m["PHONE"],
+        m["FULL_NAME"],
+        m["PROVINCE"],
+        m["HERD"],
+        m["LIVESTOCK"],
+    )
+    lines = [
+        "{",
+        f'  "leadgen_id": "{{{{1.leadgenId}}}}",',
+        f'  "form_id": "{{{{1.formId}}}}",',
+        f'  "page_id": "{{{{1.pageId}}}}",',
+        f'  "platform": "{{{{1.platform}}}}",',
+        '  "is_organic": {{if(1.isOrganic; true; false)}},',
+        f'  "date_created": "{{{{1.dateCreated}}}}",',
+        f'  "lead_source": "meta_{{{{1.pageId}}}}",',
+        f'  "campaign_id": "{{{{1.campaignId}}}}",',
+        f'  "campaign_name": "{{{{1.campaignName}}}}",',
+        f'  "adset_id": "{{{{1.adsetId}}}}",',
+        f'  "adset_name": "{{{{1.adsetName}}}}",',
+        f'  "ad_id": "{{{{1.adId}}}}",',
+        f'  "ad_name": "{{{{1.adName}}}}",',
+        f'  "adgroup_id": "{{{{1.adgroupId}}}}",',
+        f'  "email": "{EMAIL}",',
+        f'  "phone": "{PHONE}",',
+        f'  "full_name": "{FULL_NAME}",',
+        f'  "province": "{PROVINCE}",',
+        f'  "herd_count": "{HERD}",',
+        f'  "livestock_type": "{LIVESTOCK}",',
+        f'  "home_listing": "{{{{1.homeListing}}}}",',
+        f'  "partner_name": "{{{{1.partnerName}}}}",',
+        f'  "retailer_item_id": "{{{{1.retailerItemId}}}}",',
+        f'  "make_scenario_id": "{scenario_id}",',
+        f'  "title": "{FULL_NAME}"',
+        "}",
+    ]
+    return "\n".join(lines)
+
+
+def noco_meta_patch_body() -> str:
+    email, full_name = _IML_NOCO["EMAIL"], _IML_NOCO["FULL_NAME"]
+    lines = [
+        "{",
+        '  "Id": {{7.data.Id}},',
+        f'  "full_name": "{full_name}",',
+        f'  "email": "{email}",',
+        f'  "title": "{full_name}",',
+        '  "meta_payload_json": {',
+        '    "leadgenId": "{{1.leadgenId}}",',
+        '    "formId": "{{1.formId}}",',
+        '    "pageId": "{{1.pageId}}",',
+        '    "dateCreated": "{{1.dateCreated}}",',
+        '    "platform": "{{1.platform}}",',
+        '    "isOrganic": {{if(1.isOrganic; true; false)}},',
+        '    "campaignId": "{{1.campaignId}}",',
+        '    "campaignName": "{{1.campaignName}}",',
+        '    "adsetId": "{{1.adsetId}}",',
+        '    "adsetName": "{{1.adsetName}}",',
+        '    "adId": "{{1.adId}}",',
+        '    "adName": "{{1.adName}}",',
+        '    "adgroupId": "{{1.adgroupId}}",',
+        '    "homeListing": "{{1.homeListing}}",',
+        '    "partnerName": "{{1.partnerName}}",',
+        '    "retailerItemId": "{{1.retailerItemId}}",',
+        '    "data": {{1.data}}',
+        "  }",
+        "}",
+    ]
+    return "\n".join(lines)
+
+
+def _http_mapper(xc_token: str, method: str, data: str) -> dict:
+    return {
+        "url": NOCO_URL,
+        "method": method,
+        "serializeUrl": False,
+        "headers": [
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "xc-token", "value": xc_token},
+        ],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": True,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "",
+        "shareCookies": False,
+        "ca": "",
+        "rejectUnauthorized": True,
+        "followRedirect": True,
+        "useQuerystring": False,
+        "gzip": True,
+        "useMtls": False,
+        "contentType": "application/json",
+        "data": data,
+        "followAllRedirects": False,
+    }
+
+
+def http_post_module(xc_token: str, scenario_id: str) -> dict:
+    return {
+        "id": 7,
+        "module": "http:ActionSendData",
+        "version": 3,
+        "parameters": {"handleErrors": True},
+        "mapper": _http_mapper(xc_token, "post", noco_post_body(scenario_id)),
+        "metadata": {"designer": {"x": -620, "y": -320}},
+    }
+
+
+def http_patch_meta_module(xc_token: str) -> dict:
+    return {
+        "id": 8,
+        "module": "http:ActionSendData",
+        "version": 3,
+        "parameters": {"handleErrors": True},
+        "mapper": _http_mapper(xc_token, "patch", noco_meta_patch_body()),
+        "metadata": {"designer": {"x": -460, "y": -320}},
+    }
+
+
+def _is_noco_http(module: dict) -> bool:
+    if module.get("module") != "http:ActionSendData":
+        return False
+    url = (module.get("mapper") or {}).get("url") or ""
+    return "mieilgjtcw04jjr" in url
+
+
+def _is_noco_router(module: dict) -> bool:
+    if module.get("module") != "builtin:BasicRouter" or module.get("id") != 7:
+        return False
+    for route in module.get("routes") or []:
+        for step in route.get("flow") or []:
+            if _is_noco_http(step):
+                return True
+    return False
+
+
+def strip_noco_modules(flow: list) -> list:
+    if not flow:
+        return flow
+    out = [flow[0]]
+    i = 1
+    while i < len(flow):
+        m = flow[i]
+        if _is_noco_http(m) or _is_noco_router(m):
+            i += 1
+            continue
+        if m.get("module") == "json:TransformToJSON":
+            i += 1
+            continue
+        break
+    out.extend(flow[i:])
+    return out
+
+
+def insert_after_trigger(flow: list, xc_token: str, scenario_id: str) -> list:
+    flow = strip_noco_modules(flow)
+    if not flow or flow[0].get("id") != 1:
+        raise ValueError("Expected module 1 as Meta trigger")
+    out = [flow[0], http_post_module(xc_token, scenario_id), http_patch_meta_module(xc_token)]
+    out.extend(flow[1:])
+    return out
+
+
+def patch_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
+    bp = copy.deepcopy(blueprint)
+    bp["flow"] = insert_after_trigger(bp["flow"], xc_token, scenario_id)
+    return bp
+
+
+def refresh_noco_post_body(flow: list, scenario_id: str, xc_token: str) -> bool:
+    """Update module 7 Noco POST JSON in place (keeps layout / token headers)."""
+    body = noco_post_body(scenario_id)
+    for m in flow:
+        if m.get("id") != 7 or m.get("module") != "http:ActionSendData":
+            continue
+        url = (m.get("mapper") or {}).get("url") or ""
+        if "mieilgjtcw04jjr" not in url:
+            continue
+        mapper = m.setdefault("mapper", {})
+        mapper["data"] = body
+        for h in mapper.get("headers") or []:
+            if h.get("name") == "xc-token":
+                h["value"] = xc_token
+        return True
+    return False
+
+
+def _walk_modules(flow: list) -> list[dict]:
+    out: list[dict] = []
+    for m in flow:
+        out.append(m)
+        if m.get("module") == "builtin:BasicRouter":
+            for route in m.get("routes") or []:
+                out.extend(_walk_modules(route.get("flow") or []))
+    return out
+
+
+def refresh_sheets_herd_livestock(flow: list) -> None:
+    """Align Google Sheets cant-animales / tipo_animal with Noco coalesce IML."""
+    herd, livestock = _IML_NOCO["HERD"], _IML_NOCO["LIVESTOCK"]
+    name = _IML_NOCO["FULL_NAME"]
+    for m in _walk_modules(flow):
+        if m.get("module") != "google-sheets:addRow":
+            continue
+        values = (m.get("mapper") or {}).get("values")
+        if not isinstance(values, dict):
+            continue
+        if "name" in values:
+            values["name"] = name
+        if "cant-animales" in values:
+            values["cant-animales"] = herd
+        if "tipo_animal" in values:
+            values["tipo_animal"] = livestock
+
+
+def _refresh_meta_patch_body(flow: list, xc_token: str) -> bool:
+    for m in flow:
+        if m.get("id") != 8 or not _is_noco_http(m):
+            continue
+        if (m.get("mapper") or {}).get("method") != "patch":
+            continue
+        m["mapper"] = _http_mapper(xc_token, "patch", noco_meta_patch_body())
+        return True
+    return False
+
+
+def ensure_meta_patch_module(flow: list, xc_token: str) -> None:
+    if _refresh_meta_patch_body(flow, xc_token):
+        return
+    for i, m in enumerate(flow):
+        if m.get("id") == 7 and _is_noco_http(m):
+            flow.insert(i + 1, http_patch_meta_module(xc_token))
+            return
+
+
+def refresh_noco_in_blueprint(blueprint: dict, xc_token: str, scenario_id: str) -> dict:
+    bp = copy.deepcopy(blueprint)
+    if not refresh_noco_post_body(bp["flow"], scenario_id, xc_token):
+        bp["flow"] = insert_after_trigger(bp["flow"], xc_token, scenario_id)
+    else:
+        ensure_meta_patch_module(bp["flow"], xc_token)
+    refresh_sheets_herd_livestock(bp["flow"])
+    return bp
+
+
+def main() -> None:
+    if len(sys.argv) < 4:
+        print(
+            "Usage: patch_make_noco_meta_leads.py <scenario_get.json> <scenario_id> <xc_token> [out.json]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    src = Path(sys.argv[1])
+    scenario_id = sys.argv[2]
+    token = sys.argv[3]
+    out = Path(sys.argv[4]) if len(sys.argv) > 4 else None
+    data = json.loads(src.read_text(encoding="utf-8"))
+    blueprint = data.get("blueprint", data)
+    patched = refresh_noco_in_blueprint(blueprint, token, scenario_id)
+    if out:
+        out.write_text(json.dumps(patched, ensure_ascii=False, indent="\t"), encoding="utf-8")
+        print(out)
+    else:
+        json.dump(patched, sys.stdout, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    main()
