@@ -1,0 +1,7 @@
+{
+  "questions": [
+    { "type": "FULL_NAME" },
+    { "type": "EMAIL" },
+    { "type": "PHONE" }
+  ]
+}

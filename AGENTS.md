@@ -1,5 +1,27 @@
 # AGENTS.md
 
+## Meta Ads (Marketing API)
+
+When a user request involves Meta/Facebook ads, lead forms, campaigns, or Business Manager IDs, use:
+
+```bash
+scripts/meta status
+```
+
+**Alcance Digitanimal (obligatorio en chats de este cliente):** solo el BM y la ad account de Digitanimal configurados en secrets (`META_CLIENT_BUSINESS_ID`, `META_AD_ACCOUNT_ID`) y páginas en `deploy/meta_digitanimal_allowlist.json`. Mantén `META_SCOPE=digitanimal`. No uses otras cuentas/páginas del token (Parvus_ES, HogarTec, Prosegur, etc.) salvo petición explícita y `META_SCOPE=off`.
+
+Setup (partner Parvus → cliente): `deploy/META_ADS_SETUP.md`. Env template: `deploy/meta.env.example`.
+
+Standard commands:
+
+- List pages: `scripts/meta list-pages`
+- Campaign (PAUSED): `scripts/meta create-campaign --name "..."`
+- Ad set (PAUSED): `scripts/meta create-adset --campaign-id <id> --page-id <id> --name "..."`
+- Read form: `scripts/meta get-form --page-id <id> --form-id <id>`
+- Duplicate form spec (prefer UI Draft forms): `scripts/meta duplicate-form --page-id <id> --source-form-id <id> --name "..." --follow-up-url <url> --prepare-only`
+
+Do **not** create lead forms via API unless the user explicitly accepts ACTIVE/Restricted forms. Default: `--prepare-only` + duplicate in Ads Manager *Draft forms*. Use `--dry-run` before live API creates. Do not print `META_ACCESS_TOKEN` or commit secrets.
+
 ## n8n default workflow (this repository)
 
 When a user request is related to n8n (for example: "n8n", "workflow", workflow IDs, exports, MCP, REST API), use the unified helper command in this repository instead of calling n8n endpoints directly.

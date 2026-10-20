@@ -1,0 +1,33 @@
+{
+  "scope": "digitanimal",
+  "client_name": "Digitanimal",
+  "client_business_id": "461966487998679",
+  "page_ids": [
+    "1057071361086931",
+    "1236249229575192",
+    "100420486184506",
+    "111324243840340",
+    "1323667177812599"
+  ],
+  "page_labels": {
+    "1057071361086931": "digitanimal (ES)",
+    "1236249229575192": "Digitanimal Portugal",
+    "100420486184506": "Digitanimal Italia",
+    "111324243840340": "digitanimal English",
+    "1323667177812599": "digitanimal France"
+  },
+  "pixel_id_by_page_id": {
+    "1057071361086931": "545719142936280",
+    "1236249229575192": "2897190760400783",
+    "100420486184506": "263251448926901",
+    "111324243840340": "833302003835412",
+    "1323667177812599": "1310248205825804"
+  },
+  "pixel_labels": {
+    "545719142936280": "Píxel de Digitanimal (ES)",
+    "2897190760400783": "Digitanimal PT",
+    "263251448926901": "digitanimal.it",
+    "833302003835412": "Píxel de Digitanimal UK",
+    "1310248205825804": "Píxel de Digitanimal FR"
+  }
+}
