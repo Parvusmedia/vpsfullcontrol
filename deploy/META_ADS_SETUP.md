@@ -67,6 +67,7 @@ scripts/meta create-form --page-id <PAGE_ID> --name "Formulario landing" --templ
 
 Convenciones:
 
+- Al clonar campañas/ad sets de leads **por país**, el `promoted_object.pixel_id` del ad set debe ser el **pixel del mercado**, no el del país de referencia. Mapa en `deploy/meta_digitanimal_allowlist.json` → `pixel_id_by_page_id` (p. ej. PT página `1236249229575192` → pixel **Digitanimal PT** `2897190760400783`; FR → `1310248205825804`). No reutilizar el pixel FR en Portugal.
 - Campañas y ad sets se crean en **`PAUSED`** (equivalente operativo a borrador).
 - **Formularios de leads:** la Graph API **no respeta** `status=DRAFT` en la práctica: un form completo queda **`ACTIVE`** y suele mostrar **Sharing: Restricted**, sin pasar por la pestaña *Draft forms* ni ser editable como un borrador creado en la UI.  
   **Flujo recomendado:** en Ads Manager → **Draft forms** → *Duplicate* del form origen → nombre/URL → publicar cuando esté listo.  
