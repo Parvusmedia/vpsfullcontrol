@@ -7,6 +7,7 @@ if (!apiKey) {
 const baseUrl = 'https://pmedia.app.n8n.cloud';
 const lookbackHours = 24;
 const maxRetries = 300;
+const delayBetweenRetriesSeconds = 5;
 const limitPatterns = ['execution limit reached', 'consider upgrading your plan'];
 
 const staticData = $getWorkflowStaticData('global');
@@ -181,13 +182,17 @@ while (toRetry.length < maxRetries) {
   if (!errorCursor || toRetry.length >= maxRetries) break;
 }
 
-for (const id of toRetry) {
+for (let i = 0; i < toRetry.length; i += 1) {
+  const id = toRetry[i];
   try {
     await apiRetryExecution.call(this, id);
     retried[id] = new Date().toISOString();
     results.retried += 1;
   } catch (error) {
     results.errors.push(`retry ${id}: ${error.message || error}`);
+  }
+  if (i < toRetry.length - 1 && delayBetweenRetriesSeconds > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayBetweenRetriesSeconds * 1000));
   }
 }
 

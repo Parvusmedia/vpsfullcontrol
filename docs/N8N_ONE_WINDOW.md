@@ -26,8 +26,7 @@ Comandos disponibles:
 - `list [--limit 50] [--query texto]`: lista workflows.
 - `details --workflow-id <id>`: muestra detalle.
 - `export [--out ruta]`: exporta workflows a JSON.
-- `retry-limit-failures [--lookback-hours 24] [--max-retries 300] [--dry-run]`: reintenta por API ejecuciones **Failed** por límite mensual que **no llegaron a ejecutar nodos** (sin duplicar: omite retries ya exitosos, hijos `retryOf`, error workflows y runs con nodos en success). El workflow ops `[Ops] Retry ejecuciones por límite mensual (09:30)` usa la misma lógica (`scripts/n8n_retry_limit_workflow_code.js`).
-- `python3 scripts/n8n_apply_execution_delta.py [--dry-run] [--workflow-id <id>]`: inserta nodos **Delta gate (ops)** (`Code` + `Wait`) tras los triggers para espaciar ejecuciones (intervalo mínimo + jitter) antes de llamadas a terceros. Config por workflow en el script.
+- `retry-limit-failures [--lookback-hours 24] [--max-retries 300] [--delay-seconds 5] [--dry-run]`: reintenta por API ejecuciones **Failed** por límite mensual que **no llegaron a ejecutar nodos**, **una tras otra** esperando N segundos entre cada retry (sin duplicar). El workflow ops `[Ops] Retry ejecuciones por límite mensual (09:30)` usa la misma lógica (`scripts/n8n_retry_limit_workflow_code.js`).
 
 ## Ejemplos
 

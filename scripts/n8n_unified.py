@@ -435,6 +435,7 @@ def cmd_retry_limit_failures(
     client: N8NClient,
     lookback_hours: int,
     max_retries: int,
+    delay_seconds: int,
     dry_run: bool,
 ) -> int:
     if not client.rest_key:
@@ -510,18 +511,21 @@ def cmd_retry_limit_failures(
     retried: list[str] = []
     errors: list[dict[str, str]] = []
     if not dry_run:
-        for exec_id in to_retry:
+        for index, exec_id in enumerate(to_retry):
             status, retry_payload = client._request("POST", f"{client.base_url}/api/v1/executions/{exec_id}/retry", headers={"X-N8N-API-KEY": client.rest_key or ""})
             if status == 200:
                 retried.append(exec_id)
             else:
                 errors.append({"executionId": exec_id, "status": str(status), "payload": str(retry_payload)[:200]})
+            if delay_seconds > 0 and index < len(to_retry) - 1:
+                time.sleep(delay_seconds)
 
     _print_json(
         {
             "ok": True,
             "dry_run": dry_run,
             "lookback_hours": lookback_hours,
+            "delay_between_retries_seconds": delay_seconds,
             "scanned_errors": scanned,
             "candidates": len(to_retry),
             "skipped": skipped,
@@ -579,6 +583,7 @@ def parse_args() -> argparse.Namespace:
     )
     retry_p.add_argument("--lookback-hours", type=int, default=24)
     retry_p.add_argument("--max-retries", type=int, default=300)
+    retry_p.add_argument("--delay-seconds", type=int, default=5)
     retry_p.add_argument("--dry-run", action="store_true")
 
     return parser.parse_args()
@@ -603,7 +608,9 @@ def main() -> int:
     if args.command == "export":
         return cmd_export(client, args.out)
     if args.command == "retry-limit-failures":
-        return cmd_retry_limit_failures(client, args.lookback_hours, args.max_retries, args.dry_run)
+        return cmd_retry_limit_failures(
+            client, args.lookback_hours, args.max_retries, args.delay_seconds, args.dry_run
+        )
 
     _print_json({"error": "Comando no soportado."})
     return 1
