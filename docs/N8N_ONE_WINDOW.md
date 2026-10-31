@@ -26,6 +26,7 @@ Comandos disponibles:
 - `list [--limit 50] [--query texto]`: lista workflows.
 - `details --workflow-id <id>`: muestra detalle.
 - `export [--out ruta]`: exporta workflows a JSON.
+- `retry-limit-failures [--lookback-hours 72] [--max-retries 300] [--dry-run]`: reintenta por API ejecuciones **Failed** cuyo error indica límite mensual de n8n Cloud (solo las que quedaron registradas en el historial).
 
 ## Ejemplos
 

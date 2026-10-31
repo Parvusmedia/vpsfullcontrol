@@ -15,6 +15,7 @@ import json
 import re
 import sys
 import time
+from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -360,6 +361,90 @@ def _mcp_export(client: N8NClient, out_dir: Path) -> int:
     return 0
 
 
+def _is_monthly_limit_failure(payload: Any) -> bool:
+    text = json.dumps(payload).lower()
+    if "execution limit reached" in text:
+        return True
+    if "consider upgrading your plan" in text:
+        return True
+    return "execution limit" in text and "upgrade" in text
+
+
+def cmd_retry_limit_failures(
+    client: N8NClient,
+    lookback_hours: int,
+    max_retries: int,
+    dry_run: bool,
+) -> int:
+    if not client.rest_key:
+        _print_json({"error": "Requiere N8N_REST_API_KEY."})
+        return 1
+
+    cutoff_ms = time.time() * 1000 - lookback_hours * 3600 * 1000
+    static_retried: set[str] = set()
+    to_retry: list[str] = []
+    scanned = 0
+    cursor: str | None = None
+
+    while len(to_retry) < max_retries:
+        params: dict[str, Any] = {"status": "error", "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        status, payload = client.rest_get("/api/v1/executions", params=params)
+        if status != 200:
+            _print_json({"error": "No se pudo listar ejecuciones", "status": status, "payload": payload})
+            return 1
+        items = payload.get("data", []) if isinstance(payload, dict) else []
+        if not items:
+            break
+        for ex in items:
+            if not isinstance(ex, dict):
+                continue
+            scanned += 1
+            exec_id = str(ex.get("id", ""))
+            if not exec_id or exec_id in static_retried or ex.get("retryOf"):
+                continue
+            stopped_at = ex.get("stoppedAt")
+            if stopped_at:
+                stopped_dt = datetime.fromisoformat(stopped_at.replace("Z", "+00:00"))
+                if stopped_dt.timestamp() * 1000 < cutoff_ms:
+                    continue
+            detail_status, detail = client.rest_get(f"/api/v1/executions/{exec_id}", {"includeData": "true"})
+            if detail_status != 200 or not _is_monthly_limit_failure(detail):
+                continue
+            to_retry.append(exec_id)
+            if len(to_retry) >= max_retries:
+                break
+        next_cursor = payload.get("nextCursor") if isinstance(payload, dict) else None
+        if not next_cursor or len(to_retry) >= max_retries:
+            break
+        cursor = next_cursor
+
+    retried: list[str] = []
+    errors: list[dict[str, str]] = []
+    if not dry_run:
+        for exec_id in to_retry:
+            status, retry_payload = client._request("POST", f"{client.base_url}/api/v1/executions/{exec_id}/retry", headers={"X-N8N-API-KEY": client.rest_key or ""})
+            if status == 200:
+                retried.append(exec_id)
+            else:
+                errors.append({"executionId": exec_id, "status": str(status), "payload": str(retry_payload)[:200]})
+
+    _print_json(
+        {
+            "ok": True,
+            "dry_run": dry_run,
+            "lookback_hours": lookback_hours,
+            "scanned_errors": scanned,
+            "candidates": len(to_retry),
+            "retried": retried,
+            "errors": errors,
+            "candidate_ids": to_retry if dry_run else None,
+        }
+    )
+    return 0
+
+
 def cmd_export(client: N8NClient, out: str | None) -> int:
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = Path(out) if out else Path.cwd() / f"n8n_export_{timestamp}"
@@ -400,6 +485,14 @@ def parse_args() -> argparse.Namespace:
     export_p = sub.add_parser("export", help="Exportar workflows a JSON.")
     export_p.add_argument("--out", type=str, default=None)
 
+    retry_p = sub.add_parser(
+        "retry-limit-failures",
+        help="Reintentar ejecuciones fallidas por límite mensual de n8n Cloud.",
+    )
+    retry_p.add_argument("--lookback-hours", type=int, default=72)
+    retry_p.add_argument("--max-retries", type=int, default=300)
+    retry_p.add_argument("--dry-run", action="store_true")
+
     return parser.parse_args()
 
 
@@ -421,6 +514,8 @@ def main() -> int:
         return cmd_details(client, args.workflow_id)
     if args.command == "export":
         return cmd_export(client, args.out)
+    if args.command == "retry-limit-failures":
+        return cmd_retry_limit_failures(client, args.lookback_hours, args.max_retries, args.dry_run)
 
     _print_json({"error": "Comando no soportado."})
     return 1
