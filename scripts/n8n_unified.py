@@ -489,7 +489,7 @@ def parse_args() -> argparse.Namespace:
         "retry-limit-failures",
         help="Reintentar ejecuciones fallidas por límite mensual de n8n Cloud.",
     )
-    retry_p.add_argument("--lookback-hours", type=int, default=72)
+    retry_p.add_argument("--lookback-hours", type=int, default=24)
     retry_p.add_argument("--max-retries", type=int, default=300)
     retry_p.add_argument("--dry-run", action="store_true")
 
