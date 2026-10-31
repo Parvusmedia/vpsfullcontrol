@@ -370,6 +370,67 @@ def _is_monthly_limit_failure(payload: Any) -> bool:
     return "execution limit" in text and "upgrade" in text
 
 
+def _never_ran_workflow_nodes(detail: Any) -> bool:
+    """Quota-limit failures should fail before any node succeeds."""
+    if not isinstance(detail, dict):
+        return False
+    root = detail.get("data", detail)
+    if not isinstance(root, dict):
+        return False
+    inner = root.get("data") if isinstance(root.get("data"), dict) else root
+    if not isinstance(inner, dict):
+        return True
+    result = inner.get("resultData")
+    if not isinstance(result, dict):
+        return True
+    run_data = result.get("runData")
+    if not isinstance(run_data, dict) or not run_data:
+        return True
+    for node_runs in run_data.values():
+        if not isinstance(node_runs, list):
+            continue
+        for run in node_runs:
+            if isinstance(run, dict) and run.get("executionStatus") == "success":
+                return False
+    err = result.get("error")
+    if isinstance(err, dict):
+        msg = str(err.get("message", "")).lower()
+        return "execution limit" in msg or "upgrading your plan" in msg
+    return False
+
+
+def _collect_successful_retry_parents(client: N8NClient, cutoff_ms: float, max_pages: int = 40) -> set[str]:
+    parents: set[str] = set()
+    cursor: str | None = None
+    for _ in range(max_pages):
+        params: dict[str, Any] = {"status": "success", "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        status, payload = client.rest_get("/api/v1/executions", params=params)
+        if status != 200 or not isinstance(payload, dict):
+            break
+        items = payload.get("data", [])
+        if not items:
+            break
+        stop = False
+        for ex in items:
+            if not isinstance(ex, dict):
+                continue
+            started = ex.get("startedAt") or ex.get("stoppedAt")
+            if started:
+                started_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
+                if started_dt.timestamp() * 1000 < cutoff_ms:
+                    stop = True
+                    break
+            retry_of = ex.get("retryOf")
+            if retry_of and ex.get("status") == "success":
+                parents.add(str(retry_of))
+        cursor = payload.get("nextCursor")
+        if stop or not cursor:
+            break
+    return parents
+
+
 def cmd_retry_limit_failures(
     client: N8NClient,
     lookback_hours: int,
@@ -381,10 +442,14 @@ def cmd_retry_limit_failures(
         return 1
 
     cutoff_ms = time.time() * 1000 - lookback_hours * 3600 * 1000
-    static_retried: set[str] = set()
+    successful_retry_parents = _collect_successful_retry_parents(client, cutoff_ms)
     to_retry: list[str] = []
+    skipped: dict[str, int] = {}
     scanned = 0
     cursor: str | None = None
+
+    def skip(reason: str) -> None:
+        skipped[reason] = skipped.get(reason, 0) + 1
 
     while len(to_retry) < max_retries:
         params: dict[str, Any] = {"status": "error", "limit": 100}
@@ -402,15 +467,37 @@ def cmd_retry_limit_failures(
                 continue
             scanned += 1
             exec_id = str(ex.get("id", ""))
-            if not exec_id or exec_id in static_retried or ex.get("retryOf"):
+            if not exec_id:
                 continue
-            stopped_at = ex.get("stoppedAt")
+            if ex.get("retryOf"):
+                skip("retry_child")
+                continue
+            if ex.get("retrySuccessId"):
+                skip("already_succeeded_via_retry")
+                continue
+            if exec_id in successful_retry_parents:
+                skip("has_successful_retry_child")
+                continue
+            if ex.get("mode") == "error":
+                skip("error_workflow")
+                continue
+            if ex.get("mode") == "retry":
+                skip("retry_mode")
+                continue
+            stopped_at = ex.get("stoppedAt") or ex.get("startedAt")
             if stopped_at:
                 stopped_dt = datetime.fromisoformat(stopped_at.replace("Z", "+00:00"))
                 if stopped_dt.timestamp() * 1000 < cutoff_ms:
                     continue
             detail_status, detail = client.rest_get(f"/api/v1/executions/{exec_id}", {"includeData": "true"})
-            if detail_status != 200 or not _is_monthly_limit_failure(detail):
+            if detail_status != 200:
+                skip("detail_unavailable")
+                continue
+            if not _is_monthly_limit_failure(detail):
+                skip("not_limit_failure")
+                continue
+            if not _never_ran_workflow_nodes(detail):
+                skip("nodes_already_ran")
                 continue
             to_retry.append(exec_id)
             if len(to_retry) >= max_retries:
@@ -437,6 +524,7 @@ def cmd_retry_limit_failures(
             "lookback_hours": lookback_hours,
             "scanned_errors": scanned,
             "candidates": len(to_retry),
+            "skipped": skipped,
             "retried": retried,
             "errors": errors,
             "candidate_ids": to_retry if dry_run else None,
