@@ -15,6 +15,7 @@ import json
 import re
 import sys
 import time
+from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -360,6 +361,182 @@ def _mcp_export(client: N8NClient, out_dir: Path) -> int:
     return 0
 
 
+def _is_monthly_limit_failure(payload: Any) -> bool:
+    text = json.dumps(payload).lower()
+    if "execution limit reached" in text:
+        return True
+    if "consider upgrading your plan" in text:
+        return True
+    return "execution limit" in text and "upgrade" in text
+
+
+def _never_ran_workflow_nodes(detail: Any) -> bool:
+    """Quota-limit failures should fail before any node succeeds."""
+    if not isinstance(detail, dict):
+        return False
+    root = detail.get("data", detail)
+    if not isinstance(root, dict):
+        return False
+    inner = root.get("data") if isinstance(root.get("data"), dict) else root
+    if not isinstance(inner, dict):
+        return True
+    result = inner.get("resultData")
+    if not isinstance(result, dict):
+        return True
+    run_data = result.get("runData")
+    if not isinstance(run_data, dict) or not run_data:
+        return True
+    for node_runs in run_data.values():
+        if not isinstance(node_runs, list):
+            continue
+        for run in node_runs:
+            if isinstance(run, dict) and run.get("executionStatus") == "success":
+                return False
+    err = result.get("error")
+    if isinstance(err, dict):
+        msg = str(err.get("message", "")).lower()
+        return "execution limit" in msg or "upgrading your plan" in msg
+    return False
+
+
+def _collect_successful_retry_parents(client: N8NClient, cutoff_ms: float, max_pages: int = 40) -> set[str]:
+    parents: set[str] = set()
+    cursor: str | None = None
+    for _ in range(max_pages):
+        params: dict[str, Any] = {"status": "success", "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        status, payload = client.rest_get("/api/v1/executions", params=params)
+        if status != 200 or not isinstance(payload, dict):
+            break
+        items = payload.get("data", [])
+        if not items:
+            break
+        stop = False
+        for ex in items:
+            if not isinstance(ex, dict):
+                continue
+            started = ex.get("startedAt") or ex.get("stoppedAt")
+            if started:
+                started_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
+                if started_dt.timestamp() * 1000 < cutoff_ms:
+                    stop = True
+                    break
+            retry_of = ex.get("retryOf")
+            if retry_of and ex.get("status") == "success":
+                parents.add(str(retry_of))
+        cursor = payload.get("nextCursor")
+        if stop or not cursor:
+            break
+    return parents
+
+
+def cmd_retry_limit_failures(
+    client: N8NClient,
+    lookback_hours: int,
+    max_retries: int,
+    delay_seconds: int,
+    dry_run: bool,
+) -> int:
+    if not client.rest_key:
+        _print_json({"error": "Requiere N8N_REST_API_KEY."})
+        return 1
+
+    cutoff_ms = time.time() * 1000 - lookback_hours * 3600 * 1000
+    successful_retry_parents = _collect_successful_retry_parents(client, cutoff_ms)
+    to_retry: list[str] = []
+    skipped: dict[str, int] = {}
+    scanned = 0
+    cursor: str | None = None
+
+    def skip(reason: str) -> None:
+        skipped[reason] = skipped.get(reason, 0) + 1
+
+    while len(to_retry) < max_retries:
+        params: dict[str, Any] = {"status": "error", "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        status, payload = client.rest_get("/api/v1/executions", params=params)
+        if status != 200:
+            _print_json({"error": "No se pudo listar ejecuciones", "status": status, "payload": payload})
+            return 1
+        items = payload.get("data", []) if isinstance(payload, dict) else []
+        if not items:
+            break
+        for ex in items:
+            if not isinstance(ex, dict):
+                continue
+            scanned += 1
+            exec_id = str(ex.get("id", ""))
+            if not exec_id:
+                continue
+            if ex.get("retryOf"):
+                skip("retry_child")
+                continue
+            if ex.get("retrySuccessId"):
+                skip("already_succeeded_via_retry")
+                continue
+            if exec_id in successful_retry_parents:
+                skip("has_successful_retry_child")
+                continue
+            if ex.get("mode") == "error":
+                skip("error_workflow")
+                continue
+            if ex.get("mode") == "retry":
+                skip("retry_mode")
+                continue
+            stopped_at = ex.get("stoppedAt") or ex.get("startedAt")
+            if stopped_at:
+                stopped_dt = datetime.fromisoformat(stopped_at.replace("Z", "+00:00"))
+                if stopped_dt.timestamp() * 1000 < cutoff_ms:
+                    continue
+            detail_status, detail = client.rest_get(f"/api/v1/executions/{exec_id}", {"includeData": "true"})
+            if detail_status != 200:
+                skip("detail_unavailable")
+                continue
+            if not _is_monthly_limit_failure(detail):
+                skip("not_limit_failure")
+                continue
+            if not _never_ran_workflow_nodes(detail):
+                skip("nodes_already_ran")
+                continue
+            to_retry.append(exec_id)
+            if len(to_retry) >= max_retries:
+                break
+        next_cursor = payload.get("nextCursor") if isinstance(payload, dict) else None
+        if not next_cursor or len(to_retry) >= max_retries:
+            break
+        cursor = next_cursor
+
+    retried: list[str] = []
+    errors: list[dict[str, str]] = []
+    if not dry_run:
+        for index, exec_id in enumerate(to_retry):
+            status, retry_payload = client._request("POST", f"{client.base_url}/api/v1/executions/{exec_id}/retry", headers={"X-N8N-API-KEY": client.rest_key or ""})
+            if status == 200:
+                retried.append(exec_id)
+            else:
+                errors.append({"executionId": exec_id, "status": str(status), "payload": str(retry_payload)[:200]})
+            if delay_seconds > 0 and index < len(to_retry) - 1:
+                time.sleep(delay_seconds)
+
+    _print_json(
+        {
+            "ok": True,
+            "dry_run": dry_run,
+            "lookback_hours": lookback_hours,
+            "delay_between_retries_seconds": delay_seconds,
+            "scanned_errors": scanned,
+            "candidates": len(to_retry),
+            "skipped": skipped,
+            "retried": retried,
+            "errors": errors,
+            "candidate_ids": to_retry if dry_run else None,
+        }
+    )
+    return 0
+
+
 def cmd_export(client: N8NClient, out: str | None) -> int:
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = Path(out) if out else Path.cwd() / f"n8n_export_{timestamp}"
@@ -400,6 +577,15 @@ def parse_args() -> argparse.Namespace:
     export_p = sub.add_parser("export", help="Exportar workflows a JSON.")
     export_p.add_argument("--out", type=str, default=None)
 
+    retry_p = sub.add_parser(
+        "retry-limit-failures",
+        help="Reintentar ejecuciones fallidas por límite mensual de n8n Cloud.",
+    )
+    retry_p.add_argument("--lookback-hours", type=int, default=24)
+    retry_p.add_argument("--max-retries", type=int, default=300)
+    retry_p.add_argument("--delay-seconds", type=int, default=5)
+    retry_p.add_argument("--dry-run", action="store_true")
+
     return parser.parse_args()
 
 
@@ -421,6 +607,10 @@ def main() -> int:
         return cmd_details(client, args.workflow_id)
     if args.command == "export":
         return cmd_export(client, args.out)
+    if args.command == "retry-limit-failures":
+        return cmd_retry_limit_failures(
+            client, args.lookback_hours, args.max_retries, args.delay_seconds, args.dry_run
+        )
 
     _print_json({"error": "Comando no soportado."})
     return 1
