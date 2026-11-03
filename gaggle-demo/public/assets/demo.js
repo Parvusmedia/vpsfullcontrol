@@ -313,6 +313,57 @@ async function openCampaignDetail(id) {
 }
 
 let previewState = { preview: {}, urn: '' };
+let pendingDispatchCampaignId = null;
+let pendingDispatchResend = false;
+
+function renderMemberPickList(container, members, { checkedByDefault = false } = {}) {
+  if (!members.length) {
+    container.innerHTML = '<p class="empty">Añade miembros en la pestaña Miembros (invitación o manual).</p>';
+    return;
+  }
+  container.innerHTML = members
+    .map((m) => {
+      const label = (m.name || m.email) + (m.platformId ? '' : ' · sin LinkedIn');
+      return (
+        '<label class="member-row"><input type="checkbox" value="' +
+        escapeHtml(m.id) +
+        '"' +
+        (checkedByDefault ? ' checked' : '') +
+        ' /><span>' +
+        escapeHtml(label) +
+        '</span></label>'
+      );
+    })
+    .join('');
+}
+
+function getCheckedMemberIds(container) {
+  return [...container.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
+}
+
+function wireSelectAll(noneBtn, allBtn, container) {
+  if (!allBtn || !noneBtn || !container) return;
+  allBtn.addEventListener('click', () => container.querySelectorAll('input[type=checkbox]').forEach((i) => (i.checked = true)));
+  noneBtn.addEventListener('click', () => container.querySelectorAll('input[type=checkbox]').forEach((i) => (i.checked = false)));
+}
+
+async function openDispatchModal(campaignId, preselectedIds = null, resend = false) {
+  pendingDispatchCampaignId = campaignId;
+  pendingDispatchResend = resend;
+  const modal = $('#dispatch-modal');
+  const picks = $('#dispatch-member-picks');
+  const statusEl = $('#dispatch-status');
+  setStatus(statusEl, '');
+  const memData = await api('/members', { admin: true });
+  const members = memData.members || [];
+  renderMemberPickList(picks, members, { checkedByDefault: preselectedIds === null });
+  if (preselectedIds && preselectedIds.length) {
+    picks.querySelectorAll('input').forEach((i) => {
+      i.checked = preselectedIds.includes(i.value);
+    });
+  }
+  modal.showModal();
+}
 
 async function initCampaigns() {
   const form = $('#campaign-form');
@@ -348,10 +399,16 @@ async function initCampaigns() {
     }
   });
 
+  wireSelectAll($('#camp-select-none'), $('#camp-select-all'), $('#camp-member-picks'));
+
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
+    const memberIds = getCheckedMemberIds($('#camp-member-picks'));
+    if (!memberIds.length) {
+      setStatus(statusEl, 'Elige al menos un miembro destino.', 'err');
+      return;
+    }
     setStatus(statusEl, 'Guardando…');
-    const memberIds = [...$('#camp-member-picks').querySelectorAll('input:checked')].map((i) => i.value);
     try {
       const data = await api('/campaigns', {
         method: 'POST',
@@ -365,10 +422,11 @@ async function initCampaigns() {
           memberIds,
         },
       });
-      setStatus(statusEl, 'Campaña guardada.', 'ok');
+      setStatus(statusEl, 'Campaña guardada. Enviando…', 'ok');
+      await dispatchCampaign(data.campaign.id, memberIds, statusEl);
       form.reset();
       previewCard.hidden = true;
-      await dispatchCampaign(data.campaign.id, statusEl);
+      previewState = { preview: {}, urn: '' };
       await refreshCampaigns();
     } catch (e) {
       setStatus(statusEl, e.message, 'err');
@@ -376,19 +434,37 @@ async function initCampaigns() {
   });
 
   $('#modal-close').addEventListener('click', () => $('#campaign-modal').close());
+  document.querySelectorAll('.dispatch-modal-close').forEach((b) => b.addEventListener('click', () => $('#dispatch-modal').close()));
+  wireSelectAll($('#dispatch-select-none'), $('#dispatch-select-all'), $('#dispatch-member-picks'));
+  $('#dispatch-confirm').addEventListener('click', async () => {
+    const statusEl = $('#dispatch-status');
+    const memberIds = getCheckedMemberIds($('#dispatch-member-picks'));
+    if (!pendingDispatchCampaignId || !memberIds.length) {
+      setStatus(statusEl, 'Elige al menos un miembro.', 'err');
+      return;
+    }
+    try {
+      await dispatchCampaign(pendingDispatchCampaignId, memberIds, statusEl, pendingDispatchResend);
+      $('#dispatch-modal').close();
+      await refreshCampaigns();
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    }
+  });
 }
 
-async function dispatchCampaign(id, statusEl) {
+async function dispatchCampaign(id, memberIds, statusEl, resend = false) {
   setStatus(statusEl, 'Enviando invitaciones…');
   try {
     const data = await api('/dispatch', {
       method: 'POST',
       admin: true,
-      body: { campaignId: id },
+      body: { campaignId: id, memberIds, resend: resend || undefined },
     });
-    setStatus(statusEl, 'Enviadas ' + data.sent + ' invitaciones.', 'ok');
+    setStatus(statusEl, 'Enviadas ' + data.sent + ' invitaciones a ' + memberIds.length + ' personas.', 'ok');
   } catch (e) {
-    setStatus(statusEl, 'Campaña guardada pero envío: ' + e.message, 'err');
+    setStatus(statusEl, e.message, 'err');
+    throw e;
   }
 }
 
@@ -401,18 +477,8 @@ async function refreshCampaigns() {
       api('/members', { admin: true }),
     ]);
     const members = memData.members || [];
-    picks.innerHTML = members.length
-      ? members
-          .map(
-            (m) =>
-              '<label class="chip"><input type="checkbox" value="' +
-              escapeHtml(m.id) +
-              '" checked /> ' +
-              escapeHtml(m.name || m.email) +
-              '</label>'
-          )
-          .join('')
-      : '<p class="empty">Añade miembros en la pestaña Miembros.</p>';
+    renderMemberPickList(picks, members, { checkedByDefault: true });
+    $('#camp-member-tools').hidden = !members.length;
 
     const campaigns = campData.campaigns || [];
     if (!campaigns.length) {
@@ -432,7 +498,9 @@ async function refreshCampaigns() {
           sent +
           ' envíos · ' +
           rep +
-          ' reposts</div><div class="row"><button type="button" class="btn btn-secondary btn-sm" data-resend="' +
+          ' reposts</div><div class="row"><button type="button" class="btn btn-primary btn-sm" data-send="' +
+          escapeHtml(c.id) +
+          '">Enviar</button><button type="button" class="btn btn-secondary btn-sm" data-resend="' +
           escapeHtml(c.id) +
           '">Reenviar</button><button type="button" class="btn btn-secondary btn-sm" data-detail="' +
           escapeHtml(c.id) +
@@ -443,19 +511,49 @@ async function refreshCampaigns() {
     list.querySelectorAll('[data-detail]').forEach((b) =>
       b.addEventListener('click', () => openCampaignDetail(b.getAttribute('data-detail')))
     );
+    list.querySelectorAll('[data-send]').forEach((b) =>
+      b.addEventListener('click', () => openDispatchModal(b.getAttribute('data-send')))
+    );
     list.querySelectorAll('[data-resend]').forEach((b) =>
-      b.addEventListener('click', async () => {
-        try {
-          await api('/dispatch', { method: 'POST', admin: true, body: { campaignId: b.getAttribute('data-resend'), resend: true } });
-          await refreshCampaigns();
-        } catch (e) {
-          alert(e.message);
-        }
-      })
+      b.addEventListener('click', () => openDispatchModal(b.getAttribute('data-resend'), null, true))
     );
   } catch (e) {
     list.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
   }
+}
+
+async function initInvite() {
+  const form = $('#invite-form');
+  const statusEl = $('#invite-form-status');
+  const box = $('#invite-result');
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    setStatus(statusEl, 'Generando enlace…');
+    try {
+      const data = await api('/connect-invite', {
+        method: 'POST',
+        admin: true,
+        body: { name: $('#inv-name').value.trim(), email: $('#inv-email').value.trim() },
+      });
+      $('#invite-url').value = data.inviteUrl || '';
+      $('#invite-oauth-url').value = data.linkedinConnectUrl || '';
+      box.hidden = false;
+      let msg = 'Enlace listo. Envíalo al empleado por email o Slack.';
+      if (data.notice) msg += ' ' + data.notice;
+      setStatus(statusEl, msg, data.linkedinConnectUrl ? 'ok' : '');
+      await refreshMembers();
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    }
+  });
+  $('#copy-invite-url').addEventListener('click', () => {
+    navigator.clipboard.writeText($('#invite-url').value);
+    setStatus(statusEl, 'Enlace Ngaged copiado.', 'ok');
+  });
+  $('#copy-oauth-url').addEventListener('click', () => {
+    navigator.clipboard.writeText($('#invite-oauth-url').value);
+    setStatus(statusEl, 'Enlace OAuth copiado.', 'ok');
+  });
 }
 
 async function initMembers() {
@@ -478,7 +576,7 @@ async function initMembers() {
           )
           .join('') +
         '</div>'
-      : '<p class="meta">Conecta cuentas LinkedIn en el panel de administración de publicaciones.</p>';
+      : '<p class="meta">Usa «Invitar a vincular LinkedIn» arriba o conecta cuentas en el panel de canales.</p>';
     connEl.querySelectorAll('.chip-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         $('#mem-platform').value = btn.getAttribute('data-pid');
@@ -520,19 +618,60 @@ async function refreshMembers() {
       return;
     }
     list.innerHTML = members
-      .map(
-        (m) =>
+      .map((m) => {
+        const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
+        return (
           '<article class="activity"><h3>' +
           escapeHtml(m.name || m.email) +
           '</h3><div class="meta">' +
           escapeHtml(m.email) +
           '<br/>' +
-          escapeHtml(m.platformId || 'Sin cuenta LinkedIn') +
-          '</div><div class="row"><button type="button" class="btn btn-danger btn-sm" data-del="' +
+          escapeHtml(m.platformId || 'Sin LinkedIn') +
+          ' · ' +
+          escapeHtml(st) +
+          '</div><div class="row"><button type="button" class="btn btn-secondary btn-sm" data-invite="' +
+          escapeHtml(m.id) +
+          '">Regenerar enlace</button><button type="button" class="btn btn-secondary btn-sm" data-sync="' +
+          escapeHtml(m.id) +
+          '">Sync LinkedIn</button><button type="button" class="btn btn-danger btn-sm" data-del="' +
           escapeHtml(m.id) +
           '">Eliminar</button></div></article>'
-      )
+        );
+      })
       .join('');
+    list.querySelectorAll('[data-invite]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          const data = await api('/connect-invite', {
+            method: 'POST',
+            admin: true,
+            body: { memberId: btn.getAttribute('data-invite') },
+          });
+          $('#invite-url').value = data.inviteUrl || '';
+          $('#invite-oauth-url').value = data.linkedinConnectUrl || '';
+          $('#invite-result').hidden = false;
+          alert(data.linkedinConnectUrl ? 'Enlaces regenerados (ver bloque Invitar).' : (data.notice || 'Enlace Ngaged regenerado.'));
+          await refreshMembers();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    });
+    list.querySelectorAll('[data-sync]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          const data = await api('/members-sync', {
+            method: 'POST',
+            admin: true,
+            body: { memberId: btn.getAttribute('data-sync') },
+          });
+          alert('LinkedIn: ' + (data.platformId || 'OK'));
+          await refreshMembers();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    });
     list.querySelectorAll('[data-del]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         if (!confirm('¿Eliminar miembro?')) return;
@@ -652,6 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAdminKey();
   initDashboardControls();
   initCampaigns();
+  initInvite();
   initMembers();
   loadDashboard();
 });

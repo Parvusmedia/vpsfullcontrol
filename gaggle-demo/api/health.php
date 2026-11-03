@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/_publora.php';
 
 gaggle_demo_cors();
 
@@ -14,5 +15,6 @@ gaggle_demo_json_response(200, [
     'ok' => true,
     'service' => 'ngaged',
     'linkedinPublishReady' => $keyOk,
+    'workspaceConnectLinks' => $keyOk && gaggle_publora_workspace_enabled(),
     'dataWritable' => $writable,
 ]);

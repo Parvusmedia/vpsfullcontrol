@@ -36,10 +36,15 @@ if (!empty($campaign['dispatchedAt']) && empty($input['resend'])) {
     gaggle_demo_json_response(409, ['ok' => false, 'error' => 'La campaña ya fue enviada. Usa resend=true para reenviar.']);
 }
 
-$memberIds = $campaign['memberIds'] ?? [];
-if (!is_array($memberIds) || $memberIds === []) {
-    gaggle_demo_json_response(400, ['ok' => false, 'error' => 'La campaña no tiene miembros.']);
+$memberIds = $input['memberIds'] ?? $campaign['memberIds'] ?? [];
+if (!is_array($memberIds)) {
+    $memberIds = [];
 }
+$memberIds = array_values(array_unique(array_filter(array_map('strval', $memberIds))));
+if ($memberIds === []) {
+    gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Elige al menos un miembro destino.']);
+}
+$campaign['memberIds'] = $memberIds;
 
 $membersStore = ngaged_members_store();
 $byId = [];

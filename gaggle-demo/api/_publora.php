@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-function gaggle_publora_request(string $method, string $path, ?array $body = null): array
+function gaggle_publora_request(string $method, string $path, ?array $body = null, ?string $publoraUserId = null): array
 {
     $apiKey = gaggle_demo_api_key();
     if ($apiKey === '') {
@@ -19,6 +19,9 @@ function gaggle_publora_request(string $method, string $path, ?array $body = nul
         'Accept: application/json',
         'x-publora-client: ngaged',
     ];
+    if ($publoraUserId !== null && $publoraUserId !== '') {
+        $headers[] = 'x-publora-user-id: ' . $publoraUserId;
+    }
 
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -53,9 +56,9 @@ function gaggle_publora_request(string $method, string $path, ?array $body = nul
     return ['ok' => true, 'http' => $http, 'body' => $decoded];
 }
 
-function gaggle_publora_list_connections(): array
+function gaggle_publora_list_connections(?string $publoraUserId = null): array
 {
-    $resp = gaggle_publora_request('GET', 'platform-connections');
+    $resp = gaggle_publora_request('GET', 'platform-connections', null, $publoraUserId);
     if (!$resp['ok']) {
         return $resp;
     }
@@ -163,4 +166,72 @@ function gaggle_publora_list_posts(int $limit = 20): array
         $posts = [];
     }
     return ['ok' => true, 'posts' => $posts];
+}
+
+function gaggle_publora_workspace_enabled(): bool
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $resp = gaggle_publora_request('GET', 'workspace/users?limit=1');
+    if (!$resp['ok'] && str_contains((string) ($resp['error'] ?? ''), 'Workspace access is not enabled')) {
+        $cache = false;
+        return false;
+    }
+    $cache = $resp['ok'];
+    return $cache;
+}
+
+function gaggle_publora_create_managed_user(string $email, string $displayName): array
+{
+    $resp = gaggle_publora_request('POST', 'workspace/users', [
+        'username' => $email,
+        'displayName' => $displayName !== '' ? $displayName : $email,
+    ]);
+    if (!$resp['ok']) {
+        return $resp;
+    }
+    $user = $resp['body']['user'] ?? $resp['body'];
+    $id = is_array($user) ? (string) ($user['_id'] ?? $user['id'] ?? '') : '';
+    if ($id === '') {
+        return ['ok' => false, 'error' => 'Managed user created but ID missing.'];
+    }
+    return ['ok' => true, 'userId' => $id, 'user' => $user];
+}
+
+function gaggle_publora_connection_url(string $publoraUserId, int $expiresInDays = 30): array
+{
+    $resp = gaggle_publora_request(
+        'POST',
+        'workspace/users/' . rawurlencode($publoraUserId) . '/connection-url',
+        ['expiresInDays' => max(1, min(90, $expiresInDays)), 'rotate' => true]
+    );
+    if (!$resp['ok']) {
+        return $resp;
+    }
+    return [
+        'ok' => true,
+        'url' => (string) ($resp['body']['url'] ?? ''),
+        'tokenExpiresAt' => $resp['body']['tokenExpiresAt'] ?? null,
+    ];
+}
+
+/** @return array{ok:bool,platformId?:string,connections?:array} */
+function gaggle_publora_first_linkedin_for_user(string $publoraUserId): array
+{
+    $resp = gaggle_publora_list_connections($publoraUserId);
+    if (!$resp['ok']) {
+        return $resp;
+    }
+    foreach ($resp['connections'] as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $pid = (string) ($row['platformId'] ?? '');
+        if (str_starts_with($pid, 'linkedin-')) {
+            return ['ok' => true, 'platformId' => $pid, 'connections' => $resp['connections']];
+        }
+    }
+    return ['ok' => false, 'error' => 'Aún no hay LinkedIn conectado para este usuario.'];
 }

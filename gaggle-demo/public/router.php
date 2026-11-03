@@ -20,6 +20,10 @@ if (str_starts_with($uri, '/api/')) {
         'campaign-detail' => 'campaign-detail.php',
         'member-queue' => 'member-queue.php',
         'member-respond' => 'member-respond.php',
+        'connect-invite' => 'connect-invite.php',
+        'connect-status' => 'connect-status.php',
+        'connect-complete' => 'connect-complete.php',
+        'members-sync' => 'members-sync.php',
     ];
     if (isset($map[$script])) {
         require dirname(__DIR__) . '/api/' . $map[$script];
@@ -34,6 +38,12 @@ if (str_starts_with($uri, '/api/')) {
 if ($uri === '/go' || $uri === '/go/') {
     header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . '/go.html');
+    return true;
+}
+
+if ($uri === '/conectar' || str_starts_with($uri, '/conectar?')) {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/conectar.html');
     return true;
 }
 

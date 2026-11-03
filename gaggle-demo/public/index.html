@@ -107,9 +107,14 @@
               <label for="camp-commentary">Comentario sugerido al repostear</label>
               <textarea id="camp-commentary" placeholder="Copy opcional para el empleado…"></textarea>
               <label>Miembros destino</label>
-              <div id="camp-member-picks"></div>
+              <p class="meta">Marca a quién quieres enviar la invitación por email.</p>
+              <div class="row member-pick-tools" id="camp-member-tools" hidden>
+                <button type="button" class="btn btn-secondary btn-sm" id="camp-select-all">Todos</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="camp-select-none">Ninguno</button>
+              </div>
+              <div id="camp-member-picks" class="member-pick-list"></div>
               <div class="row">
-                <button class="btn btn-primary" type="submit">Guardar campaña</button>
+                <button class="btn btn-primary" type="submit" id="camp-submit-btn">Guardar y enviar campaña</button>
               </div>
             </form>
             <div id="campaign-form-status" class="status" hidden></div>
@@ -124,6 +129,33 @@
       <section data-panel="members" hidden>
         <div class="grid two">
           <div class="card">
+            <h2>Invitar a vincular LinkedIn</h2>
+            <p class="meta">
+              Genera un enlace para que la persona conecte su LinkedIn y quede lista para campañas. Si tu cuenta API tiene
+              Workspace Publora, el enlace OAuth se crea automáticamente.
+            </p>
+            <form id="invite-form">
+              <label for="inv-name">Nombre</label>
+              <input id="inv-name" placeholder="Ana García" />
+              <label for="inv-email">Email</label>
+              <input id="inv-email" type="email" required placeholder="ana@empresa.com" />
+              <div class="row">
+                <button class="btn btn-primary" type="submit">Generar enlace de invitación</button>
+              </div>
+            </form>
+            <div id="invite-result" class="invite-box" hidden>
+              <label>Enlace para el empleado (Ngaged)</label>
+              <input id="invite-url" readonly />
+              <label>Enlace OAuth LinkedIn</label>
+              <input id="invite-oauth-url" readonly placeholder="Requiere Workspace en la API" />
+              <div class="row">
+                <button type="button" class="btn btn-secondary btn-sm" id="copy-invite-url">Copiar enlace Ngaged</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="copy-oauth-url">Copiar OAuth</button>
+              </div>
+            </div>
+            <div id="invite-form-status" class="status" hidden></div>
+          </div>
+          <div class="card">
             <h2>Añadir miembro</h2>
             <form id="member-form">
               <label for="mem-name">Nombre</label>
@@ -132,7 +164,7 @@
               <input id="mem-email" type="email" required placeholder="ana@empresa.com" />
               <label for="mem-platform">Cuenta LinkedIn (platformId)</label>
               <input id="mem-platform" placeholder="linkedin-…" />
-              <p class="meta">Las cuentas conectadas aparecen abajo para copiar el ID.</p>
+              <p class="meta">Opcional si ya vincularon por invitación. Cuentas del workspace aparecen abajo.</p>
               <div id="mem-connections"></div>
               <div class="row">
                 <button class="btn btn-primary" type="submit">Guardar miembro</button>
@@ -162,6 +194,23 @@
         </div>
       </section>
     </div>
+
+    <dialog id="dispatch-modal" class="modal">
+      <div class="modal-inner card">
+        <button type="button" class="modal-close dispatch-modal-close" aria-label="Cerrar">&times;</button>
+        <h2>Enviar campaña</h2>
+        <p class="meta">Elige destinatarios. Solo recibirán email los seleccionados.</p>
+        <div class="row member-pick-tools">
+          <button type="button" class="btn btn-secondary btn-sm" id="dispatch-select-all">Todos</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="dispatch-select-none">Ninguno</button>
+        </div>
+        <div id="dispatch-member-picks" class="member-pick-list"></div>
+        <div class="row">
+          <button type="button" class="btn btn-primary" id="dispatch-confirm">Enviar invitaciones</button>
+        </div>
+        <div id="dispatch-status" class="status" hidden></div>
+      </div>
+    </dialog>
 
     <dialog id="campaign-modal" class="modal">
       <div class="modal-inner card">

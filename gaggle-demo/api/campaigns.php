@@ -56,6 +56,8 @@ if ($method === 'POST') {
     }
     $memberIds = array_values(array_unique(array_filter(array_map('strval', $memberIds))));
 
+    $sendNow = !empty($input['sendNow']);
+
     $campaign = [
         'id' => gaggle_demo_new_id('camp'),
         'title' => $title,
@@ -81,7 +83,7 @@ if ($method === 'POST') {
     $campaigns[] = $campaign;
     ngaged_save_campaigns(['campaigns' => $campaigns]);
 
-    gaggle_demo_json_response(201, ['ok' => true, 'campaign' => $campaign]);
+    gaggle_demo_json_response(201, ['ok' => true, 'campaign' => $campaign, 'sendNow' => $sendNow]);
 }
 
 gaggle_demo_json_response(405, ['ok' => false, 'error' => 'Method not allowed']);
