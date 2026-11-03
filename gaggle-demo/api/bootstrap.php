@@ -44,7 +44,9 @@ function gaggle_demo_api_key(): string
 function gaggle_demo_admin_key(): string
 {
     $file = gaggle_demo_load_env();
-    $key = $file['GAGGLE_DEMO_ADMIN_KEY'] ?? getenv('GAGGLE_DEMO_ADMIN_KEY') ?: 'demo-admin';
+    $key = $file['NGAGED_ADMIN_KEY']
+        ?? getenv('NGAGED_ADMIN_KEY')
+        ?: ($file['GAGGLE_DEMO_ADMIN_KEY'] ?? getenv('GAGGLE_DEMO_ADMIN_KEY') ?: 'demo-admin');
     return trim($key);
 }
 
@@ -115,7 +117,7 @@ function gaggle_demo_require_admin(): void
         gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Introduce la clave admin arriba y pulsa Guardar.']);
     }
     if (!hash_equals($expected, $got)) {
-        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Clave admin incorrecta. Debe coincidir con GAGGLE_DEMO_ADMIN_KEY del servidor.']);
+        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Clave admin incorrecta. Pide la clave actual a tu administrador.']);
     }
 }
 

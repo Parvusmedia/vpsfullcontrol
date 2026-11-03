@@ -15,13 +15,13 @@ Marca única: **Ngaged** en UI y emails.
 
 - PHP 8.1+ (`curl`, `json`)
 - Cuenta LinkedIn conectada vía API de publicación (clave en entorno del servidor)
-- Clave admin (`GAGGLE_DEMO_ADMIN_KEY`) para crear campañas y ver stats
+- Clave admin (`NGAGED_ADMIN_KEY`) para crear campañas y ver stats
 
 ## Local
 
 ```bash
 export PUBLORA_API_KEY=sk_...
-export GAGGLE_DEMO_ADMIN_KEY=demo-admin
+export NGAGED_ADMIN_KEY=demo-admin
 cd gaggle-demo
 php -S 127.0.0.1:8787 -t public public/router.php
 ```
@@ -47,7 +47,7 @@ Variables en `publora.env` (ejemplo ampliado en [deploy/publora.env.example](dep
 
 ```
 PUBLORA_API_KEY=sk_...
-GAGGLE_DEMO_ADMIN_KEY=...
+NGAGED_ADMIN_KEY=...
 NGAGED_APP_URL=https://ngaged.pmediaplus.com
 NGAGED_MAIL_FROM="Ngaged <noreply@pmediaplus.com>"
 NGAGED_SIGNING_SECRET=...

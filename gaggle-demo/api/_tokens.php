@@ -7,7 +7,8 @@ require_once __DIR__ . '/bootstrap.php';
 function ngaged_signing_secret(): string
 {
     $file = gaggle_demo_load_env();
-    $secret = $file['NGAGED_SIGNING_SECRET'] ?? $file['GAGGLE_DEMO_ADMIN_KEY'] ?? gaggle_demo_admin_key();
+    $secret = $file['NGAGED_SIGNING_SECRET']
+        ?? ($file['NGAGED_ADMIN_KEY'] ?? $file['GAGGLE_DEMO_ADMIN_KEY'] ?? gaggle_demo_admin_key());
     return trim($secret);
 }
 

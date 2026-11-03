@@ -1,5 +1,5 @@
 [Unit]
-Description=Gaggle advocacy demo (PHP) for ngaged.pmediaplus.com
+Description=Ngaged employee advocacy (PHP) for ngaged.pmediaplus.com
 After=network.target
 
 [Service]
