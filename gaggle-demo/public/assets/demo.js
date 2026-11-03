@@ -11,9 +11,21 @@ function $(sel, root = document) {
 function setStatus(el, message, kind = '') {
   if (!el) return;
   el.textContent = message || '';
-  el.className = 'status' + (kind ? ' ' + kind : '');
+  const base = el.classList.contains('alert') ? 'alert py-2' : 'status';
+  el.className = base + (kind === 'ok' ? ' alert-success' : kind === 'err' ? ' alert-danger' : kind ? ' alert-info' : '');
   el.hidden = !message;
 }
+
+const PAGE_META = {
+  dashboard: ['Dashboard', 'Métricas de adopción y amplificación'],
+  campaigns: ['Crear campaña', 'Publica advocacy por email one-click'],
+  'campaigns-history': ['Historial', 'Campañas enviadas y resultados'],
+  members: ['Miembros', 'Directorio del equipo'],
+  'members-invite': ['Invitar LinkedIn', 'Onboarding OAuth para empleados'],
+  connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
+  employee: ['Vista empleado', 'Cola de reposts pendientes'],
+  settings: ['Ajustes', 'Clave de administración'],
+};
 
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
@@ -49,27 +61,32 @@ function formatDate(iso) {
   }
 }
 
-function initTabs() {
-  const tabs = document.querySelectorAll('[data-tab]');
+function navigateTo(id) {
+  const links = document.querySelectorAll('.sidebar-link[data-panel]');
   const panels = document.querySelectorAll('[data-panel]');
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const id = tab.getAttribute('data-tab');
-      tabs.forEach((t) => t.classList.toggle('is-active', t === tab));
-      panels.forEach((p) => {
-        p.hidden = p.getAttribute('data-panel') !== id;
-      });
-      if (id === 'dashboard') loadDashboard();
-      if (id === 'campaigns') refreshCampaigns();
-      if (id === 'members') refreshMembers();
-      if (id === 'member') refreshMemberQueue();
-    });
+  links.forEach((l) => l.classList.toggle('active', l.getAttribute('data-panel') === id));
+  panels.forEach((p) => {
+    p.hidden = p.getAttribute('data-panel') !== id;
+  });
+  const meta = PAGE_META[id] || ['Ngaged', ''];
+  const title = $('#page-title');
+  const sub = $('#page-subtitle');
+  if (title) title.textContent = meta[0];
+  if (sub) sub.textContent = meta[1];
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'campaigns') refreshCampaignMemberPicks();
+  if (id === 'campaigns-history') refreshCampaignsList();
+  if (id === 'members' || id === 'members-invite') refreshMembers();
+  if (id === 'connections') refreshConnectionsTable();
+  if (id === 'employee') refreshMemberQueue();
+}
+
+function initNav() {
+  document.querySelectorAll('.sidebar-link[data-panel]').forEach((link) => {
+    link.addEventListener('click', () => navigateTo(link.getAttribute('data-panel')));
   });
   document.querySelectorAll('[data-goto]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-goto');
-      document.querySelector('[data-tab="' + id + '"]')?.click();
-    });
+    btn.addEventListener('click', () => navigateTo(btn.getAttribute('data-goto')));
   });
 }
 
@@ -121,18 +138,22 @@ function renderKpis(totals) {
     cards.push({ label: 'Tiempo medio hasta repost', value: totals.medianHoursToRepost + ' h' });
   }
   grid.innerHTML = cards
-    .map(
-      (c) =>
-        '<div class="kpi-card' +
-        (c.hero ? ' kpi-hero' : '') +
-        '"><div class="kpi-label">' +
+    .map((c) => {
+      const col = c.hero ? 'col-md-6 col-xl-4' : 'col-6 col-md-4 col-xl-2';
+      return (
+        '<div class="' +
+        col +
+        '"><div class="card shadow-sm h-100' +
+        (c.hero ? ' border-primary' : '') +
+        '"><div class="card-body"><div class="text-muted small">' +
         escapeHtml(c.label) +
-        '</div><div class="kpi-value">' +
+        '</div><div class="fs-3 fw-bold">' +
         escapeHtml(String(c.value)) +
         '</div>' +
-        (c.sub ? '<div class="kpi-sub">' + escapeHtml(c.sub) + '</div>' : '') +
-        '</div>'
-    )
+        (c.sub ? '<div class="text-success small">' + escapeHtml(c.sub) + '</div>' : '') +
+        '</div></div></div>'
+      );
+    })
     .join('');
 }
 
@@ -266,16 +287,63 @@ async function loadDashboard() {
 }
 
 function initDashboardControls() {
-  document.querySelectorAll('.period-pills .pill').forEach((pill) => {
+  document.querySelectorAll('button.pill[data-days]').forEach((pill) => {
     pill.addEventListener('click', () => {
-      document.querySelectorAll('.period-pills .pill').forEach((p) => p.classList.remove('is-active'));
-      pill.classList.add('is-active');
+      document.querySelectorAll('button.pill[data-days]').forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
       const d = pill.getAttribute('data-days');
       dashDays = d === 'all' ? 'all' : parseInt(d, 10);
       loadDashboard();
     });
   });
   $('#dash-refresh').addEventListener('click', loadDashboard);
+}
+
+async function refreshConnectionsTable() {
+  const tbody = $('#connections-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Cargando…</td></tr>';
+  try {
+    const data = await api('/connections');
+    const rows = data.connections || [];
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No hay cuentas LinkedIn.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows
+      .map(
+        (c) =>
+          '<tr><td>' +
+          escapeHtml(c.displayName || c.username || '—') +
+          '</td><td><code class="small">' +
+          escapeHtml(c.platformId) +
+          '</code></td><td>' +
+          escapeHtml(c.connectionStatus || '—') +
+          '</td><td><button type="button" class="btn btn-link btn-sm copy-pid" data-pid="' +
+          escapeHtml(c.platformId) +
+          '">Copiar ID</button></td></tr>'
+      )
+      .join('');
+    tbody.querySelectorAll('.copy-pid').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.getAttribute('data-pid'));
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-danger">' + escapeHtml(e.message) + '</td></tr>';
+  }
+}
+
+async function loadWorkspaceBadge() {
+  const badge = $('#workspace-badge');
+  if (!badge) return;
+  try {
+    const h = await api('/health');
+    badge.textContent = h.workspaceConnectLinks ? 'Workspace OK' : 'Workspace off';
+    badge.className = 'badge rounded-pill ' + (h.workspaceConnectLinks ? 'text-bg-success' : 'text-bg-warning');
+  } catch {
+    badge.textContent = 'API';
+  }
 }
 
 async function openCampaignDetail(id) {
@@ -427,7 +495,7 @@ async function initCampaigns() {
       form.reset();
       previewCard.hidden = true;
       previewState = { preview: {}, urn: '' };
-      await refreshCampaigns();
+      await refreshCampaignsList();
     } catch (e) {
       setStatus(statusEl, e.message, 'err');
     }
@@ -468,18 +536,22 @@ async function dispatchCampaign(id, memberIds, statusEl, resend = false) {
   }
 }
 
-async function refreshCampaigns() {
-  const list = $('#campaigns-list');
+async function refreshCampaignMemberPicks() {
   const picks = $('#camp-member-picks');
   try {
-    const [campData, memData] = await Promise.all([
-      api('/campaigns', { admin: true }),
-      api('/members', { admin: true }),
-    ]);
+    const memData = await api('/members', { admin: true });
     const members = memData.members || [];
     renderMemberPickList(picks, members, { checkedByDefault: true });
     $('#camp-member-tools').hidden = !members.length;
+  } catch (e) {
+    if (picks) picks.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
+  }
+}
 
+async function refreshCampaignsList() {
+  const list = $('#campaigns-list');
+  try {
+    const campData = await api('/campaigns', { admin: true });
     const campaigns = campData.campaigns || [];
     if (!campaigns.length) {
       list.innerHTML = '<p class="empty">No hay campañas.</p>';
@@ -787,11 +859,13 @@ async function refreshMemberQueue() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs();
+  initNav();
   initAdminKey();
   initDashboardControls();
   initCampaigns();
   initInvite();
   initMembers();
-  loadDashboard();
+  loadWorkspaceBadge();
+  $('#connections-refresh')?.addEventListener('click', refreshConnectionsTable);
+  navigateTo('dashboard');
 });

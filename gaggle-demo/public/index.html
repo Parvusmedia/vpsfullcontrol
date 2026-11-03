@@ -3,223 +3,344 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ngaged · Employee advocacy</title>
+    <title>Ngaged · Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/demo.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   </head>
-  <body>
-    <div class="wrap wrap-wide">
-      <header class="hero">
-        <div>
-          <span class="badge">Employee advocacy</span>
-          <h1>Ngaged</h1>
-          <p>
-            Campañas LinkedIn para tu equipo: invitaciones por email, repost con un clic y métricas claras en un solo
-            panel.
-          </p>
-        </div>
-        <div class="admin-key-inline">
-          <label for="admin-key">Clave admin</label>
-          <input id="admin-key" type="password" autocomplete="off" placeholder="GAGGLE_DEMO_ADMIN_KEY del VPS" />
-          <button type="button" class="btn btn-secondary btn-sm" id="save-admin-key">Guardar</button>
-        </div>
-      </header>
-
-      <div id="global-status" class="status" hidden></div>
-
-      <nav class="tabs" aria-label="Vistas">
-        <button type="button" class="tab is-active" data-tab="dashboard">Dashboard</button>
-        <button type="button" class="tab" data-tab="campaigns">Campañas</button>
-        <button type="button" class="tab" data-tab="members">Miembros</button>
-        <button type="button" class="tab" data-tab="member">Miembro</button>
-      </nav>
-
-      <section data-panel="dashboard">
-        <div class="dash-toolbar">
-          <div class="period-pills" role="group" aria-label="Periodo">
-            <button type="button" class="pill is-active" data-days="7">7 días</button>
-            <button type="button" class="pill" data-days="30">30 días</button>
-            <button type="button" class="pill" data-days="all">Todo</button>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="dash-refresh">Actualizar</button>
-        </div>
-        <div id="dash-empty" class="empty-state" hidden>
-          <h2>Sin datos aún</h2>
-          <p>Envía tu primera campaña para ver métricas y gráficos.</p>
-          <button type="button" class="btn btn-primary" data-goto="campaigns">Ir a Campañas</button>
-        </div>
-        <div id="dash-content" hidden>
-          <div class="kpi-grid" id="kpi-grid"></div>
-          <div class="chart-grid">
-            <div class="card chart-card">
-              <h2>Tasa de adopción</h2>
-              <div class="donut-wrap"><canvas id="chart-donut"></canvas></div>
-            </div>
-            <div class="card chart-card">
-              <h2>Actividad diaria</h2>
-              <canvas id="chart-line"></canvas>
-            </div>
-            <div class="card chart-card">
-              <h2>Embudo de respuestas</h2>
-              <canvas id="chart-funnel"></canvas>
-            </div>
-            <div class="card chart-card">
-              <h2>Quién más amplifica</h2>
-              <canvas id="chart-top"></canvas>
-            </div>
-          </div>
-          <div class="card">
-            <h2>Campañas recientes</h2>
-            <div class="table-wrap">
-              <table class="data-table" id="recent-campaigns-table">
-                <thead>
-                  <tr>
-                    <th>Campaña</th>
-                    <th>Fecha</th>
-                    <th>Alcanzados</th>
-                    <th>Reposts</th>
-                    <th>Adopción</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
+  <body class="admin-body">
+    <div class="admin-shell d-flex">
+      <aside class="admin-sidebar flex-shrink-0">
+        <div class="sidebar-brand px-3 py-4">
+          <span class="brand-mark">N</span>
+          <div>
+            <strong>Ngaged</strong>
+            <small>Employee advocacy</small>
           </div>
         </div>
-      </section>
+        <nav class="sidebar-nav px-2 pb-4" aria-label="Admin">
+          <div class="nav-group-label">Resumen</div>
+          <button type="button" class="sidebar-link active" data-panel="dashboard">
+            <span class="sidebar-icon">📊</span> Dashboard
+          </button>
 
-      <section data-panel="campaigns" hidden>
-        <div class="grid two">
-          <div class="card">
-            <h2>Nueva campaña</h2>
-            <form id="campaign-form">
-              <label for="camp-title">Título interno</label>
-              <input id="camp-title" required placeholder="Lanzamiento Q4" />
-              <label for="camp-url">URL del post en LinkedIn</label>
-              <input id="camp-url" type="url" placeholder="https://www.linkedin.com/feed/update/…" />
-              <div class="row">
-                <button type="button" class="btn btn-secondary" id="camp-preview-btn">Obtener vista previa</button>
+          <div class="nav-group-label mt-3">Campañas</div>
+          <button type="button" class="sidebar-link" data-panel="campaigns">
+            <span class="sidebar-icon">📣</span> Crear y enviar
+          </button>
+          <button type="button" class="sidebar-link" data-panel="campaigns-history">
+            <span class="sidebar-icon">📋</span> Historial
+          </button>
+
+          <div class="nav-group-label mt-3">Equipo</div>
+          <button type="button" class="sidebar-link" data-panel="members">
+            <span class="sidebar-icon">👥</span> Miembros
+          </button>
+          <button type="button" class="sidebar-link" data-panel="members-invite">
+            <span class="sidebar-icon">🔗</span> Invitar LinkedIn
+          </button>
+
+          <div class="nav-group-label mt-3">Canales</div>
+          <button type="button" class="sidebar-link" data-panel="connections">
+            <span class="sidebar-icon">💼</span> Cuentas LinkedIn
+          </button>
+
+          <div class="nav-group-label mt-3">Experiencia</div>
+          <button type="button" class="sidebar-link" data-panel="employee">
+            <span class="sidebar-icon">✓</span> Vista empleado
+          </button>
+
+          <div class="nav-group-label mt-3">Sistema</div>
+          <button type="button" class="sidebar-link" data-panel="settings">
+            <span class="sidebar-icon">⚙</span> Ajustes
+          </button>
+        </nav>
+      </aside>
+
+      <div class="admin-main flex-grow-1 d-flex flex-column min-vh-100">
+        <header class="admin-topbar border-bottom bg-white px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <h1 class="h4 mb-0" id="page-title">Dashboard</h1>
+            <p class="text-muted small mb-0" id="page-subtitle">Métricas de adopción y amplificación</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill text-bg-light border" id="workspace-badge">API</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-goto="settings">Clave admin</button>
+          </div>
+        </header>
+
+        <main class="admin-content flex-grow-1 p-4">
+          <div id="global-status" class="alert py-2" role="alert" hidden></div>
+
+          <section data-panel="dashboard">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div class="btn-group btn-group-sm" role="group" aria-label="Periodo">
+                <button type="button" class="btn btn-outline-secondary active pill" data-days="7">7 días</button>
+                <button type="button" class="btn btn-outline-secondary pill" data-days="30">30 días</button>
+                <button type="button" class="btn btn-outline-secondary pill" data-days="all">Todo</button>
               </div>
-              <label for="camp-urn">URN (si la URL no basta)</label>
-              <input id="camp-urn" placeholder="urn:li:share:…" />
-              <div id="camp-preview-card" class="preview-card" hidden></div>
-              <label for="camp-commentary">Comentario sugerido al repostear</label>
-              <textarea id="camp-commentary" placeholder="Copy opcional para el empleado…"></textarea>
-              <label>Miembros destino</label>
-              <p class="meta">Marca a quién quieres enviar la invitación por email.</p>
-              <div class="row member-pick-tools" id="camp-member-tools" hidden>
-                <button type="button" class="btn btn-secondary btn-sm" id="camp-select-all">Todos</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="camp-select-none">Ninguno</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="dash-refresh">Actualizar</button>
+            </div>
+            <div id="dash-empty" class="card border-dashed text-center p-5" hidden>
+              <h2 class="h5">Sin datos aún</h2>
+              <p class="text-muted">Crea tu primera campaña para ver KPIs y gráficos.</p>
+              <button type="button" class="btn btn-primary" data-goto="campaigns">Nueva campaña</button>
+            </div>
+            <div id="dash-content" hidden>
+              <div class="row g-3 mb-3" id="kpi-grid"></div>
+              <div class="row g-3 mb-3">
+                <div class="col-lg-6">
+                  <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-white"><strong>Tasa de adopción</strong></div>
+                    <div class="card-body donut-wrap"><canvas id="chart-donut"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-white"><strong>Actividad diaria</strong></div>
+                    <div class="card-body"><canvas id="chart-line"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-white"><strong>Embudo de respuestas</strong></div>
+                    <div class="card-body"><canvas id="chart-funnel"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-white"><strong>Quién más amplifica</strong></div>
+                    <div class="card-body"><canvas id="chart-top"></canvas></div>
+                  </div>
+                </div>
               </div>
-              <div id="camp-member-picks" class="member-pick-list"></div>
-              <div class="row">
-                <button class="btn btn-primary" type="submit" id="camp-submit-btn">Guardar y enviar campaña</button>
-              </div>
-            </form>
-            <div id="campaign-form-status" class="status" hidden></div>
-          </div>
-          <div class="card">
-            <h2>Historial</h2>
-            <div id="campaigns-list"></div>
-          </div>
-        </div>
-      </section>
-
-      <section data-panel="members" hidden>
-        <div class="grid two">
-          <div class="card">
-            <h2>Invitar a vincular LinkedIn</h2>
-            <p class="meta">
-              Genera un enlace para que la persona conecte su LinkedIn y quede lista para campañas. Si tu cuenta API tiene
-              Workspace Publora, el enlace OAuth se crea automáticamente.
-            </p>
-            <form id="invite-form">
-              <label for="inv-name">Nombre</label>
-              <input id="inv-name" placeholder="Ana García" />
-              <label for="inv-email">Email</label>
-              <input id="inv-email" type="email" required placeholder="ana@empresa.com" />
-              <div class="row">
-                <button class="btn btn-primary" type="submit">Generar enlace de invitación</button>
-              </div>
-            </form>
-            <div id="invite-result" class="invite-box" hidden>
-              <label>Enlace para el empleado (Ngaged)</label>
-              <input id="invite-url" readonly />
-              <label>Enlace OAuth LinkedIn</label>
-              <input id="invite-oauth-url" readonly placeholder="Requiere Workspace en la API" />
-              <div class="row">
-                <button type="button" class="btn btn-secondary btn-sm" id="copy-invite-url">Copiar enlace Ngaged</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="copy-oauth-url">Copiar OAuth</button>
+              <div class="card shadow-sm">
+                <div class="card-header bg-white"><strong>Campañas recientes</strong></div>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0" id="recent-campaigns-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Campaña</th>
+                        <th>Fecha</th>
+                        <th>Alcanzados</th>
+                        <th>Reposts</th>
+                        <th>Adopción</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            <div id="invite-form-status" class="status" hidden></div>
-          </div>
-          <div class="card">
-            <h2>Añadir miembro</h2>
-            <form id="member-form">
-              <label for="mem-name">Nombre</label>
-              <input id="mem-name" placeholder="Ana García" />
-              <label for="mem-email">Email</label>
-              <input id="mem-email" type="email" required placeholder="ana@empresa.com" />
-              <label for="mem-platform">Cuenta LinkedIn (platformId)</label>
-              <input id="mem-platform" placeholder="linkedin-…" />
-              <p class="meta">Opcional si ya vincularon por invitación. Cuentas del workspace aparecen abajo.</p>
-              <div id="mem-connections"></div>
-              <div class="row">
-                <button class="btn btn-primary" type="submit">Guardar miembro</button>
-              </div>
-            </form>
-            <div id="member-form-status" class="status" hidden></div>
-          </div>
-          <div class="card">
-            <h2>Equipo</h2>
-            <div id="members-list"></div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section data-panel="member" hidden>
-        <div class="grid">
-          <div class="card">
-            <h2>Tu cuenta LinkedIn</h2>
-            <p class="meta">Elige el perfil con el que completas campañas.</p>
-            <div id="member-accounts"></div>
-          </div>
-          <div class="card">
-            <h2>Campañas pendientes</h2>
-            <div id="member-status" class="status" hidden></div>
-            <div id="member-pending"></div>
-          </div>
-        </div>
-      </section>
+          <section data-panel="campaigns" hidden>
+            <div class="row g-4">
+              <div class="col-lg-7">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Nueva campaña LinkedIn</strong></div>
+                  <div class="card-body">
+                    <form id="campaign-form" class="vstack gap-3">
+                      <div>
+                        <label class="form-label" for="camp-title">Título interno</label>
+                        <input class="form-control" id="camp-title" required placeholder="Lanzamiento Q4" />
+                      </div>
+                      <div>
+                        <label class="form-label" for="camp-url">URL del post</label>
+                        <input class="form-control" id="camp-url" type="url" placeholder="https://www.linkedin.com/feed/update/…" />
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="camp-preview-btn">Vista previa</button>
+                      </div>
+                      <div>
+                        <label class="form-label" for="camp-urn">URN (opcional)</label>
+                        <input class="form-control" id="camp-urn" placeholder="urn:li:share:…" />
+                      </div>
+                      <div id="camp-preview-card" class="preview-card" hidden></div>
+                      <div>
+                        <label class="form-label" for="camp-commentary">Comentario sugerido al repostear</label>
+                        <textarea class="form-control" id="camp-commentary" rows="3" placeholder="Copy para el empleado…"></textarea>
+                      </div>
+                      <div>
+                        <label class="form-label">Destinatarios</label>
+                        <p class="small text-muted">Elige quién recibe el email (estilo GaggleAMP).</p>
+                        <div class="d-flex gap-2 mb-2" id="camp-member-tools" hidden>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="camp-select-all">Todos</button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="camp-select-none">Ninguno</button>
+                        </div>
+                        <div id="camp-member-picks" class="member-pick-list"></div>
+                      </div>
+                      <button class="btn btn-primary" type="submit" id="camp-submit-btn">Guardar y enviar campaña</button>
+                    </form>
+                    <div id="campaign-form-status" class="alert mt-3 py-2" hidden></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-5">
+                <div class="card shadow-sm border-0 bg-primary-subtle">
+                  <div class="card-body">
+                    <h2 class="h6">Flujo advocacy</h2>
+                    <ol class="small mb-0 ps-3">
+                      <li>Marketing publica el post en LinkedIn.</li>
+                      <li>Creas campaña con la URL y copy sugerido.</li>
+                      <li>El equipo recibe email: Repostear / Ignorar.</li>
+                      <li>El dashboard mide adopción y reposts.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="campaigns-history" hidden>
+            <div class="card shadow-sm">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Historial de campañas</strong>
+                <button type="button" class="btn btn-primary btn-sm" data-goto="campaigns">Nueva campaña</button>
+              </div>
+              <div class="card-body" id="campaigns-list"></div>
+            </div>
+          </section>
+
+          <section data-panel="members" hidden>
+            <div class="row g-4">
+              <div class="col-lg-5">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Alta manual</strong></div>
+                  <div class="card-body">
+                    <form id="member-form" class="vstack gap-3">
+                      <input class="form-control" id="mem-name" placeholder="Nombre" />
+                      <input class="form-control" id="mem-email" type="email" required placeholder="Email" />
+                      <input class="form-control" id="mem-platform" placeholder="platformId linkedin-…" />
+                      <div id="mem-connections"></div>
+                      <button class="btn btn-primary" type="submit">Guardar miembro</button>
+                    </form>
+                    <div id="member-form-status" class="alert mt-3 py-2" hidden></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-7">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Directorio del equipo</strong></div>
+                  <div class="card-body" id="members-list"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="members-invite" hidden>
+            <div class="row g-4">
+              <div class="col-lg-6">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Generar enlace de vinculación</strong></div>
+                  <div class="card-body">
+                    <p class="text-muted small">
+                      Onboarding de empleados: conectan LinkedIn y quedan listos para campañas (OAuth automático con Workspace API).
+                    </p>
+                    <form id="invite-form" class="vstack gap-3">
+                      <input class="form-control" id="inv-name" placeholder="Nombre" />
+                      <input class="form-control" id="inv-email" type="email" required placeholder="Email corporativo" />
+                      <button class="btn btn-primary" type="submit">Generar invitación</button>
+                    </form>
+                    <div id="invite-result" class="invite-box mt-3" hidden>
+                      <label class="form-label">Enlace Ngaged</label>
+                      <input class="form-control form-control-sm mb-2" id="invite-url" readonly />
+                      <label class="form-label">Enlace OAuth LinkedIn</label>
+                      <input class="form-control form-control-sm mb-2" id="invite-oauth-url" readonly placeholder="Requiere Workspace" />
+                      <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-invite-url">Copiar Ngaged</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-oauth-url">Copiar OAuth</button>
+                      </div>
+                    </div>
+                    <div id="invite-form-status" class="alert mt-3 py-2" hidden></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="connections" hidden>
+            <div class="card shadow-sm">
+              <div class="card-header bg-white d-flex justify-content-between">
+                <strong>Cuentas LinkedIn conectadas</strong>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="connections-refresh">Actualizar</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover mb-0" id="connections-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Perfil</th>
+                      <th>platformId</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="employee" hidden>
+            <div class="row g-4">
+              <div class="col-lg-5">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Cuenta LinkedIn</strong></div>
+                  <div class="card-body">
+                    <p class="small text-muted">Vista que ve el empleado al entrar al panel.</p>
+                    <div id="member-accounts"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-7">
+                <div class="card shadow-sm">
+                  <div class="card-header bg-white"><strong>Cola de campañas</strong></div>
+                  <div class="card-body">
+                    <div id="member-status" class="alert py-2" hidden></div>
+                    <div id="member-pending"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="settings" hidden>
+            <div class="card shadow-sm col-lg-6">
+              <div class="card-header bg-white"><strong>Clave de administración</strong></div>
+              <div class="card-body vstack gap-3">
+                <p class="small text-muted mb-0">Misma clave que <code>GAGGLE_DEMO_ADMIN_KEY</code> en el servidor.</p>
+                <input class="form-control" id="admin-key" type="password" autocomplete="off" placeholder="Clave admin" />
+                <button type="button" class="btn btn-primary" id="save-admin-key">Guardar y validar</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
 
-    <dialog id="dispatch-modal" class="modal">
-      <div class="modal-inner card">
+    <dialog id="dispatch-modal" class="modal-bootstrap">
+      <div class="modal-inner card shadow">
         <button type="button" class="modal-close dispatch-modal-close" aria-label="Cerrar">&times;</button>
-        <h2>Enviar campaña</h2>
-        <p class="meta">Elige destinatarios. Solo recibirán email los seleccionados.</p>
-        <div class="row member-pick-tools">
-          <button type="button" class="btn btn-secondary btn-sm" id="dispatch-select-all">Todos</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="dispatch-select-none">Ninguno</button>
+        <h2 class="h5">Enviar campaña</h2>
+        <p class="text-muted small">Solo recibirán email los seleccionados.</p>
+        <div class="d-flex gap-2 mb-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="dispatch-select-all">Todos</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="dispatch-select-none">Ninguno</button>
         </div>
-        <div id="dispatch-member-picks" class="member-pick-list"></div>
-        <div class="row">
-          <button type="button" class="btn btn-primary" id="dispatch-confirm">Enviar invitaciones</button>
-        </div>
-        <div id="dispatch-status" class="status" hidden></div>
+        <div id="dispatch-member-picks" class="member-pick-list mb-3"></div>
+        <button type="button" class="btn btn-primary" id="dispatch-confirm">Enviar invitaciones</button>
+        <div id="dispatch-status" class="alert mt-3 py-2" hidden></div>
       </div>
     </dialog>
 
-    <dialog id="campaign-modal" class="modal">
-      <div class="modal-inner card">
+    <dialog id="campaign-modal" class="modal-bootstrap">
+      <div class="modal-inner card shadow">
         <button type="button" class="modal-close" id="modal-close" aria-label="Cerrar">&times;</button>
-        <h2 id="modal-title">Detalle</h2>
+        <h2 class="h5" id="modal-title">Detalle</h2>
         <div id="modal-body"></div>
       </div>
     </dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="/assets/demo.js" defer></script>
   </body>
 </html>
