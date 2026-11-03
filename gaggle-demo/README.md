@@ -28,11 +28,13 @@ php -S 127.0.0.1:8787 -t public public/router.php
 
 ## VPS (Parvus) — https://ngaged.pmediaplus.com
 
-**DNS:** el registro **A** de `ngaged.pmediaplus.com` debe apuntar al VPS Parvus (`87.106.194.137`, igual que `prosegur.pmediaplus.com`). Si apunta a otra IP, Let's Encrypt y el sitio público no funcionarán.
+**DNS:** la zona `pmediaplus.com` vive en **Plesk (nextconvers-vps / 82.223.3.205)**. El **A** de `ngaged` debe ser **`87.106.194.137`** (Parvus, nginx + app).
 
 ```bash
+./gaggle-demo/deploy/dns-ngaged-pmediaplus.sh   # Plesk: ngaged → Parvus
 ./gaggle-demo/deploy/deploy-demo.sh
 ssh parvus-vps 'bash /opt/apps/gaggle-demo/deploy/install-ngaged-vhost.sh'
+ssh parvus-vps 'sudo certbot --nginx -d ngaged.pmediaplus.com'  # tras DNS OK
 ```
 
 Copia a `/opt/apps/gaggle-demo` en `parvus-vps`. Crea `/opt/apps/private/gaggle-demo/publora.env` con:
