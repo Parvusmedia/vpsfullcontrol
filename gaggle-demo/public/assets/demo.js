@@ -1163,18 +1163,36 @@ async function refreshMembers() {
     });
     list.querySelectorAll('[data-invite]').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        const label = btn.textContent;
+        btn.disabled = true;
         try {
           const data = await api('/connect-invite', {
             method: 'POST',
             admin: true,
             body: { memberId: btn.getAttribute('data-invite') },
           });
-          $('#invite-url').value = data.inviteUrl || '';
-          $('#invite-oauth-url').value = data.linkedinConnectUrl || '';
-          $('#invite-result').hidden = false;
-          alert(data.linkedinConnectUrl ? 'Enlaces regenerados (ver bloque Invitar).' : (data.notice || 'Enlace Ngaged regenerado.'));
+          const url = data.inviteUrl || '';
+          const inviteUrlEl = $('#invite-url');
+          const inviteOauthEl = $('#invite-oauth-url');
+          if (inviteUrlEl) inviteUrlEl.value = url;
+          if (inviteOauthEl) inviteOauthEl.value = data.linkedinConnectUrl || '';
+          const inviteResult = $('#invite-result');
+          if (inviteResult) inviteResult.hidden = false;
+          if (url) {
+            await navigator.clipboard.writeText(url);
+          }
+          btn.textContent = 'Copiado';
+          btn.classList.remove('btn-outline-secondary');
+          btn.classList.add('btn-success');
+          setTimeout(() => {
+            btn.textContent = label;
+            btn.classList.add('btn-outline-secondary');
+            btn.classList.remove('btn-success');
+            btn.disabled = false;
+          }, 2000);
           await refreshMembers();
         } catch (e) {
+          btn.disabled = false;
           alert(e.message);
         }
       });
