@@ -57,3 +57,9 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## Gaggle demo (Publora advocacy)
+
+Repo path: `gaggle-demo/`. VPS target: `/opt/apps/gaggle-demo`, secrets in `/opt/apps/private/gaggle-demo/publora.env` (`PUBLORA_API_KEY`, `GAGGLE_DEMO_ADMIN_KEY`).
+
+Deploy: `gaggle-demo/deploy/deploy-demo.sh` (or tar over SSH if `rsync` is missing locally).

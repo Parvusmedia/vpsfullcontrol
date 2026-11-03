@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gaggle Demo · Publora</title>
+    <link rel="stylesheet" href="/assets/demo.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div>
+          <span class="badge">Demo · Employee advocacy</span>
+          <h1>Gaggle Demo</h1>
+          <p>
+            Marketing publica actividades; los miembros aprueban con un clic. Las publicaciones salen por
+            <strong>Publora</strong> (LinkedIn).
+          </p>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Vistas">
+        <button type="button" class="tab is-active" data-tab="member">Miembro</button>
+        <button type="button" class="tab" data-tab="admin">Admin</button>
+      </nav>
+
+      <section data-panel="member">
+        <div class="grid">
+          <div class="card">
+            <h2>Tu cuenta</h2>
+            <p class="meta">Elige con qué perfil LinkedIn completas actividades (conexiones Publora).</p>
+            <div id="member-accounts"></div>
+          </div>
+          <div class="card">
+            <h2>Cosas por hacer</h2>
+            <p class="meta">Estilo GaggleAMP: compartir o rechazar. Sin auto-post silencioso.</p>
+            <div id="member-status" class="status" hidden></div>
+            <div id="member-activities"></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="admin" hidden>
+        <div class="grid two">
+          <div class="card">
+            <h2>Nueva actividad</h2>
+            <label for="admin-key">Clave admin (demo)</label>
+            <input id="admin-key" type="password" autocomplete="off" placeholder="GAGGLE_DEMO_ADMIN_KEY" />
+            <div class="row">
+              <button type="button" class="btn btn-secondary" id="save-admin-key">Guardar clave</button>
+            </div>
+            <form id="admin-form">
+              <label for="activity-title">Título interno</label>
+              <input id="activity-title" required placeholder="Lanzamiento Q4 — repost" />
+              <label for="activity-type">Tipo</label>
+              <select id="activity-type">
+                <option value="post">Post nuevo</option>
+                <option value="repost">Repost (URN LinkedIn)</option>
+              </select>
+              <div id="urn-field" hidden>
+                <label for="activity-urn">repostParentUrn</label>
+                <input id="activity-urn" placeholder="urn:li:share:7123456789012345678" />
+              </div>
+              <label for="activity-content">Texto (post o comentario del repost)</label>
+              <textarea id="activity-content" placeholder="Copy sugerido para el empleado…"></textarea>
+              <label>Cuentas destino (vacío = todas)</label>
+              <div id="admin-targets"></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit">Publicar actividad</button>
+              </div>
+            </form>
+            <div id="admin-status" class="status" hidden></div>
+          </div>
+          <div class="card">
+            <h2>Actividades abiertas</h2>
+            <div id="admin-activities-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="/assets/demo.js" defer></script>
+  </body>
+</html>
