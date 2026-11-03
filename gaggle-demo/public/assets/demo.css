@@ -260,10 +260,6 @@ body.admin-body {
   font-size: 0.875rem;
 }
 
-.legal-doc {
-  max-width: 720px;
-}
-
 .activity {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -300,10 +296,81 @@ body.admin-body {
   position: sticky;
   top: 0;
   z-index: 10;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.public-topbar-brand {
+  min-width: 0;
+}
+
+.public-topbar-brand strong {
+  line-height: 1.2;
+}
+
+.public-main {
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.public-main--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-main--legal {
+  display: block;
 }
 
 .public-card {
   max-width: 520px;
+  border: none;
+}
+
+.public-card--wide {
+  max-width: 720px;
+}
+
+.public-card .card-header,
+.public-card .card-body,
+.public-card .card-footer {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.public-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+}
+
+.public-footer a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.public-footer a:hover {
+  text-decoration: underline;
+}
+
+.public-actions-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.legal-doc {
+  max-width: 720px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.legal-doc a {
+  overflow-wrap: anywhere;
 }
 
 .step-num {
@@ -456,7 +523,72 @@ body.sidebar-nav-open {
   }
 }
 
+@media (max-width: 991.98px) {
+  .public-main--center {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .public-card,
+  .public-card--wide {
+    max-width: none;
+    width: 100%;
+  }
+
+  .public-card .card-header,
+  .public-card .card-body,
+  .public-card .card-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .legal-scroll {
+    max-height: min(42vh, 300px);
+  }
+
+  .public-actions-stack .btn,
+  .public-actions-stack .btn-primary,
+  #connect-oauth-actions .btn,
+  #connect-check-wrap .btn,
+  #btn-accept-terms {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  #connect-oauth-actions {
+    flex-direction: column;
+  }
+
+  .form-check-label {
+    line-height: 1.45;
+  }
+
+  .step-item {
+    padding: 12px;
+  }
+}
+
 @media (max-width: 575.98px) {
+  .public-topbar-tagline {
+    display: none;
+  }
+
+  .public-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .public-footer a {
+    width: 100%;
+    padding: 0.35rem 0;
+  }
+
+  .legal-doc .h4,
+  .legal-doc h1.h4 {
+    font-size: 1.15rem;
+  }
+
   .admin-topbar-sub {
     display: none;
   }
