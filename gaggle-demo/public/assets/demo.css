@@ -213,6 +213,40 @@ body.admin-body {
   font-size: 0.85rem;
 }
 
+.public-shell {
+  background: var(--ng-content);
+}
+
+.public-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.public-card {
+  max-width: 520px;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ng-brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-item {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
 @media (max-width: 991px) {
   .admin-shell {
     flex-direction: column;

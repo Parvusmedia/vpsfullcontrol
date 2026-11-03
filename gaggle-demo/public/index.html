@@ -233,9 +233,12 @@
                 <div class="card shadow-sm">
                   <div class="card-header bg-white"><strong>Generar enlace de vinculación</strong></div>
                   <div class="card-body">
-                    <p class="text-muted small">
-                      Onboarding de empleados: conectan LinkedIn y quedan listos para campañas (OAuth automático con Workspace API).
-                    </p>
+                    <div class="alert alert-light border small py-2 mb-3">
+                      <strong>¿Workspace?</strong> No escribes ningún ID aquí. Es un modo B2B que
+                      <strong>Publora debe activar</strong> en tu API key; entonces aparecerá el enlace OAuth LinkedIn.
+                      Mientras tanto usa el enlace Ngaged + asignación manual del <code>platformId</code> en Miembros.
+                      (Badge arriba: «Workspace off» = aún no activo.)
+                    </div>
                     <form id="invite-form" class="vstack gap-3">
                       <input class="form-control" id="inv-name" placeholder="Nombre" />
                       <input class="form-control" id="inv-email" type="email" required placeholder="Email corporativo" />
