@@ -179,6 +179,14 @@ body.admin-body {
   font-weight: 600;
 }
 
+.member-team-badge {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
 .preview-card {
   padding: 12px;
   border: 1px solid #dee2e6;

@@ -1110,9 +1110,7 @@ async function refreshMembers() {
             escapeHtml(st) +
             '</span>' +
             (m.teamId && tmap[m.teamId]
-              ? ' · <span class="badge text-bg-primary-subtle border border-primary-subtle">' +
-                escapeHtml(tmap[m.teamId]) +
-                '</span>'
+              ? ' · <span class="badge member-team-badge">' + escapeHtml(tmap[m.teamId]) + '</span>'
               : '') +
             '</div>' +
             teamSelect +
