@@ -17,6 +17,11 @@ function ngaged_connect_terms_url(): string
     return ngaged_app_base_url() . '/terminos-conexion';
 }
 
+function ngaged_privacy_policy_url(): string
+{
+    return ngaged_app_base_url() . '/privacidad';
+}
+
 /** @param array<string,mixed> $member */
 function ngaged_member_terms_accepted(array $member): bool
 {
@@ -34,6 +39,7 @@ function ngaged_terms_acceptance_meta(): array
     return [
         'version' => ngaged_connect_terms_version(),
         'url' => ngaged_connect_terms_url(),
+        'privacyUrl' => ngaged_privacy_policy_url(),
         'controller' => 'Parvus Media S.L.U.',
         'privacyContact' => 'dpo@parvusmedia.com',
     ];

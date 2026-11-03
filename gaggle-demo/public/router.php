@@ -55,6 +55,12 @@ if ($uri === '/terminos-conexion' || str_starts_with($uri, '/terminos-conexion?'
     return true;
 }
 
+if ($uri === '/privacidad' || str_starts_with($uri, '/privacidad?')) {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/privacidad.html');
+    return true;
+}
+
 $file = __DIR__ . $uri;
 if ($uri !== '/' && is_file($file)) {
     return false;

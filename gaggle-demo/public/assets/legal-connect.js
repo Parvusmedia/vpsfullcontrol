@@ -9,7 +9,7 @@
 <h2 class="h6 mt-4">2. Qué aceptas al vincular LinkedIn</h2>
 <p class="small">Al marcar la casilla y pulsar «Acepto y continuar», declaras que:</p>
 <ul class="small">
-  <li>Has leído y aceptas estas condiciones y la <a href="https://parvusmedia.com/privacy/" target="_blank" rel="noopener">Política de privacidad de Parvus Media</a>.</li>
+  <li>Has leído y aceptas estas condiciones y la <a href="/privacidad" target="_blank" rel="noopener">Política de privacidad de Ngaged</a>.</li>
   <li>Autorizas a Ngaged (operado por Parvus Media) a iniciar el flujo de autorización de <strong>LinkedIn</strong> en tu nombre, para vincular tu perfil o cuenta autorizada y ejecutar las acciones que apruebes (p. ej. reposts) en el marco de las campañas de tu organización.</li>
   <li>Comprendes que <strong>LinkedIn</strong> aplica sus propias condiciones y políticas; al conectar, también quedas sujeto a los <a href="https://www.linkedin.com/legal/user-agreement" target="_blank" rel="noopener">Términos de usuario de LinkedIn</a> y a la <a href="https://www.linkedin.com/legal/privacy-policy" target="_blank" rel="noopener">Política de privacidad de LinkedIn</a>.</li>
   <li>Actúas como empleado o colaborador autorizado por tu organización y la información que facilitas es veraz.</li>
@@ -48,6 +48,8 @@
 
 <h2 class="h6 mt-4">9. Legislación</h2>
 <p class="small">Estas condiciones se rigen por la legislación española. Salvo fuero imperativo, los tribunales de Madrid serán competentes.</p>
+
+<p class="small mt-3">Consulta también la <a href="/privacidad">Política de privacidad de Ngaged</a>.</p>
 `;
 
   window.NGAGED_CONNECT_LEGAL_HTML = LEGAL_HTML;
