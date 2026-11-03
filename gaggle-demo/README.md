@@ -1,51 +1,71 @@
-# Gaggle Demo (employee advocacy + Publora)
+# Ngaged
 
-Demo mínimo tipo **GaggleAMP**: marketing crea actividades; los miembros las aprueban con un clic y Publora publica en LinkedIn.
+Panel de **employee advocacy**: campañas LinkedIn, invitaciones por email (Repostear / Ignorar), dashboard con métricas y repost one-click para el equipo.
 
-## Flujo
+## Producto (lo que ve el usuario)
 
-1. **Admin** — crea actividad (post nuevo o repost con URN + comentario opcional) y elige cuentas destino (desde Publora).
-2. **Miembro** — ve la cola, elige su identidad (conexión LinkedIn) y pulsa **Compartir ahora** o **No gracias**.
-3. **Publora** — `publishNow` o repost vía `platformSettings.linkedin`.
+- **Dashboard** — campañas enviadas, alcance, reposts, tasa de adopción y gráficos.
+- **Campañas** — URL de LinkedIn, vista previa, selección de miembros y envío.
+- **Miembros** — email + cuenta LinkedIn asociada.
+- **Miembro** — cola de campañas pendientes desde el navegador.
 
-## Requisitos
+Marca única: **Ngaged** en UI y emails.
 
-- PHP 8.1+ con `curl` y `json`
-- API key Publora (`sk_…`) con al menos una conexión LinkedIn
-- Opcional: clave admin (`GAGGLE_DEMO_ADMIN_KEY`) para crear actividades
+## Requisitos técnicos
+
+- PHP 8.1+ (`curl`, `json`)
+- Cuenta LinkedIn conectada vía API de publicación (clave en entorno del servidor)
+- Clave admin (`GAGGLE_DEMO_ADMIN_KEY`) para crear campañas y ver stats
 
 ## Local
 
 ```bash
 export PUBLORA_API_KEY=sk_...
-export GAGGLE_DEMO_ADMIN_KEY=demo-admin   # opcional; por defecto demo-admin
+export GAGGLE_DEMO_ADMIN_KEY=demo-admin
 cd gaggle-demo
 php -S 127.0.0.1:8787 -t public public/router.php
 ```
 
-- Panel: http://127.0.0.1:8787/
-- Admin key en el formulario admin (localStorage)
+Panel: http://127.0.0.1:8787/ — guarda la clave admin en el header.
 
-## VPS (Parvus) — https://ngaged.pmediaplus.com
+## VPS — https://ngaged.pmediaplus.com
 
-**DNS:** la zona `pmediaplus.com` vive en **Plesk (nextconvers-vps / 82.223.3.205)**. El **A** de `ngaged` debe ser **`87.106.194.137`** (Parvus, nginx + app).
+Ver [deploy/deploy-demo.sh](deploy/deploy-demo.sh) y [deploy/install-ngaged-vhost.sh](deploy/install-ngaged-vhost.sh).
 
-```bash
-./gaggle-demo/deploy/dns-ngaged-pmediaplus.sh   # Plesk: ngaged → Parvus
-./gaggle-demo/deploy/deploy-demo.sh
-ssh parvus-vps 'bash /opt/apps/gaggle-demo/deploy/install-ngaged-vhost.sh'
-ssh parvus-vps 'sudo certbot --nginx -d ngaged.pmediaplus.com'  # tras DNS OK
-```
+### Ops (mantenedores)
 
-Copia a `/opt/apps/gaggle-demo` en `parvus-vps`. Crea `/opt/apps/private/gaggle-demo/publora.env` con:
+Rutas en servidor (nombres históricos):
+
+| Qué | Dónde |
+|-----|--------|
+| App | `/opt/apps/gaggle-demo` |
+| Secrets | `/opt/apps/private/gaggle-demo/publora.env` |
+| Datos JSON | `/opt/apps/private/gaggle-demo/data` |
+| systemd | `gaggle-demo.service` → `:8790` |
+
+Variables en `publora.env` (ejemplo ampliado en [deploy/publora.env.example](deploy/publora.env.example) y [deploy/mail.env.example](deploy/mail.env.example)):
 
 ```
 PUBLORA_API_KEY=sk_...
-GAGGLE_DEMO_ADMIN_KEY=elige-una-clave-larga
+GAGGLE_DEMO_ADMIN_KEY=...
+NGAGED_APP_URL=https://ngaged.pmediaplus.com
+NGAGED_MAIL_FROM="Ngaged <noreply@pmediaplus.com>"
+NGAGED_SIGNING_SECRET=...
 ```
 
-Sirve con nginx/apache apuntando al `public/` o PHP built-in detrás de systemd (ver comentarios en `deploy-demo.sh`).
+DNS: [deploy/dns-ngaged-pmediaplus.sh](deploy/dns-ngaged-pmediaplus.sh) (A `ngaged` → Parvus).
 
-## Seguridad (demo)
+## API (resumen)
 
-No es producción: sin OAuth por empleado ni multi-tenant. Protege la URL (VPN, Basic Auth, IP allowlist) antes de exponerla.
+| Ruta | Uso |
+|------|-----|
+| `GET /api/stats?days=30` | Dashboard (admin) |
+| `POST /api/campaigns` | Crear campaña |
+| `POST /api/dispatch` | Enviar emails |
+| `POST /api/preview-post` | URL → URN + OG |
+| `GET/POST /api/members` | CRUD miembros |
+| `GET /api/action` | Enlaces email (`/go?token=…`) |
+
+## Seguridad
+
+Demo orientada a equipos internos: protege la URL (VPN, Basic Auth, allowlist) antes de producción real.

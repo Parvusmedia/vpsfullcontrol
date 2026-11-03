@@ -12,8 +12,7 @@ $writable = is_dir($dataDir) && is_writable($dataDir);
 
 gaggle_demo_json_response(200, [
     'ok' => true,
-    'service' => 'gaggle-demo',
-    'publoraKeyConfigured' => $keyOk,
-    'dataDir' => $dataDir,
+    'service' => 'ngaged',
+    'linkedinPublishReady' => $keyOk,
     'dataWritable' => $writable,
 ]);

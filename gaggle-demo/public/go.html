@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ngaged · Acción</title>
+    <link rel="stylesheet" href="/assets/demo.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <div>
+          <span class="badge">Ngaged</span>
+          <h1>Procesando tu respuesta…</h1>
+        </div>
+      </header>
+      <div class="card">
+        <div id="go-status" class="status">Un momento…</div>
+        <p class="meta"><a href="/">Volver al panel</a></p>
+      </div>
+    </div>
+    <script>
+      (async function () {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token') || '';
+        const action = params.get('action') || '';
+        const el = document.getElementById('go-status');
+        if (!token || !action) {
+          el.textContent = 'Enlace incompleto.';
+          el.className = 'status err';
+          return;
+        }
+        try {
+          const res = await fetch('/api/action?token=' + encodeURIComponent(token) + '&action=' + encodeURIComponent(action));
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || 'Error');
+          el.textContent = data.message || 'Listo.';
+          el.className = 'status ok';
+        } catch (e) {
+          el.textContent = e.message || 'No pudimos completar la acción.';
+          el.className = 'status err';
+        }
+      })();
+    </script>
+  </body>
+</html>

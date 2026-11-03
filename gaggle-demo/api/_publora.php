@@ -17,7 +17,7 @@ function gaggle_publora_request(string $method, string $path, ?array $body = nul
         'x-publora-key: ' . $apiKey,
         'Content-Type: application/json',
         'Accept: application/json',
-        'x-publora-client: gaggle-demo',
+        'x-publora-client: ngaged',
     ];
 
     curl_setopt_array($ch, [
@@ -106,4 +106,61 @@ function gaggle_publora_publish_activity(array $activity, string $platformId): a
         'scheduledTime' => $resp['body']['scheduledTime'] ?? null,
         'publora' => $resp['body'],
     ];
+}
+
+function gaggle_publora_linkedin_reshare(string $platformId, string $repostParentUrn, string $commentary = ''): array
+{
+    $urn = trim($repostParentUrn);
+    if ($urn === '') {
+        return ['ok' => false, 'error' => 'Missing repost URN.'];
+    }
+
+    $payload = [
+        'platforms' => [$platformId],
+        'publishNow' => true,
+        'repostParentUrn' => $urn,
+        'repostVisibility' => 'PUBLIC',
+    ];
+    if (trim($commentary) !== '') {
+        $payload['content'] = trim($commentary);
+    }
+
+    $resp = gaggle_publora_request('POST', 'linkedin-reshare', $payload);
+    if (!$resp['ok'] && ($resp['http'] ?? 0) === 404) {
+        $fallback = [
+            'platforms' => [$platformId],
+            'publishNow' => true,
+            'content' => trim($commentary) !== '' ? trim($commentary) : ' ',
+            'platformSettings' => [
+                'linkedin' => [
+                    'repostParentUrn' => $urn,
+                    'repostVisibility' => 'PUBLIC',
+                ],
+            ],
+        ];
+        $resp = gaggle_publora_request('POST', 'create-post', $fallback);
+    }
+
+    if (!$resp['ok']) {
+        return $resp;
+    }
+
+    return [
+        'ok' => true,
+        'postGroupId' => $resp['body']['postGroupId'] ?? null,
+        'scheduledTime' => $resp['body']['scheduledTime'] ?? null,
+    ];
+}
+
+function gaggle_publora_list_posts(int $limit = 20): array
+{
+    $resp = gaggle_publora_request('GET', 'posts?limit=' . max(1, min(50, $limit)));
+    if (!$resp['ok']) {
+        return $resp;
+    }
+    $posts = $resp['body']['posts'] ?? $resp['body']['data'] ?? $resp['body'];
+    if (!is_array($posts)) {
+        $posts = [];
+    }
+    return ['ok' => true, 'posts' => $posts];
 }

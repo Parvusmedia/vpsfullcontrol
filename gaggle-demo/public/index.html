@@ -3,81 +3,174 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gaggle Demo · Publora</title>
+    <title>Ngaged · Employee advocacy</title>
     <link rel="stylesheet" href="/assets/demo.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   </head>
   <body>
-    <div class="wrap">
+    <div class="wrap wrap-wide">
       <header class="hero">
         <div>
-          <span class="badge">Demo · Employee advocacy</span>
-          <h1>Gaggle Demo</h1>
+          <span class="badge">Employee advocacy</span>
+          <h1>Ngaged</h1>
           <p>
-            Marketing publica actividades; los miembros aprueban con un clic. Las publicaciones salen por
-            <strong>Publora</strong> (LinkedIn).
+            Campañas LinkedIn para tu equipo: invitaciones por email, repost con un clic y métricas claras en un solo
+            panel.
           </p>
+        </div>
+        <div class="admin-key-inline">
+          <label for="admin-key">Clave admin</label>
+          <input id="admin-key" type="password" autocomplete="off" placeholder="Clave de administración" />
+          <button type="button" class="btn btn-secondary btn-sm" id="save-admin-key">Guardar</button>
         </div>
       </header>
 
+      <div id="global-status" class="status" hidden></div>
+
       <nav class="tabs" aria-label="Vistas">
-        <button type="button" class="tab is-active" data-tab="member">Miembro</button>
-        <button type="button" class="tab" data-tab="admin">Admin</button>
+        <button type="button" class="tab is-active" data-tab="dashboard">Dashboard</button>
+        <button type="button" class="tab" data-tab="campaigns">Campañas</button>
+        <button type="button" class="tab" data-tab="members">Miembros</button>
+        <button type="button" class="tab" data-tab="member">Miembro</button>
       </nav>
 
-      <section data-panel="member">
-        <div class="grid">
-          <div class="card">
-            <h2>Tu cuenta</h2>
-            <p class="meta">Elige con qué perfil LinkedIn completas actividades (conexiones Publora).</p>
-            <div id="member-accounts"></div>
+      <section data-panel="dashboard">
+        <div class="dash-toolbar">
+          <div class="period-pills" role="group" aria-label="Periodo">
+            <button type="button" class="pill is-active" data-days="7">7 días</button>
+            <button type="button" class="pill" data-days="30">30 días</button>
+            <button type="button" class="pill" data-days="all">Todo</button>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="dash-refresh">Actualizar</button>
+        </div>
+        <div id="dash-empty" class="empty-state" hidden>
+          <h2>Sin datos aún</h2>
+          <p>Envía tu primera campaña para ver métricas y gráficos.</p>
+          <button type="button" class="btn btn-primary" data-goto="campaigns">Ir a Campañas</button>
+        </div>
+        <div id="dash-content" hidden>
+          <div class="kpi-grid" id="kpi-grid"></div>
+          <div class="chart-grid">
+            <div class="card chart-card">
+              <h2>Tasa de adopción</h2>
+              <div class="donut-wrap"><canvas id="chart-donut"></canvas></div>
+            </div>
+            <div class="card chart-card">
+              <h2>Actividad diaria</h2>
+              <canvas id="chart-line"></canvas>
+            </div>
+            <div class="card chart-card">
+              <h2>Embudo de respuestas</h2>
+              <canvas id="chart-funnel"></canvas>
+            </div>
+            <div class="card chart-card">
+              <h2>Quién más amplifica</h2>
+              <canvas id="chart-top"></canvas>
+            </div>
           </div>
           <div class="card">
-            <h2>Cosas por hacer</h2>
-            <p class="meta">Estilo GaggleAMP: compartir o rechazar. Sin auto-post silencioso.</p>
-            <div id="member-status" class="status" hidden></div>
-            <div id="member-activities"></div>
+            <h2>Campañas recientes</h2>
+            <div class="table-wrap">
+              <table class="data-table" id="recent-campaigns-table">
+                <thead>
+                  <tr>
+                    <th>Campaña</th>
+                    <th>Fecha</th>
+                    <th>Alcanzados</th>
+                    <th>Reposts</th>
+                    <th>Adopción</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
 
-      <section data-panel="admin" hidden>
+      <section data-panel="campaigns" hidden>
         <div class="grid two">
           <div class="card">
-            <h2>Nueva actividad</h2>
-            <label for="admin-key">Clave admin (demo)</label>
-            <input id="admin-key" type="password" autocomplete="off" placeholder="GAGGLE_DEMO_ADMIN_KEY" />
-            <div class="row">
-              <button type="button" class="btn btn-secondary" id="save-admin-key">Guardar clave</button>
-            </div>
-            <form id="admin-form">
-              <label for="activity-title">Título interno</label>
-              <input id="activity-title" required placeholder="Lanzamiento Q4 — repost" />
-              <label for="activity-type">Tipo</label>
-              <select id="activity-type">
-                <option value="post">Post nuevo</option>
-                <option value="repost">Repost (URN LinkedIn)</option>
-              </select>
-              <div id="urn-field" hidden>
-                <label for="activity-urn">repostParentUrn</label>
-                <input id="activity-urn" placeholder="urn:li:share:7123456789012345678" />
-              </div>
-              <label for="activity-content">Texto (post o comentario del repost)</label>
-              <textarea id="activity-content" placeholder="Copy sugerido para el empleado…"></textarea>
-              <label>Cuentas destino (vacío = todas)</label>
-              <div id="admin-targets"></div>
+            <h2>Nueva campaña</h2>
+            <form id="campaign-form">
+              <label for="camp-title">Título interno</label>
+              <input id="camp-title" required placeholder="Lanzamiento Q4" />
+              <label for="camp-url">URL del post en LinkedIn</label>
+              <input id="camp-url" type="url" placeholder="https://www.linkedin.com/feed/update/…" />
               <div class="row">
-                <button class="btn btn-primary" type="submit">Publicar actividad</button>
+                <button type="button" class="btn btn-secondary" id="camp-preview-btn">Obtener vista previa</button>
+              </div>
+              <label for="camp-urn">URN (si la URL no basta)</label>
+              <input id="camp-urn" placeholder="urn:li:share:…" />
+              <div id="camp-preview-card" class="preview-card" hidden></div>
+              <label for="camp-commentary">Comentario sugerido al repostear</label>
+              <textarea id="camp-commentary" placeholder="Copy opcional para el empleado…"></textarea>
+              <label>Miembros destino</label>
+              <div id="camp-member-picks"></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit">Guardar campaña</button>
               </div>
             </form>
-            <div id="admin-status" class="status" hidden></div>
+            <div id="campaign-form-status" class="status" hidden></div>
           </div>
           <div class="card">
-            <h2>Actividades abiertas</h2>
-            <div id="admin-activities-list"></div>
+            <h2>Historial</h2>
+            <div id="campaigns-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="members" hidden>
+        <div class="grid two">
+          <div class="card">
+            <h2>Añadir miembro</h2>
+            <form id="member-form">
+              <label for="mem-name">Nombre</label>
+              <input id="mem-name" placeholder="Ana García" />
+              <label for="mem-email">Email</label>
+              <input id="mem-email" type="email" required placeholder="ana@empresa.com" />
+              <label for="mem-platform">Cuenta LinkedIn (platformId)</label>
+              <input id="mem-platform" placeholder="linkedin-…" />
+              <p class="meta">Las cuentas conectadas aparecen abajo para copiar el ID.</p>
+              <div id="mem-connections"></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit">Guardar miembro</button>
+              </div>
+            </form>
+            <div id="member-form-status" class="status" hidden></div>
+          </div>
+          <div class="card">
+            <h2>Equipo</h2>
+            <div id="members-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="member" hidden>
+        <div class="grid">
+          <div class="card">
+            <h2>Tu cuenta LinkedIn</h2>
+            <p class="meta">Elige el perfil con el que completas campañas.</p>
+            <div id="member-accounts"></div>
+          </div>
+          <div class="card">
+            <h2>Campañas pendientes</h2>
+            <div id="member-status" class="status" hidden></div>
+            <div id="member-pending"></div>
           </div>
         </div>
       </section>
     </div>
+
+    <dialog id="campaign-modal" class="modal">
+      <div class="modal-inner card">
+        <button type="button" class="modal-close" id="modal-close" aria-label="Cerrar">&times;</button>
+        <h2 id="modal-title">Detalle</h2>
+        <div id="modal-body"></div>
+      </div>
+    </dialog>
+
     <script src="/assets/demo.js" defer></script>
   </body>
 </html>
