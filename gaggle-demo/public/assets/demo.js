@@ -63,7 +63,8 @@ function formatDate(iso) {
 
 function navigateTo(id) {
   const links = document.querySelectorAll('.sidebar-link[data-panel]');
-  const panels = document.querySelectorAll('[data-panel]');
+  // Only content sections — sidebar buttons also carry data-panel and must stay visible.
+  const panels = document.querySelectorAll('.admin-content section[data-panel]');
   links.forEach((l) => l.classList.toggle('active', l.getAttribute('data-panel') === id));
   panels.forEach((p) => {
     p.hidden = p.getAttribute('data-panel') !== id;
@@ -592,6 +593,11 @@ async function refreshCampaignsList() {
   } catch (e) {
     list.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
   }
+}
+
+async function refreshCampaigns() {
+  await refreshCampaignMemberPicks();
+  await refreshCampaignsList();
 }
 
 async function initInvite() {
