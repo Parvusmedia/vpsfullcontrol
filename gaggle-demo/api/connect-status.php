@@ -22,12 +22,30 @@ if ($found === null) {
 }
 
 $member = $found['member'];
+$i = $found['index'];
+$store = ngaged_members_store();
+
+if (gaggle_publora_workspace_enabled()) {
+    $provision = ngaged_provision_member_connect($member);
+    if ($provision['ok'] && isset($provision['member']) && is_array($provision['member'])) {
+        $member = $provision['member'];
+        $store['members'][$i] = $member;
+        ngaged_save_members($store);
+    }
+}
+
+$oauthUrl = trim((string) ($member['linkedinConnectUrl'] ?? ''));
+if ($oauthUrl === '') {
+    $oauthUrl = null;
+}
+
 gaggle_demo_json_response(200, [
     'ok' => true,
     'name' => $member['name'] ?? '',
     'email' => $member['email'] ?? '',
-    'linkedinConnectUrl' => $member['linkedinConnectUrl'] ?? null,
+    'linkedinConnectUrl' => $oauthUrl,
     'platformLinked' => trim((string) ($member['platformId'] ?? '')) !== '',
     'connectStatus' => $member['connectStatus'] ?? 'pending',
+    'selfConnectAvailable' => $oauthUrl !== null,
     'workspaceEnabled' => (bool) ($member['workspaceEnabled'] ?? gaggle_publora_workspace_enabled()),
 ]);

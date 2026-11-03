@@ -76,6 +76,10 @@ if ($method === 'PUT') {
     $members[$i]['name'] = trim((string) ($input['name'] ?? $members[$i]['name'] ?? ''));
     $members[$i]['email'] = strtolower(trim((string) ($input['email'] ?? $members[$i]['email'] ?? '')));
     $members[$i]['platformId'] = trim((string) ($input['platformId'] ?? $members[$i]['platformId'] ?? ''));
+    if ($members[$i]['platformId'] !== '') {
+        $members[$i]['connectStatus'] = 'linked';
+        $members[$i]['linkedAt'] = gmdate('c');
+    }
     ngaged_save_members(['members' => $members]);
     gaggle_demo_json_response(200, ['ok' => true, 'member' => $members[$i]]);
 }

@@ -17,9 +17,31 @@ if ($verified === null) {
     gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Enlace caducado o no válido.']);
 }
 
+$found = ngaged_find_member(ngaged_members_store(), $verified['memberId']);
+if ($found === null) {
+    gaggle_demo_json_response(404, ['ok' => false, 'error' => 'Invitación no encontrada.']);
+}
+
+$member = $found['member'];
+$existing = trim((string) ($member['platformId'] ?? ''));
+if ($existing !== '') {
+    gaggle_demo_json_response(200, [
+        'ok' => true,
+        'message' => 'LinkedIn vinculado correctamente.',
+        'platformId' => $existing,
+    ]);
+}
+
 $result = ngaged_sync_member_linkedin($verified['memberId']);
 if (!$result['ok']) {
-    gaggle_demo_json_response(422, ['ok' => false, 'error' => $result['error'] ?? 'Aún no detectamos LinkedIn.']);
+    $hint = gaggle_publora_workspace_enabled()
+        ? 'Completa la autorización en LinkedIn y vuelve a pulsar comprobar.'
+        : 'Tu administrador aún no ha vinculado tu perfil. Avísale y vuelve a comprobar en unos minutos.';
+    gaggle_demo_json_response(422, [
+        'ok' => false,
+        'error' => $result['error'] ?? 'Aún no detectamos LinkedIn.',
+        'hint' => $hint,
+    ]);
 }
 
 gaggle_demo_json_response(200, [

@@ -699,18 +699,46 @@ async function refreshMembers() {
   try {
     const data = await api('/members', { admin: true });
     const members = data.members || [];
+    let connections = [];
+    try {
+      connections = await loadConnections();
+    } catch {
+      connections = [];
+    }
     if (!members.length) {
       list.innerHTML = '<p class="empty">Sin miembros.</p>';
       return;
     }
+    const linkOptions =
+      connections.length > 0
+        ? connections
+            .map(
+              (c) =>
+                '<option value="' +
+                escapeHtml(c.platformId) +
+                '">' +
+                escapeHtml(c.username || c.platformId) +
+                '</option>'
+            )
+            .join('')
+        : '';
     list.innerHTML =
       '<div class="list-group list-group-flush member-directory">' +
       members
         .map((m) => {
           const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
+          const pending = !m.platformId;
+          const linkSelect =
+            pending && linkOptions
+              ? '<select class="form-select form-select-sm mt-2 member-link-select" data-link="' +
+                escapeHtml(m.id) +
+                '"><option value="">Vincular cuenta LinkedIn…</option>' +
+                linkOptions +
+                '</select>'
+              : '';
           return (
             '<div class="list-group-item"><div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
-            '<div><div class="fw-semibold">' +
+            '<div class="flex-grow-1"><div class="fw-semibold">' +
             escapeHtml(m.name || m.email) +
             '</div><div class="small text-muted">' +
             escapeHtml(m.email) +
@@ -718,7 +746,9 @@ async function refreshMembers() {
             escapeHtml(m.platformId || 'Sin LinkedIn') +
             ' · <span class="badge text-bg-light border">' +
             escapeHtml(st) +
-            '</span></div></div>' +
+            '</span></div>' +
+            linkSelect +
+            '</div>' +
             '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
             '<button type="button" class="btn btn-outline-secondary" data-invite="' +
             escapeHtml(m.id) +
@@ -733,6 +763,20 @@ async function refreshMembers() {
         })
         .join('') +
       '</div>';
+    list.querySelectorAll('.member-link-select').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const platformId = sel.value;
+        if (!platformId) return;
+        const memberId = sel.getAttribute('data-link');
+        try {
+          await api('/members', { method: 'PUT', admin: true, body: { id: memberId, platformId } });
+          await refreshMembers();
+        } catch (e) {
+          alert(e.message);
+          sel.value = '';
+        }
+      });
+    });
     list.querySelectorAll('[data-invite]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         try {

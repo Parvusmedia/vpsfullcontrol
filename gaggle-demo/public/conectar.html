@@ -33,26 +33,34 @@
                 <span class="step-num">1</span>
                 <div>
                   <strong>Autoriza LinkedIn</strong>
-                  <p class="small text-muted mb-0">Se abrirá una ventana segura para conectar tu perfil.</p>
+                  <p class="small text-muted mb-0">Pulsa el botón y sigue el flujo seguro de LinkedIn.</p>
                 </div>
               </div>
               <div class="d-flex gap-3 align-items-start step-item">
                 <span class="step-num">2</span>
                 <div>
                   <strong>Confirma aquí</strong>
-                  <p class="small text-muted mb-0">Vuelve a Ngaged y pulsa «Ya conecté».</p>
+                  <p class="small text-muted mb-0">Al volver, pulsa «Comprobar vínculo».</p>
                 </div>
               </div>
             </div>
 
-            <div class="d-flex flex-wrap gap-2" id="connect-actions" hidden>
-              <a id="btn-oauth" class="btn btn-primary" href="#" target="_blank" rel="noopener">Conectar LinkedIn</a>
-              <button type="button" class="btn btn-outline-secondary" id="btn-done">Ya conecté — comprobar</button>
+            <div id="connect-admin-steps" class="vstack gap-2 mb-4 small text-muted" hidden>
+              <p class="mb-2">
+                Tu organización usa vinculación asistida: un administrador Ngaged conectará tu perfil desde el panel.
+              </p>
+              <ol class="mb-0 ps-3">
+                <li>Envía este enlace a tu admin si aún no lo tiene.</li>
+                <li>Cuando te confirme que ya está hecho, pulsa <strong>Comprobar vínculo</strong>.</li>
+              </ol>
             </div>
 
-            <div id="connect-workspace-note" class="alert alert-warning py-2 mt-3 small" hidden>
-              <strong>Conexión automática no disponible.</strong> Pide a tu administrador que active LinkedIn para la
-              organización o que vincule tu perfil desde el panel en <strong>Miembros</strong>.
+            <div class="d-flex flex-wrap gap-2" id="connect-oauth-actions" hidden>
+              <a id="btn-oauth" class="btn btn-primary" href="#">Conectar LinkedIn</a>
+            </div>
+
+            <div class="mt-3" id="connect-check-wrap" hidden>
+              <button type="button" class="btn btn-outline-secondary" id="btn-done">Comprobar vínculo</button>
             </div>
           </div>
           <div class="card-footer bg-light border-0 px-4 py-3">
@@ -70,16 +78,45 @@
         el.hidden = !message;
       }
 
+      function isValidOAuthUrl(url) {
+        return typeof url === 'string' && /^https?:\/\//i.test(url);
+      }
+
       (async function () {
         const params = new URLSearchParams(location.search);
         const token = params.get('token') || '';
         const statusEl = document.getElementById('connect-status');
-        const actions = document.getElementById('connect-actions');
+        const oauthActions = document.getElementById('connect-oauth-actions');
         const steps = document.getElementById('connect-steps');
-        const wsNote = document.getElementById('connect-workspace-note');
+        const adminSteps = document.getElementById('connect-admin-steps');
+        const checkWrap = document.getElementById('connect-check-wrap');
         const lead = document.getElementById('lead');
         const oauth = document.getElementById('btn-oauth');
         const done = document.getElementById('btn-done');
+        let oauthOpened = false;
+
+        async function runCheck() {
+          setConnectStatus(statusEl, 'Comprobando conexión…', 'info');
+          try {
+            const res = await fetch('/api/connect-complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }),
+            });
+            const data = await res.json();
+            if (!data.ok) {
+              const msg = data.hint ? data.error + ' ' + data.hint : data.error || 'Error';
+              throw new Error(msg);
+            }
+            setConnectStatus(statusEl, data.message || 'Listo.', 'ok');
+            oauthActions.hidden = true;
+            steps.hidden = true;
+            adminSteps.hidden = true;
+            checkWrap.hidden = true;
+          } catch (e) {
+            setConnectStatus(statusEl, e.message || 'No pudimos comprobar el vínculo.', 'warn');
+          }
+        }
 
         if (!token) {
           setConnectStatus(statusEl, 'Enlace incompleto.', 'err');
@@ -94,20 +131,31 @@
             'Hola ' +
             (data.name || data.email || '') +
             ', autoriza tu cuenta para recibir campañas de employee advocacy.';
+
+          checkWrap.hidden = false;
+
           if (data.platformLinked) {
             setConnectStatus(statusEl, 'Tu LinkedIn ya está vinculado. Puedes cerrar esta página.', 'ok');
+            checkWrap.hidden = true;
             return;
           }
-          if (data.linkedinConnectUrl) {
+
+          if (isValidOAuthUrl(data.linkedinConnectUrl)) {
             oauth.href = data.linkedinConnectUrl;
-            actions.hidden = false;
+            oauthActions.hidden = false;
             steps.hidden = false;
             setConnectStatus(statusEl, 'Sigue los dos pasos de abajo.', 'info');
+            oauth.addEventListener('click', () => {
+              oauthOpened = true;
+            });
+            window.addEventListener('focus', () => {
+              if (oauthOpened) runCheck();
+            });
           } else {
-            wsNote.hidden = false;
+            adminSteps.hidden = false;
             setConnectStatus(
               statusEl,
-              'Esperando configuración del administrador. Avísale si ves este mensaje.',
+              'Tu administrador debe vincular tu LinkedIn desde el panel Ngaged. Cuando te avise, pulsa «Comprobar vínculo».',
               'warn'
             );
           }
@@ -115,23 +163,7 @@
           setConnectStatus(statusEl, e.message || 'No pudimos cargar la invitación.', 'err');
         }
 
-        done.addEventListener('click', async () => {
-          setConnectStatus(statusEl, 'Comprobando conexión…', 'info');
-          try {
-            const res = await fetch('/api/connect-complete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token }),
-            });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'Error');
-            setConnectStatus(statusEl, data.message || 'Listo.', 'ok');
-            actions.hidden = true;
-            steps.hidden = true;
-          } catch (e) {
-            setConnectStatus(statusEl, e.message, 'err');
-          }
-        });
+        done.addEventListener('click', runCheck);
       })();
     </script>
   </body>
