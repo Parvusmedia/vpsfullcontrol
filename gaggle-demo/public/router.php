@@ -23,6 +23,8 @@ if (str_starts_with($uri, '/api/')) {
         'connect-invite' => 'connect-invite.php',
         'connect-status' => 'connect-status.php',
         'connect-complete' => 'connect-complete.php',
+        'connect-accept-terms' => 'connect-accept-terms.php',
+        'connect-terms' => 'connect-terms.php',
         'members-sync' => 'members-sync.php',
     ];
     if (isset($map[$script])) {
@@ -44,6 +46,12 @@ if ($uri === '/go' || $uri === '/go/') {
 if ($uri === '/conectar' || str_starts_with($uri, '/conectar?')) {
     header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . '/conectar.html');
+    return true;
+}
+
+if ($uri === '/terminos-conexion' || str_starts_with($uri, '/terminos-conexion?')) {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/terminos-conexion.html');
     return true;
 }
 

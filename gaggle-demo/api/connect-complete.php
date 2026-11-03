@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_connect.php';
+require_once __DIR__ . '/_legal.php';
 
 gaggle_demo_cors();
 
@@ -23,6 +24,11 @@ if ($found === null) {
 }
 
 $member = $found['member'];
+$termsBlock = ngaged_require_terms_accepted($member);
+if ($termsBlock !== null) {
+    gaggle_demo_json_response(403, $termsBlock);
+}
+
 $existing = trim((string) ($member['platformId'] ?? ''));
 if ($existing !== '') {
     gaggle_demo_json_response(200, [

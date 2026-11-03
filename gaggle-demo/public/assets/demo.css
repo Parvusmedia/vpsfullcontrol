@@ -197,6 +197,20 @@ body.admin-body {
   padding: 1rem 1.25rem;
 }
 
+.legal-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.8125rem;
+}
+
+.legal-scroll h2 {
+  font-size: 0.875rem;
+}
+
+.legal-doc {
+  max-width: 720px;
+}
+
 .activity {
   border: 1px solid #e2e8f0;
   border-radius: 10px;

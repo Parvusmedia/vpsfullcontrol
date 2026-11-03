@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_connect.php';
+require_once __DIR__ . '/_legal.php';
 
 gaggle_demo_cors();
 
@@ -48,4 +49,6 @@ gaggle_demo_json_response(200, [
     'connectStatus' => $member['connectStatus'] ?? 'pending',
     'selfConnectAvailable' => $oauthUrl !== null,
     'workspaceEnabled' => (bool) ($member['workspaceEnabled'] ?? gaggle_publora_workspace_enabled()),
+    'termsAccepted' => ngaged_member_terms_accepted($member),
+    'terms' => ngaged_terms_acceptance_meta(),
 ]);
