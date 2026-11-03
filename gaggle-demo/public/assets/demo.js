@@ -81,6 +81,45 @@ function navigateTo(id) {
   if (id === 'connections') refreshConnectionsTable();
   if (id === 'employee') refreshMemberQueue();
   if (id === 'settings') renderHealthChecks();
+  if (isMobileNav()) setSidebarOpen(false);
+}
+
+function isMobileNav() {
+  return window.matchMedia('(max-width: 991.98px)').matches;
+}
+
+function setSidebarOpen(open) {
+  const sidebar = $('#admin-sidebar');
+  const overlay = $('#sidebar-overlay');
+  const toggle = $('#sidebar-toggle');
+  if (!sidebar) return;
+  sidebar.classList.toggle('is-open', open);
+  if (overlay) {
+    overlay.classList.toggle('is-visible', open);
+    overlay.hidden = !open;
+    overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+  document.body.classList.toggle('sidebar-nav-open', open);
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+  }
+}
+
+function initMobileNav() {
+  const toggle = $('#sidebar-toggle');
+  const overlay = $('#sidebar-overlay');
+  toggle?.addEventListener('click', () => {
+    const sidebar = $('#admin-sidebar');
+    setSidebarOpen(!sidebar?.classList.contains('is-open'));
+  });
+  overlay?.addEventListener('click', () => setSidebarOpen(false));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setSidebarOpen(false);
+  });
+  window.addEventListener('resize', () => {
+    if (!isMobileNav()) setSidebarOpen(false);
+  });
 }
 
 function initNav() {
@@ -1372,6 +1411,7 @@ async function refreshMemberQueue() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initMobileNav();
   initNav();
   initAdminKey();
   initDashboardControls();
