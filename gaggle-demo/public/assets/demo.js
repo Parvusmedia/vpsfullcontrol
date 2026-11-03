@@ -462,35 +462,186 @@ let previewState = { preview: {}, urn: '' };
 let pendingDispatchCampaignId = null;
 let pendingDispatchResend = false;
 
-function renderMemberPickList(container, members, { checkedByDefault = false } = {}) {
+function memberPickLabel(m) {
+  const base = (m.name || m.email || 'Miembro').trim();
+  return m.platformId ? base : base + ' · sin LinkedIn';
+}
+
+/** Multiselect con búsqueda: seleccionados en chips horizontales; opciones en desplegable. */
+function mountMemberMultiSelect(container, members, options = {}) {
+  container._memberMultiSelect = null;
   if (!members.length) {
-    container.innerHTML = '<p class="empty">Añade miembros en la pestaña Miembros (invitación o manual).</p>';
+    container.className = 'member-multiselect member-multiselect-empty';
+    container.innerHTML = '<p class="empty mb-0">Añade miembros en la pestaña Miembros (invitación o manual).</p>';
     return;
   }
-  container.innerHTML = members
-    .map((m) => {
-      const label = (m.name || m.email) + (m.platformId ? '' : ' · sin LinkedIn');
-      return (
-        '<label class="member-row"><input type="checkbox" value="' +
-        escapeHtml(m.id) +
-        '"' +
-        (checkedByDefault ? ' checked' : '') +
-        ' /><span>' +
-        escapeHtml(label) +
-        '</span></label>'
-      );
-    })
-    .join('');
+
+  const selected = new Set();
+  if (options.selectedIds != null) {
+    options.selectedIds.forEach((id) => selected.add(id));
+  } else if (options.checkedByDefault) {
+    members.forEach((m) => selected.add(m.id));
+  }
+
+  container.className = 'member-multiselect';
+  container.innerHTML =
+    '<div class="member-ms-chips" role="list" aria-label="Destinatarios seleccionados"></div>' +
+    '<div class="member-ms-field position-relative">' +
+    '<input type="text" class="form-control member-ms-search" placeholder="Escribe para buscar y añadir…" autocomplete="off" aria-expanded="false" aria-controls="' +
+    escapeHtml('ms-drop-' + Math.random().toString(36).slice(2, 9)) +
+    '" />' +
+    '<div class="member-ms-dropdown list-group" hidden role="listbox"></div>' +
+    '</div>';
+
+  const chipsEl = container.querySelector('.member-ms-chips');
+  const searchEl = container.querySelector('.member-ms-search');
+  const dropEl = container.querySelector('.member-ms-dropdown');
+  const dropId = 'ms-drop-' + Math.random().toString(36).slice(2, 9);
+  dropEl.id = dropId;
+  searchEl.setAttribute('aria-controls', dropId);
+
+  function memberById(id) {
+    return members.find((m) => m.id === id);
+  }
+
+  function renderChips() {
+    if (!selected.size) {
+      chipsEl.innerHTML = '<span class="text-muted small py-1 d-inline-block">Ningún destinatario seleccionado.</span>';
+      return;
+    }
+    chipsEl.innerHTML = [...selected]
+      .map((id) => {
+        const m = memberById(id);
+        if (!m) return '';
+        return (
+          '<span class="badge rounded-pill text-bg-light border member-ms-chip" role="listitem">' +
+          escapeHtml(memberPickLabel(m)) +
+          '<button type="button" class="member-ms-chip-remove" data-rm="' +
+          escapeHtml(id) +
+          '" aria-label="Quitar destinatario">&times;</button></span>'
+        );
+      })
+      .join('');
+    chipsEl.querySelectorAll('[data-rm]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selected.delete(btn.getAttribute('data-rm'));
+        renderChips();
+        renderDropdown();
+      });
+    });
+  }
+
+  function renderDropdown() {
+    const q = searchEl.value.trim().toLowerCase();
+    const available = members.filter((m) => {
+      if (selected.has(m.id)) return false;
+      if (!q) return true;
+      const hay = memberPickLabel(m).toLowerCase() + ' ' + (m.email || '').toLowerCase();
+      return hay.includes(q);
+    });
+    if (!available.length) {
+      dropEl.innerHTML =
+        '<div class="list-group-item list-group-item-light small text-muted">' +
+        (q ? 'Sin coincidencias.' : 'Todos los miembros ya están seleccionados.') +
+        '</div>';
+    } else {
+      const limit = 40;
+      const slice = available.slice(0, limit);
+      dropEl.innerHTML = slice
+        .map(
+          (m) =>
+            '<button type="button" class="list-group-item list-group-item-action py-2 member-ms-option" data-id="' +
+            escapeHtml(m.id) +
+            '">' +
+            escapeHtml(memberPickLabel(m)) +
+            '</button>'
+        )
+        .join('');
+      if (available.length > limit) {
+        dropEl.innerHTML +=
+          '<div class="list-group-item list-group-item-light small text-muted">+' +
+          (available.length - limit) +
+          ' más; afina la búsqueda.</div>';
+      }
+      dropEl.querySelectorAll('.member-ms-option').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selected.add(btn.getAttribute('data-id'));
+          searchEl.value = '';
+          renderChips();
+          renderDropdown();
+          searchEl.focus();
+        });
+      });
+    }
+    const open = document.activeElement === searchEl && !dropEl.hidden;
+    if (open) dropEl.hidden = false;
+  }
+
+  function openDropdown() {
+    dropEl.hidden = false;
+    searchEl.setAttribute('aria-expanded', 'true');
+    renderDropdown();
+  }
+
+  function closeDropdown() {
+    dropEl.hidden = true;
+    searchEl.setAttribute('aria-expanded', 'false');
+  }
+
+  searchEl.addEventListener('focus', openDropdown);
+  searchEl.addEventListener('input', () => {
+    openDropdown();
+    renderDropdown();
+  });
+  searchEl.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      closeDropdown();
+      searchEl.blur();
+    }
+  });
+  document.addEventListener('click', (ev) => {
+    if (!container.contains(ev.target)) closeDropdown();
+  });
+
+  container._memberMultiSelect = {
+    getSelectedIds: () => [...selected],
+    selectAll: () => {
+      members.forEach((m) => selected.add(m.id));
+      renderChips();
+      renderDropdown();
+    },
+    selectNone: () => {
+      selected.clear();
+      renderChips();
+      renderDropdown();
+    },
+    setSelectedIds: (ids) => {
+      selected.clear();
+      (ids || []).forEach((id) => selected.add(id));
+      renderChips();
+      renderDropdown();
+    },
+  };
+
+  renderChips();
+  closeDropdown();
+}
+
+function renderMemberPickList(container, members, options = {}) {
+  mountMemberMultiSelect(container, members, options);
 }
 
 function getCheckedMemberIds(container) {
-  return [...container.querySelectorAll('input[type=checkbox]:checked')].map((i) => i.value);
+  if (container && container._memberMultiSelect) {
+    return container._memberMultiSelect.getSelectedIds();
+  }
+  return [];
 }
 
 function wireSelectAll(noneBtn, allBtn, container) {
   if (!allBtn || !noneBtn || !container) return;
-  allBtn.addEventListener('click', () => container.querySelectorAll('input[type=checkbox]').forEach((i) => (i.checked = true)));
-  noneBtn.addEventListener('click', () => container.querySelectorAll('input[type=checkbox]').forEach((i) => (i.checked = false)));
+  allBtn.addEventListener('click', () => container._memberMultiSelect?.selectAll());
+  noneBtn.addEventListener('click', () => container._memberMultiSelect?.selectNone());
 }
 
 async function openDispatchModal(campaignId, preselectedIds = null, resend = false) {
@@ -502,12 +653,9 @@ async function openDispatchModal(campaignId, preselectedIds = null, resend = fal
   setStatus(statusEl, '');
   const memData = await api('/members', { admin: true });
   const members = memData.members || [];
-  renderMemberPickList(picks, members, { checkedByDefault: preselectedIds === null });
-  if (preselectedIds && preselectedIds.length) {
-    picks.querySelectorAll('input').forEach((i) => {
-      i.checked = preselectedIds.includes(i.value);
-    });
-  }
+  const selectedIds =
+    preselectedIds === null ? members.map((m) => m.id) : preselectedIds && preselectedIds.length ? preselectedIds : [];
+  renderMemberPickList(picks, members, { selectedIds });
   modal.showModal();
 }
 

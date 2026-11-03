@@ -110,28 +110,58 @@ body.admin-body {
   max-height: 240px;
 }
 
-.member-pick-list {
+.member-multiselect {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.member-pick-list label.member-row {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  margin: 0;
 }
 
-.member-pick-list label.member-row input {
-  width: auto;
+.member-ms-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 2rem;
+}
+
+.member-ms-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+}
+
+.member-ms-chip-remove {
+  border: none;
+  background: transparent;
+  line-height: 1;
+  padding: 0 2px;
+  font-size: 1.1rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.member-ms-chip-remove:hover {
+  color: #0f172a;
+}
+
+.member-ms-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 4px;
+  border-radius: 8px;
+}
+
+.member-ms-option {
+  font-size: 0.875rem;
+  text-align: left;
 }
 
 .preview-card {
