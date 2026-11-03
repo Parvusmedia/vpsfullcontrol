@@ -87,6 +87,13 @@
               <button type="button" class="btn btn-primary" data-goto="campaigns">Nueva campaña</button>
             </div>
             <div id="dash-content" hidden>
+              <div id="dash-demo-banner" class="alert alert-info border-0 shadow-sm mb-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2" hidden>
+                <div>
+                  <strong class="me-1">Datos demo</strong>
+                  <span class="small">Vista de ejemplo con métricas simuladas. Desaparece cuando envíes campañas con actividad real.</span>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" data-goto="campaigns">Nueva campaña</button>
+              </div>
               <div class="row g-3 mb-3" id="kpi-grid"></div>
               <div class="row g-3 mb-3">
                 <div class="col-lg-6">
@@ -348,6 +355,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261103-connect" defer></script>
+    <script src="/assets/demo.js?v=20261103-dashdemo" defer></script>
   </body>
 </html>

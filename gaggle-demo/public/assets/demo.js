@@ -238,7 +238,8 @@ function renderCharts(data) {
   });
 }
 
-function renderRecentTable(rows) {
+function renderRecentTable(rows, options) {
+  const demo = options && options.demo;
   const tbody = $('#recent-campaigns-table tbody');
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin campañas en este periodo.</td></tr>';
@@ -257,33 +258,109 @@ function renderRecentTable(rows) {
         r.reposted +
         '</td><td>' +
         r.rate +
-        '%</td><td><button type="button" class="btn btn-secondary btn-sm" data-detail="' +
-        escapeHtml(r.id) +
-        '">Detalle</button></td></tr>'
+        '%</td><td>' +
+        (demo
+          ? '<span class="text-muted small">Demo</span>'
+          : '<button type="button" class="btn btn-secondary btn-sm" data-detail="' +
+            escapeHtml(r.id) +
+            '">Detalle</button>') +
+        '</td></tr>'
     )
     .join('');
-  tbody.querySelectorAll('[data-detail]').forEach((btn) => {
-    btn.addEventListener('click', () => openCampaignDetail(btn.getAttribute('data-detail')));
-  });
+  if (!demo) {
+    tbody.querySelectorAll('[data-detail]').forEach((btn) => {
+      btn.addEventListener('click', () => openCampaignDetail(btn.getAttribute('data-detail')));
+    });
+  }
+}
+
+/** Métricas simuladas para el dashboard vacío (se ocultan con actividad real). */
+function buildDashboardDemoStats(daysParam) {
+  const spanDays = daysParam === 'all' ? 30 : Math.max(7, parseInt(String(daysParam), 10) || 30);
+  const daily = [];
+  const now = new Date();
+  let sumCamp = 0;
+  let sumRepost = 0;
+  for (let i = spanDays - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const campaigns = i % 5 === 0 ? 1 : 0;
+    const reposts = campaigns ? 2 + (i % 3) : i % 7 === 0 ? 1 : 0;
+    sumCamp += campaigns;
+    sumRepost += reposts;
+    daily.push({ date: key, campaigns, reposts });
+  }
+  const invitesSent = Math.max(42, sumRepost * 2 + 12);
+  const reposted = Math.max(28, sumRepost);
+  const declined = 7;
+  const pending = Math.max(4, invitesSent - reposted - declined);
+  const answered = reposted + declined;
+  const iso = (offsetDays) => {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - offsetDays);
+    return d.toISOString();
+  };
+  return {
+    totals: {
+      campaigns: Math.max(5, sumCamp),
+      invitesSent,
+      reposted,
+      declined,
+      pending,
+      adoptionRate: answered > 0 ? Math.round((100 * reposted) / answered * 10) / 10 : 0,
+      medianHoursToRepost: 5.5,
+      campaignsThisMonth: 3,
+    },
+    series: {
+      daily,
+      responseMix: { reposted, declined, pending },
+    },
+    topMembers: [
+      { memberId: 'demo_1', name: 'Ana García', reposts: 9, adoptionRate: 90 },
+      { memberId: 'demo_2', name: 'Carlos Ruiz', reposts: 7, adoptionRate: 88 },
+      { memberId: 'demo_3', name: 'Laura Méndez', reposts: 6, adoptionRate: 85 },
+      { memberId: 'demo_4', name: 'Miguel Soto', reposts: 5, adoptionRate: 83 },
+      { memberId: 'demo_5', name: 'Elena Vidal', reposts: 4, adoptionRate: 80 },
+    ],
+    recentCampaigns: [
+      { id: 'demo_c1', title: 'Lanzamiento producto Q4', sent: 12, reposted: 9, rate: 75, createdAt: iso(2) },
+      { id: 'demo_c2', title: 'Caso de éxito cliente', sent: 10, reposted: 8, rate: 80, createdAt: iso(6) },
+      { id: 'demo_c3', title: 'Webinar employee advocacy', sent: 11, reposted: 7, rate: 63.6, createdAt: iso(11) },
+      { id: 'demo_c4', title: 'Employer branding', sent: 9, reposted: 5, rate: 55.6, createdAt: iso(18) },
+      { id: 'demo_c5', title: 'Nota de prensa', sent: 8, reposted: 4, rate: 50, createdAt: iso(24) },
+    ],
+  };
+}
+
+function dashboardHasRealActivity(apiData) {
+  const t = apiData.totals || {};
+  return (t.invitesSent ?? 0) > 0 || (t.campaigns ?? 0) > 0;
 }
 
 async function loadDashboard() {
   const empty = $('#dash-empty');
   const content = $('#dash-content');
+  const demoBanner = $('#dash-demo-banner');
   try {
     const q = dashDays === 'all' || dashDays === 0 ? 'all' : String(dashDays);
-    const data = await api('/stats?days=' + encodeURIComponent(q), { admin: true });
-    const hasData = (data.totals?.invitesSent ?? 0) > 0 || (data.totals?.campaigns ?? 0) > 0;
-    empty.hidden = hasData;
-    content.hidden = !hasData;
-    if (!hasData) return;
+    const apiData = await api('/stats?days=' + encodeURIComponent(q), { admin: true });
+    const hasReal = dashboardHasRealActivity(apiData);
+    const data = hasReal ? apiData : buildDashboardDemoStats(q);
+    empty.hidden = true;
+    content.hidden = false;
+    if (demoBanner) demoBanner.hidden = hasReal;
     renderKpis(data.totals);
     renderCharts(data);
-    renderRecentTable(data.recentCampaigns || []);
+    renderRecentTable(data.recentCampaigns || [], { demo: !hasReal });
   } catch (e) {
     empty.hidden = false;
     content.hidden = true;
-    empty.querySelector('p').textContent = e.message.includes('Admin') ? 'Guarda la clave admin arriba.' : e.message;
+    if (demoBanner) demoBanner.hidden = true;
+    const msgEl = empty.querySelector('p');
+    if (msgEl) {
+      msgEl.textContent = e.message.includes('Admin') ? 'Guarda la clave admin arriba.' : e.message;
+    }
   }
 }
 
