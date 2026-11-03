@@ -210,7 +210,7 @@
                     <form id="member-form" class="vstack gap-3">
                       <input class="form-control" id="mem-name" placeholder="Nombre" />
                       <input class="form-control" id="mem-email" type="email" required placeholder="Email" />
-                      <input class="form-control" id="mem-platform" placeholder="platformId linkedin-…" />
+                      <input class="form-control" id="mem-platform" placeholder="ID de cuenta LinkedIn (opcional)" />
                       <div id="mem-connections"></div>
                       <button class="btn btn-primary" type="submit">Guardar miembro</button>
                     </form>
@@ -233,12 +233,16 @@
                 <div class="card shadow-sm">
                   <div class="card-header bg-white"><strong>Generar enlace de vinculación</strong></div>
                   <div class="card-body">
-                    <div class="alert alert-light border small py-2 mb-3">
-                      <strong>¿Workspace?</strong> No escribes ningún ID aquí. Es un modo B2B que
-                      <strong>Publora debe activar</strong> en tu API key; entonces aparecerá el enlace OAuth LinkedIn.
-                      Mientras tanto usa el enlace Ngaged + asignación manual del <code>platformId</code> en Miembros.
-                      (Badge arriba: «Workspace off» = aún no activo.)
-                    </div>
+                    <p class="small text-muted mb-2">
+                      Crea un enlace personalizado para que un empleado conecte su perfil de LinkedIn con Ngaged.
+                      Compártelo por email, Slack o Teams; el proceso suele tardar menos de un minuto.
+                    </p>
+                    <ol class="small text-muted mb-3 ps-3">
+                      <li>Completa nombre y email corporativo.</li>
+                      <li>Pulsa <strong>Generar invitación</strong> y copia el enlace Ngaged.</li>
+                      <li>El empleado abre el enlace, autoriza LinkedIn y confirma la conexión.</li>
+                      <li>Comprueba el estado en <strong>Miembros</strong>; desde ahí puedes vincular una cuenta si hace falta.</li>
+                    </ol>
                     <form id="invite-form" class="vstack gap-3">
                       <input class="form-control" id="inv-name" placeholder="Nombre" />
                       <input class="form-control" id="inv-email" type="email" required placeholder="Email corporativo" />
@@ -248,7 +252,7 @@
                       <label class="form-label">Enlace Ngaged</label>
                       <input class="form-control form-control-sm mb-2" id="invite-url" readonly />
                       <label class="form-label">Enlace OAuth LinkedIn</label>
-                      <input class="form-control form-control-sm mb-2" id="invite-oauth-url" readonly placeholder="Requiere Workspace" />
+                      <input class="form-control form-control-sm mb-2" id="invite-oauth-url" readonly placeholder="Opcional: enlace directo LinkedIn si está habilitado" />
                       <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-invite-url">Copiar Ngaged</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-oauth-url">Copiar OAuth</button>
@@ -272,7 +276,7 @@
                   <thead class="table-light">
                     <tr>
                       <th>Perfil</th>
-                      <th>platformId</th>
+                      <th>ID cuenta</th>
                       <th>Estado</th>
                       <th></th>
                     </tr>
@@ -344,6 +348,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261103-ui" defer></script>
+    <script src="/assets/demo.js?v=20261103-copy" defer></script>
   </body>
 </html>

@@ -21,7 +21,7 @@ const PAGE_META = {
   campaigns: ['Crear campaña', 'Publica advocacy por email one-click'],
   'campaigns-history': ['Historial', 'Campañas enviadas y resultados'],
   members: ['Miembros', 'Directorio del equipo'],
-  'members-invite': ['Invitar LinkedIn', 'Onboarding OAuth para empleados'],
+  'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
   connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
   employee: ['Vista empleado', 'Cola de reposts pendientes'],
   settings: ['Ajustes', 'Clave de administración'],
@@ -340,7 +340,7 @@ async function loadWorkspaceBadge() {
   if (!badge) return;
   try {
     const h = await api('/health');
-    badge.textContent = h.workspaceConnectLinks ? 'Workspace OK' : 'Workspace off';
+    badge.textContent = h.workspaceConnectLinks ? 'LinkedIn OAuth' : 'Enlace Ngaged';
     badge.className = 'badge rounded-pill ' + (h.workspaceConnectLinks ? 'text-bg-success' : 'text-bg-warning');
   } catch {
     badge.textContent = 'API';

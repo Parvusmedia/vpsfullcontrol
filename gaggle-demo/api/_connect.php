@@ -75,7 +75,7 @@ function ngaged_provision_member_connect(array $member): array
             'inviteUrl' => $inviteUrl,
             'linkedinConnectUrl' => null,
             'workspaceEnabled' => false,
-            'notice' => 'Workspace no activo en la API. Actívalo en Publora o asigna platformId manualmente.',
+            'notice' => 'OAuth LinkedIn directo no está activo: envía solo el enlace Ngaged o vincula la cuenta en Miembros.',
         ];
     }
 
