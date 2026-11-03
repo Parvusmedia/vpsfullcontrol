@@ -558,29 +558,37 @@ async function refreshCampaignsList() {
       list.innerHTML = '<p class="empty">No hay campañas.</p>';
       return;
     }
-    list.innerHTML = campaigns
-      .map((c) => {
-        const sent = (c.deliveries || []).length;
-        const rep = (c.deliveries || []).filter((d) => d.action === 'approve').length;
-        return (
-          '<article class="activity"><h3>' +
-          escapeHtml(c.title) +
-          '</h3><div class="meta">' +
-          escapeHtml(formatDate(c.dispatchedAt || c.createdAt)) +
-          ' · ' +
-          sent +
-          ' envíos · ' +
-          rep +
-          ' reposts</div><div class="row"><button type="button" class="btn btn-primary btn-sm" data-send="' +
-          escapeHtml(c.id) +
-          '">Enviar</button><button type="button" class="btn btn-secondary btn-sm" data-resend="' +
-          escapeHtml(c.id) +
-          '">Reenviar</button><button type="button" class="btn btn-secondary btn-sm" data-detail="' +
-          escapeHtml(c.id) +
-          '">Detalle</button></div></article>'
-        );
-      })
-      .join('');
+    list.innerHTML =
+      '<div class="table-responsive"><table class="table table-hover align-middle mb-0 campaign-history-table">' +
+      '<thead class="table-light"><tr><th>Campaña</th><th>Fecha</th><th>Envíos</th><th>Reposts</th>' +
+      '<th class="text-end" style="min-width:220px">Acciones</th></tr></thead><tbody>' +
+      campaigns
+        .map((c) => {
+          const sent = (c.deliveries || []).length;
+          const rep = (c.deliveries || []).filter((d) => d.action === 'approve').length;
+          return (
+            '<tr><td class="fw-semibold">' +
+            escapeHtml(c.title) +
+            '</td><td class="text-muted small">' +
+            escapeHtml(formatDate(c.dispatchedAt || c.createdAt)) +
+            '</td><td>' +
+            sent +
+            '</td><td>' +
+            rep +
+            '</td><td class="text-end"><div class="btn-group btn-group-sm" role="group">' +
+            '<button type="button" class="btn btn-primary" data-send="' +
+            escapeHtml(c.id) +
+            '">Enviar</button>' +
+            '<button type="button" class="btn btn-outline-secondary" data-resend="' +
+            escapeHtml(c.id) +
+            '">Reenviar</button>' +
+            '<button type="button" class="btn btn-outline-secondary" data-detail="' +
+            escapeHtml(c.id) +
+            '">Detalle</button></div></td></tr>'
+          );
+        })
+        .join('') +
+      '</tbody></table></div>';
     list.querySelectorAll('[data-detail]').forEach((b) =>
       b.addEventListener('click', () => openCampaignDetail(b.getAttribute('data-detail')))
     );
@@ -695,28 +703,36 @@ async function refreshMembers() {
       list.innerHTML = '<p class="empty">Sin miembros.</p>';
       return;
     }
-    list.innerHTML = members
-      .map((m) => {
-        const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
-        return (
-          '<article class="activity"><h3>' +
-          escapeHtml(m.name || m.email) +
-          '</h3><div class="meta">' +
-          escapeHtml(m.email) +
-          '<br/>' +
-          escapeHtml(m.platformId || 'Sin LinkedIn') +
-          ' · ' +
-          escapeHtml(st) +
-          '</div><div class="row"><button type="button" class="btn btn-secondary btn-sm" data-invite="' +
-          escapeHtml(m.id) +
-          '">Regenerar enlace</button><button type="button" class="btn btn-secondary btn-sm" data-sync="' +
-          escapeHtml(m.id) +
-          '">Sync LinkedIn</button><button type="button" class="btn btn-danger btn-sm" data-del="' +
-          escapeHtml(m.id) +
-          '">Eliminar</button></div></article>'
-        );
-      })
-      .join('');
+    list.innerHTML =
+      '<div class="list-group list-group-flush member-directory">' +
+      members
+        .map((m) => {
+          const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
+          return (
+            '<div class="list-group-item"><div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
+            '<div><div class="fw-semibold">' +
+            escapeHtml(m.name || m.email) +
+            '</div><div class="small text-muted">' +
+            escapeHtml(m.email) +
+            '</div><div class="small text-muted">' +
+            escapeHtml(m.platformId || 'Sin LinkedIn') +
+            ' · <span class="badge text-bg-light border">' +
+            escapeHtml(st) +
+            '</span></div></div>' +
+            '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
+            '<button type="button" class="btn btn-outline-secondary" data-invite="' +
+            escapeHtml(m.id) +
+            '">Enlace</button>' +
+            '<button type="button" class="btn btn-outline-secondary" data-sync="' +
+            escapeHtml(m.id) +
+            '">Sync</button>' +
+            '<button type="button" class="btn btn-outline-danger" data-del="' +
+            escapeHtml(m.id) +
+            '">Eliminar</button></div></div></div>'
+          );
+        })
+        .join('') +
+      '</div>';
     list.querySelectorAll('[data-invite]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         try {
