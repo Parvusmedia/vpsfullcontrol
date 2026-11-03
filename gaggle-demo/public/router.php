@@ -27,6 +27,7 @@ if (str_starts_with($uri, '/api/')) {
         'connect-accept-terms' => 'connect-accept-terms.php',
         'connect-terms' => 'connect-terms.php',
         'members-sync' => 'members-sync.php',
+        'maintenance-dedupe' => 'maintenance-dedupe.php',
     ];
     if (isset($map[$script])) {
         require dirname(__DIR__) . '/api/' . $map[$script];

@@ -16,10 +16,17 @@ if (!is_array($members)) {
 
 if ($method === 'GET') {
     gaggle_demo_require_admin();
+    $deduped = ngaged_deduplicate_members_store($store);
+    if ($deduped['removed'] > 0) {
+        ngaged_save_members($deduped['store']);
+        $store = $deduped['store'];
+        $members = $store['members'] ?? [];
+    }
     gaggle_demo_json_response(200, [
         'ok' => true,
         'members' => $members,
         'teams' => $store['teams'] ?? [],
+        'dedupedRemoved' => $deduped['removed'],
     ]);
 }
 

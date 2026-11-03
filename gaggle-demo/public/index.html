@@ -333,16 +333,46 @@
           </section>
 
           <section data-panel="settings" hidden>
-            <div class="card shadow-sm col-lg-6">
-              <div class="card-header bg-white"><strong>Clave de administración</strong></div>
-              <div class="card-body vstack gap-3">
-                <p class="small text-muted mb-0">La define tu administrador de sistemas en el servidor (Ngaged).</p>
-                <input class="form-control" id="admin-key" type="password" autocomplete="off" placeholder="Clave admin" />
-                <button type="button" class="btn btn-primary" id="save-admin-key">Guardar y validar</button>
+            <div class="row g-4">
+              <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                  <div class="card-header bg-white"><strong>Clave de administración</strong></div>
+                  <div class="card-body vstack gap-3">
+                    <p class="small text-muted mb-0">La define tu administrador de sistemas en el servidor (Ngaged).</p>
+                    <input class="form-control" id="admin-key" type="password" autocomplete="off" placeholder="Clave admin" />
+                    <button type="button" class="btn btn-primary" id="save-admin-key">Guardar y validar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>Estado del sistema</strong>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="health-refresh">Actualizar</button>
+                  </div>
+                  <div class="card-body">
+                    <ul class="list-group list-group-flush small" id="health-checks"></ul>
+                    <p class="text-muted small mt-3 mb-2">Mantenimiento</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="dedupe-members-btn">
+                      Fusionar miembros duplicados (mismo email)
+                    </button>
+                    <div id="settings-maint-status" class="alert mt-3 py-2" hidden></div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
         </main>
+        <footer class="admin-footer border-top bg-white px-4 py-3 mt-auto">
+          <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between small text-muted">
+            <span>Ngaged · Employee advocacy</span>
+            <div class="d-flex flex-wrap gap-3">
+              <a href="/privacidad" class="text-muted">Privacidad</a>
+              <a href="/terminos-conexion" class="text-muted">Condiciones de vinculación</a>
+              <a href="mailto:dpo@parvusmedia.com" class="text-muted">Contacto DPO</a>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
 
@@ -370,6 +400,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261103-teamtag" defer></script>
+    <script src="/assets/demo.js?v=20261103-s0" defer></script>
   </body>
 </html>

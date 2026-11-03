@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_connect.php';
+require_once __DIR__ . '/_members_util.php';
 
 gaggle_demo_cors();
 
@@ -32,21 +33,26 @@ if ($memberId !== '') {
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Email válido obligatorio.']);
     }
-    foreach ($members as $m) {
-        if (is_array($m) && strtolower((string) ($m['email'] ?? '')) === $email) {
-            gaggle_demo_json_response(409, ['ok' => false, 'error' => 'Ese email ya existe. Usa Regenerar enlace.']);
+    $found = ngaged_find_member_by_email($store, $email);
+    if ($found !== null) {
+        $member = $found['member'];
+        $idx = $found['index'];
+        $newName = trim((string) ($input['name'] ?? ''));
+        if ($newName !== '') {
+            $member['name'] = $newName;
         }
+    } else {
+        $member = [
+            'id' => gaggle_demo_new_id('mem'),
+            'name' => trim((string) ($input['name'] ?? '')),
+            'email' => $email,
+            'platformId' => '',
+            'teamId' => trim((string) ($input['teamId'] ?? '')),
+            'createdAt' => gmdate('c'),
+        ];
+        $idx = count($members);
+        $members[] = $member;
     }
-    $member = [
-        'id' => gaggle_demo_new_id('mem'),
-        'name' => trim((string) ($input['name'] ?? '')),
-        'email' => $email,
-        'platformId' => '',
-        'teamId' => trim((string) ($input['teamId'] ?? '')),
-        'createdAt' => gmdate('c'),
-    ];
-    $idx = count($members);
-    $members[] = $member;
 }
 
 $result = ngaged_provision_member_connect($member);

@@ -24,7 +24,7 @@ const PAGE_META = {
   'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
   connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
   employee: ['Vista empleado', 'Cola de reposts pendientes'],
-  settings: ['Ajustes', 'Clave de administración'],
+  settings: ['Ajustes', 'Clave admin y estado del sistema'],
 };
 
 async function api(path, options = {}) {
@@ -80,6 +80,7 @@ function navigateTo(id) {
   if (id === 'members' || id === 'members-invite') refreshMembers();
   if (id === 'connections') refreshConnectionsTable();
   if (id === 'employee') refreshMemberQueue();
+  if (id === 'settings') renderHealthChecks();
 }
 
 function initNav() {
@@ -417,11 +418,57 @@ async function loadWorkspaceBadge() {
   if (!badge) return;
   try {
     const h = await api('/health');
-    badge.textContent = h.workspaceConnectLinks ? 'LinkedIn OAuth' : 'Enlace Ngaged';
-    badge.className = 'badge rounded-pill ' + (h.workspaceConnectLinks ? 'text-bg-success' : 'text-bg-warning');
+    badge.textContent = h.linkedinOAuth ? 'OAuth LinkedIn' : 'Vinculación asistida';
+    badge.className = 'badge rounded-pill ' + (h.linkedinOAuth ? 'text-bg-success' : 'text-bg-secondary');
+    badge.title = h.linkedinOAuth
+      ? 'Los empleados pueden autorizar LinkedIn desde su invitación.'
+      : 'El admin vincula cuentas en Miembros hasta activar OAuth.';
   } catch {
-    badge.textContent = 'API';
+    badge.textContent = 'Estado API';
   }
+}
+
+async function renderHealthChecks() {
+  const list = $('#health-checks');
+  if (!list) return;
+  list.innerHTML = '<li class="list-group-item text-muted">Comprobando…</li>';
+  try {
+    const h = await api('/health');
+    const checks = h.checks || [];
+    list.innerHTML = checks
+      .map(
+        (c) =>
+          '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+          '<span>' +
+          escapeHtml(c.label) +
+          '</span>' +
+          '<span class="badge rounded-pill ' +
+          (c.ok ? 'text-bg-success' : 'text-bg-warning') +
+          '">' +
+          (c.ok ? 'OK' : 'Revisar') +
+          '</span></li>'
+      )
+      .join('');
+    await loadWorkspaceBadge();
+  } catch (e) {
+    list.innerHTML = '<li class="list-group-item text-danger">' + escapeHtml(e.message) + '</li>';
+  }
+}
+
+function initSettingsPanel() {
+  $('#health-refresh')?.addEventListener('click', renderHealthChecks);
+  $('#dedupe-members-btn')?.addEventListener('click', async () => {
+    const statusEl = $('#settings-maint-status');
+    setStatus(statusEl, 'Fusionando duplicados…');
+    try {
+      const data = await api('/maintenance-dedupe', { method: 'POST', admin: true, body: {} });
+      setStatus(statusEl, 'Listo: ' + data.removed + ' duplicados eliminados.', 'ok');
+      await refreshMembers();
+      await refreshCampaignMemberPicks();
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    }
+  });
 }
 
 async function openCampaignDetail(id) {
@@ -1332,6 +1379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initInvite();
   initMembers();
   initTeams();
+  initSettingsPanel();
   loadWorkspaceBadge();
   $('#connections-refresh')?.addEventListener('click', refreshConnectionsTable);
   navigateTo('dashboard');

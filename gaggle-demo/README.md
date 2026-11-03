@@ -55,6 +55,17 @@ NGAGED_SIGNING_SECRET=...
 
 DNS: [deploy/dns-ngaged-pmediaplus.sh](deploy/dns-ngaged-pmediaplus.sh) (A `ngaged` → Parvus).
 
+### Datos de demo (presentaciones)
+
+Para rellenar miembros, equipos y campañas con historial de envíos (el dashboard deja de mostrar la capa «Datos demo»):
+
+```bash
+# En el VPS (datos en /opt/apps/private/gaggle-demo/data)
+ssh parvus-vps 'cd /opt/apps/gaggle-demo && php deploy/seed-demo-data.php --force'
+```
+
+En **Ajustes** puedes revisar el semáforo del sistema y fusionar miembros duplicados por email.
+
 ## API (resumen)
 
 | Ruta | Uso |

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/_teams.php';
+require_once __DIR__ . '/_members_util.php';
 
 function ngaged_campaigns_store(): array
 {
