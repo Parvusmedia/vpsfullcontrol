@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/_teams.php';
 
 function ngaged_campaigns_store(): array
 {
@@ -26,7 +27,14 @@ function ngaged_find_campaign(array $store, string $id): ?array
 
 function ngaged_members_store(): array
 {
-    return gaggle_demo_read_json_file('members.json', ['members' => []]);
+    $store = ngaged_normalize_members_store(
+        gaggle_demo_read_json_file('members.json', ['members' => [], 'teams' => []])
+    );
+    if ($store['teams'] === []) {
+        $store = ngaged_seed_default_teams_if_empty($store);
+        ngaged_save_members($store);
+    }
+    return $store;
 }
 
 function ngaged_save_members(array $store): void

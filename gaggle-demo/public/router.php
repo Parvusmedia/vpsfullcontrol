@@ -13,6 +13,7 @@ if (str_starts_with($uri, '/api/')) {
         'respond' => 'respond.php',
         'campaigns' => 'campaigns.php',
         'members' => 'members.php',
+        'teams' => 'teams.php',
         'preview-post' => 'preview-post.php',
         'dispatch' => 'dispatch.php',
         'action' => 'action.php',

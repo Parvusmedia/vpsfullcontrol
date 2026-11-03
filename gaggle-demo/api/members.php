@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_campaigns.php';
+require_once __DIR__ . '/_teams.php';
 
 gaggle_demo_cors();
 
@@ -15,7 +16,11 @@ if (!is_array($members)) {
 
 if ($method === 'GET') {
     gaggle_demo_require_admin();
-    gaggle_demo_json_response(200, ['ok' => true, 'members' => $members]);
+    gaggle_demo_json_response(200, [
+        'ok' => true,
+        'members' => $members,
+        'teams' => $store['teams'] ?? [],
+    ]);
 }
 
 if ($method === 'POST') {
@@ -36,16 +41,23 @@ if ($method === 'POST') {
         }
     }
 
+    $teamId = trim((string) ($input['teamId'] ?? ''));
+    if ($teamId !== '' && ngaged_find_team($store, $teamId) === null) {
+        gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Equipo no válido.']);
+    }
+
     $member = [
         'id' => gaggle_demo_new_id('mem'),
         'name' => trim((string) ($input['name'] ?? '')),
         'email' => $email,
         'platformId' => trim((string) ($input['platformId'] ?? '')),
+        'teamId' => $teamId,
         'createdAt' => gmdate('c'),
     ];
 
     $members[] = $member;
-    ngaged_save_members(['members' => $members]);
+    $store['members'] = $members;
+    ngaged_save_members($store);
     gaggle_demo_json_response(201, ['ok' => true, 'member' => $member]);
 }
 
@@ -57,7 +69,8 @@ if ($method === 'DELETE') {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'id required']);
     }
     $members = array_values(array_filter($members, static fn ($m) => is_array($m) && ($m['id'] ?? '') !== $id));
-    ngaged_save_members(['members' => $members]);
+    $store['members'] = $members;
+    ngaged_save_members($store);
     gaggle_demo_json_response(200, ['ok' => true]);
 }
 
@@ -76,11 +89,19 @@ if ($method === 'PUT') {
     $members[$i]['name'] = trim((string) ($input['name'] ?? $members[$i]['name'] ?? ''));
     $members[$i]['email'] = strtolower(trim((string) ($input['email'] ?? $members[$i]['email'] ?? '')));
     $members[$i]['platformId'] = trim((string) ($input['platformId'] ?? $members[$i]['platformId'] ?? ''));
+    if (array_key_exists('teamId', $input)) {
+        $teamId = trim((string) ($input['teamId'] ?? ''));
+        if ($teamId !== '' && ngaged_find_team(['teams' => $store['teams'] ?? []], $teamId) === null) {
+            gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Equipo no válido.']);
+        }
+        $members[$i]['teamId'] = $teamId;
+    }
     if ($members[$i]['platformId'] !== '') {
         $members[$i]['connectStatus'] = 'linked';
         $members[$i]['linkedAt'] = gmdate('c');
     }
-    ngaged_save_members(['members' => $members]);
+    $store['members'] = $members;
+    ngaged_save_members($store);
     gaggle_demo_json_response(200, ['ok' => true, 'member' => $members[$i]]);
 }
 

@@ -169,7 +169,7 @@
                       </div>
                       <div>
                         <label class="form-label">Destinatarios</label>
-                        <p class="small text-muted">Elige quién recibe el email de la campaña.</p>
+                        <p class="small text-muted">Personas o equipos completos (+ incluir / − excluir grupo).</p>
                         <div class="d-flex gap-2 mb-2" id="camp-member-tools" hidden>
                           <button type="button" class="btn btn-outline-secondary btn-sm" id="camp-select-all">Todos</button>
                           <button type="button" class="btn btn-outline-secondary btn-sm" id="camp-select-none">Ninguno</button>
@@ -217,11 +217,26 @@
                     <form id="member-form" class="vstack gap-3">
                       <input class="form-control" id="mem-name" placeholder="Nombre" />
                       <input class="form-control" id="mem-email" type="email" required placeholder="Email" />
+                      <select class="form-select" id="mem-team" aria-label="Equipo">
+                        <option value="">Sin equipo</option>
+                      </select>
                       <input class="form-control" id="mem-platform" placeholder="ID de cuenta LinkedIn (opcional)" />
                       <div id="mem-connections"></div>
                       <button class="btn btn-primary" type="submit">Guardar miembro</button>
                     </form>
                     <div id="member-form-status" class="alert mt-3 py-2" hidden></div>
+                  </div>
+                </div>
+                <div class="card shadow-sm mt-3">
+                  <div class="card-header bg-white"><strong>Equipos</strong></div>
+                  <div class="card-body">
+                    <p class="small text-muted mb-2">Agrupa miembros (Marketing, Ventas…) para destinatarios de campaña.</p>
+                    <div id="teams-list" class="d-flex flex-wrap gap-2 mb-3"></div>
+                    <form id="team-form" class="input-group input-group-sm">
+                      <input class="form-control" id="team-name" placeholder="Nuevo equipo" required />
+                      <button class="btn btn-outline-primary" type="submit">Añadir</button>
+                    </form>
+                    <div id="team-form-status" class="alert mt-2 py-2" hidden></div>
                   </div>
                 </div>
               </div>
@@ -355,6 +370,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261103-ms" defer></script>
+    <script src="/assets/demo.js?v=20261103-teams" defer></script>
   </body>
 </html>

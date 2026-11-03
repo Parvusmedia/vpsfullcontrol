@@ -462,9 +462,24 @@ let previewState = { preview: {}, urn: '' };
 let pendingDispatchCampaignId = null;
 let pendingDispatchResend = false;
 
-function memberPickLabel(m) {
+function memberPickLabel(m, teamNames = {}) {
   const base = (m.name || m.email || 'Miembro').trim();
-  return m.platformId ? base : base + ' · sin LinkedIn';
+  const team = m.teamId && teamNames[m.teamId] ? ' · ' + teamNames[m.teamId] : '';
+  const li = m.platformId ? '' : ' · sin LinkedIn';
+  return base + team + li;
+}
+
+function teamNameMap(teams) {
+  const map = {};
+  (teams || []).forEach((t) => {
+    if (t && t.id) map[t.id] = t.name || t.id;
+  });
+  return map;
+}
+
+async function loadMembersBundle() {
+  const data = await api('/members', { admin: true });
+  return { members: data.members || [], teams: data.teams || [] };
 }
 
 /** Multiselect con búsqueda: seleccionados en chips horizontales; opciones en desplegable. */
@@ -483,8 +498,16 @@ function mountMemberMultiSelect(container, members, options = {}) {
     members.forEach((m) => selected.add(m.id));
   }
 
+  const teams = options.teams || [];
+  const teamNames = teamNameMap(teams);
+
+  function membersOfTeam(teamId) {
+    return members.filter((m) => (m.teamId || '') === teamId);
+  }
+
   container.className = 'member-multiselect';
   container.innerHTML =
+    '<div class="member-ms-team-bar flex-wrap align-items-center gap-2 mb-1" hidden></div>' +
     '<div class="member-ms-chips" role="list" aria-label="Destinatarios seleccionados"></div>' +
     '<div class="member-ms-field position-relative">' +
     '<input type="text" class="form-control member-ms-search" placeholder="Escribe para buscar y añadir…" autocomplete="off" aria-expanded="false" aria-controls="' +
@@ -493,6 +516,7 @@ function mountMemberMultiSelect(container, members, options = {}) {
     '<div class="member-ms-dropdown list-group" hidden role="listbox"></div>' +
     '</div>';
 
+  const teamBarEl = container.querySelector('.member-ms-team-bar');
   const chipsEl = container.querySelector('.member-ms-chips');
   const searchEl = container.querySelector('.member-ms-search');
   const dropEl = container.querySelector('.member-ms-dropdown');
@@ -502,6 +526,53 @@ function mountMemberMultiSelect(container, members, options = {}) {
 
   function memberById(id) {
     return members.find((m) => m.id === id);
+  }
+
+  function renderTeamBar() {
+    if (!teams.length) {
+      teamBarEl.hidden = true;
+      return;
+    }
+    const parts = teams
+      .map((t) => {
+        const count = membersOfTeam(t.id).length;
+        if (!count) return '';
+        return (
+          '<span class="member-ms-team-ctrl">' +
+          '<span class="member-ms-team-label">' +
+          escapeHtml(t.name) +
+          ' <span class="text-muted">(' +
+          count +
+          ')</span></span>' +
+          '<button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" data-team-add="' +
+          escapeHtml(t.id) +
+          '" title="Incluir todo el equipo">+</button>' +
+          '<button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-team-sub="' +
+          escapeHtml(t.id) +
+          '" title="Excluir todo el equipo">−</button></span>'
+        );
+      })
+      .filter(Boolean);
+    if (!parts.length) {
+      teamBarEl.hidden = true;
+      return;
+    }
+    teamBarEl.hidden = false;
+    teamBarEl.innerHTML = '<span class="small text-muted">Equipos:</span>' + parts.join('');
+    teamBarEl.querySelectorAll('[data-team-add]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        membersOfTeam(btn.getAttribute('data-team-add')).forEach((m) => selected.add(m.id));
+        renderChips();
+        renderDropdown();
+      });
+    });
+    teamBarEl.querySelectorAll('[data-team-sub]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        membersOfTeam(btn.getAttribute('data-team-sub')).forEach((m) => selected.delete(m.id));
+        renderChips();
+        renderDropdown();
+      });
+    });
   }
 
   function renderChips() {
@@ -515,7 +586,7 @@ function mountMemberMultiSelect(container, members, options = {}) {
         if (!m) return '';
         return (
           '<span class="badge rounded-pill text-bg-light border member-ms-chip" role="listitem">' +
-          escapeHtml(memberPickLabel(m)) +
+          escapeHtml(memberPickLabel(m, teamNames)) +
           '<button type="button" class="member-ms-chip-remove" data-rm="' +
           escapeHtml(id) +
           '" aria-label="Quitar destinatario">&times;</button></span>'
@@ -536,7 +607,8 @@ function mountMemberMultiSelect(container, members, options = {}) {
     const available = members.filter((m) => {
       if (selected.has(m.id)) return false;
       if (!q) return true;
-      const hay = memberPickLabel(m).toLowerCase() + ' ' + (m.email || '').toLowerCase();
+      const hay =
+        memberPickLabel(m, teamNames).toLowerCase() + ' ' + (m.email || '').toLowerCase();
       return hay.includes(q);
     });
     if (!available.length) {
@@ -553,7 +625,7 @@ function mountMemberMultiSelect(container, members, options = {}) {
             '<button type="button" class="list-group-item list-group-item-action py-2 member-ms-option" data-id="' +
             escapeHtml(m.id) +
             '">' +
-            escapeHtml(memberPickLabel(m)) +
+            escapeHtml(memberPickLabel(m, teamNames)) +
             '</button>'
         )
         .join('');
@@ -623,6 +695,7 @@ function mountMemberMultiSelect(container, members, options = {}) {
     },
   };
 
+  renderTeamBar();
   renderChips();
   closeDropdown();
 }
@@ -651,11 +724,11 @@ async function openDispatchModal(campaignId, preselectedIds = null, resend = fal
   const picks = $('#dispatch-member-picks');
   const statusEl = $('#dispatch-status');
   setStatus(statusEl, '');
-  const memData = await api('/members', { admin: true });
-  const members = memData.members || [];
+  const bundle = await loadMembersBundle();
+  const members = bundle.members;
   const selectedIds =
     preselectedIds === null ? members.map((m) => m.id) : preselectedIds && preselectedIds.length ? preselectedIds : [];
-  renderMemberPickList(picks, members, { selectedIds });
+  renderMemberPickList(picks, members, { selectedIds, teams: bundle.teams });
   modal.showModal();
 }
 
@@ -765,10 +838,9 @@ async function dispatchCampaign(id, memberIds, statusEl, resend = false) {
 async function refreshCampaignMemberPicks() {
   const picks = $('#camp-member-picks');
   try {
-    const memData = await api('/members', { admin: true });
-    const members = memData.members || [];
-    renderMemberPickList(picks, members, { checkedByDefault: true });
-    $('#camp-member-tools').hidden = !members.length;
+    const bundle = await loadMembersBundle();
+    renderMemberPickList(picks, bundle.members, { checkedByDefault: true, teams: bundle.teams });
+    $('#camp-member-tools').hidden = !bundle.members.length;
   } catch (e) {
     if (picks) picks.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
   }
@@ -908,10 +980,54 @@ async function initMembers() {
           name: $('#mem-name').value.trim(),
           email: $('#mem-email').value.trim(),
           platformId: $('#mem-platform').value.trim(),
+          teamId: $('#mem-team').value.trim(),
         },
       });
       form.reset();
       setStatus(statusEl, 'Miembro añadido.', 'ok');
+      await refreshMembers();
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    }
+  });
+}
+
+function renderTeamsBadges(teams) {
+  const list = $('#teams-list');
+  if (!list) return;
+  list.innerHTML =
+    (teams || [])
+      .map((t) => '<span class="badge text-bg-light border">' + escapeHtml(t.name) + '</span>')
+      .join('') || '<span class="text-muted small">Sin equipos.</span>';
+}
+
+function fillTeamSelect(teams, selectEl) {
+  if (!selectEl) return;
+  const cur = selectEl.value;
+  selectEl.innerHTML =
+    '<option value="">Sin equipo</option>' +
+    (teams || [])
+      .map(
+        (t) =>
+          '<option value="' + escapeHtml(t.id) + '">' + escapeHtml(t.name) + '</option>'
+      )
+      .join('');
+  if (cur) selectEl.value = cur;
+}
+
+function initTeams() {
+  const form = $('#team-form');
+  const statusEl = $('#team-form-status');
+  if (!form) return;
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const name = $('#team-name').value.trim();
+    if (!name) return;
+    setStatus(statusEl, 'Creando equipo…');
+    try {
+      await api('/teams', { method: 'POST', admin: true, body: { name } });
+      $('#team-name').value = '';
+      setStatus(statusEl, 'Equipo creado.', 'ok');
       await refreshMembers();
     } catch (e) {
       setStatus(statusEl, e.message, 'err');
@@ -924,6 +1040,10 @@ async function refreshMembers() {
   try {
     const data = await api('/members', { admin: true });
     const members = data.members || [];
+    const teams = data.teams || [];
+    renderTeamsBadges(teams);
+    fillTeamSelect(teams, $('#mem-team'));
+    const tmap = teamNameMap(teams);
     let connections = [];
     try {
       connections = await loadConnections();
@@ -961,6 +1081,23 @@ async function refreshMembers() {
                 linkOptions +
                 '</select>'
               : '';
+          const teamSelect =
+            '<label class="small text-muted mt-2 mb-0">Equipo</label><select class="form-select form-select-sm member-team-select" data-member="' +
+            escapeHtml(m.id) +
+            '"><option value="">Sin equipo</option>' +
+            teams
+              .map(
+                (t) =>
+                  '<option value="' +
+                  escapeHtml(t.id) +
+                  '"' +
+                  ((m.teamId || '') === t.id ? ' selected' : '') +
+                  '>' +
+                  escapeHtml(t.name) +
+                  '</option>'
+              )
+              .join('') +
+            '</select>';
           return (
             '<div class="list-group-item"><div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
             '<div class="flex-grow-1"><div class="fw-semibold">' +
@@ -971,7 +1108,14 @@ async function refreshMembers() {
             escapeHtml(m.platformId || 'Sin LinkedIn') +
             ' · <span class="badge text-bg-light border">' +
             escapeHtml(st) +
-            '</span></div>' +
+            '</span>' +
+            (m.teamId && tmap[m.teamId]
+              ? ' · <span class="badge text-bg-primary-subtle border border-primary-subtle">' +
+                escapeHtml(tmap[m.teamId]) +
+                '</span>'
+              : '') +
+            '</div>' +
+            teamSelect +
             linkSelect +
             '</div>' +
             '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
@@ -988,6 +1132,21 @@ async function refreshMembers() {
         })
         .join('') +
       '</div>';
+    list.querySelectorAll('.member-team-select').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        try {
+          await api('/members', {
+            method: 'PUT',
+            admin: true,
+            body: { id: sel.getAttribute('data-member'), teamId: sel.value },
+          });
+          await refreshMembers();
+          await refreshCampaignMemberPicks();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    });
     list.querySelectorAll('.member-link-select').forEach((sel) => {
       sel.addEventListener('change', async () => {
         const platformId = sel.value;
@@ -1156,6 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCampaigns();
   initInvite();
   initMembers();
+  initTeams();
   loadWorkspaceBadge();
   $('#connections-refresh')?.addEventListener('click', refreshConnectionsTable);
   navigateTo('dashboard');

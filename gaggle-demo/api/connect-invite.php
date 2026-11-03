@@ -42,6 +42,7 @@ if ($memberId !== '') {
         'name' => trim((string) ($input['name'] ?? '')),
         'email' => $email,
         'platformId' => '',
+        'teamId' => trim((string) ($input['teamId'] ?? '')),
         'createdAt' => gmdate('c'),
     ];
     $idx = count($members);
@@ -55,7 +56,8 @@ if (!$result['ok']) {
 
 $member = $result['member'];
 $members[$idx] = $member;
-ngaged_save_members(['members' => $members]);
+$store['members'] = $members;
+ngaged_save_members($store);
 
 gaggle_demo_json_response(200, [
     'ok' => true,
