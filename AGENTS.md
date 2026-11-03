@@ -60,6 +60,6 @@ Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
 
 ## Gaggle demo (Publora advocacy)
 
-Repo path: `gaggle-demo/`. VPS target: `/opt/apps/gaggle-demo`, secrets in `/opt/apps/private/gaggle-demo/publora.env` (`PUBLORA_API_KEY`, `GAGGLE_DEMO_ADMIN_KEY`).
+Repo path: `gaggle-demo/`. Public demo URL: **https://ngaged.pmediaplus.com** (DNS A → Parvus `87.106.194.137`). VPS: `/opt/apps/gaggle-demo`, secrets `/opt/apps/private/gaggle-demo/publora.env`, systemd `gaggle-demo.service` (:8790), nginx `ngaged.pmediaplus.com`.
 
-Deploy: `gaggle-demo/deploy/deploy-demo.sh` (or tar over SSH if `rsync` is missing locally).
+Deploy: `deploy-demo.sh` then `deploy/install-ngaged-vhost.sh` on `parvus-vps`.

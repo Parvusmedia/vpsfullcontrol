@@ -26,10 +26,13 @@ php -S 127.0.0.1:8787 -t public public/router.php
 - Panel: http://127.0.0.1:8787/
 - Admin key en el formulario admin (localStorage)
 
-## VPS (Parvus)
+## VPS (Parvus) — https://ngaged.pmediaplus.com
+
+**DNS:** el registro **A** de `ngaged.pmediaplus.com` debe apuntar al VPS Parvus (`87.106.194.137`, igual que `prosegur.pmediaplus.com`). Si apunta a otra IP, Let's Encrypt y el sitio público no funcionarán.
 
 ```bash
 ./gaggle-demo/deploy/deploy-demo.sh
+ssh parvus-vps 'bash /opt/apps/gaggle-demo/deploy/install-ngaged-vhost.sh'
 ```
 
 Copia a `/opt/apps/gaggle-demo` en `parvus-vps`. Crea `/opt/apps/private/gaggle-demo/publora.env` con:
