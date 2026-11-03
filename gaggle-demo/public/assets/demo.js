@@ -82,10 +82,18 @@ function initAdminKey() {
     if (legacy) localStorage.setItem(ADMIN_KEY_STORAGE, legacy);
   }
   input.value = localStorage.getItem(ADMIN_KEY_STORAGE) || '';
-  saveBtn.addEventListener('click', () => {
-    localStorage.setItem(ADMIN_KEY_STORAGE, input.value.trim());
-    setStatus(global, 'Clave guardada en este navegador.', 'ok');
-    loadDashboard();
+  saveBtn.addEventListener('click', async () => {
+    const key = input.value.trim();
+    localStorage.setItem(ADMIN_KEY_STORAGE, key);
+    setStatus(global, 'Comprobando clave…');
+    try {
+      await api('/stats?days=7', { admin: true });
+      setStatus(global, 'Clave correcta. Guardada en este navegador.', 'ok');
+      loadDashboard();
+    } catch (e) {
+      localStorage.removeItem(ADMIN_KEY_STORAGE);
+      setStatus(global, e.message, 'err');
+    }
   });
 }
 

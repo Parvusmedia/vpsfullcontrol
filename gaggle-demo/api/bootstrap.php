@@ -111,8 +111,11 @@ function gaggle_demo_require_admin(): void
 {
     $expected = gaggle_demo_admin_key();
     $got = trim((string) ($_SERVER['HTTP_X_DEMO_ADMIN_KEY'] ?? ''));
-    if ($got === '' || !hash_equals($expected, $got)) {
-        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Admin key required.']);
+    if ($got === '') {
+        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Introduce la clave admin arriba y pulsa Guardar.']);
+    }
+    if (!hash_equals($expected, $got)) {
+        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Clave admin incorrecta. Debe coincidir con GAGGLE_DEMO_ADMIN_KEY del servidor.']);
     }
 }
 
