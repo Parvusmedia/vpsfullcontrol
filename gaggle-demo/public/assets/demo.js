@@ -1,7 +1,26 @@
 const API = '/api';
 const ADMIN_KEY_STORAGE = 'ngaged_admin_key';
 const MEMBER_PLATFORM_STORAGE = 'ngaged_platform_id';
-let dashDays = 7;
+const DASH_DAYS_STORAGE = 'ngaged_dash_days';
+
+function getAdminKey() {
+  return localStorage.getItem(ADMIN_KEY_STORAGE) || '';
+}
+
+function updateAdminKeyBanner() {
+  const banner = $('#admin-key-banner');
+  if (!banner) return;
+  banner.hidden = getAdminKey() !== '';
+}
+
+function readStoredDashDays() {
+  const raw = localStorage.getItem(DASH_DAYS_STORAGE);
+  if (raw === 'all') return 'all';
+  const n = parseInt(raw || '7', 10);
+  return n === 30 ? 30 : 7;
+}
+
+let dashDays = readStoredDashDays();
 let chartInstances = {};
 
 function $(sel, root = document) {
@@ -74,7 +93,10 @@ function navigateTo(id) {
   const sub = $('#page-subtitle');
   if (title) title.textContent = meta[0];
   if (sub) sub.textContent = meta[1];
-  if (id === 'dashboard') loadDashboard();
+  if (id === 'dashboard') {
+    loadDashboard();
+    scheduleChartResize();
+  }
   if (id === 'campaigns') refreshCampaignMemberPicks();
   if (id === 'campaigns-history') refreshCampaignsList();
   if (id === 'members' || id === 'members-invite') refreshMembers();
@@ -104,6 +126,25 @@ function setSidebarOpen(open) {
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     toggle.setAttribute('aria-label', open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
   }
+  if (!open) {
+    scheduleChartResize();
+  }
+}
+
+function resizeCharts() {
+  Object.values(chartInstances).forEach((ch) => {
+    try {
+      ch?.resize?.();
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
+function scheduleChartResize() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(resizeCharts);
+  });
 }
 
 function initMobileNav() {
@@ -119,7 +160,9 @@ function initMobileNav() {
   });
   window.addEventListener('resize', () => {
     if (!isMobileNav()) setSidebarOpen(false);
+    scheduleChartResize();
   });
+  window.addEventListener('orientationchange', scheduleChartResize);
 }
 
 function initNav() {
@@ -139,17 +182,22 @@ function initAdminKey() {
     const legacy = localStorage.getItem('gaggle_demo_admin_key');
     if (legacy) localStorage.setItem(ADMIN_KEY_STORAGE, legacy);
   }
-  input.value = localStorage.getItem(ADMIN_KEY_STORAGE) || '';
+  input.value = getAdminKey();
+  updateAdminKeyBanner();
   saveBtn.addEventListener('click', async () => {
     const key = input.value.trim();
     localStorage.setItem(ADMIN_KEY_STORAGE, key);
     setStatus(global, 'Comprobando clave…');
     try {
       await api('/stats?days=7', { admin: true });
-      setStatus(global, 'Clave correcta. Guardada en este navegador.', 'ok');
+      setStatus(global, 'Clave correcta. Guardada solo en este navegador/dispositivo.', 'ok');
+      updateAdminKeyBanner();
       loadDashboard();
+      refreshMembers();
+      refreshCampaignsList();
     } catch (e) {
       localStorage.removeItem(ADMIN_KEY_STORAGE);
+      updateAdminKeyBanner();
       setStatus(global, e.message, 'err');
     }
   });
@@ -226,6 +274,8 @@ function renderCharts(data) {
       ],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: true,
       animation: { duration: 400 },
       plugins: { legend: { position: 'bottom' } },
     },
@@ -241,7 +291,12 @@ function renderCharts(data) {
         { label: 'Reposts', data: daily.map((d) => d.reposts), borderColor: c.ok, tension: 0.35 },
       ],
     },
-    options: { animation: { duration: 400 }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: { duration: 400 },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
   });
 
   const sent = data.totals.invitesSent || 0;
@@ -257,6 +312,8 @@ function renderCharts(data) {
       ],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: true,
       indexAxis: 'y',
       animation: { duration: 400 },
       plugins: { legend: { display: false } },
@@ -271,11 +328,14 @@ function renderCharts(data) {
       datasets: [{ label: 'Reposts', data: top.map((m) => m.reposts), backgroundColor: c.brand }],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: true,
       indexAxis: 'y',
       animation: { duration: 400 },
       plugins: { legend: { display: false } },
     },
   });
+  scheduleChartResize();
 }
 
 function renderRecentTable(rows, options) {
@@ -399,18 +459,31 @@ async function loadDashboard() {
     if (demoBanner) demoBanner.hidden = true;
     const msgEl = empty.querySelector('p');
     if (msgEl) {
-      msgEl.textContent = e.message.includes('Admin') ? 'Guarda la clave admin arriba.' : e.message;
+      if (!getAdminKey()) {
+        msgEl.textContent =
+          'En este móvil u otro navegador debes guardar la clave admin en Ajustes. No se sincroniza automáticamente con el ordenador.';
+      } else if (e.message.includes('Admin') || e.message.includes('clave')) {
+        msgEl.textContent = 'Clave admin incorrecta en este dispositivo. Vuelve a guardarla en Ajustes.';
+      } else {
+        msgEl.textContent = e.message;
+      }
     }
   }
 }
 
 function initDashboardControls() {
   document.querySelectorAll('button.pill[data-days]').forEach((pill) => {
+    const days = pill.getAttribute('data-days');
+    pill.classList.toggle(
+      'active',
+      days === 'all' ? dashDays === 'all' : String(dashDays) === days
+    );
     pill.addEventListener('click', () => {
       document.querySelectorAll('button.pill[data-days]').forEach((p) => p.classList.remove('active'));
       pill.classList.add('active');
       const d = pill.getAttribute('data-days');
       dashDays = d === 'all' ? 'all' : parseInt(d, 10);
+      localStorage.setItem(DASH_DAYS_STORAGE, String(dashDays));
       loadDashboard();
     });
   });

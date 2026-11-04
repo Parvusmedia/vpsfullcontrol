@@ -110,6 +110,13 @@ body.admin-body {
   max-height: 240px;
 }
 
+@media (max-width: 991.98px) {
+  #dash-content .card-body canvas {
+    min-height: 200px;
+    max-height: 280px;
+  }
+}
+
 .member-multiselect {
   display: flex;
   flex-direction: column;
