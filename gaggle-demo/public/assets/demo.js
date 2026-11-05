@@ -1,5 +1,4 @@
 const API = '/api';
-const MEMBER_PLATFORM_STORAGE = 'ngaged_platform_id';
 const DASH_DAYS_STORAGE = 'ngaged_dash_days';
 let currentAdmin = null;
 
@@ -36,7 +35,6 @@ const PAGE_META = {
   members: ['Miembros', 'Directorio del equipo'],
   'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
   connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
-  employee: ['Vista empleado', 'Cola de reposts pendientes'],
   settings: ['Ajustes', 'Accesos admin y estado del sistema'],
 };
 
@@ -119,7 +117,6 @@ function navigateTo(id) {
   if (id === 'campaigns-history') refreshCampaignsList();
   if (id === 'members' || id === 'members-invite') refreshMembers();
   if (id === 'connections') refreshConnectionsTable();
-  if (id === 'employee') refreshMemberQueue();
   if (id === 'settings') {
     renderHealthChecks();
     refreshAdminUsers();
@@ -1434,108 +1431,6 @@ async function refreshMembers() {
   } catch (e) {
     list.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
   }
-}
-
-function renderMemberConnections(container, connections) {
-  container.innerHTML = '';
-  if (!connections.length) {
-    container.innerHTML = '<p class="empty">No hay cuentas LinkedIn disponibles.</p>';
-    return;
-  }
-  const wrap = document.createElement('div');
-  wrap.className = 'chips';
-  connections.forEach((c) => {
-    const label = document.createElement('label');
-    label.className = 'chip';
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'memberPlatform';
-    input.value = c.platformId;
-    if (localStorage.getItem(MEMBER_PLATFORM_STORAGE) === c.platformId) input.checked = true;
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(c.username || c.platformId));
-    wrap.appendChild(label);
-  });
-  container.appendChild(wrap);
-}
-
-async function refreshMemberQueue() {
-  const picker = $('#member-accounts');
-  const listEl = $('#member-pending');
-  const statusEl = $('#member-status');
-  let connections = [];
-  try {
-    connections = await loadConnections();
-    renderMemberConnections(picker, connections);
-    picker.addEventListener('change', () => {
-      const selected = picker.querySelector('input:checked');
-      if (selected) localStorage.setItem(MEMBER_PLATFORM_STORAGE, selected.value);
-      loadPending();
-    });
-  } catch (e) {
-    picker.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
-  }
-
-  async function loadPending() {
-    const platformId =
-      picker.querySelector('input:checked')?.value || localStorage.getItem(MEMBER_PLATFORM_STORAGE) || '';
-    if (!platformId) {
-      listEl.innerHTML = '<p class="empty">Elige tu cuenta LinkedIn.</p>';
-      return;
-    }
-    try {
-      const data = await api('/member-queue?platformId=' + encodeURIComponent(platformId));
-      const pending = data.pending || [];
-      if (!pending.length) {
-        listEl.innerHTML = '<p class="empty">No tienes campañas pendientes.</p>';
-        return;
-      }
-      listEl.innerHTML = pending
-        .map((p) => {
-          const cardId = 'p-' + p.campaignId;
-          return (
-            '<article class="activity" id="' +
-            cardId +
-            '"><h3>' +
-            escapeHtml(p.title) +
-            '</h3><p>' +
-            escapeHtml(p.preview?.description || p.commentary || '') +
-            '</p><div class="row"><button type="button" class="btn btn-primary" data-act="approve">Repostear</button><button type="button" class="btn btn-secondary" data-act="decline">Ignorar</button></div><div class="status" hidden></div></article>'
-          );
-        })
-        .join('');
-      listEl.querySelectorAll('.activity').forEach((card, i) => {
-        const item = pending[i];
-        card.querySelectorAll('button').forEach((btn) => {
-          btn.addEventListener('click', async () => {
-            const st = card.querySelector('.status');
-            setStatus(st, 'Procesando…');
-            st.hidden = false;
-            try {
-              await api('/member-respond', {
-                method: 'POST',
-                body: {
-                  campaignId: item.campaignId,
-                  memberId: item.memberId,
-                  platformId,
-                  action: btn.getAttribute('data-act'),
-                },
-              });
-              setStatus(st, btn.getAttribute('data-act') === 'approve' ? '¡Publicado!' : 'Ignorado.', 'ok');
-              card.querySelectorAll('button').forEach((b) => (b.disabled = true));
-            } catch (e) {
-              setStatus(st, e.message, 'err');
-            }
-          });
-        });
-      });
-      setStatus(statusEl, '');
-    } catch (e) {
-      listEl.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
-    }
-  }
-
-  await loadPending();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

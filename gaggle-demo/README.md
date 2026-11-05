@@ -6,8 +6,7 @@ Panel de **employee advocacy**: campañas LinkedIn, invitaciones por email (Repo
 
 - **Dashboard** — campañas enviadas, alcance, reposts, tasa de adopción y gráficos.
 - **Campañas** — URL de LinkedIn, vista previa, selección de miembros y envío.
-- **Miembros** — email + cuenta LinkedIn asociada.
-- **Miembro** — cola de campañas pendientes desde el navegador.
+- **Miembros** — email + cuenta LinkedIn asociada (empleados solo vinculan vía `/conectar` y responden por email).
 
 Marca única: **Ngaged** en UI y emails.
 
