@@ -132,7 +132,7 @@ function formatDate(iso) {
   }
 }
 
-function navigateTo(id) {
+function navigateTo(id, options = {}) {
   const links = document.querySelectorAll('.sidebar-link[data-panel]');
   // Only content sections — sidebar buttons also carry data-panel and must stay visible.
   const panels = document.querySelectorAll('.admin-content section[data-panel]');
@@ -157,7 +157,7 @@ function navigateTo(id) {
     renderHealthChecks();
     refreshAdminUsers();
   }
-  if (id === 'campaigns') {
+  if (id === 'campaigns' && !options.fromOnboarding && !window.NgagedOnboarding?.isActive?.()) {
     window.NgagedOnboarding?.maybeStartCampaignTour?.();
   }
   if (isMobileNav()) setSidebarOpen(false);

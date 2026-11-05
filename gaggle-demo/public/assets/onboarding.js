@@ -7,9 +7,11 @@
 
   let ctx = {};
   let active = null;
-  let highlightEl = null;
+  let spotlightEl = null;
   let backdrop = null;
   let popover = null;
+  let resizeTimer = null;
+  let pendingCampaignTimer = null;
 
   function $(sel) {
     return document.querySelector(sel);
@@ -31,17 +33,26 @@
     }
   }
 
-  function clearHighlight() {
-    if (highlightEl) {
-      highlightEl.classList.remove('onboarding-highlight');
-      highlightEl = null;
-    }
+  function currentPanelId() {
+    const open = document.querySelector('.admin-content section[data-panel]:not([hidden])');
+    return open?.getAttribute('data-panel') || '';
+  }
+
+  function isTourActive() {
+    return active !== null;
+  }
+
+  function clearSpotlight() {
+    if (spotlightEl) spotlightEl.hidden = true;
+    backdrop?.classList.remove('onboarding-backdrop-full');
   }
 
   function destroyUi() {
-    clearHighlight();
+    clearSpotlight();
+    spotlightEl?.remove();
     backdrop?.remove();
     popover?.remove();
+    spotlightEl = null;
     backdrop = null;
     popover = null;
     document.body.classList.remove('onboarding-active');
@@ -53,11 +64,15 @@
     backdrop = document.createElement('div');
     backdrop.className = 'onboarding-backdrop';
     backdrop.setAttribute('aria-hidden', 'true');
+    spotlightEl = document.createElement('div');
+    spotlightEl.className = 'onboarding-spotlight-ring';
+    spotlightEl.hidden = true;
     popover = document.createElement('div');
     popover.className = 'onboarding-popover';
     popover.setAttribute('role', 'dialog');
     popover.setAttribute('aria-modal', 'true');
     document.body.appendChild(backdrop);
+    document.body.appendChild(spotlightEl);
     document.body.appendChild(popover);
   }
 
@@ -78,7 +93,25 @@
     }
   }
 
+  function updateSpotlight(target) {
+    if (!spotlightEl || !backdrop) return;
+    if (!target) {
+      spotlightEl.hidden = true;
+      backdrop.classList.add('onboarding-backdrop-full');
+      return;
+    }
+    backdrop.classList.remove('onboarding-backdrop-full');
+    const pad = 6;
+    const r = target.getBoundingClientRect();
+    spotlightEl.hidden = false;
+    spotlightEl.style.top = Math.max(0, r.top - pad) + 'px';
+    spotlightEl.style.left = Math.max(0, r.left - pad) + 'px';
+    spotlightEl.style.width = Math.max(0, r.width + pad * 2) + 'px';
+    spotlightEl.style.height = Math.max(0, r.height + pad * 2) + 'px';
+  }
+
   function positionPopover(target, placement) {
+    if (!popover) return;
     const pad = 12;
     const popRect = popover.getBoundingClientRect();
     const vw = window.innerWidth;
@@ -94,9 +127,7 @@
     let top = rect.bottom + pad;
     let left = rect.left;
 
-    if (placement === 'top') {
-      top = rect.top - popRect.height - pad;
-    }
+    if (placement === 'top') top = rect.top - popRect.height - pad;
     if (placement === 'left') {
       left = rect.left - popRect.width - pad;
       top = rect.top;
@@ -115,9 +146,17 @@
     popover.style.top = top + 'px';
   }
 
-  async function prepareStep(step) {
-    if (step.panel && ctx.navigateTo) {
-      ctx.navigateTo(step.panel);
+  function scrollTargetIntoViewIfNeeded(target) {
+    if (!target) return;
+    const r = target.getBoundingClientRect();
+    const vh = window.innerHeight;
+    if (r.top >= 0 && r.bottom <= vh) return;
+    target.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }
+
+  async function prepareStep(step, { navigate = true } = {}) {
+    if (navigate && step.panel && ctx.navigateTo && currentPanelId() !== step.panel) {
+      ctx.navigateTo(step.panel, { fromOnboarding: true });
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     }
     let target = null;
@@ -125,16 +164,26 @@
       target = $(step.target);
       if (target) {
         openSidebarIfNeeded(target);
-        target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        await new Promise((r) => setTimeout(r, 280));
+        if (navigate) scrollTargetIntoViewIfNeeded(target);
       }
     }
     return target;
   }
 
-  function renderPopover(step, index, total, target) {
+  function bindPopoverActions(step, index, total) {
     const isLast = index >= total - 1;
     const isFirst = index === 0;
+    popover.querySelector('.onboarding-skip')?.addEventListener('click', () => finishTour('skipped'));
+    popover.querySelector('.onboarding-prev')?.addEventListener('click', () => go(-1));
+    popover.querySelector('.onboarding-next')?.addEventListener('click', () => {
+      if (isLast) finishTour('done');
+      else go(1);
+    });
+    if (isFirst) popover.querySelector('.onboarding-prev')?.remove();
+  }
+
+  function renderPopoverContent(step, index, total) {
+    const isLast = index >= total - 1;
     popover.innerHTML =
       '<div class="onboarding-popover-inner">' +
       '<p class="onboarding-step-label">Paso ' +
@@ -151,19 +200,12 @@
       '<div class="onboarding-actions">' +
       '<button type="button" class="btn btn-link btn-sm onboarding-skip">Omitir</button>' +
       '<div class="d-flex gap-2">' +
-      (isFirst ? '' : '<button type="button" class="btn btn-outline-secondary btn-sm onboarding-prev">Anterior</button>') +
+      (index === 0 ? '' : '<button type="button" class="btn btn-outline-secondary btn-sm onboarding-prev">Anterior</button>') +
       '<button type="button" class="btn btn-primary btn-sm onboarding-next">' +
-      (isLast ? (step.finishLabel || 'Empezar') : 'Siguiente') +
+      (isLast ? step.finishLabel || 'Empezar' : 'Siguiente') +
       '</button>' +
       '</div></div></div>';
-
-    popover.querySelector('.onboarding-skip')?.addEventListener('click', () => finishTour('skipped'));
-    popover.querySelector('.onboarding-prev')?.addEventListener('click', () => go(-1));
-    popover.querySelector('.onboarding-next')?.addEventListener('click', () => {
-      if (isLast) finishTour('done');
-      else go(1);
-    });
-    positionPopover(target, step.placement || (target ? 'bottom' : 'center'));
+    bindPopoverActions(step, index, total);
   }
 
   function escapeHtml(s) {
@@ -173,22 +215,30 @@
       .replace(/>/g, '&gt;');
   }
 
-  async function showStep() {
+  function refreshStepLayout() {
+    if (!active) return;
+    const step = active.steps[active.index];
+    const target = step.target ? $(step.target) : null;
+    updateSpotlight(target);
+    positionPopover(target, step.placement || (target ? 'bottom' : 'center'));
+  }
+
+  async function showStep({ navigate = true } = {}) {
     if (!active) return;
     const { steps, index } = active;
     const step = steps[index];
-    clearHighlight();
-    const target = await prepareStep(step);
+    clearSpotlight();
+    const target = await prepareStep(step, { navigate });
     if (step.target && !target) {
       go(1);
       return;
     }
-    if (target) {
-      target.classList.add('onboarding-highlight');
-      highlightEl = target;
-    }
-    renderPopover(step, index, steps.length, target);
-    requestAnimationFrame(() => positionPopover(target, step.placement || (target ? 'bottom' : 'center')));
+    active.currentTarget = target;
+    updateSpotlight(target);
+    renderPopoverContent(step, index, steps.length);
+    requestAnimationFrame(() => {
+      positionPopover(target, step.placement || (target ? 'bottom' : 'center'));
+    });
   }
 
   function go(delta) {
@@ -199,7 +249,7 @@
       finishTour('done');
       return;
     }
-    showStep();
+    showStep({ navigate: true });
   }
 
   function finishTour(status) {
@@ -211,6 +261,10 @@
   }
 
   function startTour(config) {
+    if (pendingCampaignTimer) {
+      clearTimeout(pendingCampaignTimer);
+      pendingCampaignTimer = null;
+    }
     destroyUi();
     if (!config.steps?.length) return;
     ensureUi();
@@ -220,8 +274,9 @@
       index: 0,
       storageKey: config.storageKey || null,
       onDone: config.onDone || null,
+      currentTarget: null,
     };
-    showStep();
+    showStep({ navigate: true });
   }
 
   function panelSteps(full) {
@@ -273,7 +328,7 @@
         ? 'Siguiente paso recomendado: añade miembros o lanza tu primera campaña. Puedes repetir este tour en Ajustes.'
         : 'Abre Crear y enviar y sigue el mini-tour de campaña. Repite el tour en Ajustes cuando quieras.',
       placement: 'center',
-      finishLabel: full ? 'Ir a campañas' : 'Ir a campañas',
+      finishLabel: 'Ir a campañas',
     });
     return steps;
   }
@@ -310,20 +365,25 @@
   }
 
   function maybeStartPanelTour(admin) {
-    if (readFlag(STORAGE_PANEL)) return;
+    if (readFlag(STORAGE_PANEL) || isTourActive()) return;
     const full = ctx.isFullAdmin?.(admin) ?? true;
     setTimeout(() => {
+      if (isTourActive()) return;
       startTour({
         storageKey: STORAGE_PANEL,
         steps: panelSteps(full),
-        onDone: () => ctx.navigateTo?.('campaigns'),
+        onDone: () => ctx.navigateTo?.('campaigns', { fromOnboarding: true }),
       });
     }, 600);
   }
 
   function maybeStartCampaignTour() {
-    if (readFlag(STORAGE_CAMPAIGN)) return;
-    setTimeout(() => {
+    if (readFlag(STORAGE_CAMPAIGN) || isTourActive()) return;
+    if (pendingCampaignTimer) clearTimeout(pendingCampaignTimer);
+    pendingCampaignTimer = setTimeout(() => {
+      pendingCampaignTimer = null;
+      if (readFlag(STORAGE_CAMPAIGN) || isTourActive()) return;
+      if (currentPanelId() !== 'campaigns') return;
       startTour({
         storageKey: STORAGE_CAMPAIGN,
         steps: campaignSteps(),
@@ -335,6 +395,7 @@
     init(options) {
       ctx = options || {};
     },
+    isActive: isTourActive,
     maybeStartPanelTour,
     maybeStartCampaignTour,
     startPanelTour: () => {
@@ -344,7 +405,9 @@
   };
 
   window.addEventListener('resize', () => {
-    if (active) showStep();
+    if (!active) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(refreshStepLayout, 80);
   });
 
   window.addEventListener('keydown', (e) => {
