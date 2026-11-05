@@ -103,22 +103,13 @@ function ngaged_admin_public(array $admin): array
 
 function ngaged_login_admin(string $email, string $password): array
 {
-    ngaged_bootstrap_admin_from_env();
-    $store = ngaged_admins_store();
-    $found = ngaged_find_admin_by_email($store, $email);
-    if ($found === null) {
-        return ['ok' => false, 'error' => 'Email o contraseña incorrectos.'];
+    require_once __DIR__ . '/_admin_2fa.php';
+    $check = ngaged_verify_admin_password($email, $password);
+    if (!$check['ok']) {
+        return $check;
     }
-    $admin = $found['admin'];
-    $hash = (string) ($admin['passwordHash'] ?? '');
-    if ($hash === '' || !password_verify($password, $hash)) {
-        return ['ok' => false, 'error' => 'Email o contraseña incorrectos.'];
-    }
-    ngaged_session_start();
-    session_regenerate_id(true);
-    $_SESSION['ngaged_admin_id'] = $admin['id'];
-    $_SESSION['ngaged_admin_email'] = $admin['email'];
-    return ['ok' => true, 'admin' => ngaged_admin_public($admin)];
+    ngaged_establish_admin_session($check['admin']);
+    return ['ok' => true, 'admin' => ngaged_admin_public($check['admin'])];
 }
 
 function ngaged_logout_admin(): void

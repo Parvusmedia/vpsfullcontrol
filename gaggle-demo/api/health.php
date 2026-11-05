@@ -6,6 +6,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/_publora.php';
 require_once __DIR__ . '/_mail.php';
 require_once __DIR__ . '/_admin_auth.php';
+require_once __DIR__ . '/_admin_2fa.php';
 
 gaggle_demo_cors();
 
@@ -38,5 +39,6 @@ gaggle_demo_json_response(200, [
         ['id' => 'mail', 'label' => 'Envío de email (SMTP/php-mail)', 'ok' => function_exists('mail')],
         ['id' => 'admin', 'label' => 'Cuentas de administrador', 'ok' => $hasAdmins],
         ['id' => 'google', 'label' => 'Login con Google (opcional)', 'ok' => ngaged_google_oauth_configured()],
+        ['id' => '2fa', 'label' => '2FA admin por email', 'ok' => !ngaged_admin_2fa_enabled() || function_exists('mail')],
     ],
 ]);

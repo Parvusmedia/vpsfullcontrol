@@ -29,6 +29,8 @@ if (str_starts_with($uri, '/api/')) {
         'members-sync' => 'members-sync.php',
         'maintenance-dedupe' => 'maintenance-dedupe.php',
         'admin-login' => 'admin-login.php',
+        'admin-login-verify' => 'admin-login-verify.php',
+        'admin-login-resend' => 'admin-login-resend.php',
         'admin-logout' => 'admin-logout.php',
         'admin-me' => 'admin-me.php',
         'admins' => 'admins.php',
