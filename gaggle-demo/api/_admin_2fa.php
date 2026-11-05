@@ -61,17 +61,39 @@ function ngaged_establish_admin_session(array $admin): void
     $_SESSION['ngaged_admin_email'] = $admin['email'];
 }
 
+function ngaged_login_2fa_email_subject(): string
+{
+    return 'Tu acceso a Ngaged — código de verificación';
+}
+
+function ngaged_login_2fa_email_text(string $name, string $code, int $minutes): string
+{
+    $who = $name !== '' ? $name : 'Administrador';
+    return "Hola {$who},\n\n"
+        . "Tu código de verificación para entrar en Ngaged es: {$code}\n\n"
+        . "Caduca en {$minutes} minutos.\n\n"
+        . "Si no has solicitado este acceso, ignora este mensaje.\n\n"
+        . "— Ngaged\n";
+}
+
 function ngaged_login_2fa_email_html(string $name, string $code, int $minutes): string
 {
     $name = htmlspecialchars($name !== '' ? $name : 'Administrador', ENT_QUOTES, 'UTF-8');
     $code = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
-    return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head><body style="font-family:system-ui,sans-serif;color:#0b1929;">'
-        . '<div style="max-width:480px;margin:24px auto;padding:24px;border:1px solid #d8e2ec;border-radius:12px;">'
+    $appUrl = htmlspecialchars(ngaged_app_base_url(), ENT_QUOTES, 'UTF-8');
+    return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head><body style="margin:0;background:#eef3f8;font-family:Segoe UI,system-ui,sans-serif;color:#0b1929;">'
+        . '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">'
+        . '<table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;border:1px solid #d8e2ec;overflow:hidden;">'
+        . '<tr><td style="padding:20px 24px;background:#0a66c2;color:#fff;"><strong style="font-size:17px;">Ngaged</strong>'
+        . '<br/><span style="opacity:.9;font-size:13px;">Verificación de acceso al panel</span></td></tr>'
+        . '<tr><td style="padding:24px 28px;">'
         . '<p style="margin:0 0 12px;">Hola ' . $name . ',</p>'
-        . '<p style="margin:0 0 16px;color:#5c6b7a;">Tu código de verificación para entrar en <strong>Ngaged</strong> es:</p>'
-        . '<p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">' . $code . '</p>'
-        . '<p style="margin:0;color:#94a3b8;font-size:13px;">Caduca en ' . $minutes . ' minutos. Si no has sido tú, ignora este mensaje.</p>'
-        . '</div></body></html>';
+        . '<p style="margin:0 0 16px;color:#5c6b7a;">Introduce este código en la pantalla de login:</p>'
+        . '<p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:20px 0;text-align:center;color:#0b1929;">' . $code . '</p>'
+        . '<p style="margin:0 0 8px;color:#5c6b7a;font-size:14px;">Caduca en ' . (int) $minutes . ' minutos.</p>'
+        . '<p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">Si no has sido tú, ignora este mensaje. '
+        . ($appUrl !== '' ? 'Panel: <a href="' . $appUrl . '/login" style="color:#0a66c2;">' . $appUrl . '/login</a>' : '')
+        . '</p></td></tr></table></td></tr></table></body></html>';
 }
 
 /** @return array{ok:bool,loginToken?:string,emailMasked?:string,error?:string} */
@@ -108,9 +130,11 @@ function ngaged_start_login_2fa(array $admin): array
     ];
     ngaged_save_login_challenges($store);
 
-    $subject = 'Código Ngaged: ' . $code;
-    $html = ngaged_login_2fa_email_html((string) ($admin['name'] ?? ''), $code, $ttlMin);
-    $sentResult = ngaged_send_mail_verbose($email, $subject, $html);
+    $subject = ngaged_login_2fa_email_subject();
+    $adminName = (string) ($admin['name'] ?? '');
+    $html = ngaged_login_2fa_email_html($adminName, $code, $ttlMin);
+    $text = ngaged_login_2fa_email_text($adminName, $code, $ttlMin);
+    $sentResult = ngaged_send_mail_verbose($email, $subject, $html, $text);
     if (!$sentResult['ok']) {
         $hint = $sentResult['error'] ?? 'Revisa SMTP en el servidor.';
         return ['ok' => false, 'error' => 'No pudimos enviar el email de verificación. ' . $hint];

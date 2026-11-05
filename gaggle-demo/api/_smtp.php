@@ -136,11 +136,23 @@ function ngaged_send_mail_smtp(string $to, string $subject, string $htmlBody, st
 
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     $boundary = 'ngaged_' . bin2hex(random_bytes(8));
+    $fromMailbox = ngaged_parse_mailbox($fromHeader);
+    $msgDomain = $fromMailbox['email'] !== '' && str_contains($fromMailbox['email'], '@')
+        ? substr($fromMailbox['email'], strpos($fromMailbox['email'], '@') + 1)
+        : 'pmediaplus.com';
+    $messageId = '<ngaged.' . bin2hex(random_bytes(12)) . '@' . $msgDomain . '>';
+    $replyTo = $fromMailbox['email'] !== '' ? $fromMailbox['email'] : $cfg['user'];
+
     $message =
         'From: ' . $fromHeader . "\r\n"
         . 'To: ' . $to . "\r\n"
+        . 'Reply-To: ' . $replyTo . "\r\n"
         . 'Subject: ' . $encodedSubject . "\r\n"
+        . 'Date: ' . gmdate('D, d M Y H:i:s') . ' +0000' . "\r\n"
+        . 'Message-ID: ' . $messageId . "\r\n"
         . 'MIME-Version: 1.0' . "\r\n"
+        . 'Auto-Submitted: auto-generated' . "\r\n"
+        . 'X-Auto-Response-Suppress: All' . "\r\n"
         . 'Content-Type: multipart/alternative; boundary="' . $boundary . '"' . "\r\n"
         . "\r\n"
         . '--' . $boundary . "\r\n"
