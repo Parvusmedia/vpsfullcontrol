@@ -6,7 +6,7 @@ ENV_FILE="${ENV_FILE:-/opt/apps/private/gaggle-demo/publora.env}"
 HOST="${NGAGED_SMTP_HOST:-mail.pmediaplus.com}"
 PORT="${NGAGED_SMTP_PORT:-587}"
 SECURE="${NGAGED_SMTP_SECURE:-tls}"
-USER="${NGAGED_SMTP_USER:-noreply@pmediaplus.com}"
+USER="${NGAGED_SMTP_USER:-alerts@pmediaplus.com}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "No existe $ENV_FILE"
