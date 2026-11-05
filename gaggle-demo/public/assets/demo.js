@@ -621,6 +621,16 @@ async function renderHealthChecks() {
 
 function initSettingsPanel() {
   $('#health-refresh')?.addEventListener('click', renderHealthChecks);
+  $('#mail-test-btn')?.addEventListener('click', async () => {
+    const statusEl = $('#settings-maint-status');
+    setStatus(statusEl, 'Enviando prueba a tu email…');
+    try {
+      const data = await api('/admin-mail-test', { method: 'POST', admin: true, body: {} });
+      setStatus(statusEl, 'Enviado vía ' + data.transport + ' a ' + data.to, 'ok');
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    }
+  });
   $('#dedupe-members-btn')?.addEventListener('click', async () => {
     const statusEl = $('#settings-maint-status');
     setStatus(statusEl, 'Fusionando duplicados…');

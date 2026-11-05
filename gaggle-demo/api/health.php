@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/_publora.php';
 require_once __DIR__ . '/_mail.php';
+require_once __DIR__ . '/_smtp.php';
 require_once __DIR__ . '/_admin_auth.php';
 require_once __DIR__ . '/_admin_2fa.php';
 
@@ -29,14 +30,22 @@ gaggle_demo_json_response(200, [
     'linkedinOAuth' => $oauth,
     'dataWritable' => $writable,
     'mailFromConfigured' => ngaged_mail_from() !== '',
-    'mailTransport' => function_exists('mail') ? 'php-mail' : 'unavailable',
+    'mailTransport' => ngaged_mail_transport_label(),
+    'smtpConfigured' => ngaged_smtp_config() !== null,
     'adminUsersConfigured' => $hasAdmins,
     'googleLoginConfigured' => ngaged_google_oauth_configured(),
     'checks' => [
         ['id' => 'api', 'label' => 'API de publicación LinkedIn', 'ok' => $keyOk],
         ['id' => 'oauth', 'label' => 'OAuth LinkedIn por empleado', 'ok' => $oauth],
         ['id' => 'data', 'label' => 'Almacenamiento de datos', 'ok' => $writable],
-        ['id' => 'mail', 'label' => 'Envío de email (SMTP/php-mail)', 'ok' => function_exists('mail')],
+        [
+            'id' => 'mail',
+            'label' => 'Envío de email (' . ngaged_mail_transport_label() . ')',
+            'ok' => ngaged_smtp_config() !== null
+                ? (trim((string) (gaggle_demo_load_env()['NGAGED_SMTP_USER'] ?? '')) !== ''
+                    && (string) (gaggle_demo_load_env()['NGAGED_SMTP_PASSWORD'] ?? '') !== '')
+                : function_exists('mail'),
+        ],
         ['id' => 'admin', 'label' => 'Cuentas de administrador', 'ok' => $hasAdmins],
         ['id' => 'google', 'label' => 'Login con Google (opcional)', 'ok' => ngaged_google_oauth_configured()],
         ['id' => '2fa', 'label' => '2FA admin por email', 'ok' => !ngaged_admin_2fa_enabled() || function_exists('mail')],

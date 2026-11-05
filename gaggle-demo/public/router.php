@@ -31,6 +31,7 @@ if (str_starts_with($uri, '/api/')) {
         'admin-login' => 'admin-login.php',
         'admin-login-verify' => 'admin-login-verify.php',
         'admin-login-resend' => 'admin-login-resend.php',
+        'admin-mail-test' => 'admin-mail-test.php',
         'admin-logout' => 'admin-logout.php',
         'admin-me' => 'admin-me.php',
         'admins' => 'admins.php',

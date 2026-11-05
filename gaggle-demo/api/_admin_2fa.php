@@ -110,9 +110,10 @@ function ngaged_start_login_2fa(array $admin): array
 
     $subject = 'Código Ngaged: ' . $code;
     $html = ngaged_login_2fa_email_html((string) ($admin['name'] ?? ''), $code, $ttlMin);
-    $sent = ngaged_send_mail($email, $subject, $html);
-    if (!$sent) {
-        return ['ok' => false, 'error' => 'No pudimos enviar el email de verificación. Revisa la configuración de correo del servidor.'];
+    $sentResult = ngaged_send_mail_verbose($email, $subject, $html);
+    if (!$sentResult['ok']) {
+        $hint = $sentResult['error'] ?? 'Revisa SMTP en el servidor.';
+        return ['ok' => false, 'error' => 'No pudimos enviar el email de verificación. ' . $hint];
     }
 
     $parts = explode('@', $email);

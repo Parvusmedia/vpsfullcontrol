@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/_tokens.php';
+require_once __DIR__ . '/_smtp.php';
 
 function ngaged_mail_from(): string
 {
@@ -18,6 +19,11 @@ function ngaged_send_mail(string $to, string $subject, string $htmlBody, string 
     }
 
     $from = ngaged_mail_from();
+    if (ngaged_smtp_config() !== null) {
+        $result = ngaged_send_mail_smtp($to, $subject, $htmlBody, $textBody, $from);
+        return $result['ok'];
+    }
+
     $headers = [
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
@@ -26,6 +32,25 @@ function ngaged_send_mail(string $to, string $subject, string $htmlBody, string 
     ];
 
     return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $htmlBody, implode("\r\n", $headers));
+}
+
+/** @return array{ok:bool,transport:string,error?:string} */
+function ngaged_send_mail_verbose(string $to, string $subject, string $htmlBody, string $textBody = ''): array
+{
+    if ($textBody === '') {
+        $textBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $htmlBody));
+    }
+    $from = ngaged_mail_from();
+    if (ngaged_smtp_config() !== null) {
+        $result = ngaged_send_mail_smtp($to, $subject, $htmlBody, $textBody, $from);
+        return [
+            'ok' => $result['ok'],
+            'transport' => 'smtp',
+            'error' => $result['error'] ?? null,
+        ];
+    }
+    $ok = ngaged_send_mail($to, $subject, $htmlBody, $textBody);
+    return ['ok' => $ok, 'transport' => ngaged_mail_transport_label(), 'error' => $ok ? null : 'mail() falló'];
 }
 
 function ngaged_campaign_email_html(array $campaign, array $member, string $approveUrl, string $declineUrl): string
