@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ngaged · Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/assets/demo.css?v=20261103-mobile" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261105-onboarding" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   </head>
   <body class="admin-body">
@@ -80,7 +80,7 @@
 
         <main class="admin-content flex-grow-1 p-4">
           <div id="global-status" class="alert py-2" role="alert" hidden></div>
-          <section data-panel="dashboard">
+          <section data-panel="dashboard" id="tour-dashboard-section">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <div class="btn-group btn-group-sm" role="group" aria-label="Periodo">
                 <button type="button" class="btn btn-outline-secondary active pill" data-days="7">7 días</button>
@@ -102,7 +102,7 @@
                 </div>
                 <button type="button" class="btn btn-primary btn-sm" data-goto="campaigns">Nueva campaña</button>
               </div>
-              <div class="row g-3 mb-3" id="kpi-grid"></div>
+              <div class="row g-3 mb-3" id="kpi-grid" data-tour="dashboard-kpis"></div>
               <div class="row g-3 mb-3">
                 <div class="col-lg-6">
                   <div class="card h-100 shadow-sm">
@@ -353,6 +353,9 @@
                   </div>
                   <div class="card-body">
                     <ul class="list-group list-group-flush small" id="health-checks"></ul>
+                    <p class="small mb-0 mt-3">
+                      <button type="button" class="btn btn-link btn-sm p-0" id="restart-panel-tour">Ver tour de bienvenida</button>
+                    </p>
                     <div id="settings-maint-tools">
                       <p class="text-muted small mt-3 mb-2">Mantenimiento</p>
                       <button type="button" class="btn btn-outline-secondary btn-sm" id="mail-test-btn">Enviar email de prueba</button>
@@ -404,6 +407,7 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261105-no-employee" defer></script>
+    <script src="/assets/onboarding.js?v=20261105-onboarding" defer></script>
+    <script src="/assets/demo.js?v=20261105-onboarding" defer></script>
   </body>
 </html>

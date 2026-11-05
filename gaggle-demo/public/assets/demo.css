@@ -11,6 +11,63 @@ body.admin-body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Onboarding spotlight tour */
+body.onboarding-active {
+  overflow: hidden;
+}
+
+.onboarding-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.onboarding-highlight {
+  position: relative;
+  z-index: 10001 !important;
+  box-shadow: 0 0 0 4px rgba(10, 102, 194, 0.85), 0 0 0 9999px rgba(15, 23, 42, 0.55) !important;
+  border-radius: 8px;
+}
+
+.onboarding-popover {
+  position: fixed;
+  z-index: 10002;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
+  pointer-events: auto;
+}
+
+.onboarding-popover-inner {
+  padding: 1rem 1.1rem 1rem;
+}
+
+.onboarding-step-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 0.35rem;
+}
+
+.onboarding-title {
+  margin: 0 0 0.5rem;
+  color: #0f172a;
+}
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
 .admin-sidebar {
   width: 260px;
   background: var(--ng-sidebar);

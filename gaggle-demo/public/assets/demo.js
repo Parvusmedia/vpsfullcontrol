@@ -157,6 +157,9 @@ function navigateTo(id) {
     renderHealthChecks();
     refreshAdminUsers();
   }
+  if (id === 'campaigns') {
+    window.NgagedOnboarding?.maybeStartCampaignTour?.();
+  }
   if (isMobileNav()) setSidebarOpen(false);
 }
 
@@ -657,6 +660,9 @@ async function renderHealthChecks() {
 }
 
 function initSettingsPanel() {
+  $('#restart-panel-tour')?.addEventListener('click', () => {
+    window.NgagedOnboarding?.startPanelTour?.();
+  });
   $('#health-refresh')?.addEventListener('click', renderHealthChecks);
   $('#mail-test-btn')?.addEventListener('click', async () => {
     const statusEl = $('#settings-maint-status');
@@ -1501,6 +1507,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch {
     return;
   }
+  window.NgagedOnboarding?.init?.({
+    isFullAdmin,
+    navigateTo,
+    currentAdmin: () => currentAdmin,
+  });
   initDashboardControls();
   initCampaigns();
   initInvite();
@@ -1510,4 +1521,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadWorkspaceBadge();
   $('#connections-refresh')?.addEventListener('click', refreshConnectionsTable);
   navigateTo('dashboard');
+  window.NgagedOnboarding?.maybeStartPanelTour?.(currentAdmin);
 });
