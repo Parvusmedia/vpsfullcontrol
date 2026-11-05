@@ -64,6 +64,8 @@ Repo path: `gaggle-demo/`. Public demo URL: **https://ngaged.pmediaplus.com** (D
 
 Deploy: `deploy-demo.sh` then `deploy/install-ngaged-vhost.sh` on `parvus-vps`.
 
+Panel roles (`admins.json`): **`admin`** (full — accesos al panel, miembros, invitaciones) y **`manager`** (campañas y contenido; sin alta de miembros ni invitaciones). API: `ngaged_require_full_admin()` / `GET|POST|PUT /api/admins` (solo admin).
+
 ### Email SMTP (2FA admin y campañas)
 
 Buzón Plesk: **`alerts@pmediaplus.com`** → `mail.pmediaplus.com:587` (TLS). En prod: `NGAGED_SMTP_*` y `NGAGED_MAIL_FROM` en `publora.env`. Plantillas: `gaggle-demo/deploy/publora.env.example`, `deploy/configure-plesk-smtp.sh`.

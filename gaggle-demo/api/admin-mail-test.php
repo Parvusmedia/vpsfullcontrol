@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     gaggle_demo_json_response(405, ['ok' => false, 'error' => 'POST only']);
 }
 
-ngaged_require_admin_access();
+ngaged_require_full_admin();
 $admin = ngaged_current_admin();
 if ($admin === null) {
     gaggle_demo_json_response(403, ['ok' => false, 'error' => 'Sesión requerida']);

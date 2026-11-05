@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * Crea o actualiza el administrador principal (owner).
+ * Crea o actualiza un administrador con permiso completo (admin).
  * Uso: php deploy/create-admin.php email@dominio.com 'ContraseñaLarga' [Nombre]
  */
 $root = dirname(__DIR__);
@@ -30,7 +30,7 @@ if ($found !== null) {
     $idx = $found['index'];
     $row = $found['admin'];
     $row['passwordHash'] = password_hash($password, PASSWORD_DEFAULT);
-    $row['role'] = 'owner';
+    $row['role'] = 'admin';
     $row['active'] = true;
     $row['name'] = $name;
     $store['admins'][$idx] = $row;
@@ -44,10 +44,10 @@ $store['admins'][] = [
     'email' => $email,
     'name' => $name,
     'passwordHash' => password_hash($password, PASSWORD_DEFAULT),
-    'role' => 'owner',
+    'role' => 'admin',
     'active' => true,
     'createdAt' => gmdate('c'),
     'auth' => ['password' => true],
 ];
 ngaged_save_admins($store);
-echo "Admin creado (owner): {$email}\n";
+echo "Admin creado (permiso completo): {$email}\n";

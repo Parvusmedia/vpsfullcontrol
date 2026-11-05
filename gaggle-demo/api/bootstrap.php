@@ -115,6 +115,12 @@ function gaggle_demo_require_admin(): void
     ngaged_require_admin_access();
 }
 
+function gaggle_demo_require_full_admin(): void
+{
+    require_once __DIR__ . '/_admin_auth.php';
+    ngaged_require_full_admin();
+}
+
 function gaggle_demo_new_id(string $prefix): string
 {
     return $prefix . '_' . bin2hex(random_bytes(8));

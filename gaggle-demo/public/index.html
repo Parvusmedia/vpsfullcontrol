@@ -37,7 +37,7 @@
           <button type="button" class="sidebar-link" data-panel="members">
             <span class="sidebar-icon">👥</span> Miembros
           </button>
-          <button type="button" class="sidebar-link" data-panel="members-invite">
+          <button type="button" class="sidebar-link" data-panel="members-invite" id="members-invite-nav">
             <span class="sidebar-icon">🔗</span> Invitar LinkedIn
           </button>
 
@@ -218,7 +218,7 @@
 
           <section data-panel="members" hidden>
             <div class="row g-4">
-              <div class="col-lg-5">
+              <div class="col-lg-5" id="members-admin-tools">
                 <div class="card shadow-sm">
                   <div class="card-header bg-white"><strong>Alta manual</strong></div>
                   <div class="card-body">
@@ -248,7 +248,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-lg-7">
+              <div class="col-lg-7" id="members-directory-col">
                 <div class="card shadow-sm">
                   <div class="card-header bg-white"><strong>Directorio del equipo</strong></div>
                   <div class="card-body" id="members-list"></div>
@@ -319,20 +319,27 @@
 
           <section data-panel="settings" hidden>
             <div class="row g-4">
-              <div class="col-lg-6">
+              <div class="col-lg-6" id="settings-panel-access">
                 <div class="card shadow-sm h-100">
-                  <div class="card-header bg-white"><strong>Accesos de administrador</strong></div>
+                  <div class="card-header bg-white"><strong>Accesos al panel</strong></div>
                   <div class="card-body vstack gap-3">
                     <p class="small text-muted mb-0">
-                      Sesión iniciada como <strong id="settings-admin-email">—</strong>. Invita a otras personas con email y contraseña
-                      (solo el administrador principal).
+                      Sesión: <strong id="settings-admin-email">—</strong>
+                      <span class="badge text-bg-light border ms-1" id="settings-admin-role">—</span>.
+                      Los <strong>administradores</strong> gestionan accesos, miembros e invitaciones.
+                      Los <strong>managers</strong> crean y envían campañas.
                     </p>
                     <div id="admin-invite-form" class="vstack gap-2" hidden>
                       <input class="form-control form-control-sm" id="new-admin-name" type="text" placeholder="Nombre" />
                       <input class="form-control form-control-sm" id="new-admin-email" type="email" placeholder="Email corporativo" />
+                      <select class="form-select form-select-sm" id="new-admin-role" aria-label="Permiso">
+                        <option value="manager">Manager — campañas y contenido</option>
+                        <option value="admin">Administrador — permiso completo</option>
+                      </select>
                       <input class="form-control form-control-sm" id="new-admin-password" type="password" placeholder="Contraseña inicial (10+ caracteres)" />
-                      <button type="button" class="btn btn-primary btn-sm" id="create-admin-btn">Dar acceso</button>
+                      <button type="button" class="btn btn-primary btn-sm" id="create-admin-btn">Dar acceso al panel</button>
                     </div>
+                    <p id="settings-manager-note" class="small text-muted mb-0" hidden>Solo un administrador puede invitar o cambiar accesos al panel.</p>
                     <ul class="list-group list-group-flush small" id="admin-users-list"></ul>
                     <div id="admin-users-status" class="alert py-2" hidden></div>
                   </div>
@@ -346,11 +353,13 @@
                   </div>
                   <div class="card-body">
                     <ul class="list-group list-group-flush small" id="health-checks"></ul>
-                    <p class="text-muted small mt-3 mb-2">Mantenimiento</p>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="mail-test-btn">Enviar email de prueba</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="dedupe-members-btn">
-                      Fusionar miembros duplicados (mismo email)
-                    </button>
+                    <div id="settings-maint-tools">
+                      <p class="text-muted small mt-3 mb-2">Mantenimiento</p>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" id="mail-test-btn">Enviar email de prueba</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" id="dedupe-members-btn">
+                        Fusionar miembros duplicados (mismo email)
+                      </button>
+                    </div>
                     <div id="settings-maint-status" class="alert mt-3 py-2" hidden></div>
                   </div>
                 </div>

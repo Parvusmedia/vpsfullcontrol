@@ -9,7 +9,7 @@ gaggle_demo_cors();
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'GET') {
-    ngaged_require_owner();
+    ngaged_require_full_admin();
     $store = ngaged_admins_store();
     $list = [];
     foreach ($store['admins'] as $a) {
@@ -26,7 +26,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    ngaged_require_owner();
+    ngaged_require_full_admin();
     $input = json_decode((string) file_get_contents('php://input'), true);
     if (!is_array($input)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'JSON inválido.']);
@@ -34,15 +34,15 @@ if ($method === 'POST') {
     $email = strtolower(trim((string) ($input['email'] ?? '')));
     $name = trim((string) ($input['name'] ?? ''));
     $password = (string) ($input['password'] ?? '');
-    $role = (string) ($input['role'] ?? 'admin');
+    $role = ngaged_normalize_role((string) ($input['role'] ?? 'manager'));
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Email válido obligatorio.']);
     }
     if (strlen($password) < 10) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'La contraseña debe tener al menos 10 caracteres.']);
     }
-    if (!in_array($role, ['admin', 'owner'], true)) {
-        $role = 'admin';
+    if (!in_array($role, ['admin', 'manager'], true)) {
+        gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Rol no válido. Usa admin o manager.']);
     }
     $store = ngaged_admins_store();
     if (ngaged_find_admin_by_email($store, $email) !== null) {
@@ -64,7 +64,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
-    ngaged_require_owner();
+    ngaged_require_full_admin();
     $input = json_decode((string) file_get_contents('php://input'), true);
     if (!is_array($input)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'JSON inválido.']);
@@ -73,15 +73,24 @@ if ($method === 'PUT') {
     $store = ngaged_admins_store();
     $found = ngaged_find_admin_by_id($store, $id);
     if ($found === null) {
-        gaggle_demo_json_response(404, ['ok' => false, 'error' => 'Administrador no encontrado.']);
+        gaggle_demo_json_response(404, ['ok' => false, 'error' => 'Usuario no encontrado.']);
     }
     $idx = $found['index'];
     $row = $found['admin'];
+    $wasFull = ngaged_admin_has_full_access($row);
+
     if (isset($input['active'])) {
         $row['active'] = (bool) $input['active'];
     }
     if (isset($input['name'])) {
         $row['name'] = trim((string) $input['name']);
+    }
+    if (isset($input['role'])) {
+        $role = ngaged_normalize_role((string) $input['role']);
+        if (!in_array($role, ['admin', 'manager'], true)) {
+            gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Rol no válido.']);
+        }
+        $row['role'] = $role;
     }
     $newPass = (string) ($input['password'] ?? '');
     if ($newPass !== '') {
@@ -90,7 +99,12 @@ if ($method === 'PUT') {
         }
         $row['passwordHash'] = password_hash($newPass, PASSWORD_DEFAULT);
     }
+
     $store['admins'][$idx] = $row;
+    if ($wasFull && (!ngaged_admin_has_full_access($row) || empty($row['active'])) && ngaged_count_full_admins($store) < 1) {
+        gaggle_demo_json_response(400, ['ok' => false, 'error' => 'Debe quedar al menos un administrador con permiso completo.']);
+    }
+
     ngaged_save_admins($store);
     gaggle_demo_json_response(200, ['ok' => true, 'admin' => ngaged_admin_public($row)]);
 }

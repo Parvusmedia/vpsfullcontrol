@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     gaggle_demo_json_response(405, ['ok' => false, 'error' => 'POST only']);
 }
 
-gaggle_demo_require_admin();
+gaggle_demo_require_full_admin();
 
 $store = ngaged_members_store();
 $result = ngaged_deduplicate_members_store($store);

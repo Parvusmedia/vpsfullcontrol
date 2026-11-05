@@ -2,6 +2,38 @@ const API = '/api';
 const DASH_DAYS_STORAGE = 'ngaged_dash_days';
 let currentAdmin = null;
 
+function isFullAdmin(admin = currentAdmin) {
+  if (!admin) return false;
+  if (admin.canManagePanelAccess === true) return true;
+  const r = admin.role || '';
+  return r === 'admin' || r === 'owner';
+}
+
+function roleLabel(role) {
+  return role === 'manager' ? 'Manager' : 'Administrador';
+}
+
+function applyPanelPermissions() {
+  const full = isFullAdmin();
+  const inviteNav = $('#members-invite-nav');
+  if (inviteNav) inviteNav.hidden = !full;
+  const tools = $('#members-admin-tools');
+  if (tools) tools.hidden = !full;
+  const panelAccess = $('#settings-panel-access');
+  if (panelAccess) panelAccess.hidden = false;
+  const inviteForm = $('#admin-invite-form');
+  const managerNote = $('#settings-manager-note');
+  if (inviteForm) inviteForm.hidden = !full;
+  if (managerNote) managerNote.hidden = full;
+  const maint = $('#settings-maint-tools');
+  if (maint) maint.hidden = !full;
+  const dirCol = $('#members-directory-col');
+  if (dirCol) {
+    dirCol.classList.toggle('col-lg-7', full);
+    dirCol.classList.toggle('col-lg-12', !full);
+  }
+}
+
 function getAdminKey() {
   return localStorage.getItem('ngaged_admin_key') || '';
 }
@@ -71,11 +103,15 @@ async function ensureAdminSession() {
   currentAdmin = data.admin || null;
   const label = $('#admin-user-label');
   if (label && currentAdmin?.email) {
-    label.textContent = currentAdmin.name ? currentAdmin.name + ' · ' + currentAdmin.email : currentAdmin.email;
+    const who = currentAdmin.name ? currentAdmin.name + ' · ' + currentAdmin.email : currentAdmin.email;
+    label.textContent = who + ' · ' + roleLabel(currentAdmin.role);
     label.classList.remove('d-none');
   }
   const emailEl = $('#settings-admin-email');
   if (emailEl && currentAdmin?.email) emailEl.textContent = currentAdmin.email;
+  const roleEl = $('#settings-admin-role');
+  if (roleEl && currentAdmin?.role) roleEl.textContent = roleLabel(currentAdmin.role);
+  applyPanelPermissions();
   return currentAdmin;
 }
 
@@ -208,9 +244,9 @@ async function refreshAdminUsers() {
   const form = $('#admin-invite-form');
   const statusEl = $('#admin-users-status');
   if (!list) return;
-  if (currentAdmin?.role !== 'owner') {
+  if (!isFullAdmin()) {
     form.hidden = true;
-    list.innerHTML = '<li class="list-group-item text-muted">Solo el administrador principal gestiona accesos.</li>';
+    list.innerHTML = '';
     return;
   }
   form.hidden = false;
@@ -229,7 +265,7 @@ async function refreshAdminUsers() {
           '<span class="badge ' +
           (a.active ? 'text-bg-success' : 'text-bg-secondary') +
           '">' +
-          escapeHtml(a.role) +
+          escapeHtml(roleLabel(a.role)) +
           '</span></li>'
       )
       .join('');
@@ -246,7 +282,8 @@ function initAdminUsersPanel() {
     const password = $('#new-admin-password')?.value || '';
     setStatus(statusEl, 'Creando acceso…');
     try {
-      await api('/admins', { method: 'POST', admin: true, body: { name, email, password, role: 'admin' } });
+      const role = $('#new-admin-role')?.value || 'manager';
+      await api('/admins', { method: 'POST', admin: true, body: { name, email, password, role } });
       setStatus(statusEl, 'Acceso creado. Comparte el email y la contraseña inicial.', 'ok');
       $('#new-admin-name').value = '';
       $('#new-admin-email').value = '';
@@ -1288,6 +1325,7 @@ async function refreshMembers() {
             )
             .join('')
         : '';
+    const full = isFullAdmin();
     list.innerHTML =
       '<div class="list-group list-group-flush member-directory">' +
       members
@@ -1295,30 +1333,45 @@ async function refreshMembers() {
           const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
           const pending = !m.platformId;
           const linkSelect =
-            pending && linkOptions
+            full && pending && linkOptions
               ? '<select class="form-select form-select-sm mt-2 member-link-select" data-link="' +
                 escapeHtml(m.id) +
                 '"><option value="">Vincular cuenta LinkedIn…</option>' +
                 linkOptions +
                 '</select>'
               : '';
-          const teamSelect =
-            '<label class="small text-muted mt-2 mb-0">Equipo</label><select class="form-select form-select-sm member-team-select" data-member="' +
-            escapeHtml(m.id) +
-            '"><option value="">Sin equipo</option>' +
-            teams
-              .map(
-                (t) =>
-                  '<option value="' +
-                  escapeHtml(t.id) +
-                  '"' +
-                  ((m.teamId || '') === t.id ? ' selected' : '') +
-                  '>' +
-                  escapeHtml(t.name) +
-                  '</option>'
-              )
-              .join('') +
-            '</select>';
+          const teamSelect = full
+            ? '<label class="small text-muted mt-2 mb-0">Equipo</label><select class="form-select form-select-sm member-team-select" data-member="' +
+              escapeHtml(m.id) +
+              '"><option value="">Sin equipo</option>' +
+              teams
+                .map(
+                  (t) =>
+                    '<option value="' +
+                    escapeHtml(t.id) +
+                    '"' +
+                    ((m.teamId || '') === t.id ? ' selected' : '') +
+                    '>' +
+                    escapeHtml(t.name) +
+                    '</option>'
+                )
+                .join('') +
+              '</select>'
+            : m.teamId && tmap[m.teamId]
+              ? '<div class="small text-muted mt-1">Equipo: ' + escapeHtml(tmap[m.teamId]) + '</div>'
+              : '';
+          const actions = full
+            ? '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
+              '<button type="button" class="btn btn-outline-secondary" data-invite="' +
+              escapeHtml(m.id) +
+              '">Enlace</button>' +
+              '<button type="button" class="btn btn-outline-secondary" data-sync="' +
+              escapeHtml(m.id) +
+              '">Sync</button>' +
+              '<button type="button" class="btn btn-outline-danger" data-del="' +
+              escapeHtml(m.id) +
+              '">Eliminar</button></div>'
+            : '';
           return (
             '<div class="list-group-item"><div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
             '<div class="flex-grow-1"><div class="fw-semibold">' +
@@ -1330,27 +1383,22 @@ async function refreshMembers() {
             ' · <span class="badge text-bg-light border">' +
             escapeHtml(st) +
             '</span>' +
-            (m.teamId && tmap[m.teamId]
+            (m.teamId && tmap[m.teamId] && full
               ? ' · <span class="badge member-team-badge">' + escapeHtml(tmap[m.teamId]) + '</span>'
               : '') +
             '</div>' +
             teamSelect +
             linkSelect +
             '</div>' +
-            '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
-            '<button type="button" class="btn btn-outline-secondary" data-invite="' +
-            escapeHtml(m.id) +
-            '">Enlace</button>' +
-            '<button type="button" class="btn btn-outline-secondary" data-sync="' +
-            escapeHtml(m.id) +
-            '">Sync</button>' +
-            '<button type="button" class="btn btn-outline-danger" data-del="' +
-            escapeHtml(m.id) +
-            '">Eliminar</button></div></div></div>'
+            actions +
+            '</div></div>'
           );
         })
         .join('') +
       '</div>';
+    if (!full) {
+      return;
+    }
     list.querySelectorAll('.member-team-select').forEach((sel) => {
       sel.addEventListener('change', async () => {
         try {

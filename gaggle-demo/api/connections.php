@@ -6,6 +6,9 @@ require_once __DIR__ . '/_publora.php';
 
 gaggle_demo_cors();
 
+require_once __DIR__ . '/bootstrap.php';
+gaggle_demo_require_admin();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     gaggle_demo_json_response(405, ['ok' => false, 'error' => 'GET only']);
 }

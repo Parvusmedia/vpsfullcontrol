@@ -31,7 +31,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    gaggle_demo_require_admin();
+    gaggle_demo_require_full_admin();
     $input = json_decode((string) file_get_contents('php://input'), true);
     if (!is_array($input)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'JSON inválido.']);
@@ -69,7 +69,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'DELETE') {
-    gaggle_demo_require_admin();
+    gaggle_demo_require_full_admin();
     $input = json_decode((string) file_get_contents('php://input'), true);
     $id = trim((string) ($input['id'] ?? $_GET['id'] ?? ''));
     if ($id === '') {
@@ -82,7 +82,7 @@ if ($method === 'DELETE') {
 }
 
 if ($method === 'PUT') {
-    gaggle_demo_require_admin();
+    gaggle_demo_require_full_admin();
     $input = json_decode((string) file_get_contents('php://input'), true);
     if (!is_array($input)) {
         gaggle_demo_json_response(400, ['ok' => false, 'error' => 'JSON inválido.']);

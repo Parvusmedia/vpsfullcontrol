@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     gaggle_demo_json_response(405, ['ok' => false, 'error' => 'POST only']);
 }
 
-gaggle_demo_require_admin();
+gaggle_demo_require_full_admin();
 $input = json_decode((string) file_get_contents('php://input'), true);
 if (!is_array($input)) {
     gaggle_demo_json_response(400, ['ok' => false, 'error' => 'JSON inválido.']);

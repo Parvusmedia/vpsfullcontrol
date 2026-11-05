@@ -7,15 +7,16 @@ require_once __DIR__ . '/_teams.php';
 
 gaggle_demo_cors();
 
-gaggle_demo_require_admin();
-
 $method = $_SERVER['REQUEST_METHOD'];
 $store = ngaged_members_store();
 $teams = $store['teams'] ?? [];
 
 if ($method === 'GET') {
+    gaggle_demo_require_admin();
     gaggle_demo_json_response(200, ['ok' => true, 'teams' => $teams]);
 }
+
+gaggle_demo_require_full_admin();
 
 $input = json_decode((string) file_get_contents('php://input'), true);
 if (!is_array($input)) {

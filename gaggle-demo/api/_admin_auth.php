@@ -59,7 +59,7 @@ function ngaged_bootstrap_admin_from_env(): void
         'email' => $email,
         'name' => trim($env['NGAGED_BOOTSTRAP_ADMIN_NAME'] ?? '') ?: 'Administrador',
         'passwordHash' => password_hash($pass, PASSWORD_DEFAULT),
-        'role' => 'owner',
+        'role' => 'admin',
         'active' => true,
         'createdAt' => gmdate('c'),
         'auth' => ['password' => true],
@@ -91,13 +91,36 @@ function ngaged_find_admin_by_id(array $store, string $id): ?array
     return null;
 }
 
+function ngaged_normalize_role(string $role): string
+{
+    $role = strtolower(trim($role));
+    if ($role === 'owner') {
+        return 'admin';
+    }
+    if ($role === 'manager') {
+        return 'manager';
+    }
+    return 'admin';
+}
+
+function ngaged_admin_has_full_access(?array $admin): bool
+{
+    if ($admin === null) {
+        return ngaged_legacy_admin_key_valid();
+    }
+    return ngaged_normalize_role((string) ($admin['role'] ?? 'admin')) === 'admin';
+}
+
 function ngaged_admin_public(array $admin): array
 {
+    $role = ngaged_normalize_role((string) ($admin['role'] ?? 'admin'));
     return [
         'id' => $admin['id'] ?? '',
         'email' => $admin['email'] ?? '',
         'name' => $admin['name'] ?? '',
-        'role' => $admin['role'] ?? 'admin',
+        'role' => $role,
+        'canManagePanelAccess' => $role === 'admin',
+        'canManageMembers' => $role === 'admin',
     ];
 }
 
@@ -164,17 +187,38 @@ function ngaged_require_admin_access(): void
     ]);
 }
 
-function ngaged_require_owner(): array
+/** Cuenta con permiso completo (admin): gestionar accesos al panel y miembros. */
+function ngaged_require_full_admin(): array
 {
     ngaged_require_admin_access();
     $admin = ngaged_current_admin();
-    if ($admin === null) {
-        gaggle_demo_json_response(403, ['ok' => false, 'error' => 'Solo disponible con sesión de administrador.']);
+    if ($admin === null && ngaged_legacy_admin_key_valid()) {
+        return ['id' => '', 'email' => '', 'name' => 'API', 'role' => 'admin', 'active' => true];
     }
-    if (($admin['role'] ?? '') !== 'owner') {
-        gaggle_demo_json_response(403, ['ok' => false, 'error' => 'Solo el administrador principal puede gestionar accesos.']);
+    if ($admin === null) {
+        gaggle_demo_json_response(403, ['ok' => false, 'error' => 'Sesión requerida.']);
+    }
+    if (!ngaged_admin_has_full_access($admin)) {
+        gaggle_demo_json_response(403, ['ok' => false, 'error' => 'Solo un administrador con permiso completo puede hacer esto.']);
     }
     return $admin;
+}
+
+/** @deprecated use ngaged_require_full_admin */
+function ngaged_require_owner(): array
+{
+    return ngaged_require_full_admin();
+}
+
+function ngaged_count_full_admins(array $store): int
+{
+    $n = 0;
+    foreach ($store['admins'] ?? [] as $a) {
+        if (is_array($a) && !empty($a['active']) && ngaged_admin_has_full_access($a)) {
+            $n++;
+        }
+    }
+    return $n;
 }
 
 function ngaged_google_oauth_configured(): bool

@@ -25,7 +25,13 @@ if ($admin !== null) {
     $payload['auth'] = 'session';
 } else {
     $payload['auth'] = 'legacyKey';
-    $payload['admin'] = ['email' => '', 'name' => 'API (clave legacy)', 'role' => 'admin'];
+    $payload['admin'] = [
+        'email' => '',
+        'name' => 'API (clave legacy)',
+        'role' => 'admin',
+        'canManagePanelAccess' => true,
+        'canManageMembers' => true,
+    ];
 }
 
 gaggle_demo_json_response(200, $payload);

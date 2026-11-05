@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     gaggle_demo_json_response(405, ['ok' => false, 'error' => 'POST only']);
 }
 
-gaggle_demo_require_admin();
+gaggle_demo_require_full_admin();
 $input = json_decode((string) file_get_contents('php://input'), true);
 $memberId = trim((string) ($input['memberId'] ?? ''));
 if ($memberId === '') {
