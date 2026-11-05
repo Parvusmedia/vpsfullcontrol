@@ -1,0 +1,15 @@
+[Unit]
+Description=Ngaged employee advocacy (PHP) for ngaged.pmediaplus.com
+After=network.target
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/gaggle-demo
+ExecStart=/usr/bin/php -S 127.0.0.1:8790 -t /opt/apps/gaggle-demo/public /opt/apps/gaggle-demo/public/router.php
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

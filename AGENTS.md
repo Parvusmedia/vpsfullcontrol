@@ -57,3 +57,19 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## Gaggle demo (Publora advocacy)
+
+Repo path: `gaggle-demo/`. Public demo URL: **https://ngaged.pmediaplus.com** (DNS A → Parvus `87.106.194.137`). VPS: `/opt/apps/gaggle-demo`, secrets `/opt/apps/private/gaggle-demo/publora.env`, systemd `gaggle-demo.service` (:8790), nginx `ngaged.pmediaplus.com`.
+
+Deploy: `deploy-demo.sh` then `deploy/install-ngaged-vhost.sh` on `parvus-vps`.
+
+Panel roles (`admins.json`): **`admin`** (full — accesos al panel, miembros, invitaciones) y **`manager`** (campañas y contenido; sin alta de miembros ni invitaciones). API: `ngaged_require_full_admin()` / `GET|POST|PUT /api/admins` (solo admin).
+
+### Email SMTP (2FA admin y campañas)
+
+Buzón Plesk: **`alerts@pmediaplus.com`** → `mail.pmediaplus.com:587` (TLS). En prod: `NGAGED_SMTP_*` y `NGAGED_MAIL_FROM` en `publora.env`. Plantillas: `gaggle-demo/deploy/publora.env.example`, `deploy/configure-plesk-smtp.sh`.
+
+Cloud Agents: pedir la contraseña con **environment secret** `NGAGED_SMTP_PASSWORD` (panel de secrets / `request-environment-setup-actions`), nunca en el chat. Aplicar en el VPS con `configure-plesk-smtp.sh` vía `ssh parvus-vps` sin imprimir la clave. Comprobar: `GET /api/health` (`smtpConfigured`) o email de prueba en Ajustes.
+
+No commitear ni loguear `NGAGED_SMTP_PASSWORD`.
