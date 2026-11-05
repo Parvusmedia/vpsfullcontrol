@@ -28,7 +28,15 @@ if (str_starts_with($uri, '/api/')) {
         'connect-terms' => 'connect-terms.php',
         'members-sync' => 'members-sync.php',
         'maintenance-dedupe' => 'maintenance-dedupe.php',
+        'admin-login' => 'admin-login.php',
+        'admin-logout' => 'admin-logout.php',
+        'admin-me' => 'admin-me.php',
+        'admins' => 'admins.php',
     ];
+    if (str_starts_with($uri, '/api/auth-google')) {
+        require dirname(__DIR__) . '/api/auth-google.php';
+        return true;
+    }
     if (isset($map[$script])) {
         require dirname(__DIR__) . '/api/' . $map[$script];
         return true;
@@ -60,6 +68,12 @@ if ($uri === '/terminos-conexion' || str_starts_with($uri, '/terminos-conexion?'
 if ($uri === '/privacidad' || str_starts_with($uri, '/privacidad?')) {
     header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . '/privacidad.html');
+    return true;
+}
+
+if ($uri === '/login' || str_starts_with($uri, '/login?')) {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/login.html');
     return true;
 }
 

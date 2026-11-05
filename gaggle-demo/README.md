@@ -15,7 +15,7 @@ Marca única: **Ngaged** en UI y emails.
 
 - PHP 8.1+ (`curl`, `json`)
 - Cuenta LinkedIn conectada vía API de publicación (clave en entorno del servidor)
-- Clave admin (`NGAGED_ADMIN_KEY`) para crear campañas y ver stats
+- Cuentas de administrador (email + contraseña) con sesión persistente; login opcional con Google
 
 ## Local
 
@@ -26,7 +26,7 @@ cd gaggle-demo
 php -S 127.0.0.1:8787 -t public public/router.php
 ```
 
-Panel: http://127.0.0.1:8787/ — guarda la clave admin en el header.
+Panel: http://127.0.0.1:8787/login — crea el primer admin con `php deploy/create-admin.php tu@email.com 'contraseña-larga'`.
 
 ## VPS — https://ngaged.pmediaplus.com
 

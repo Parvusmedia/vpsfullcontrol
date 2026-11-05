@@ -1,16 +1,10 @@
 const API = '/api';
-const ADMIN_KEY_STORAGE = 'ngaged_admin_key';
 const MEMBER_PLATFORM_STORAGE = 'ngaged_platform_id';
 const DASH_DAYS_STORAGE = 'ngaged_dash_days';
+let currentAdmin = null;
 
 function getAdminKey() {
-  return localStorage.getItem(ADMIN_KEY_STORAGE) || '';
-}
-
-function updateAdminKeyBanner() {
-  const banner = $('#admin-key-banner');
-  if (!banner) return;
-  banner.hidden = getAdminKey() !== '';
+  return localStorage.getItem('ngaged_admin_key') || '';
 }
 
 function readStoredDashDays() {
@@ -43,24 +37,48 @@ const PAGE_META = {
   'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
   connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
   employee: ['Vista empleado', 'Cola de reposts pendientes'],
-  settings: ['Ajustes', 'Clave admin y estado del sistema'],
+  settings: ['Ajustes', 'Accesos admin y estado del sistema'],
 };
 
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.admin) {
-    headers['X-Demo-Admin-Key'] = localStorage.getItem(ADMIN_KEY_STORAGE) || '';
+    const legacy = getAdminKey();
+    if (legacy) headers['X-Demo-Admin-Key'] = legacy;
   }
   if (options.body && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
     options.body = JSON.stringify(options.body);
   }
-  const res = await fetch(API + path, { ...options, headers });
+  const res = await fetch(API + path, { ...options, headers, credentials: 'include' });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && data.loginRequired && !path.includes('admin-me')) {
+    window.location.href = '/login';
+    throw new Error('Sesión expirada');
+  }
   if (!res.ok) {
     throw new Error(data.error || res.statusText || 'Request failed');
   }
   return data;
+}
+
+async function ensureAdminSession() {
+  const data = await api('/admin-me');
+  if (data.auth !== 'session') {
+    localStorage.removeItem('ngaged_admin_key');
+    localStorage.removeItem('gaggle_demo_admin_key');
+    window.location.href = '/login';
+    return null;
+  }
+  currentAdmin = data.admin || null;
+  const label = $('#admin-user-label');
+  if (label && currentAdmin?.email) {
+    label.textContent = currentAdmin.name ? currentAdmin.name + ' · ' + currentAdmin.email : currentAdmin.email;
+    label.classList.remove('d-none');
+  }
+  const emailEl = $('#settings-admin-email');
+  if (emailEl && currentAdmin?.email) emailEl.textContent = currentAdmin.email;
+  return currentAdmin;
 }
 
 function escapeHtml(s) {
@@ -102,7 +120,10 @@ function navigateTo(id) {
   if (id === 'members' || id === 'members-invite') refreshMembers();
   if (id === 'connections') refreshConnectionsTable();
   if (id === 'employee') refreshMemberQueue();
-  if (id === 'settings') renderHealthChecks();
+  if (id === 'settings') {
+    renderHealthChecks();
+    refreshAdminUsers();
+  }
   if (isMobileNav()) setSidebarOpen(false);
 }
 
@@ -174,31 +195,68 @@ function initNav() {
   });
 }
 
-function initAdminKey() {
-  const input = $('#admin-key');
-  const saveBtn = $('#save-admin-key');
-  const global = $('#global-status');
-  if (!localStorage.getItem(ADMIN_KEY_STORAGE)) {
-    const legacy = localStorage.getItem('gaggle_demo_admin_key');
-    if (legacy) localStorage.setItem(ADMIN_KEY_STORAGE, legacy);
-  }
-  input.value = getAdminKey();
-  updateAdminKeyBanner();
-  saveBtn.addEventListener('click', async () => {
-    const key = input.value.trim();
-    localStorage.setItem(ADMIN_KEY_STORAGE, key);
-    setStatus(global, 'Comprobando clave…');
+function initAdminAuthUi() {
+  $('#admin-logout-btn')?.addEventListener('click', async () => {
     try {
-      await api('/stats?days=7', { admin: true });
-      setStatus(global, 'Clave correcta. Guardada solo en este navegador/dispositivo.', 'ok');
-      updateAdminKeyBanner();
-      loadDashboard();
-      refreshMembers();
-      refreshCampaignsList();
+      await api('/admin-logout', { method: 'POST' });
+    } catch {
+      /* ignore */
+    }
+    window.location.href = '/login';
+  });
+}
+
+async function refreshAdminUsers() {
+  const list = $('#admin-users-list');
+  const form = $('#admin-invite-form');
+  const statusEl = $('#admin-users-status');
+  if (!list) return;
+  if (currentAdmin?.role !== 'owner') {
+    form.hidden = true;
+    list.innerHTML = '<li class="list-group-item text-muted">Solo el administrador principal gestiona accesos.</li>';
+    return;
+  }
+  form.hidden = false;
+  try {
+    const data = await api('/admins', { admin: true });
+    const rows = data.admins || [];
+    list.innerHTML = rows
+      .map(
+        (a) =>
+          '<li class="list-group-item d-flex justify-content-between align-items-center gap-2">' +
+          '<span>' +
+          escapeHtml(a.name || a.email) +
+          '<br/><span class="text-muted">' +
+          escapeHtml(a.email) +
+          '</span></span>' +
+          '<span class="badge ' +
+          (a.active ? 'text-bg-success' : 'text-bg-secondary') +
+          '">' +
+          escapeHtml(a.role) +
+          '</span></li>'
+      )
+      .join('');
+  } catch (e) {
+    setStatus(statusEl, e.message, 'err');
+  }
+}
+
+function initAdminUsersPanel() {
+  $('#create-admin-btn')?.addEventListener('click', async () => {
+    const statusEl = $('#admin-users-status');
+    const name = $('#new-admin-name')?.value.trim() || '';
+    const email = $('#new-admin-email')?.value.trim() || '';
+    const password = $('#new-admin-password')?.value || '';
+    setStatus(statusEl, 'Creando acceso…');
+    try {
+      await api('/admins', { method: 'POST', admin: true, body: { name, email, password, role: 'admin' } });
+      setStatus(statusEl, 'Acceso creado. Comparte el email y la contraseña inicial.', 'ok');
+      $('#new-admin-name').value = '';
+      $('#new-admin-email').value = '';
+      $('#new-admin-password').value = '';
+      await refreshAdminUsers();
     } catch (e) {
-      localStorage.removeItem(ADMIN_KEY_STORAGE);
-      updateAdminKeyBanner();
-      setStatus(global, e.message, 'err');
+      setStatus(statusEl, e.message, 'err');
     }
   });
 }
@@ -459,11 +517,8 @@ async function loadDashboard() {
     if (demoBanner) demoBanner.hidden = true;
     const msgEl = empty.querySelector('p');
     if (msgEl) {
-      if (!getAdminKey()) {
-        msgEl.textContent =
-          'En este móvil u otro navegador debes guardar la clave admin en Ajustes. No se sincroniza automáticamente con el ordenador.';
-      } else if (e.message.includes('Admin') || e.message.includes('clave')) {
-        msgEl.textContent = 'Clave admin incorrecta en este dispositivo. Vuelve a guardarla en Ajustes.';
+      if (e.message.includes('Sesión') || e.message.includes('sesión') || e.message.includes('Inicia')) {
+        msgEl.textContent = 'Inicia sesión en /login para ver los datos del servidor.';
       } else {
         msgEl.textContent = e.message;
       }
@@ -1483,10 +1538,16 @@ async function refreshMemberQueue() {
   await loadPending();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initMobileNav();
   initNav();
-  initAdminKey();
+  initAdminAuthUi();
+  initAdminUsersPanel();
+  try {
+    await ensureAdminSession();
+  } catch {
+    return;
+  }
   initDashboardControls();
   initCampaigns();
   initInvite();

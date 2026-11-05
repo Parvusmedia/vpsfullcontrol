@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/_publora.php';
 require_once __DIR__ . '/_mail.php';
+require_once __DIR__ . '/_admin_auth.php';
 
 gaggle_demo_cors();
 
@@ -13,8 +14,11 @@ $dataDir = gaggle_demo_data_dir();
 $writable = is_dir($dataDir) && is_writable($dataDir);
 
 $oauth = $keyOk && gaggle_publora_workspace_enabled();
+ngaged_bootstrap_admin_from_env();
+$adminStore = ngaged_admins_store();
+$hasAdmins = count($adminStore['admins'] ?? []) > 0;
 $adminKey = gaggle_demo_admin_key();
-$defaultAdmin = $adminKey === '' || $adminKey === 'demo-admin';
+$legacyKeySet = $adminKey !== '' && $adminKey !== 'demo-admin';
 
 gaggle_demo_json_response(200, [
     'ok' => true,
@@ -25,12 +29,14 @@ gaggle_demo_json_response(200, [
     'dataWritable' => $writable,
     'mailFromConfigured' => ngaged_mail_from() !== '',
     'mailTransport' => function_exists('mail') ? 'php-mail' : 'unavailable',
-    'adminKeyConfigured' => !$defaultAdmin,
+    'adminUsersConfigured' => $hasAdmins,
+    'googleLoginConfigured' => ngaged_google_oauth_configured(),
     'checks' => [
         ['id' => 'api', 'label' => 'API de publicación LinkedIn', 'ok' => $keyOk],
         ['id' => 'oauth', 'label' => 'OAuth LinkedIn por empleado', 'ok' => $oauth],
         ['id' => 'data', 'label' => 'Almacenamiento de datos', 'ok' => $writable],
         ['id' => 'mail', 'label' => 'Envío de email (SMTP/php-mail)', 'ok' => function_exists('mail')],
-        ['id' => 'admin', 'label' => 'Clave admin personalizada', 'ok' => !$defaultAdmin],
+        ['id' => 'admin', 'label' => 'Cuentas de administrador', 'ok' => $hasAdmins],
+        ['id' => 'google', 'label' => 'Login con Google (opcional)', 'ok' => ngaged_google_oauth_configured()],
     ],
 ]);

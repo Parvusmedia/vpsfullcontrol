@@ -78,20 +78,13 @@
           </div>
           <div class="admin-topbar-actions d-flex align-items-center gap-2 flex-shrink-0">
             <span class="badge rounded-pill text-bg-light border" id="workspace-badge">API</span>
-            <button type="button" class="btn btn-outline-primary btn-sm" data-goto="settings">Clave admin</button>
+            <span class="small text-muted d-none d-md-inline" id="admin-user-label"></span>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="admin-logout-btn">Salir</button>
           </div>
         </header>
 
         <main class="admin-content flex-grow-1 p-4">
           <div id="global-status" class="alert py-2" role="alert" hidden></div>
-          <div id="admin-key-banner" class="alert alert-warning border-0 shadow-sm py-2 mb-3" role="status" hidden>
-            <strong>Este dispositivo no tiene la clave admin.</strong>
-            <span class="small d-block d-md-inline ms-md-1">
-              Los datos del panel (miembros, campañas, KPIs) vienen del servidor y solo se cargan tras guardar la misma clave que en el ordenador.
-            </span>
-            <button type="button" class="btn btn-warning btn-sm ms-md-2 mt-2 mt-md-0" data-goto="settings">Ir a Ajustes</button>
-          </div>
-
           <section data-panel="dashboard">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <div class="btn-group btn-group-sm" role="group" aria-label="Periodo">
@@ -356,11 +349,20 @@
             <div class="row g-4">
               <div class="col-lg-6">
                 <div class="card shadow-sm h-100">
-                  <div class="card-header bg-white"><strong>Clave de administración</strong></div>
+                  <div class="card-header bg-white"><strong>Accesos de administrador</strong></div>
                   <div class="card-body vstack gap-3">
-                    <p class="small text-muted mb-0">La define tu administrador de sistemas en el servidor (Ngaged).</p>
-                    <input class="form-control" id="admin-key" type="password" autocomplete="off" placeholder="Clave admin" />
-                    <button type="button" class="btn btn-primary" id="save-admin-key">Guardar y validar</button>
+                    <p class="small text-muted mb-0">
+                      Sesión iniciada como <strong id="settings-admin-email">—</strong>. Invita a otras personas con email y contraseña
+                      (solo el administrador principal).
+                    </p>
+                    <div id="admin-invite-form" class="vstack gap-2" hidden>
+                      <input class="form-control form-control-sm" id="new-admin-name" type="text" placeholder="Nombre" />
+                      <input class="form-control form-control-sm" id="new-admin-email" type="email" placeholder="Email corporativo" />
+                      <input class="form-control form-control-sm" id="new-admin-password" type="password" placeholder="Contraseña inicial (10+ caracteres)" />
+                      <button type="button" class="btn btn-primary btn-sm" id="create-admin-btn">Dar acceso</button>
+                    </div>
+                    <ul class="list-group list-group-flush small" id="admin-users-list"></ul>
+                    <div id="admin-users-status" class="alert py-2" hidden></div>
                   </div>
                 </div>
               </div>
@@ -420,6 +422,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="/assets/demo.js?v=20261104-sync" defer></script>
+    <script src="/assets/demo.js?v=20261105-auth" defer></script>
   </body>
 </html>

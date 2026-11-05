@@ -111,14 +111,8 @@ function gaggle_demo_cors(): void
 
 function gaggle_demo_require_admin(): void
 {
-    $expected = gaggle_demo_admin_key();
-    $got = trim((string) ($_SERVER['HTTP_X_DEMO_ADMIN_KEY'] ?? ''));
-    if ($got === '') {
-        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Introduce la clave admin arriba y pulsa Guardar.']);
-    }
-    if (!hash_equals($expected, $got)) {
-        gaggle_demo_json_response(401, ['ok' => false, 'error' => 'Clave admin incorrecta. Pide la clave actual a tu administrador.']);
-    }
+    require_once __DIR__ . '/_admin_auth.php';
+    ngaged_require_admin_access();
 }
 
 function gaggle_demo_new_id(string $prefix): string
