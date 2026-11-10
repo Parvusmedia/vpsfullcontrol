@@ -308,11 +308,36 @@ function destroyCharts() {
   chartInstances = {};
 }
 
-function renderKpis(totals) {
+function normalizeDeliveryAction(action) {
+  const a = String(action || '').toLowerCase();
+  if (a === 'approve') return 'repost';
+  return a;
+}
+
+function deliveryActionLabel(action) {
+  const map = {
+    like: 'Me gusta',
+    repost: 'Repost',
+    like_repost: 'Me gusta + Repost',
+    decline: 'Ignorado',
+  };
+  return map[normalizeDeliveryAction(action)] || 'Pendiente';
+}
+
+function deliveryIncludesRepost(action) {
+  const a = normalizeDeliveryAction(action);
+  return a === 'repost' || a === 'like_repost';
+}
+
+function renderKpis(totals, actionBreakdown) {
   const grid = $('#kpi-grid');
+  const bd = actionBreakdown || {};
   const cards = [
     { label: 'Campañas enviadas', value: totals.campaigns, sub: totals.campaignsThisMonth ? '+' + totals.campaignsThisMonth + ' este mes' : '' },
     { label: 'Invitaciones enviadas', value: totals.invitesSent },
+    { label: 'Me gusta', value: bd.like ?? 0 },
+    { label: 'Repost', value: bd.repost ?? 0 },
+    { label: 'Me gusta + Repost', value: bd.like_repost ?? 0 },
     { label: 'Amplificaciones', value: totals.reposted, hero: false },
     { label: 'Tasa de adopción', value: (totals.adoptionRate ?? 0) + '%', hero: true },
     { label: 'Pendientes', value: totals.pending },
@@ -354,16 +379,27 @@ function renderCharts(data) {
   if (typeof Chart === 'undefined') return;
   destroyCharts();
   const c = chartColors();
-  const mix = data.series.responseMix;
+  const mix = data.series.responseMix || {};
+  const bd = data.series.actionBreakdown || {};
+  const hasActionSplit = (bd.like ?? 0) + (bd.repost ?? 0) + (bd.like_repost ?? 0) > 0;
+  const donutLabels = hasActionSplit
+    ? ['Me gusta', 'Repost', 'Me gusta + Repost', 'Ignorado', 'Pendiente']
+    : ['Reposteado', 'Ignorado', 'Pendiente'];
+  const donutData = hasActionSplit
+    ? [bd.like ?? 0, bd.repost ?? 0, bd.like_repost ?? 0, mix.declined ?? 0, mix.pending ?? 0]
+    : [mix.reposted ?? 0, mix.declined ?? 0, mix.pending ?? 0];
+  const donutColors = hasActionSplit
+    ? ['#3b82f6', c.ok, c.brand, c.muted, c.warn]
+    : [c.ok, c.muted, c.warn];
 
   chartInstances.donut = new Chart($('#chart-donut'), {
     type: 'doughnut',
     data: {
-      labels: ['Reposteado', 'Ignorado', 'Pendiente'],
+      labels: donutLabels,
       datasets: [
         {
-          data: [mix.reposted, mix.declined, mix.pending],
-          backgroundColor: [c.ok, c.muted, c.warn],
+          data: donutData,
+          backgroundColor: donutColors,
           borderWidth: 0,
         },
       ],
@@ -395,14 +431,23 @@ function renderCharts(data) {
   });
 
   const sent = data.totals.invitesSent || 0;
+  const funnelLabels = hasActionSplit
+    ? ['Enviados', 'Me gusta', 'Repost', 'Me gusta + Repost', 'Ignorados', 'Pendientes']
+    : ['Enviados', 'Reposteados', 'Ignorados', 'Pendientes'];
+  const funnelData = hasActionSplit
+    ? [sent, bd.like ?? 0, bd.repost ?? 0, bd.like_repost ?? 0, mix.declined ?? 0, mix.pending ?? 0]
+    : [sent, mix.reposted ?? 0, mix.declined ?? 0, mix.pending ?? 0];
+  const funnelColors = hasActionSplit
+    ? [c.brand, '#3b82f6', c.ok, '#2563eb', c.muted, c.warn]
+    : [c.brand, c.ok, c.muted, c.warn];
   chartInstances.funnel = new Chart($('#chart-funnel'), {
     type: 'bar',
     data: {
-      labels: ['Enviados', 'Reposteados', 'Ignorados', 'Pendientes'],
+      labels: funnelLabels,
       datasets: [
         {
-          data: [sent, mix.reposted, mix.declined, mix.pending],
-          backgroundColor: [c.brand, c.ok, c.muted, c.warn],
+          data: funnelData,
+          backgroundColor: funnelColors,
         },
       ],
     },
@@ -486,10 +531,13 @@ function buildDashboardDemoStats(daysParam) {
     sumRepost += reposts;
     daily.push({ date: key, campaigns, reposts });
   }
+  const actionBreakdown = { like: 8, repost: 12, like_repost: 9 };
   const invitesSent = Math.max(42, sumRepost * 2 + 12);
-  const reposted = Math.max(28, sumRepost);
+  const reposted = actionBreakdown.repost + actionBreakdown.like_repost;
+  const liked = actionBreakdown.like + actionBreakdown.like_repost;
   const declined = 7;
-  const pending = Math.max(4, invitesSent - reposted - declined);
+  const answeredCount = actionBreakdown.like + actionBreakdown.repost + actionBreakdown.like_repost + declined;
+  const pending = Math.max(4, invitesSent - answeredCount);
   const answered = reposted + declined;
   const iso = (offsetDays) => {
     const d = new Date(now);
@@ -501,6 +549,7 @@ function buildDashboardDemoStats(daysParam) {
       campaigns: Math.max(5, sumCamp),
       invitesSent,
       reposted,
+      liked,
       declined,
       pending,
       adoptionRate: answered > 0 ? Math.round((100 * reposted) / answered * 10) / 10 : 0,
@@ -509,7 +558,8 @@ function buildDashboardDemoStats(daysParam) {
     },
     series: {
       daily,
-      responseMix: { reposted, declined, pending },
+      responseMix: { reposted, liked, declined, pending },
+      actionBreakdown,
     },
     topMembers: [
       { memberId: 'demo_1', name: 'Ana García', reposts: 9, adoptionRate: 90 },
@@ -545,7 +595,7 @@ async function loadDashboard() {
     empty.hidden = true;
     content.hidden = false;
     if (demoBanner) demoBanner.hidden = hasReal;
-    renderKpis(data.totals);
+    renderKpis(data.totals, data.series?.actionBreakdown);
     renderCharts(data);
     renderRecentTable(data.recentCampaigns || [], { demo: !hasReal });
   } catch (e) {
@@ -701,9 +751,7 @@ async function openCampaignDetail(id) {
       '<div class="table-wrap"><table class="data-table"><thead><tr><th>Miembro</th><th>Estado</th><th>Respondió</th></tr></thead><tbody>' +
       rows
         .map((d) => {
-          let state = 'Pendiente';
-          if (d.action === 'approve') state = 'Reposteado';
-          if (d.action === 'decline') state = 'Ignorado';
+          let state = deliveryActionLabel(d.action);
           if (d.error) state = 'Error';
           return (
             '<tr><td>' +
@@ -1126,7 +1174,7 @@ async function refreshCampaignsList() {
       campaigns
         .map((c) => {
           const sent = (c.deliveries || []).length;
-          const rep = (c.deliveries || []).filter((d) => d.action === 'approve').length;
+          const rep = (c.deliveries || []).filter((d) => deliveryIncludesRepost(d.action)).length;
           return (
             '<tr><td class="fw-semibold">' +
             escapeHtml(c.title) +

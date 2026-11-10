@@ -34,6 +34,7 @@ function ngaged_compute_stats(int $days): array
     ];
 
     $responseMix = ['reposted' => 0, 'liked' => 0, 'declined' => 0, 'pending' => 0];
+    $actionBreakdown = ['like' => 0, 'repost' => 0, 'like_repost' => 0];
     $daily = [];
     $memberReposts = [];
     $hoursToRepost = [];
@@ -72,6 +73,13 @@ function ngaged_compute_stats(int $days): array
             $campSent++;
             $totals['invitesSent']++;
             $action = ngaged_normalize_member_action((string) ($d['action'] ?? '')) ?? (string) ($d['action'] ?? '');
+            if ($action === 'like') {
+                $actionBreakdown['like']++;
+            } elseif ($action === 'repost') {
+                $actionBreakdown['repost']++;
+            } elseif ($action === 'like_repost') {
+                $actionBreakdown['like_repost']++;
+            }
             if (ngaged_action_includes_repost($action)) {
                 $totals['reposted']++;
                 $responseMix['reposted']++;
@@ -163,6 +171,7 @@ function ngaged_compute_stats(int $days): array
         'series' => [
             'daily' => $dailyList,
             'responseMix' => $responseMix,
+            'actionBreakdown' => $actionBreakdown,
         ],
         'topMembers' => $topMembers,
         'recentCampaigns' => $recentCampaigns,

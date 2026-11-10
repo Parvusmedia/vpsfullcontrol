@@ -74,18 +74,19 @@ function delivery(string $memberId, string $email, string $name, int $daysAgo, s
         'action' => $action === 'pending' ? '' : $action,
     ];
     if ($action === 'approve') {
-        $row['respondedAt'] = gmdate('c', time() - (($daysAgo - 1) * 86400));
+        $action = 'repost';
+        $row['action'] = 'repost';
     }
-    if ($action === 'decline') {
+    if (in_array($action, ['repost', 'like', 'like_repost', 'decline'], true)) {
         $row['respondedAt'] = gmdate('c', time() - (($daysAgo - 1) * 86400));
     }
     return $row;
 }
 
 $camp1Deliveries = [
-    delivery('mem_demo_ana', 'ana.garcia@demo.ngaged', 'Ana García', 5, 'approve'),
-    delivery('mem_demo_carlos', 'carlos.ruiz@demo.ngaged', 'Carlos Ruiz', 5, 'approve'),
-    delivery('mem_demo_laura', 'laura.mendez@demo.ngaged', 'Laura Méndez', 5, 'approve'),
+    delivery('mem_demo_ana', 'ana.garcia@demo.ngaged', 'Ana García', 5, 'like_repost'),
+    delivery('mem_demo_carlos', 'carlos.ruiz@demo.ngaged', 'Carlos Ruiz', 5, 'repost'),
+    delivery('mem_demo_laura', 'laura.mendez@demo.ngaged', 'Laura Méndez', 5, 'like'),
     delivery('mem_demo_miguel', 'miguel.soto@demo.ngaged', 'Miguel Soto', 5, 'decline'),
     delivery('mem_demo_elena', 'elena.vidal@demo.ngaged', 'Elena Vidal', 5, 'pending'),
     delivery('mem_demo_pablo', 'pablo.nunez@demo.ngaged', 'Pablo Núñez', 5, 'pending'),
@@ -115,9 +116,9 @@ $campaigns['campaigns'] = [
         'createdAt' => $iso(12),
         'dispatchedAt' => $iso(11),
         'deliveries' => [
-            delivery('mem_demo_ana', 'ana.garcia@demo.ngaged', 'Ana García', 11, 'approve'),
-            delivery('mem_demo_laura', 'laura.mendez@demo.ngaged', 'Laura Méndez', 11, 'approve'),
-            delivery('mem_demo_carlos', 'carlos.ruiz@demo.ngaged', 'Carlos Ruiz', 11, 'pending'),
+            delivery('mem_demo_ana', 'ana.garcia@demo.ngaged', 'Ana García', 11, 'like_repost'),
+            delivery('mem_demo_laura', 'laura.mendez@demo.ngaged', 'Laura Méndez', 11, 'like'),
+            delivery('mem_demo_carlos', 'carlos.ruiz@demo.ngaged', 'Carlos Ruiz', 11, 'repost'),
         ],
     ],
 ];
