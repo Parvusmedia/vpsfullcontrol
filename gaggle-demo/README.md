@@ -1,6 +1,6 @@
 # Ngaged
 
-Panel de **employee advocacy**: campañas LinkedIn, invitaciones por email (Repostear / Ignorar), dashboard con métricas y repost one-click para el equipo.
+Panel de **employee advocacy**: campañas LinkedIn, emails con **Me gusta**, **Repost** o **Me gusta + Repost** (con pausa entre acciones), dashboard y repost one-click vía Publora.
 
 ## Producto (lo que ve el usuario)
 

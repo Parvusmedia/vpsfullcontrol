@@ -23,6 +23,7 @@
           <div class="card-body">
             <h1 class="h4 mb-3">Procesando tu respuesta…</h1>
             <div id="go-status" class="alert alert-info py-2" role="status">Un momento…</div>
+            <p id="go-hint" class="small text-muted mb-0" hidden>Me gusta + Repost puede tardar hasta 20 segundos (LinkedIn).</p>
             <a href="/" class="small">Volver al panel</a>
           </div>
         </div>
@@ -43,6 +44,10 @@
         if (!token || !action) {
           set('Enlace incompleto.', 'err');
           return;
+        }
+        if (action === 'like_repost') {
+          document.getElementById('go-hint').hidden = false;
+          set('Aplicando me gusta, esperando unos segundos y republicando…', '');
         }
         try {
           const res = await fetch(

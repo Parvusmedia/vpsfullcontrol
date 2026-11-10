@@ -53,7 +53,10 @@ function ngaged_send_mail_verbose(string $to, string $subject, string $htmlBody,
     return ['ok' => $ok, 'transport' => ngaged_mail_transport_label(), 'error' => $ok ? null : 'mail() falló'];
 }
 
-function ngaged_campaign_email_html(array $campaign, array $member, string $approveUrl, string $declineUrl): string
+/**
+ * @param array{like:string,repost:string,like_repost:string,decline:string} $urls
+ */
+function ngaged_campaign_email_html(array $campaign, array $member, array $urls): string
 {
     $preview = $campaign['preview'] ?? [];
     $title = htmlspecialchars((string) ($preview['title'] ?? $campaign['title'] ?? 'Nueva campaña'), ENT_QUOTES, 'UTF-8');
@@ -71,15 +74,19 @@ function ngaged_campaign_email_html(array $campaign, array $member, string $appr
         . '<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;border:1px solid #d8e2ec;overflow:hidden;">'
         . '<tr><td style="padding:24px 28px;background:#0a66c2;color:#fff;"><strong style="font-size:18px;">Ngaged</strong><br/><span style="opacity:.9;font-size:14px;">Amplifica en LinkedIn con un clic</span></td></tr>'
         . '<tr><td style="padding:28px;"><p style="margin:0 0 8px;">Hola ' . $name . ',</p>'
-        . '<p style="margin:0 0 16px;color:#5c6b7a;">Tu equipo te invita a repostear este contenido en LinkedIn.</p>'
+        . '<p style="margin:0 0 16px;color:#5c6b7a;">Tu equipo te invita a amplificar este post en LinkedIn. Elige una opción (un clic cada una).</p>'
         . $imgBlock
         . '<h2 style="margin:16px 0 8px;font-size:20px;">' . $title . '</h2>'
         . ($desc !== '' ? '<p style="margin:0 0 12px;color:#5c6b7a;">' . $desc . '</p>' : '')
         . ($commentary !== '' ? '<p style="margin:12px 0;padding:12px;background:#f7fafc;border-radius:8px;font-size:14px;"><strong>Tu comentario sugerido:</strong><br/>' . nl2br($commentary) . '</p>' : '')
-        . '<table cellpadding="0" cellspacing="0" style="margin-top:24px;"><tr>'
-        . '<td style="padding-right:12px;"><a href="' . htmlspecialchars($approveUrl, ENT_QUOTES) . '" style="display:inline-block;background:#0a66c2;color:#fff;text-decoration:none;padding:14px 22px;border-radius:10px;font-weight:600;">Repostear</a></td>'
-        . '<td><a href="' . htmlspecialchars($declineUrl, ENT_QUOTES) . '" style="display:inline-block;background:#edf2f7;color:#0b1929;text-decoration:none;padding:14px 22px;border-radius:10px;font-weight:600;">Ignorar</a></td>'
+        . '<table cellpadding="0" cellspacing="0" style="margin-top:24px;width:100%;"><tr>'
+        . '<td style="padding:0 8px 10px 0;width:50%;"><a href="' . htmlspecialchars($urls['like_repost'], ENT_QUOTES) . '" style="display:block;text-align:center;background:#0a66c2;color:#fff;text-decoration:none;padding:14px 16px;border-radius:10px;font-weight:600;">Me gusta + Repost</a></td>'
+        . '<td style="padding:0 0 10px 8px;width:50%;"><a href="' . htmlspecialchars($urls['repost'], ENT_QUOTES) . '" style="display:block;text-align:center;background:#1b4f8a;color:#fff;text-decoration:none;padding:14px 16px;border-radius:10px;font-weight:600;">Solo repost</a></td>'
+        . '</tr><tr>'
+        . '<td style="padding:0 8px 0 0;width:50%;"><a href="' . htmlspecialchars($urls['like'], ENT_QUOTES) . '" style="display:block;text-align:center;background:#edf2f7;color:#0b1929;text-decoration:none;padding:12px 16px;border-radius:10px;font-weight:600;">Solo me gusta</a></td>'
+        . '<td style="padding:0 0 0 8px;width:50%;"><a href="' . htmlspecialchars($urls['decline'], ENT_QUOTES) . '" style="display:block;text-align:center;background:#f8fafc;color:#64748b;text-decoration:none;padding:12px 16px;border-radius:10px;font-weight:600;border:1px solid #e2e8f0;">Ignorar</a></td>'
         . '</tr></table>'
+        . '<p style="margin:16px 0 0;font-size:11px;color:#94a3b8;">«Me gusta + Repost» aplica ambas acciones en LinkedIn con un breve intervalo entre ellas.</p>'
         . '<p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">Si los botones no funcionan, abre el enlace desde el panel Ngaged.</p>'
         . '</td></tr></table></td></tr></table></body></html>';
 }

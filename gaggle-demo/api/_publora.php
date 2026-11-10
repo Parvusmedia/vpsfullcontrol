@@ -111,6 +111,33 @@ function gaggle_publora_publish_activity(array $activity, string $platformId): a
     ];
 }
 
+function gaggle_publora_linkedin_like(string $platformId, string $postedId, string $reactionType = 'LIKE'): array
+{
+    $postedId = trim($postedId);
+    if ($postedId === '') {
+        return ['ok' => false, 'error' => 'Missing post URN.'];
+    }
+    if ($platformId === '') {
+        return ['ok' => false, 'error' => 'Missing LinkedIn connection.'];
+    }
+
+    $resp = gaggle_publora_request('POST', 'linkedin-reactions', [
+        'postedId' => $postedId,
+        'reactionType' => strtoupper($reactionType),
+        'platformId' => $platformId,
+    ]);
+
+    if (!$resp['ok']) {
+        return $resp;
+    }
+
+    return [
+        'ok' => true,
+        'reaction' => $resp['body']['reaction'] ?? null,
+        'urnTranslated' => $resp['body']['urnTranslated'] ?? null,
+    ];
+}
+
 function gaggle_publora_linkedin_reshare(string $platformId, string $repostParentUrn, string $commentary = ''): array
 {
     $urn = trim($repostParentUrn);

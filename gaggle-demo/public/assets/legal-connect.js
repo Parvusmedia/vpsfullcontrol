@@ -19,8 +19,8 @@
 <p class="small">Tras tu autorización OAuth, el sistema puede tratar, entre otros, identificadores de cuenta, nombre visible, imagen de perfil, tokens de acceso, metadatos de publicaciones y métricas necesarias para:</p>
 <ul class="small">
   <li>mantener la conexión con LinkedIn;</li>
-  <li>mostrarte campañas pendientes y registrar tu respuesta (repostear / ignorar);</li>
-  <li>ejecutar reposts o acciones que apruebes;</li>
+  <li>mostrarte campañas pendientes y registrar tu respuesta (me gusta, repost, ambos o ignorar);</li>
+  <li>ejecutar en LinkedIn las acciones que elijas desde el email;</li>
   <li>generar estadísticas agregadas para el administrador de tu organización (alcance, adopción).</li>
 </ul>
 

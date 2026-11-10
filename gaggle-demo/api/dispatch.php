@@ -72,10 +72,14 @@ foreach ($memberIds as $mid) {
     }
 
     $token = ngaged_action_token($campaignId, $mid);
-    $approveUrl = ngaged_action_url($token, 'approve');
-    $declineUrl = ngaged_action_url($token, 'decline');
+    $urls = [
+        'like' => ngaged_action_url($token, 'like'),
+        'repost' => ngaged_action_url($token, 'repost'),
+        'like_repost' => ngaged_action_url($token, 'like_repost'),
+        'decline' => ngaged_action_url($token, 'decline'),
+    ];
     $subject = 'Ngaged · ' . ($campaign['title'] ?? 'Nueva campaña');
-    $html = ngaged_campaign_email_html($campaign, $member, $approveUrl, $declineUrl);
+    $html = ngaged_campaign_email_html($campaign, $member, $urls);
     $ok = ngaged_send_mail($email, $subject, $html);
 
     $deliveries[] = [

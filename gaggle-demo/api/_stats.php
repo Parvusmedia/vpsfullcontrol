@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_campaigns.php';
+require_once __DIR__ . '/_actions.php';
 
 function ngaged_compute_stats(int $days): array
 {
@@ -24,6 +25,7 @@ function ngaged_compute_stats(int $days): array
         'campaigns' => 0,
         'invitesSent' => 0,
         'reposted' => 0,
+        'liked' => 0,
         'declined' => 0,
         'pending' => 0,
         'adoptionRate' => 0.0,
@@ -31,7 +33,7 @@ function ngaged_compute_stats(int $days): array
         'campaignsThisMonth' => 0,
     ];
 
-    $responseMix = ['reposted' => 0, 'declined' => 0, 'pending' => 0];
+    $responseMix = ['reposted' => 0, 'liked' => 0, 'declined' => 0, 'pending' => 0];
     $daily = [];
     $memberReposts = [];
     $hoursToRepost = [];
@@ -69,8 +71,8 @@ function ngaged_compute_stats(int $days): array
             }
             $campSent++;
             $totals['invitesSent']++;
-            $action = (string) ($d['action'] ?? '');
-            if ($action === 'approve') {
+            $action = ngaged_normalize_member_action((string) ($d['action'] ?? '')) ?? (string) ($d['action'] ?? '');
+            if (ngaged_action_includes_repost($action)) {
                 $totals['reposted']++;
                 $responseMix['reposted']++;
                 $campReposted++;
@@ -78,7 +80,7 @@ function ngaged_compute_stats(int $days): array
                 if ($mid !== '') {
                     $memberReposts[$mid] = ($memberReposts[$mid] ?? 0) + 1;
                 }
-                $sentTs = strtotime((string) $d['sentAt']);
+                $sentTs = strtotime((string) ($d['sentAt']);
                 $respTs = strtotime((string) ($d['respondedAt'] ?? ''));
                 if ($sentTs && $respTs && $respTs >= $sentTs) {
                     $hoursToRepost[] = ($respTs - $sentTs) / 3600;
@@ -88,10 +90,15 @@ function ngaged_compute_stats(int $days): array
                     $daily[$rDay] = ['date' => $rDay, 'campaigns' => 0, 'reposts' => 0];
                 }
                 $daily[$rDay]['reposts']++;
-            } elseif ($action === 'decline') {
+            }
+            if (ngaged_action_includes_like($action)) {
+                $totals['liked']++;
+                $responseMix['liked']++;
+            }
+            if ($action === 'decline') {
                 $totals['declined']++;
                 $responseMix['declined']++;
-            } else {
+            } elseif ($action === '' || empty($d['respondedAt'])) {
                 $totals['pending']++;
                 $responseMix['pending']++;
             }
