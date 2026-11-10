@@ -80,7 +80,7 @@ function ngaged_compute_stats(int $days): array
                 if ($mid !== '') {
                     $memberReposts[$mid] = ($memberReposts[$mid] ?? 0) + 1;
                 }
-                $sentTs = strtotime((string) ($d['sentAt']);
+                $sentTs = strtotime((string) ($d['sentAt']));
                 $respTs = strtotime((string) ($d['respondedAt'] ?? ''));
                 if ($sentTs && $respTs && $respTs >= $sentTs) {
                     $hoursToRepost[] = ($respTs - $sentTs) / 3600;
