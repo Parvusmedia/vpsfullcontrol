@@ -27,9 +27,11 @@ php -S 127.0.0.1:8787 -t public public/router.php
 
 Panel: http://127.0.0.1:8787/login — crea el primer admin con `php deploy/create-admin.php tu@email.com 'contraseña-larga'`.
 
-## VPS — https://ngaged.pmediaplus.com
+## VPS — https://ngaged.app
 
-Ver [deploy/deploy-demo.sh](deploy/deploy-demo.sh) y [deploy/install-ngaged-vhost.sh](deploy/install-ngaged-vhost.sh).
+Dominio principal: **ngaged.app** (DNS en Piensa → A `87.106.194.137`). El alias `ngaged.pmediaplus.com` sigue activo.
+
+Ver [deploy/deploy-demo.sh](deploy/deploy-demo.sh), [deploy/nginx-ngaged.app.conf](deploy/nginx-ngaged.app.conf) y [deploy/install-ngaged-vhost.sh](deploy/install-ngaged-vhost.sh).
 
 ### Ops (mantenedores)
 
