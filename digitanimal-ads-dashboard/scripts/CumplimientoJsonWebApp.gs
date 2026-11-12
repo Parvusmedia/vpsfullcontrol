@@ -30,6 +30,7 @@ function doGet() {
     updatedAt: new Date().toISOString(),
     cumplimiento: sheetToObjects_("cumplimiento"),
     presupuesto_activacion: sheetToObjects_("presupuesto_activacion"),
+    agent_cambios: sheetToObjects_("agent_cambios"),
   };
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
     ContentService.MimeType.JSON
