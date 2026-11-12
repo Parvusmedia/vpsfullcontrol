@@ -8,6 +8,8 @@ type Payload = {
   source?: string;
   message?: string;
   updatedAt?: string;
+  metrics_note?: string;
+  metrics_period?: { from: string; to: string };
   cumplimiento?: Row[];
   presupuesto_activacion?: Row[];
   agent_cambios?: Row[];
@@ -84,7 +86,11 @@ export default function App() {
         </p>
       </header>
 
-      {data?.message && <p className="banner">{data.message}</p>}
+      {(data?.message || data?.metrics_note) && (
+        <p className="banner">
+          {[data.message, data.metrics_note].filter(Boolean).join(" · ")}
+        </p>
+      )}
 
       <section className="kpis">
         <div className="kpi">
@@ -139,6 +145,8 @@ export default function App() {
                   <th>Campaña</th>
                   <th>€/día</th>
                   <th>Spend €</th>
+                  <th>Conv.</th>
+                  <th>CPA €</th>
                   <th>Budget plan €</th>
                   <th>Ritmo %</th>
                   <th>Desvío €</th>
@@ -198,6 +206,14 @@ function CampaignRows({
   const brief = String(row.nombre_en_brief ?? "");
   const campana = String(row.campana ?? brief);
   const spend = truncEur(num(row.spend));
+  const conversions = num(row.conversions);
+  const cpaRaw = row.cost_per_conversion;
+  const cpa =
+    cpaRaw != null && cpaRaw !== ""
+      ? truncEur(num(cpaRaw))
+      : conversions > 0
+        ? truncEur(num(row.spend) / conversions)
+        : null;
   const bud = truncEur(num(row.budget_consumido));
   const daily = truncEur(num(row.presupuesto_diario));
   const pct = pctDisplay(row.pct_cumplimiento);
@@ -217,6 +233,8 @@ function CampaignRows({
         <td title={brief}>{campana}</td>
         <td>{daily.toFixed(2)}</td>
         <td>{spend.toFixed(2)}</td>
+        <td>{conversions > 0 ? conversions.toFixed(2) : "—"}</td>
+        <td>{cpa != null ? cpa.toFixed(2) : "—"}</td>
         <td>{bud.toFixed(2)}</td>
         <td>
           <motionBar pct={Math.min(pct, 120)} warn={low} />
@@ -228,7 +246,7 @@ function CampaignRows({
       </tr>
       {open && (
         <tr className="detail">
-          <td colSpan={10}>
+          <td colSpan={12}>
             <DetailGrid row={row} rec={rec} />
           </td>
         </tr>

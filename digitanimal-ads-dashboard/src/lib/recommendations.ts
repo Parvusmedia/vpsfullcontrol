@@ -64,6 +64,17 @@ export function recommend(raw: Row): Recommendation {
   const pct = pctDisplay(r.pct_cumplimiento);
   const desvio = num(r.desvio_eur);
   const spend = num(r.spend);
+  const conversions = num(r.conversions);
+  const clicks = num(r.clicks);
+
+  if (clicks > 30 && conversions === 0 && (tier === "T1" || tier === "T2")) {
+    return {
+      tier,
+      review,
+      severity: "alert",
+      text: "Gate medición: clics sin conversiones atribuidas. Revisar GTM/consent/UTM antes de subir pujas.",
+    };
+  }
 
   if (spend === 0 && (tier === "T1" || tier === "T2")) {
     return {
