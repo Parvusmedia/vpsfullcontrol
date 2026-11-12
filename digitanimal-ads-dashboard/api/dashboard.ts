@@ -1,9 +1,9 @@
-import { BRIEF_META, buildCumplimientoRows, presupuestoActivacionRows } from "../../../api/lib/brief-plan";
-import { fetchDeepAnalysis } from "../../../api/lib/windsor-deep";
+import { BRIEF_META, buildCumplimientoRows, presupuestoActivacionRows } from "./lib/brief-plan";
+import { fetchDeepAnalysis } from "./lib/windsor-deep";
 import {
   fetchActivationMetrics,
   fetchEnabledPlanBriefs,
-} from "../../../api/lib/windsor-campaigns";
+} from "./lib/windsor-campaigns";
 
 function analysisWindow(): { from: string; to: string } {
   const to = new Date();
