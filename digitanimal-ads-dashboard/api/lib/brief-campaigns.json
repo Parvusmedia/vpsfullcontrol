@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "account_label": "AW-846006068",
+    "period_start": "2026-10-01",
+    "period_end": "2026-12-06",
+    "period_days": 67,
+    "total_eur": 8000,
+    "timezone": "Europe/Madrid",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1fVVnw2jfny74kz15VGA6nmSHXpdjBQBfMa5cO1vbIHM/edit"
+  },
+  "tier_rules": {
+    "T1": { "min_daily_eur": 12, "lookback_days": 7, "review": "daily" },
+    "T2": { "min_daily_eur": 6, "max_daily_eur": 11.99, "lookback_days": 14, "review": "every_2_days" },
+    "T3": { "min_daily_eur": 2, "max_daily_eur": 5.99, "lookback_days": 14, "review": "twice_weekly" },
+    "T4": { "max_daily_eur": 1.99, "lookback_days": 28, "review": "weekly" }
+  },
+  "campaigns": [
+    {
+      "pais": "ES",
+      "campana": "Max Rend_GPS_ESP",
+      "nombre_en_brief": "es_gps_siempre-activa_max-rendimiento_202407",
+      "presupuesto_diario_eur": 15.92,
+      "objetivo": "ventas",
+      "modalidad": "siempre-activa",
+      "producto": "gps",
+      "tier": "T1",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "ES",
+      "campana": "Max Rend_VV_ESP",
+      "nombre_en_brief": "es_vallado-virtual_siempre-activa_max-rendimiento_202602",
+      "presupuesto_diario_eur": 15.92,
+      "objetivo": "ventas",
+      "modalidad": "siempre-activa",
+      "producto": "vallado-virtual",
+      "tier": "T1",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "ES",
+      "campana": "Búsqueda_Protección_Marca ESP",
+      "nombre_en_brief": "es_generico_proteccion-marca_branding_202604",
+      "presupuesto_diario_eur": 15.92,
+      "objetivo": "branding",
+      "modalidad": "siempre-activa",
+      "producto": "generico",
+      "tier": "T1",
+      "mutations_allowed": false,
+      "notes": "Requiere OK humano explícito para cualquier cambio"
+    },
+    {
+      "pais": "FR",
+      "campana": "FR - SEARCH - GPS",
+      "nombre_en_brief": "fr_gps_siempre-activa_ventas_202609",
+      "presupuesto_diario_eur": 8.96,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "FR",
+      "campana": "FR - SEARCH - Clôture Virtuelle",
+      "nombre_en_brief": "fr_vallado-virtual_puntual_leads_202609",
+      "presupuesto_diario_eur": 8.96,
+      "objetivo": "leads",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "IT",
+      "campana": "Búsqueda_GPS_IT",
+      "nombre_en_brief": "it_gps_siempre-activa_ventas_202605",
+      "presupuesto_diario_eur": 8.96,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "IT",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "it_vallado-virtual_puntual_ventas_202610",
+      "presupuesto_diario_eur": 8.96,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "GR",
+      "campana": "GPS — nueva",
+      "nombre_en_brief": "gr_gps_puntual_ventas_202610",
+      "presupuesto_diario_eur": 5.97,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "GR",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "gr_vallado-virtual_puntual_ventas_202610",
+      "presupuesto_diario_eur": 5.97,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "PT",
+      "campana": "PT · Search · GPS · Sales",
+      "nombre_en_brief": "pt_gps_puntual_ventas_202609",
+      "presupuesto_diario_eur": 5.97,
+      "objetivo": "ventas",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "PT",
+      "campana": "PT · Search · VV · Leads",
+      "nombre_en_brief": "pt_vallado-virtual_siempre-activa_ventas_202609",
+      "presupuesto_diario_eur": 5.97,
+      "objetivo": "leads",
+      "tier": "T2",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "RO",
+      "campana": "GPS — nueva",
+      "nombre_en_brief": "ro_gps_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "RO",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "ro_vallado-virtual_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "HR",
+      "campana": "HR - SEARCH - GPS",
+      "nombre_en_brief": "hr_gps_siempre-activa_ventas_202609",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "HR",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "hr_vallado-virtual_puntual_ventas_202609",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "IE",
+      "campana": "GPS — nueva",
+      "nombre_en_brief": "ie_gps_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "IE",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "ie_vallado-virtual_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "UK",
+      "campana": "GPS — nueva",
+      "nombre_en_brief": "uk_gps_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "UK",
+      "campana": "VV — nueva",
+      "nombre_en_brief": "uk_vallado-virtual_puntual_ventas_202611",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "ventas",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "NL",
+      "campana": "Search · LUX · Leads",
+      "nombre_en_brief": "nl_lux_puntual_leads_202609",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "leads",
+      "tier": "T4",
+      "mutations_allowed": true
+    },
+    {
+      "pais": "DK",
+      "campana": "LUX — nueva",
+      "nombre_en_brief": "dn_lux_puntual_leads_202609",
+      "presupuesto_diario_eur": 1.19,
+      "objetivo": "leads",
+      "tier": "T4",
+      "mutations_allowed": true
+    }
+  ],
+  "excluded_from_plan": [
+    {
+      "campana": "gr_grecia_subsidy_busqueda_trafico_202610",
+      "nombre_en_brief": "gr_gps_subvencion-grecia_leads_202610",
+      "mutations_allowed": false
+    }
+  ]
+}

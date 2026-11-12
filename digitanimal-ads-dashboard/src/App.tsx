@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { countryFromBrief, num, pctDisplay, truncEur, type Row } from "./lib/metrics";
 import { normalizeCumplimientoRow } from "./lib/normalize";
 import { recommend, type Recommendation } from "./lib/recommendations";
+import { DeepAnalysisPanel, type DeepAnalysis } from "./DeepAnalysis";
 import "./app.css";
 
 type Payload = {
@@ -13,9 +14,11 @@ type Payload = {
   cumplimiento?: Row[];
   presupuesto_activacion?: Row[];
   agent_cambios?: Row[];
+  analysis_window?: { from: string; to: string };
+  deep_analysis?: DeepAnalysis | null;
 };
 
-type Tab = "cumplimiento" | "cambios" | "presupuesto";
+type Tab = "cumplimiento" | "profundo" | "cambios" | "presupuesto";
 
 export default function App() {
   const [data, setData] = useState<Payload | null>(null);
@@ -80,8 +83,8 @@ export default function App() {
       <header>
         <h1>Digitanimal · Google Ads</h1>
         <p className="meta">
-          {isSample && <span className="badge warn">Muestra / conectar hoja</span>}
-          {!isSample && <span className="badge ok">En vivo</span>}
+          {isSample && <span className="badge warn">Muestra / Windsor API</span>}
+          {!isSample && <span className="badge ok">Windsor en vivo</span>}
           {data?.updatedAt && <> · Actualizado {new Date(data.updatedAt).toLocaleString("es-ES")}</>}
         </p>
       </header>
@@ -114,6 +117,9 @@ export default function App() {
       <nav className="tabs">
         <button type="button" className={tab === "cumplimiento" ? "active" : ""} onClick={() => setTab("cumplimiento")}>
           Cumplimiento + recomendaciones
+        </button>
+        <button type="button" className={tab === "profundo" ? "active" : ""} onClick={() => setTab("profundo")}>
+          Análisis profundo
         </button>
         <button type="button" className={tab === "cambios" ? "active" : ""} onClick={() => setTab("cambios")}>
           Cambios agente ({cambios.length})
@@ -170,12 +176,24 @@ export default function App() {
         </>
       )}
 
+      {tab === "profundo" && (
+        <>
+          {!data?.deep_analysis ? (
+            <p className="empty">
+              Análisis profundo requiere <code>WINDSOR_API_KEY</code> (grupos, keywords, anuncios ENABLED).
+            </p>
+          ) : (
+            <DeepAnalysisPanel data={data.deep_analysis} />
+          )}
+        </>
+      )}
+
       {tab === "cambios" && (
         <div className="table-wrap">
           {cambios.length === 0 ? (
             <p className="empty">
-              Sin filas en <code>agent_cambios</code>. Crea la pestaña en la hoja (ver doc agent_cambios) y vuelve a
-              implementar el Apps Script con la versión nueva del repo.
+              Historial de cambios: agente <code>digitanimal-google-ads</code> (JSONL). Próximo: sincronizar aquí vía
+              Windsor o API del agente.
             </p>
           ) : (
             <DynamicTable rows={cambios} />
