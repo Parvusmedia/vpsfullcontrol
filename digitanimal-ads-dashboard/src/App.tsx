@@ -7,6 +7,8 @@ import "./app.css";
 
 type Payload = {
   source?: string;
+  _delivery?: string;
+  snapshot_built_at?: string;
   message?: string;
   updatedAt?: string;
   metrics_note?: string;
@@ -27,12 +29,22 @@ export default function App() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then(async (r) => {
-        const text = await r.text();
+    const parsePayload = (text: string): Payload | null => {
+      try {
+        return JSON.parse(text) as Payload;
+      } catch {
+        return null;
+      }
+    };
+
+    const load = async () => {
+      for (const url of ["/api/dashboard", "/dashboard.json"] as const) {
         try {
-          const json = JSON.parse(text) as Payload;
+          const r = await fetch(url);
+          const json = parsePayload(await r.text());
+          if (!json) continue;
           if (!r.ok) {
+            if (url === "/dashboard.json") continue;
             setData({
               ...json,
               source: "error",
@@ -40,18 +52,24 @@ export default function App() {
             });
             return;
           }
-          setData(json);
+          setData(
+            url === "/dashboard.json"
+              ? { ...json, _delivery: json._delivery ?? "build_snapshot" }
+              : { ...json, _delivery: "api" }
+          );
+          return;
         } catch {
-          setData({
-            source: "error",
-            message:
-              "La ruta /api/dashboard no responde JSON (revisa publish Next.js y WINDSOR_API_KEY).",
-          });
+          /* try next URL */
         }
-      })
-      .catch(() =>
-        setData({ source: "error", message: "No se pudo conectar con /api/dashboard." })
-      );
+      }
+      setData({
+        source: "error",
+        message:
+          "No hay datos: ni /api/dashboard ni /dashboard.json (republica con WINDSOR_API_KEY).",
+      });
+    };
+
+    void load();
   }, []);
 
   const rows = useMemo(
@@ -96,6 +114,7 @@ export default function App() {
   const alerts = filtered.filter(({ rec }) => rec.severity === "alert" || rec.severity === "warn").length;
 
   const isSample = data?.source === "sample" || data?.source === "error";
+  const isSnapshot = data?._delivery === "build_snapshot";
   const cambios = data?.agent_cambios ?? [];
   const presupuesto = data?.presupuesto_activacion ?? [];
 
@@ -105,8 +124,17 @@ export default function App() {
         <h1>Digitanimal · Google Ads</h1>
         <p className="meta">
           {isSample && <span className="badge warn">Muestra / Windsor API</span>}
-          {!isSample && <span className="badge ok">Windsor en vivo</span>}
-          {data?.updatedAt && <> · Actualizado {new Date(data.updatedAt).toLocaleString("es-ES")}</>}
+          {!isSample && isSnapshot && (
+            <span className="badge warn">Snapshot al publicar</span>
+          )}
+          {!isSample && !isSnapshot && <span className="badge ok">Windsor en vivo</span>}
+          {(data?.snapshot_built_at || data?.updatedAt) && (
+            <>
+              {" "}
+              · Actualizado{" "}
+              {new Date(data.snapshot_built_at ?? data.updatedAt!).toLocaleString("es-ES")}
+            </>
+          )}
         </p>
       </header>
 
