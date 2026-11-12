@@ -8,4 +8,12 @@ export default defineAgent({
       { id: "fast", value: "true" },
     ],
   },
+  hosting: {
+    egressDomains: [
+      "windsor.ai",
+      "onboard.windsor.ai",
+      "api.windsor.ai",
+      "connectors.windsor.ai",
+    ],
+  },
 });
