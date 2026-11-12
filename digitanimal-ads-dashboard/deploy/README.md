@@ -2,17 +2,17 @@
 
 **URL:** https://digitanimal.pmediaplus.com (requiere DNS)
 
-## DNS (IONOS / panel del dominio)
+## DNS (Plesk en nextconvers / 82.223.3.205)
 
-Apunta el subdominio al VPS Parvus:
+Desde **parvus-vps**:
 
-| Registro | Valor |
-|----------|--------|
-| `digitanimal` **A** | `87.106.194.137` |
+```bash
+bash /opt/apps/digitanimal-ads-dashboard/deploy/plesk-dns-digitanimal.sh
+```
 
-Hoy `digitanimal.pmediaplus.com` resuelve a `82.223.3.205` (landings IONOS), no al VPS. Hasta cambiarlo verás otra web o 404.
+(o el script genérico `education-ai-advisor/scripts/plesk-add-a-record.sh` con `DNS_HOST=digitanimal`).
 
-Ejemplo correcto: `friendinme.pmediaplus.com` → `87.106.194.137`.
+Registro: `digitanimal.pmediaplus.com` **A** → `87.106.194.137`.
 
 ## Despliegue
 
