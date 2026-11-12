@@ -4,9 +4,11 @@
   background: #f4f4f5;
 }
 .page {
-  max-width: 1100px;
+  width: min(1920px, calc(100vw - 1.5rem));
+  max-width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.25rem clamp(0.75rem, 2vw, 1.75rem);
+  box-sizing: border-box;
 }
 header h1 {
   margin: 0;
@@ -67,6 +69,28 @@ header h1 {
 }
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 calc(-1 * clamp(0.75rem, 2vw, 1.75rem));
+  padding: 0 clamp(0.75rem, 2vw, 1.75rem);
+}
+table.data-table {
+  width: 100%;
+  min-width: 1500px;
+}
+table.data-table .col-campaign {
+  min-width: 15rem;
+  max-width: 22rem;
+  line-height: 1.35;
+  font-size: 0.82rem;
+  word-break: break-word;
+}
+table.data-table .col-num {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+table.data-table .col-rec {
+  min-width: 22rem;
+  max-width: 32rem;
 }
 .kpi {
   background: #fff;
@@ -127,12 +151,12 @@ tr.high {
   background: #fef2f2;
 }
 .rec {
-  max-width: 280px;
   font-size: 0.82rem;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 .action-cell {
-  max-width: 420px;
+  min-width: 22rem;
+  max-width: 36rem;
   vertical-align: top;
 }
 .action-cell .action-main {

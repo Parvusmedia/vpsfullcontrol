@@ -207,23 +207,25 @@ export default function App() {
           </nav>
 
           <div className="table-wrap">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
-                  <th></th>
-                  <th>País</th>
-                  <th>Campaña (Google Ads)</th>
-                  <th>€/día</th>
-                  <th>Spend €</th>
+                  <th className="col-num"></th>
+                  <th className="col-num">País</th>
+                  <th className="col-campaign">Campaña (Google Ads)</th>
+                  <th className="col-num">€/día</th>
+                  <th className="col-num">Spend €</th>
                   <th title={REG_COL_TITLE}>Reg. (atrib.)</th>
-                  <th title={PURCHASE_COL_TITLE}>Compra (atrib.)</th>
-                  <th>CPL €</th>
-                  <th>CPA €</th>
-                  <th>Budget plan €</th>
-                  <th>Ritmo %</th>
-                  <th>Desvío €</th>
-                  <th>Tier</th>
-                  <th>Recomendación</th>
+                  <th className="col-num" title={PURCHASE_COL_TITLE}>
+                    Compra (atrib.)
+                  </th>
+                  <th className="col-num">CPL €</th>
+                  <th className="col-num">CPA €</th>
+                  <th className="col-num">Budget plan €</th>
+                  <th className="col-num">Ritmo %</th>
+                  <th className="col-num">Desvío €</th>
+                  <th className="col-num">Tier</th>
+                  <th className="col-rec">Recomendación</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,24 +335,32 @@ function CampaignRows({
             {open ? "−" : "+"}
           </button>
         </td>
-        <td>{countryFromBrief(brief)}</td>
-        <td title={aliasBrief ? `Alias brief: ${aliasBrief}` : brief}>{campana}</td>
-        <td>{daily.toFixed(2)}</td>
-        <td>{spend.toFixed(2)}</td>
+        <td className="col-num">{countryFromBrief(brief)}</td>
+        <td className="col-campaign" title={aliasBrief ? `Alias brief: ${aliasBrief}` : brief}>
+          {campana}
+        </td>
+        <td className="col-num">{daily.toFixed(2)}</td>
+        <td className="col-num">{spend.toFixed(2)}</td>
         <td title={costTitle}>{formatAttributedConversions(convLead)}</td>
         <td title={`${costTitle}${purchaseTip}`}>
           {formatAttributedConversions(convPurchase)}
         </td>
-        <td title={costTitle}>{cpl != null ? cpl.toFixed(2) : "—"}</td>
-        <td title={costTitle}>{cpa != null ? cpa.toFixed(2) : "—"}</td>
-        <td>{bud.toFixed(2)}</td>
+        <td className="col-num" title={costTitle}>
+          {cpl != null ? cpl.toFixed(2) : "—"}
+        </td>
+        <td className="col-num" title={costTitle}>
+          {cpa != null ? cpa.toFixed(2) : "—"}
+        </td>
+        <td className="col-num">{bud.toFixed(2)}</td>
         <td>
           <MotionBar pct={Math.min(pct, 120)} warn={low} />
           <span className="pct-text">{pct.toFixed(1)} %</span>
         </td>
-        <td>{desvio.toFixed(2)}</td>
-        <td title={rec.review}>{rec.tier}</td>
-        <td className={`rec rec-${rec.severity}`}>{rec.text}</td>
+        <td className="col-num">{desvio.toFixed(2)}</td>
+        <td className="col-num" title={rec.review}>
+          {rec.tier}
+        </td>
+        <td className={`rec col-rec rec-${rec.severity}`}>{rec.text}</td>
       </tr>
       {open && (
         <tr className="detail">

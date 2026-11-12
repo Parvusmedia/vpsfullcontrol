@@ -126,7 +126,7 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
             ))}
           </nav>
           <div className="table-wrap">
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Prior.</th>
