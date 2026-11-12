@@ -123,14 +123,18 @@ export function buildInsights(input: {
     if (!input.activeBriefs.has(campaign)) continue;
     const st = r.ad_group_status;
     if (st != null && String(st) !== "ENABLED") continue;
-    const name = String(r.ad_group_name ?? r.ad_group ?? "—");
+    const rawName = String(r.ad_group_name ?? r.ad_group ?? "").trim();
+    const camp = shortCampaign(campaign);
+    const name =
+      rawName && rawName !== "—"
+        ? rawName
+        : `Grupo (sin nombre en Windsor) · ${camp}`;
     const spend = n(r.spend);
     const clicks = n(r.clicks);
     const conv = n(r.conversions);
     if (spend < 10) continue;
 
     if (conv === 0 && clicks >= 12 && spend >= 20) {
-      const camp = shortCampaign(campaign);
       out.push({
         id: id(),
         severity: "high",
