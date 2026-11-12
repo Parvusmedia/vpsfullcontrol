@@ -276,7 +276,7 @@ function CampaignRows({
         <td>{cpa != null ? cpa.toFixed(2) : "—"}</td>
         <td>{bud.toFixed(2)}</td>
         <td>
-          <motionBar pct={Math.min(pct, 120)} warn={low} />
+          <MotionBar pct={Math.min(pct, 120)} warn={low} />
           <span className="pct-text">{pct.toFixed(1)} %</span>
         </td>
         <td>{desvio.toFixed(2)}</td>
@@ -362,7 +362,7 @@ function DynamicTable({ rows }: { rows: Row[] }) {
   );
 }
 
-function motionBar({ pct, warn }: { pct: number; warn?: boolean }) {
+function MotionBar({ pct, warn }: { pct: number; warn?: boolean }) {
   return (
     <div className="bar-track">
       <div className={`bar-fill${warn ? " warn" : ""}`} style={{ width: `${Math.min(pct, 100)}%` }} />

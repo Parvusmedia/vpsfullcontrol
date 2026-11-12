@@ -21,7 +21,7 @@ export async function fetchDeepAnalysis(
 ): Promise<DeepAnalysis> {
   const baseFilter = [["campaign_status", "eq", "ENABLED"]] as unknown[][];
 
-  const [adGroups, keywords, ads] = await Promise.all([
+  const [adGroupRows, keywordRows, adRows] = await Promise.all([
     windsorQuery(
       apiKey,
       [
@@ -76,13 +76,13 @@ export async function fetchDeepAnalysis(
 
   const inPlan = (campaign: string) => activeBriefs.has(campaign);
 
-  const ad_groups = adGroups
+  const ad_groups = adGroupRows
     .filter((r) => inPlan(String(r.campaign ?? "")))
     .slice(0, 80);
-  const keywords = keywords
+  const keywords = keywordRows
     .filter((r) => inPlan(String(r.campaign ?? "")))
     .slice(0, 150);
-  const ads = ads.filter((r) => inPlan(String(r.campaign ?? ""))).slice(0, 80);
+  const ads = adRows.filter((r) => inPlan(String(r.campaign ?? ""))).slice(0, 80);
 
   const pmax_notes = [...activeBriefs]
     .filter(isPmaxBrief)
