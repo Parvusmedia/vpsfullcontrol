@@ -45,7 +45,7 @@ export default function App() {
           setData({
             source: "error",
             message:
-              "La ruta /api/dashboard no responde JSON (¿app republicada con api/dashboard.ts?).",
+              "La ruta /api/dashboard no responde JSON (la app debe publicarse como Next.js, no solo Vite/dist).",
           });
         }
       })
