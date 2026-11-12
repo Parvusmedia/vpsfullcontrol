@@ -1,0 +1,21 @@
+{
+  "name": "digitanimal-ads-dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1 -p 5180",
+    "build": "tsx scripts/snapshot-runner.ts && next build && node scripts/copy-snapshot-to-dist.mjs",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

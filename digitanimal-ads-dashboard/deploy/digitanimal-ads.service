@@ -1,0 +1,20 @@
+[Unit]
+Description=Digitanimal Google Ads dashboard (Next.js)
+After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=cursorbot
+Group=cursorbot
+WorkingDirectory=/opt/apps/digitanimal-ads-dashboard
+Environment=NODE_ENV=production
+Environment=PORT=3025
+EnvironmentFile=-/opt/apps/private/digitanimal/windsor.env
+ExecStart=/opt/apps/digitanimal-ads-dashboard/node_modules/.bin/next start -H 127.0.0.1 -p 3025
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
