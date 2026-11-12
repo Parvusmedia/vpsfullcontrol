@@ -1,0 +1,119 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1a1a1a;
+  background: #f4f4f5;
+}
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.meta {
+  color: #555;
+  font-size: 0.9rem;
+}
+.badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.badge.ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+.banner {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+.kpi {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
+}
+.kpi .label {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+}
+.kpi .value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.filters button {
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.filters button.active {
+  background: #18181b;
+  color: #fff;
+  border-color: #18181b;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+th,
+td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 0.88rem;
+}
+th {
+  background: #fafafa;
+  font-weight: 600;
+}
+tr.low {
+  background: #fff7ed;
+}
+.bar-track {
+  height: 6px;
+  background: #e4e4e7;
+  border-radius: 3px;
+  width: 80px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+.bar-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 3px;
+}
+tr.low .bar-fill {
+  background: #ea580c;
+}
+.pct-text {
+  font-variant-numeric: tabular-nums;
+}

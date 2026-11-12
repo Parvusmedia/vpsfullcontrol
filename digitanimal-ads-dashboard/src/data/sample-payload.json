@@ -1,0 +1,38 @@
+{
+  "updatedAt": "2026-11-12T10:00:00.000Z",
+  "cumplimiento": [
+    {
+      "nombre_en_brief": "es_gps_siempre-activa_max-rendimiento_202407",
+      "campana": "Max Rend_GPS_ESP",
+      "spend": 111.82,
+      "budget_consumido": 165.16,
+      "pct_cumplimiento": 0.678,
+      "desvio_eur": -53.34
+    },
+    {
+      "nombre_en_brief": "es_vallado-virtual_siempre-activa_max-rendimiento_202602",
+      "campana": "Max Rend_VV_ESP",
+      "spend": 46.16,
+      "budget_consumido": 165.16,
+      "pct_cumplimiento": 0.279,
+      "desvio_eur": -119
+    },
+    {
+      "nombre_en_brief": "es_generico_proteccion-marca_branding_202604",
+      "campana": "Búsqueda_Protección_Marca ESP",
+      "spend": 60.95,
+      "budget_consumido": 165.16,
+      "pct_cumplimiento": 0.369,
+      "desvio_eur": -104.21
+    },
+    {
+      "nombre_en_brief": "fr_gps_siempre-activa_ventas_202609",
+      "campana": "FR - SEARCH - GPS",
+      "spend": 81.12,
+      "budget_consumido": 92.96,
+      "pct_cumplimiento": 0.873,
+      "desvio_eur": -11.84
+    }
+  ],
+  "presupuesto_activacion": []
+}
