@@ -20,8 +20,17 @@ function n(v: unknown): number {
   return 0;
 }
 
+function eur(x: number): string {
+  return `${Math.round(x * 100) / 100} €`;
+}
+
 function cpa(spend: number, conv: number): number | null {
   return conv > 0 ? Math.round((spend / conv) * 100) / 100 : null;
+}
+
+function shortCampaign(campaign: string): string {
+  if (campaign.length <= 48) return campaign;
+  return `${campaign.slice(0, 45)}…`;
 }
 
 export function buildInsights(input: {
@@ -44,7 +53,9 @@ export function buildInsights(input: {
     const clicks = n(r.clicks);
     const conv = n(r.conversions);
     const qs = n(r.quality_score);
-    const match = String(r.match_type ?? "");
+    const match = String(r.match_type ?? "—");
+    const label = `${kw} (${match})`;
+    const camp = shortCampaign(campaign);
 
     if (spend >= 15 && conv === 0 && clicks >= 5) {
       out.push({
@@ -52,27 +63,28 @@ export function buildInsights(input: {
         severity: "high",
         entity: "keyword",
         campaign,
-        label: `${kw} (${match})`,
+        label,
         spend,
         clicks,
         conversions: conv,
         cpa: null,
-        action: "Pausar o añadir negativa",
-        detail: "Gasto alto sin conversión atribuida en ventana.",
+        action: `Pausar la keyword «${kw}» [${match}] · ${eur(spend)} y ${clicks} clics sin conversiones (ventana 14 d). Si el término no encaja con la oferta, añadir negativa a nivel campaña o cuenta.`,
+        detail: `Campaña ${camp}.`,
       });
     } else if (qs > 0 && qs < 5 && spend >= 8) {
+      const c = cpa(spend, conv);
       out.push({
         id: id(),
         severity: "medium",
         entity: "keyword",
         campaign,
-        label: `${kw} (${match})`,
+        label,
         spend,
         clicks,
         conversions: conv,
-        cpa: cpa(spend, conv),
-        action: "Mejorar anuncio/landing o pausar",
-        detail: `Quality Score bajo (${qs}).`,
+        cpa: c,
+        action: `Mejorar QS de «${kw}» [${match}]: QS ${qs}, ${eur(spend)} · Revisar concordancia anuncio↔keyword, LP y CTR; si no mejora en 7 d, pausar la keyword.`,
+        detail: c != null ? `CPA actual ${eur(c)} · ${camp}.` : `Sin conv atribuidas · ${camp}.`,
       });
     } else if (match === "BROAD" && spend >= 20 && conv === 0) {
       out.push({
@@ -85,22 +97,23 @@ export function buildInsights(input: {
         clicks,
         conversions: conv,
         cpa: null,
-        action: "Restringir concordancia o negativas",
-        detail: "Broad con gasto sin conversión.",
+        action: `Restringir «${kw}» (BROAD): ${eur(spend)} sin conv. Pasar a frase/exacta o pausar; revisar términos de búsqueda y volcar irrelevantes como negativas.`,
+        detail: camp,
       });
     } else if (conv >= 1 && cpa(spend, conv)! < 40) {
+      const c = cpa(spend, conv)!;
       out.push({
         id: id(),
         severity: "low",
         entity: "keyword",
         campaign,
-        label: `${kw} (${match})`,
+        label,
         spend,
         clicks,
         conversions: conv,
-        cpa: cpa(spend, conv),
-        action: "Mantener / escalar con control",
-        detail: "Keyword eficiente en la ventana.",
+        cpa: c,
+        action: `Mantener «${kw}» [${match}]: CPA ${eur(c)} (${conv.toFixed(1)} conv). Valorar subir puja ≤10 % solo tras revisar ritmo de campaña (sin superar ±20 % presupuesto).`,
+        detail: camp,
       });
     }
   }
@@ -117,6 +130,7 @@ export function buildInsights(input: {
     if (spend < 10) continue;
 
     if (conv === 0 && clicks >= 12 && spend >= 20) {
+      const camp = shortCampaign(campaign);
       out.push({
         id: id(),
         severity: "high",
@@ -127,8 +141,8 @@ export function buildInsights(input: {
         clicks,
         conversions: 0,
         cpa: null,
-        action: "Revisar anuncios/URLs o pausar grupo",
-        detail: "Grupo activo con clics y sin conversiones.",
+        action: `Grupo «${name}» (${camp}): ${eur(spend)}, ${clicks} clics, 0 conv. Revisar URL final del grupo, RSA (≥1 titular alineado) y extensiones; pausar el grupo solo si tras el arreglo sigue sin conv.`,
+        detail: "Entidad: ad group ENABLED en ventana 14 d.",
       });
     }
   }
@@ -142,8 +156,10 @@ export function buildInsights(input: {
     const clicks = n(r.clicks);
     const conv = n(r.conversions);
     const short = adName.length > 80 ? `${adName.slice(0, 77)}…` : adName;
+    const adType = String(r.ad_type ?? "RSA");
 
     if (spend >= 25 && conv === 0 && clicks >= 15) {
+      const camp = shortCampaign(campaign);
       out.push({
         id: id(),
         severity: "medium",
@@ -154,8 +170,8 @@ export function buildInsights(input: {
         clicks,
         conversions: 0,
         cpa: null,
-        action: "Rotar creatividades RSA / revisar extensiones",
-        detail: `Tipo ${String(r.ad_type ?? "—")}.`,
+        action: `Anuncio «${short}» (${adType}, ${camp}): ${eur(spend)} sin conv. Sustituir/desactivar este RSA, probar 2 titulares + CTA nuevos y validar LP; pausar el anuncio si el grupo tiene otra RSA con conv.`,
+        detail: `${clicks} clics en ventana 14 d.`,
       });
     }
   }

@@ -131,6 +131,19 @@ tr.high {
   font-size: 0.82rem;
   line-height: 1.35;
 }
+.action-cell {
+  max-width: 420px;
+  vertical-align: top;
+}
+.action-cell .action-main {
+  display: block;
+}
+.action-cell .action-detail {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
 .rec-ok {
   color: #166534;
 }

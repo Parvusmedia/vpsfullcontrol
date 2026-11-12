@@ -28,6 +28,13 @@ export type DeepAnalysis = {
 
 type View = "insights" | "ad_groups" | "keywords" | "ads";
 
+const ENTITY_LABEL: Record<string, string> = {
+  keyword: "Keyword",
+  ad_group: "Grupo",
+  ad: "Anuncio",
+  campaign: "Campaña",
+};
+
 export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
   const [view, setView] = useState<View>("insights");
   const [filter, setFilter] = useState("ALL");
@@ -127,7 +134,7 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                 {filteredInsights.map((i) => (
                   <tr key={i.id} className={`sev-${i.severity}`}>
                     <td>{i.severity}</td>
-                    <td>{i.entity}</td>
+                    <td>{ENTITY_LABEL[i.entity] ?? i.entity}</td>
                     <td title={i.campaign}>
                       <code className="platform-name">{i.campaign}</code>
                     </td>
@@ -135,7 +142,10 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                     <td>{truncEur(i.spend).toFixed(2)}</td>
                     <td>{i.conversions > 0 ? i.conversions.toFixed(2) : "—"}</td>
                     <td>{i.cpa != null ? i.cpa.toFixed(2) : "—"}</td>
-                    <td className="rec">{i.action}</td>
+                    <td className="rec action-cell">
+                      <span className="action-main">{i.action}</span>
+                      {i.detail ? <span className="action-detail">{i.detail}</span> : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>
