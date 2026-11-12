@@ -1,3 +1,5 @@
+import { costPerLead, costPerPurchase } from "./conversion-classify";
+import { fetchCampaignConversionSplit } from "./windsor-conversions";
 import { num, round2, windsorQuery } from "./windsor-client";
 import { BRIEF_META, planCampaigns } from "./brief-plan";
 
@@ -25,19 +27,23 @@ export async function fetchEnabledPlanBriefs(
   return enabled;
 }
 
+export type ActivationMetrics = {
+  campaign_name: string;
+  spend: number;
+  conversions: number;
+  conversions_lead: number;
+  conversions_purchase: number;
+  conversions_other: number;
+  clicks: number;
+  cpl: number | null;
+  cpa: number | null;
+};
+
 export async function fetchActivationMetrics(apiKey: string): Promise<
-  Map<
-    string,
-    {
-      campaign_name: string;
-      spend: number;
-      conversions: number;
-      clicks: number;
-      cpa: number | null;
-    }
-  >
+  Map<string, ActivationMetrics>
 > {
-  const rows = await windsorQuery(
+  const [rows, split] = await Promise.all([
+    windsorQuery(
     apiKey,
     [
       "campaign",
@@ -48,20 +54,17 @@ export async function fetchActivationMetrics(apiKey: string): Promise<
       "conversions",
       "cost_per_conversion",
     ],
-    BRIEF_META.period_start,
-    BRIEF_META.period_end,
-    [["campaign_status", "eq", "ENABLED"]]
-  );
-  const map = new Map<
-    string,
-    {
-      campaign_name: string;
-      spend: number;
-      conversions: number;
-      clicks: number;
-      cpa: number | null;
-    }
-  >();
+      BRIEF_META.period_start,
+      BRIEF_META.period_end,
+      [["campaign_status", "eq", "ENABLED"]]
+    ),
+    fetchCampaignConversionSplit(
+      apiKey,
+      BRIEF_META.period_start,
+      BRIEF_META.period_end
+    ),
+  ]);
+  const map = new Map<string, ActivationMetrics>();
   for (const r of rows) {
     const brief = String(r.campaign ?? "");
     if (!PLAN_KEYS.has(brief)) continue;
@@ -69,14 +72,24 @@ export async function fetchActivationMetrics(apiKey: string): Promise<
     const conversions = num(r.conversions);
     const spend = round2(num(r.spend));
     const clicks = num(r.clicks);
-    let cpa = num(r.cost_per_conversion);
-    if (!cpa && conversions > 0) cpa = spend / conversions;
+    const convSplit = split.get(brief);
+    const conversions_lead = round2(convSplit?.lead ?? 0);
+    const conversions_purchase = round2(convSplit?.purchase ?? 0);
+    const conversions_other = round2(convSplit?.other ?? 0);
+    const totalSplit =
+      conversions_lead + conversions_purchase + conversions_other;
+    const conversionsTotal =
+      totalSplit > 0 ? round2(totalSplit) : round2(conversions);
     map.set(brief, {
       campaign_name: platformName,
       spend,
-      conversions: round2(conversions),
+      conversions: conversionsTotal,
+      conversions_lead,
+      conversions_purchase,
+      conversions_other,
       clicks: Math.round(clicks),
-      cpa: conversions > 0 ? round2(cpa) : null,
+      cpl: costPerLead(spend, conversions_lead),
+      cpa: costPerPurchase(spend, conversions_purchase),
     });
   }
   return map;

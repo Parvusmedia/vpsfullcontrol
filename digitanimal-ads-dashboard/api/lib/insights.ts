@@ -1,5 +1,12 @@
 type Row = Record<string, unknown>;
 
+import {
+  costPerLead,
+  costPerPurchase,
+  type ConversionTotals,
+} from "./conversion-classify";
+import { keywordSplitKey } from "./windsor-conversions";
+
 export type Insight = {
   id: string;
   severity: "high" | "medium" | "low" | "info";
@@ -9,6 +16,9 @@ export type Insight = {
   spend: number;
   clicks: number;
   conversions: number;
+  conversions_lead: number;
+  conversions_purchase: number;
+  cpl: number | null;
   cpa: number | null;
   action: string;
   detail: string;
@@ -24,8 +34,35 @@ function eur(x: number): string {
   return `${Math.round(x * 100) / 100} €`;
 }
 
-function cpa(spend: number, conv: number): number | null {
-  return conv > 0 ? Math.round((spend / conv) * 100) / 100 : null;
+function convCosts(
+  spend: number,
+  lead: number,
+  purchase: number
+): { cpl: number | null; cpa: number | null } {
+  return {
+    cpl: costPerLead(spend, lead),
+    cpa: costPerPurchase(spend, purchase),
+  };
+}
+
+function insightConv(
+  entity: Insight["entity"],
+  campaign: string,
+  keywordText: string | null,
+  totalFromRow: number,
+  keywordConvSplit?: Map<string, ConversionTotals>
+): { lead: number; purchase: number; total: number } {
+  if (entity === "keyword" && keywordText && keywordConvSplit) {
+    const split = keywordConvSplit.get(keywordSplitKey(campaign, keywordText));
+    if (split && split.total > 0) {
+      return {
+        lead: split.lead,
+        purchase: split.purchase,
+        total: split.total,
+      };
+    }
+  }
+  return { lead: totalFromRow, purchase: 0, total: totalFromRow };
 }
 
 function shortCampaign(campaign: string): string {
@@ -33,11 +70,41 @@ function shortCampaign(campaign: string): string {
   return `${campaign.slice(0, 45)}…`;
 }
 
+function pushInsight(
+  out: Insight[],
+  id: () => string,
+  base: Omit<Insight, "id" | "conversions_lead" | "conversions_purchase" | "cpl" | "cpa" | "conversions"> & {
+    conversions_total: number;
+    lead: number;
+    purchase: number;
+  }
+) {
+  const costs = convCosts(base.spend, base.lead, base.purchase);
+  out.push({
+    id: id(),
+    severity: base.severity,
+    entity: base.entity,
+    campaign: base.campaign,
+    label: base.label,
+    spend: base.spend,
+    clicks: base.clicks,
+    conversions: base.conversions_total,
+    conversions_lead: base.lead,
+    conversions_purchase: base.purchase,
+    cpl: costs.cpl,
+    cpa: costs.cpa,
+    action: base.action,
+    detail: base.detail,
+  });
+}
+
 export function buildInsights(input: {
   adGroups: Row[];
   keywords: Row[];
   ads: Row[];
   activeBriefs: Set<string>;
+  keywordConvSplit?: Map<string, ConversionTotals>;
+  campaignObjetivo?: Map<string, string>;
 }): Insight[] {
   const out: Insight[] = [];
   let seq = 0;
@@ -51,68 +118,101 @@ export function buildInsights(input: {
     if (!kw) continue;
     const spend = n(r.spend);
     const clicks = n(r.clicks);
-    const conv = n(r.conversions);
+    const convRow = n(r.conversions);
+    const conv = insightConv(
+      "keyword",
+      campaign,
+      kw,
+      convRow,
+      input.keywordConvSplit
+    );
     const qs = n(r.quality_score);
     const match = String(r.match_type ?? "—");
     const label = `${kw} (${match})`;
     const camp = shortCampaign(campaign);
+    const objetivo = input.campaignObjetivo?.get(campaign) ?? "ventas";
+    const primaryZero =
+      objetivo === "ventas"
+        ? conv.purchase + conv.lead === 0
+        : conv.lead === 0;
 
-    if (spend >= 15 && conv === 0 && clicks >= 5) {
-      out.push({
-        id: id(),
+    if (spend >= 15 && primaryZero && clicks >= 5) {
+      pushInsight(out, id, {
         severity: "high",
         entity: "keyword",
         campaign,
         label,
         spend,
         clicks,
-        conversions: conv,
-        cpa: null,
-        action: `Pausar la keyword «${kw}» [${match}] · ${eur(spend)} y ${clicks} clics sin conversiones (ventana 14 d). Si el término no encaja con la oferta, añadir negativa a nivel campaña o cuenta.`,
+        conversions_total: conv.total,
+        lead: conv.lead,
+        purchase: conv.purchase,
+        action: `Pausar la keyword «${kw}» [${match}] · ${eur(spend)} y ${clicks} clics sin ${objetivo === "ventas" ? "registros ni compras" : "registros"} (14 d). Si no encaja, negativa en campaña/cuenta.`,
         detail: `Campaña ${camp}.`,
       });
     } else if (qs > 0 && qs < 5 && spend >= 8) {
-      const c = cpa(spend, conv);
-      out.push({
-        id: id(),
+      const costs = convCosts(spend, conv.lead, conv.purchase);
+      const costLine =
+        costs.cpl != null
+          ? `CPL ${eur(costs.cpl)}`
+          : costs.cpa != null
+            ? `CPA ${eur(costs.cpa)}`
+            : "Sin coste/conv.";
+      pushInsight(out, id, {
         severity: "medium",
         entity: "keyword",
         campaign,
         label,
         spend,
         clicks,
-        conversions: conv,
-        cpa: c,
-        action: `Mejorar QS de «${kw}» [${match}]: QS ${qs}, ${eur(spend)} · Revisar concordancia anuncio↔keyword, LP y CTR; si no mejora en 7 d, pausar la keyword.`,
-        detail: c != null ? `CPA actual ${eur(c)} · ${camp}.` : `Sin conv atribuidas · ${camp}.`,
+        conversions_total: conv.total,
+        lead: conv.lead,
+        purchase: conv.purchase,
+        action: `Mejorar QS de «${kw}» [${match}]: QS ${qs}, ${eur(spend)} · Revisar anuncio↔keyword, LP y CTR; si no mejora en 7 d, pausar.`,
+        detail: `${costLine} · ${camp}.`,
       });
-    } else if (match === "BROAD" && spend >= 20 && conv === 0) {
-      out.push({
-        id: id(),
+    } else if (match === "BROAD" && spend >= 20 && primaryZero) {
+      pushInsight(out, id, {
         severity: "medium",
         entity: "keyword",
         campaign,
         label: `${kw} (BROAD)`,
         spend,
         clicks,
-        conversions: conv,
-        cpa: null,
-        action: `Restringir «${kw}» (BROAD): ${eur(spend)} sin conv. Pasar a frase/exacta o pausar; revisar términos de búsqueda y volcar irrelevantes como negativas.`,
+        conversions_total: conv.total,
+        lead: conv.lead,
+        purchase: conv.purchase,
+        action: `Restringir «${kw}» (BROAD): ${eur(spend)} sin conv. útiles. Frase/exacta o pausar; negativas desde términos de búsqueda.`,
         detail: camp,
       });
-    } else if (conv >= 1 && cpa(spend, conv)! < 40) {
-      const c = cpa(spend, conv)!;
-      out.push({
-        id: id(),
+    } else if (conv.purchase >= 1 && convCosts(spend, conv.lead, conv.purchase).cpa! < 80) {
+      const c = convCosts(spend, conv.lead, conv.purchase).cpa!;
+      pushInsight(out, id, {
         severity: "low",
         entity: "keyword",
         campaign,
         label,
         spend,
         clicks,
-        conversions: conv,
-        cpa: c,
-        action: `Mantener «${kw}» [${match}]: CPA ${eur(c)} (${conv.toFixed(1)} conv). Valorar subir puja ≤10 % solo tras revisar ritmo de campaña (sin superar ±20 % presupuesto).`,
+        conversions_total: conv.total,
+        lead: conv.lead,
+        purchase: conv.purchase,
+        action: `Mantener «${kw}» [${match}]: CPA ${eur(c)} (${conv.purchase.toFixed(1)} compras). Subir puja ≤10 % solo si el ritmo de campaña lo permite.`,
+        detail: camp,
+      });
+    } else if (conv.lead >= 1 && convCosts(spend, conv.lead, conv.purchase).cpl! < 45) {
+      const c = convCosts(spend, conv.lead, conv.purchase).cpl!;
+      pushInsight(out, id, {
+        severity: "low",
+        entity: "keyword",
+        campaign,
+        label,
+        spend,
+        clicks,
+        conversions_total: conv.total,
+        lead: conv.lead,
+        purchase: conv.purchase,
+        action: `Mantener «${kw}» [${match}]: CPL ${eur(c)} (${conv.lead.toFixed(1)} registros). Escalar con control de presupuesto (±20 %).`,
         detail: camp,
       });
     }
@@ -135,18 +235,18 @@ export function buildInsights(input: {
     if (spend < 10) continue;
 
     if (conv === 0 && clicks >= 12 && spend >= 20) {
-      out.push({
-        id: id(),
+      pushInsight(out, id, {
         severity: "high",
         entity: "ad_group",
         campaign,
         label: name,
         spend,
         clicks,
-        conversions: 0,
-        cpa: null,
-        action: `Grupo «${name}» (${camp}): ${eur(spend)}, ${clicks} clics, 0 conv. Revisar URL final del grupo, RSA (≥1 titular alineado) y extensiones; pausar el grupo solo si tras el arreglo sigue sin conv.`,
-        detail: "Entidad: ad group ENABLED en ventana 14 d.",
+        conversions_total: 0,
+        lead: 0,
+        purchase: 0,
+        action: `Grupo «${name}» (${camp}): ${eur(spend)}, ${clicks} clics, 0 registros/compras. Revisar URL, RSA y extensiones; pausar si sigue en 0 tras arreglo.`,
+        detail: "Ventana 14 d · ad group ENABLED.",
       });
     }
   }
@@ -164,18 +264,18 @@ export function buildInsights(input: {
 
     if (spend >= 25 && conv === 0 && clicks >= 15) {
       const camp = shortCampaign(campaign);
-      out.push({
-        id: id(),
+      pushInsight(out, id, {
         severity: "medium",
         entity: "ad",
         campaign,
         label: short,
         spend,
         clicks,
-        conversions: 0,
-        cpa: null,
-        action: `Anuncio «${short}» (${adType}, ${camp}): ${eur(spend)} sin conv. Sustituir/desactivar este RSA, probar 2 titulares + CTA nuevos y validar LP; pausar el anuncio si el grupo tiene otra RSA con conv.`,
-        detail: `${clicks} clics en ventana 14 d.`,
+        conversions_total: 0,
+        lead: 0,
+        purchase: 0,
+        action: `Anuncio «${short}» (${adType}, ${camp}): ${eur(spend)} sin conv. Rotar RSA/CTA y LP; pausar si otra RSA del grupo convierte.`,
+        detail: `${clicks} clics · ventana 14 d.`,
       });
     }
   }

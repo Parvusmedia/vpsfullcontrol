@@ -1,6 +1,8 @@
 import { buildInsights } from "./insights";
 import { isPmaxBrief } from "./active-campaigns";
+import { planCampaigns } from "./brief-plan";
 import { windsorQuery } from "./windsor-client";
+import { fetchKeywordConversionSplit } from "./windsor-conversions";
 
 export type DeepAnalysis = {
   window: { from: string; to: string };
@@ -21,7 +23,11 @@ export async function fetchDeepAnalysis(
 ): Promise<DeepAnalysis> {
   const baseFilter = [["campaign_status", "eq", "ENABLED"]] as unknown[][];
 
-  const [adGroupRows, keywordRows, adRows] = await Promise.all([
+  const campaignObjetivo = new Map(
+    planCampaigns().map((c) => [c.nombre_en_brief, c.objetivo ?? "ventas"])
+  );
+
+  const [adGroupRows, keywordRows, adRows, keywordConvSplit] = await Promise.all([
     windsorQuery(
       apiKey,
       [
@@ -72,6 +78,7 @@ export async function fetchDeepAnalysis(
       dateTo,
       [...baseFilter, ["spend", "gt", 5]]
     ),
+    fetchKeywordConversionSplit(apiKey, dateFrom, dateTo),
   ]);
 
   const inPlan = (campaign: string) => activeBriefs.has(campaign);
@@ -96,6 +103,8 @@ export async function fetchDeepAnalysis(
     keywords,
     ads,
     activeBriefs,
+    keywordConvSplit,
+    campaignObjetivo,
   });
 
   return {

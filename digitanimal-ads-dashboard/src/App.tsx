@@ -209,7 +209,9 @@ export default function App() {
                   <th>Campaña (Google Ads)</th>
                   <th>€/día</th>
                   <th>Spend €</th>
-                  <th>Conv.</th>
+                  <th title="Formulario, contacto, llamada, etc.">Reg.</th>
+                  <th title="Compra / purchase">Compra</th>
+                  <th>CPL €</th>
                   <th>CPA €</th>
                   <th>Budget plan €</th>
                   <th>Ritmo %</th>
@@ -283,14 +285,26 @@ function CampaignRows({
   const campana = String(row.campana ?? brief);
   const aliasBrief = String(row.campana_brief ?? "");
   const spend = truncEur(num(row.spend));
-  const conversions = num(row.conversions);
-  const cpaRaw = row.cost_per_conversion;
-  const cpa =
-    cpaRaw != null && cpaRaw !== ""
-      ? truncEur(num(cpaRaw))
-      : conversions > 0
-        ? truncEur(num(row.spend) / conversions)
+  const convLead = num(row.conversions_lead);
+  const convPurchase = num(row.conversions_purchase);
+  const cpl =
+    row.cpl != null && row.cpl !== ""
+      ? truncEur(num(row.cpl))
+      : convLead > 0
+        ? truncEur(spend / convLead)
         : null;
+  const cpa =
+    row.cpa != null && row.cpa !== ""
+      ? truncEur(num(row.cpa))
+      : convPurchase > 0
+        ? truncEur(spend / convPurchase)
+        : null;
+  const convOther = num(row.conversions_other);
+  const convTip =
+    convOther > 0
+      ? ` · otras conv. (micro): ${convOther.toFixed(2)}`
+      : "";
+  const costTitle = `Registros y compras por acción de conversión (Windsor)${convTip}`;
   const bud = truncEur(num(row.budget_consumido));
   const daily = truncEur(num(row.presupuesto_diario));
   const pct = pctDisplay(row.pct_cumplimiento);
@@ -310,8 +324,10 @@ function CampaignRows({
         <td title={aliasBrief ? `Alias brief: ${aliasBrief}` : brief}>{campana}</td>
         <td>{daily.toFixed(2)}</td>
         <td>{spend.toFixed(2)}</td>
-        <td>{conversions > 0 ? conversions.toFixed(2) : "—"}</td>
-        <td>{cpa != null ? cpa.toFixed(2) : "—"}</td>
+        <td title={costTitle}>{convLead > 0 ? convLead.toFixed(2) : "—"}</td>
+        <td title={costTitle}>{convPurchase > 0 ? convPurchase.toFixed(2) : "—"}</td>
+        <td title={costTitle}>{cpl != null ? cpl.toFixed(2) : "—"}</td>
+        <td title={costTitle}>{cpa != null ? cpa.toFixed(2) : "—"}</td>
         <td>{bud.toFixed(2)}</td>
         <td>
           <MotionBar pct={Math.min(pct, 120)} warn={low} />

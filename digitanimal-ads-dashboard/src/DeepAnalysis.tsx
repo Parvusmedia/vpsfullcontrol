@@ -10,6 +10,9 @@ export type Insight = {
   spend: number;
   clicks: number;
   conversions: number;
+  conversions_lead: number;
+  conversions_purchase: number;
+  cpl: number | null;
   cpa: number | null;
   action: string;
   detail: string;
@@ -125,7 +128,9 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                   <th>Campaña</th>
                   <th>Elemento</th>
                   <th>Spend</th>
-                  <th>Conv</th>
+                  <th>Reg.</th>
+                  <th>Compra</th>
+                  <th>CPL</th>
                   <th>CPA</th>
                   <th>Acción sugerida</th>
                 </tr>
@@ -140,7 +145,9 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                     </td>
                     <td title={i.detail}>{i.label}</td>
                     <td>{truncEur(i.spend).toFixed(2)}</td>
-                    <td>{i.conversions > 0 ? i.conversions.toFixed(2) : "—"}</td>
+                    <td>{i.conversions_lead > 0 ? i.conversions_lead.toFixed(2) : "—"}</td>
+                    <td>{i.conversions_purchase > 0 ? i.conversions_purchase.toFixed(2) : "—"}</td>
+                    <td>{i.cpl != null ? i.cpl.toFixed(2) : "—"}</td>
                     <td>{i.cpa != null ? i.cpa.toFixed(2) : "—"}</td>
                     <td className="rec action-cell">
                       <span className="action-main">{i.action}</span>

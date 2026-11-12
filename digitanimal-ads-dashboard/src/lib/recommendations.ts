@@ -65,14 +65,18 @@ export function recommend(raw: Row): Recommendation {
   const desvio = num(r.desvio_eur);
   const spend = num(r.spend);
   const conversions = num(r.conversions);
+  const convLead = num(r.conversions_lead);
+  const convPurchase = num(r.conversions_purchase);
+  const objetivo = String(r.objetivo ?? "ventas");
+  const primaryConv = objetivo === "ventas" ? convPurchase || convLead : convLead || convPurchase;
   const clicks = num(r.clicks);
 
-  if (clicks > 30 && conversions === 0 && (tier === "T1" || tier === "T2")) {
+  if (clicks > 30 && primaryConv === 0 && (tier === "T1" || tier === "T2")) {
     return {
       tier,
       review,
       severity: "alert",
-      text: "Gate medición: clics sin conversiones atribuidas. Revisar GTM/consent/UTM antes de subir pujas.",
+      text: `Gate medición: clics sin ${objetivo === "ventas" ? "compras ni registros" : "registros"} atribuidos. Revisar GTM/consent/UTM antes de subir pujas.`,
     };
   }
 

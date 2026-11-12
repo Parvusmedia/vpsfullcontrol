@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ActivationMetrics } from "./windsor-campaigns";
 
 const brief = JSON.parse(
   readFileSync(
@@ -48,16 +49,7 @@ export function daysElapsedInPlan(now = new Date()): number {
 
 export function buildCumplimientoRows(
   enabledBriefs: Set<string>,
-  windsorSpend: Map<
-    string,
-    {
-      campaign_name: string;
-      spend: number;
-      conversions: number;
-      clicks: number;
-      cpa: number | null;
-    }
-  >
+  windsorSpend: Map<string, ActivationMetrics>
 ): Record<string, unknown>[] {
   const dias = daysElapsedInPlan();
   const rows: Record<string, unknown>[] = [];
@@ -68,7 +60,11 @@ export function buildCumplimientoRows(
       campaign_name: c.nombre_en_brief,
       spend: 0,
       conversions: 0,
+      conversions_lead: 0,
+      conversions_purchase: 0,
+      conversions_other: 0,
       clicks: 0,
+      cpl: null,
       cpa: null,
     };
     const budget = Math.round(c.presupuesto_diario_eur * dias * 100) / 100;
@@ -90,8 +86,14 @@ export function buildCumplimientoRows(
       pct_cumplimiento: pct,
       desvio_eur: Math.round((spend - budget) * 100) / 100,
       conversions: m.conversions,
+      conversions_lead: m.conversions_lead,
+      conversions_purchase: m.conversions_purchase,
+      conversions_other: m.conversions_other,
       clicks: m.clicks,
+      cpl: m.cpl,
+      cpa: m.cpa,
       cost_per_conversion: m.cpa,
+      cost_kind: c.objetivo === "ventas" ? "cpa" : "cpl",
       campaign_status: "ENABLED",
       incluir: "SI",
     });

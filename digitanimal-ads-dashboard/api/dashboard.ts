@@ -51,7 +51,7 @@ export async function GET(_request: Request): Promise<Response> {
       analysis_window: win,
       deep_analysis,
       metrics_note:
-        "Solo campañas ENABLED del brief 8k€ (Windsor). Ritmo vs brief JSON; profundidad últimos 14 días.",
+        "CPL = spend/registros (formulario, contacto…). CPA = spend/compras. Desglose por conversion_action en Windsor. Ritmo = plan 8k€; profundidad 14 días.",
     });
   } catch (e) {
     return Response.json(
