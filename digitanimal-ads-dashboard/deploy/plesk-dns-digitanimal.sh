@@ -11,3 +11,8 @@ bash /opt/apps/education-ai-advisor/scripts/plesk-add-a-record.sh
 ssh -i "${HOME}/.ssh/nextconvers_vps_ed25519" -o BatchMode=yes root@82.223.3.205 \
   "plesk bin dns -d ${DNS_DOMAIN} -a ${DNS_HOST} -ip ${OLD_IP}" 2>/dev/null \
   || echo "(old A ${OLD_IP} already removed or absent)"
+
+# Stop serving the IONOS/MyWebsite landing on the legacy Plesk host (82.223.3.205).
+ssh -i "${HOME}/.ssh/nextconvers_vps_ed25519" -o BatchMode=yes root@82.223.3.205 \
+  "plesk bin site --update ${DNS_HOST}.${DNS_DOMAIN} -hosting false" 2>/dev/null \
+  || true
