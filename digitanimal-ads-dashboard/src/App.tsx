@@ -38,10 +38,17 @@ export default function App() {
     };
 
     const load = async () => {
+      const host = window.location.hostname;
+      if (host.endsWith(".apps.grok.bot")) {
+        window.location.replace(`https://digitanimal.pmediaplus.com${window.location.pathname}${window.location.search}`);
+        return;
+      }
+
       for (const url of ["/api/dashboard", "/dashboard.json"] as const) {
         try {
-          const r = await fetch(url);
-          const json = parsePayload(await r.text());
+          const r = await fetch(url, { cache: "no-store" });
+          const text = await r.text();
+          const json = parsePayload(text);
           if (!json) continue;
           if (!r.ok) {
             if (url === "/dashboard.json") continue;
@@ -62,10 +69,12 @@ export default function App() {
           /* try next URL */
         }
       }
+      const onGrok = host.includes("grok.bot");
       setData({
         source: "error",
-        message:
-          "No hay datos: ni /api/dashboard ni /dashboard.json (republica con WINDSOR_API_KEY).",
+        message: onGrok
+          ? "Estás en la URL antigua de Cursor Apps (sin API). Abre https://digitanimal.pmediaplus.com"
+          : `No hay datos en ${host}: ni /api/dashboard ni /dashboard.json respondieron JSON. Prueba en ventana privada o desactiva extensiones que bloqueen peticiones.`,
       });
     };
 
