@@ -1,4 +1,13 @@
-import brief from "./brief-campaigns.json";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const brief = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "brief-campaigns.json"),
+    "utf8"
+  )
+);
 
 type BriefCampaign = {
   pais: string;

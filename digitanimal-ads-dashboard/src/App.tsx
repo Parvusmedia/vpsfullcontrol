@@ -28,9 +28,30 @@ export default function App() {
 
   useEffect(() => {
     fetch("/api/dashboard")
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => setData({ source: "error", message: "No API" }));
+      .then(async (r) => {
+        const text = await r.text();
+        try {
+          const json = JSON.parse(text) as Payload;
+          if (!r.ok) {
+            setData({
+              ...json,
+              source: "error",
+              message: json.message ?? `Error HTTP ${r.status}`,
+            });
+            return;
+          }
+          setData(json);
+        } catch {
+          setData({
+            source: "error",
+            message:
+              "La ruta /api/dashboard no responde JSON (republica la app con app/api/dashboard/route.ts).",
+          });
+        }
+      })
+      .catch(() =>
+        setData({ source: "error", message: "No se pudo conectar con /api/dashboard." })
+      );
   }, []);
 
   const rows = useMemo(

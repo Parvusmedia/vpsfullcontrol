@@ -1,9 +1,9 @@
-import { BRIEF_META, buildCumplimientoRows, presupuestoActivacionRows } from "./lib/brief-plan";
-import { fetchDeepAnalysis } from "./lib/windsor-deep";
+import { BRIEF_META, buildCumplimientoRows, presupuestoActivacionRows } from "../../../api/lib/brief-plan";
+import { fetchDeepAnalysis } from "../../../api/lib/windsor-deep";
 import {
   fetchActivationMetrics,
   fetchEnabledPlanBriefs,
-} from "./lib/windsor-campaigns";
+} from "../../../api/lib/windsor-campaigns";
 
 function analysisWindow(): { from: string; to: string } {
   const to = new Date();
@@ -13,7 +13,7 @@ function analysisWindow(): { from: string; to: string } {
   return { from: fmt(from), to: fmt(to) };
 }
 
-export async function GET(): Promise<Response> {
+export async function GET(_request: Request): Promise<Response> {
   const windsorKey = process.env.WINDSOR_API_KEY;
   if (!windsorKey) {
     return Response.json({
