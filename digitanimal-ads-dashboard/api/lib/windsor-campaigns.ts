@@ -1,5 +1,8 @@
 import { costPerLead, costPerPurchase } from "./conversion-classify";
-import { fetchCampaignConversionSplit } from "./windsor-conversions";
+import {
+  fetchCampaignConversionSplit,
+  type ConversionActionLine,
+} from "./windsor-conversions";
 import { num, round2, windsorQuery } from "./windsor-client";
 import { BRIEF_META, planCampaigns } from "./brief-plan";
 
@@ -37,6 +40,7 @@ export type ActivationMetrics = {
   clicks: number;
   cpl: number | null;
   cpa: number | null;
+  conversion_actions: ConversionActionLine[];
 };
 
 export async function fetchActivationMetrics(apiKey: string): Promise<
@@ -90,6 +94,7 @@ export async function fetchActivationMetrics(apiKey: string): Promise<
       clicks: Math.round(clicks),
       cpl: costPerLead(spend, conversions_lead),
       cpa: costPerPurchase(spend, conversions_purchase),
+      conversion_actions: convSplit?.actions ?? [],
     });
   }
   return map;

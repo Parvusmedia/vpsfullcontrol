@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  ATTRIBUTED_CONV_TITLE,
+  formatAttributedConversions,
+  PURCHASE_COL_TITLE,
+  REG_COL_TITLE,
+} from "./lib/conversions-display";
 import { countryFromBrief, num, pctDisplay, truncEur, type Row } from "./lib/metrics";
 import { normalizeCumplimientoRow } from "./lib/normalize";
 import { recommend, type Recommendation } from "./lib/recommendations";
@@ -209,8 +215,8 @@ export default function App() {
                   <th>Campaña (Google Ads)</th>
                   <th>€/día</th>
                   <th>Spend €</th>
-                  <th title="Formulario, contacto, llamada, etc.">Reg.</th>
-                  <th title="Compra / purchase">Compra</th>
+                  <th title={REG_COL_TITLE}>Reg. (atrib.)</th>
+                  <th title={PURCHASE_COL_TITLE}>Compra (atrib.)</th>
                   <th>CPL €</th>
                   <th>CPA €</th>
                   <th>Budget plan €</th>
@@ -304,7 +310,14 @@ function CampaignRows({
     convOther > 0
       ? ` · otras conv. (micro): ${convOther.toFixed(2)}`
       : "";
-  const costTitle = `Registros y compras por acción de conversión (Windsor)${convTip}`;
+  const costTitle = `${ATTRIBUTED_CONV_TITLE}${convTip}`;
+  const purchaseActions = row.conversion_purchase_actions as
+    | { name: string; conversions: number }[]
+    | undefined;
+  const purchaseTip =
+    purchaseActions && purchaseActions.length > 0
+      ? `\nAcciones compra: ${purchaseActions.map((a) => `${a.name} (${Number(a.conversions).toFixed(2)})`).join("; ")}`
+      : "";
   const bud = truncEur(num(row.budget_consumido));
   const daily = truncEur(num(row.presupuesto_diario));
   const pct = pctDisplay(row.pct_cumplimiento);
@@ -324,8 +337,10 @@ function CampaignRows({
         <td title={aliasBrief ? `Alias brief: ${aliasBrief}` : brief}>{campana}</td>
         <td>{daily.toFixed(2)}</td>
         <td>{spend.toFixed(2)}</td>
-        <td title={costTitle}>{convLead > 0 ? convLead.toFixed(2) : "—"}</td>
-        <td title={costTitle}>{convPurchase > 0 ? convPurchase.toFixed(2) : "—"}</td>
+        <td title={costTitle}>{formatAttributedConversions(convLead)}</td>
+        <td title={`${costTitle}${purchaseTip}`}>
+          {formatAttributedConversions(convPurchase)}
+        </td>
         <td title={costTitle}>{cpl != null ? cpl.toFixed(2) : "—"}</td>
         <td title={costTitle}>{cpa != null ? cpa.toFixed(2) : "—"}</td>
         <td>{bud.toFixed(2)}</td>
@@ -339,7 +354,7 @@ function CampaignRows({
       </tr>
       {open && (
         <tr className="detail">
-          <td colSpan={12}>
+          <td colSpan={14}>
             <DetailGrid row={row} rec={rec} />
           </td>
         </tr>
@@ -349,8 +364,20 @@ function CampaignRows({
 }
 
 function DetailGrid({ row, rec }: { row: Row; rec: Recommendation }) {
-  const skip = new Set(["nombre_en_brief", "campana"]);
+  const skip = new Set([
+    "nombre_en_brief",
+    "campana",
+    "conversion_purchase_actions",
+    "conversion_lead_actions",
+    "conversion_attribution_note",
+  ]);
   const entries = Object.entries(row).filter(([k]) => !skip.has(k));
+  const purchaseActions = row.conversion_purchase_actions as
+    | { name: string; conversions: number }[]
+    | undefined;
+  const leadActions = row.conversion_lead_actions as
+    | { name: string; conversions: number }[]
+    | undefined;
   return (
     <div className="detail-grid">
       <div>
@@ -361,6 +388,32 @@ function DetailGrid({ row, rec }: { row: Row; rec: Recommendation }) {
         <strong>Cadencia</strong>
         <span>{rec.review}</span>
       </div>
+      {(purchaseActions?.length || leadActions?.length) ? (
+        <div className="detail-conv-actions">
+          <strong>Acciones de conversión (Windsor)</strong>
+          {leadActions && leadActions.length > 0 ? (
+            <ul>
+              {leadActions.map((a) => (
+                <li key={`l-${a.name}`}>
+                  <span className="tag">Registro</span> {a.name}:{" "}
+                  {formatAttributedConversions(Number(a.conversions))}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {purchaseActions && purchaseActions.length > 0 ? (
+            <ul>
+              {purchaseActions.map((a) => (
+                <li key={`p-${a.name}`}>
+                  <span className="tag">Compra</span> {a.name}:{" "}
+                  {formatAttributedConversions(Number(a.conversions))}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="muted-note">{String(row.conversion_attribution_note ?? ATTRIBUTED_CONV_TITLE)}</p>
+        </div>
+      ) : null}
       <div className="detail-fields">
         {entries.map(([k, v]) => (
           <div key={k}>

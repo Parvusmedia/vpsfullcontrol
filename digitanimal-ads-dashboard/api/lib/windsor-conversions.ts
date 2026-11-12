@@ -1,15 +1,28 @@
 import {
   addConversionRow,
+  classifyConversionAction,
   emptyConversionTotals,
+  type ConversionBucket,
   type ConversionTotals,
 } from "./conversion-classify";
 import { windsorQuery } from "./windsor-client";
+
+export type ConversionActionLine = {
+  name: string;
+  category: string;
+  conversions: number;
+  bucket: ConversionBucket;
+};
+
+export type CampaignConversionDetail = ConversionTotals & {
+  actions: ConversionActionLine[];
+};
 
 export async function fetchCampaignConversionSplit(
   apiKey: string,
   dateFrom: string,
   dateTo: string
-): Promise<Map<string, ConversionTotals>> {
+): Promise<Map<string, CampaignConversionDetail>> {
   const rows = await windsorQuery(
     apiKey,
     [
@@ -22,20 +35,27 @@ export async function fetchCampaignConversionSplit(
     dateTo,
     [["campaign_status", "eq", "ENABLED"]]
   );
-  const map = new Map<string, ConversionTotals>();
+  const map = new Map<string, CampaignConversionDetail>();
   for (const r of rows) {
     const campaign = String(r.campaign ?? "");
     if (!campaign) continue;
     const conv = Number(r.conversions ?? 0);
     if (conv <= 0) continue;
-    const t = map.get(campaign) ?? emptyConversionTotals();
-    addConversionRow(
-      t,
-      r.conversion_action_category,
-      r.conversion_action_name,
-      conv
-    );
-    map.set(campaign, t);
+    const name = String(r.conversion_action_name ?? "—");
+    const category = String(r.conversion_action_category ?? "");
+    const bucket = classifyConversionAction(category, name);
+    const cur = map.get(campaign) ?? { ...emptyConversionTotals(), actions: [] };
+    addConversionRow(cur, category, name, conv);
+    cur.actions.push({
+      name,
+      category,
+      conversions: conv,
+      bucket,
+    });
+    map.set(campaign, cur);
+  }
+  for (const detail of map.values()) {
+    detail.actions.sort((a, b) => b.conversions - a.conversions);
   }
   return map;
 }

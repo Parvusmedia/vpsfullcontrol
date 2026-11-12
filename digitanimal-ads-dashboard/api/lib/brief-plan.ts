@@ -66,10 +66,13 @@ export function buildCumplimientoRows(
       clicks: 0,
       cpl: null,
       cpa: null,
+      conversion_actions: [],
     };
     const budget = Math.round(c.presupuesto_diario_eur * dias * 100) / 100;
     const spend = m.spend;
     const pct = budget > 0 ? spend / budget : 0;
+    const purchaseActions = m.conversion_actions.filter((a) => a.bucket === "purchase");
+    const leadActions = m.conversion_actions.filter((a) => a.bucket === "lead");
     rows.push({
       nombre_en_brief: c.nombre_en_brief,
       campana: m.campaign_name,
@@ -94,6 +97,10 @@ export function buildCumplimientoRows(
       cpa: m.cpa,
       cost_per_conversion: m.cpa,
       cost_kind: c.objetivo === "ventas" ? "cpa" : "cpl",
+      conversion_attribution_note:
+        "Valores atribuidos por Google Ads (modelo de atribución); no son pedidos cerrados 1:1.",
+      conversion_purchase_actions: purchaseActions.slice(0, 6),
+      conversion_lead_actions: leadActions.slice(0, 6),
       campaign_status: "ENABLED",
       incluir: "SI",
     });

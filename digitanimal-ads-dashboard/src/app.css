@@ -138,6 +138,23 @@ tr.high {
 .action-cell .action-main {
   display: block;
 }
+.detail-conv-actions ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+}
+.detail-conv-actions .tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #475569;
+  margin-right: 0.35rem;
+}
+.muted-note {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0.5rem 0 0;
+}
 .action-cell .action-detail {
   display: block;
   margin-top: 0.35rem;

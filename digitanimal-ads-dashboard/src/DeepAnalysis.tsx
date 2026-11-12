@@ -1,4 +1,10 @@
 import { useMemo, useState } from "react";
+import {
+  ATTRIBUTED_CONV_TITLE,
+  formatAttributedConversions,
+  PURCHASE_COL_TITLE,
+  REG_COL_TITLE,
+} from "./lib/conversions-display";
 import { countryFromBrief, num, truncEur } from "./lib/metrics";
 
 export type Insight = {
@@ -128,8 +134,8 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                   <th>Campaña</th>
                   <th>Elemento</th>
                   <th>Spend</th>
-                  <th>Reg.</th>
-                  <th>Compra</th>
+                  <th title={REG_COL_TITLE}>Reg. (atrib.)</th>
+                  <th title={PURCHASE_COL_TITLE}>Compra (atrib.)</th>
                   <th>CPL</th>
                   <th>CPA</th>
                   <th>Acción sugerida</th>
@@ -145,8 +151,12 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                     </td>
                     <td title={i.detail}>{i.label}</td>
                     <td>{truncEur(i.spend).toFixed(2)}</td>
-                    <td>{i.conversions_lead > 0 ? i.conversions_lead.toFixed(2) : "—"}</td>
-                    <td>{i.conversions_purchase > 0 ? i.conversions_purchase.toFixed(2) : "—"}</td>
+                    <td title={ATTRIBUTED_CONV_TITLE}>
+                      {formatAttributedConversions(i.conversions_lead)}
+                    </td>
+                    <td title={ATTRIBUTED_CONV_TITLE}>
+                      {formatAttributedConversions(i.conversions_purchase)}
+                    </td>
                     <td>{i.cpl != null ? i.cpl.toFixed(2) : "—"}</td>
                     <td>{i.cpa != null ? i.cpa.toFixed(2) : "—"}</td>
                     <td className="rec action-cell">
