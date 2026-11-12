@@ -40,7 +40,7 @@ export default function App() {
     const load = async () => {
       const host = window.location.hostname;
       if (host.endsWith(".apps.grok.bot")) {
-        window.location.replace(`https://digitanimal.pmediaplus.com${window.location.pathname}${window.location.search}`);
+        window.location.replace(`https://digitanimal-ads.pmediaplus.com${window.location.pathname}${window.location.search}`);
         return;
       }
 
@@ -73,7 +73,7 @@ export default function App() {
       setData({
         source: "error",
         message: onGrok
-          ? "Estás en la URL antigua de Cursor Apps (sin API). Abre https://digitanimal.pmediaplus.com"
+          ? "Estás en la URL antigua de Cursor Apps (sin API). Abre https://digitanimal-ads.pmediaplus.com"
           : `No hay datos en ${host}: ni /api/dashboard ni /dashboard.json respondieron JSON. Prueba en ventana privada o desactiva extensiones que bloqueen peticiones.`,
       });
     };

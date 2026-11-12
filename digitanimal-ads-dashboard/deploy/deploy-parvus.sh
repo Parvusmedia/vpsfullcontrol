@@ -43,11 +43,8 @@ ssh "$REMOTE" "sudo systemctl daemon-reload && sudo systemctl enable --now digit
 ssh "$REMOTE" "sudo systemctl restart digitanimal-ads.service"
 ssh "$REMOTE" "sudo nginx -t && sudo systemctl reload nginx"
 
-echo "==> Optional TLS"
-if ssh "$REMOTE" "sudo test -d /etc/letsencrypt/live/digitanimal.pmediaplus.com" 2>/dev/null; then
-  echo "    cert already present for digitanimal.pmediaplus.com"
-else
-  echo "    run on VPS if DNS is ready: sudo certbot --nginx -d digitanimal.pmediaplus.com"
-fi
+echo "==> TLS (restaura HTTPS tras copiar plantilla nginx)"
+ssh "$REMOTE" "sudo certbot --nginx -d digitanimal-ads.pmediaplus.com -d digitanimal.pmediaplus.com --non-interactive --redirect --expand 2>&1 | tail -8" \
+  || echo "    certbot failed; run manually when DNS propagates"
 
 echo "==> Done. Smoke: curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3025/api/dashboard (on VPS)"

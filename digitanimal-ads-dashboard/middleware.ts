@@ -1,18 +1,21 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const PRODUCTION_HOST = "digitanimal.pmediaplus.com";
+const PRODUCTION_HOSTS = new Set([
+  "digitanimal-ads.pmediaplus.com",
+  "digitanimal.pmediaplus.com",
+]);
 
 /** El hosting estático de Cursor Apps no ejecuta API routes; redirigimos al VPS. */
 export function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
-  if (host === PRODUCTION_HOST || host === "localhost" || host === "127.0.0.1") {
+  if (PRODUCTION_HOSTS.has(host) || host === "localhost" || host === "127.0.0.1") {
     return NextResponse.next();
   }
   if (host.endsWith(".apps.grok.bot") || host.includes("cursor")) {
     const target = new URL(request.url);
     target.protocol = "https:";
-    target.host = PRODUCTION_HOST;
+    target.host = "digitanimal-ads.pmediaplus.com";
     return NextResponse.redirect(target, 308);
   }
   return NextResponse.next();

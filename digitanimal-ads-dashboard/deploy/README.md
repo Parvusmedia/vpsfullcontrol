@@ -1,6 +1,6 @@
 # Digitanimal dashboard en Parvus VPS
 
-**URL:** https://digitanimal.pmediaplus.com (requiere DNS)
+**URL:** https://digitanimal-ads.pmediaplus.com (canónico; también `digitanimal.pmediaplus.com`)
 
 ## DNS (Plesk en nextconvers / 82.223.3.205)
 
@@ -12,7 +12,7 @@ bash /opt/apps/digitanimal-ads-dashboard/deploy/plesk-dns-digitanimal.sh
 
 (o el script genérico `education-ai-advisor/scripts/plesk-add-a-record.sh` con `DNS_HOST=digitanimal`).
 
-Registro: `digitanimal.pmediaplus.com` **A** → `87.106.194.137`.
+Registro: `digitanimal-ads.pmediaplus.com` **A** → `87.106.194.137` (`deploy/plesk-dns-digitanimal-ads.sh` en parvus).
 
 ## Despliegue
 
