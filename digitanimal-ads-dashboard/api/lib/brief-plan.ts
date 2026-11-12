@@ -50,7 +50,13 @@ export function buildCumplimientoRows(
   enabledBriefs: Set<string>,
   windsorSpend: Map<
     string,
-    { spend: number; conversions: number; clicks: number; cpa: number | null }
+    {
+      campaign_name: string;
+      spend: number;
+      conversions: number;
+      clicks: number;
+      cpa: number | null;
+    }
   >
 ): Record<string, unknown>[] {
   const dias = daysElapsedInPlan();
@@ -59,6 +65,7 @@ export function buildCumplimientoRows(
   for (const c of planCampaigns()) {
     if (!enabledBriefs.has(c.nombre_en_brief)) continue;
     const m = windsorSpend.get(c.nombre_en_brief) ?? {
+      campaign_name: c.nombre_en_brief,
       spend: 0,
       conversions: 0,
       clicks: 0,
@@ -69,7 +76,8 @@ export function buildCumplimientoRows(
     const pct = budget > 0 ? spend / budget : 0;
     rows.push({
       nombre_en_brief: c.nombre_en_brief,
-      campana: c.campana,
+      campana: m.campaign_name,
+      campana_brief: c.campana,
       pais: c.pais,
       tier: c.tier,
       objetivo: c.objetivo,
@@ -94,7 +102,8 @@ export function buildCumplimientoRows(
 export function presupuestoActivacionRows(): Record<string, unknown>[] {
   return planCampaigns().map((c) => ({
     pais: c.pais,
-    campana: c.campana,
+    campana: c.nombre_en_brief,
+    campana_brief: c.campana,
     nombre_en_brief: c.nombre_en_brief,
     presupuesto_diario_eur: c.presupuesto_diario_eur,
     tier: c.tier,

@@ -128,7 +128,9 @@ export function DeepAnalysisPanel({ data }: { data: DeepAnalysis }) {
                   <tr key={i.id} className={`sev-${i.severity}`}>
                     <td>{i.severity}</td>
                     <td>{i.entity}</td>
-                    <td title={i.campaign}>{countryFromBrief(i.campaign)}</td>
+                    <td title={i.campaign}>
+                      <code className="platform-name">{i.campaign}</code>
+                    </td>
                     <td title={i.detail}>{i.label}</td>
                     <td>{truncEur(i.spend).toFixed(2)}</td>
                     <td>{i.conversions > 0 ? i.conversions.toFixed(2) : "—"}</td>

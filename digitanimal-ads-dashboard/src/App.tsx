@@ -206,7 +206,7 @@ export default function App() {
                 <tr>
                   <th></th>
                   <th>País</th>
-                  <th>Campaña</th>
+                  <th>Campaña (Google Ads)</th>
                   <th>€/día</th>
                   <th>Spend €</th>
                   <th>Conv.</th>
@@ -281,6 +281,7 @@ function CampaignRows({
 }) {
   const brief = String(row.nombre_en_brief ?? "");
   const campana = String(row.campana ?? brief);
+  const aliasBrief = String(row.campana_brief ?? "");
   const spend = truncEur(num(row.spend));
   const conversions = num(row.conversions);
   const cpaRaw = row.cost_per_conversion;
@@ -306,7 +307,7 @@ function CampaignRows({
           </button>
         </td>
         <td>{countryFromBrief(brief)}</td>
-        <td title={brief}>{campana}</td>
+        <td title={aliasBrief ? `Alias brief: ${aliasBrief}` : brief}>{campana}</td>
         <td>{daily.toFixed(2)}</td>
         <td>{spend.toFixed(2)}</td>
         <td>{conversions > 0 ? conversions.toFixed(2) : "—"}</td>
