@@ -1261,13 +1261,17 @@ async function refreshCampaigns() {
   await refreshCampaignsList();
 }
 
+let lastInviteMemberId = '';
+
 async function initInvite() {
   const form = $('#invite-form');
   const statusEl = $('#invite-form-status');
   const box = $('#invite-result');
+  const sendBtn = $('#send-invite-email');
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     setStatus(statusEl, 'Generando enlace…');
+    if (sendBtn) sendBtn.disabled = true;
     try {
       const data = await api('/connect-invite', {
         method: 'POST',
@@ -1276,13 +1280,42 @@ async function initInvite() {
       });
       $('#invite-url').value = data.inviteUrl || '';
       $('#invite-oauth-url').value = data.linkedinConnectUrl || '';
+      lastInviteMemberId = (data.member && data.member.id) || '';
       box.hidden = false;
-      let msg = 'Enlace listo. Envíalo al empleado por email o Slack.';
+      if (sendBtn) sendBtn.disabled = !lastInviteMemberId;
+      let msg = 'Enlace listo. Pulsa «Enviar invitación por email» o copia el enlace.';
       if (data.notice) msg += ' ' + data.notice;
       setStatus(statusEl, msg, data.linkedinConnectUrl ? 'ok' : '');
       await refreshMembers();
     } catch (e) {
       setStatus(statusEl, e.message, 'err');
+    }
+  });
+  sendBtn?.addEventListener('click', async () => {
+    const name = $('#inv-name').value.trim();
+    const email = $('#inv-email').value.trim();
+    if (!email) {
+      setStatus(statusEl, 'Indica el email corporativo.', 'err');
+      return;
+    }
+    setStatus(statusEl, 'Enviando email de invitación…');
+    sendBtn.disabled = true;
+    try {
+      const body = lastInviteMemberId ? { memberId: lastInviteMemberId } : { name, email };
+      const data = await api('/connect-invite-send', { method: 'POST', admin: true, body });
+      lastInviteMemberId = (data.member && data.member.id) || lastInviteMemberId;
+      if (data.inviteUrl) $('#invite-url').value = data.inviteUrl;
+      box.hidden = false;
+      setStatus(
+        statusEl,
+        'Invitación enviada a ' + (data.to || email) + ' con enlace de vinculación y resumen de Ngaged.',
+        'ok'
+      );
+      await refreshMembers();
+    } catch (e) {
+      setStatus(statusEl, e.message, 'err');
+    } finally {
+      sendBtn.disabled = false;
     }
   });
   $('#copy-invite-url').addEventListener('click', () => {

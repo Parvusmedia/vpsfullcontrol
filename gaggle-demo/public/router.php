@@ -22,6 +22,7 @@ if (str_starts_with($uri, '/api/')) {
         'member-queue' => 'member-queue.php',
         'member-respond' => 'member-respond.php',
         'connect-invite' => 'connect-invite.php',
+        'connect-invite-send' => 'connect-invite-send.php',
         'connect-status' => 'connect-status.php',
         'connect-complete' => 'connect-complete.php',
         'connect-accept-terms' => 'connect-accept-terms.php',

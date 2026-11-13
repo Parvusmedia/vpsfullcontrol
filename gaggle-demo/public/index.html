@@ -327,7 +327,7 @@
                     </p>
                     <ol class="small text-muted mb-3 ps-3">
                       <li>Completa nombre y email corporativo y genera el enlace Ngaged.</li>
-                      <li>Envía el enlace al empleado (email, Slack o Teams).</li>
+                      <li>Usa <strong>Enviar invitación por email</strong> o copia el enlace a Slack/Teams.</li>
                       <li>La persona vincula su LinkedIn desde ese enlace.</li>
                       <li>En <strong>Miembros</strong> aparecerá como <strong>pendiente de validación</strong>.</li>
                       <li>Tú eliges el equipo y pulsas <strong>Validar y activar</strong> para incluirla en campañas.</li>
@@ -342,8 +342,11 @@
                       <input class="form-control form-control-sm mb-2" id="invite-url" readonly />
                       <label class="form-label">Enlace OAuth LinkedIn</label>
                       <input class="form-control form-control-sm mb-2" id="invite-oauth-url" readonly placeholder="Opcional: enlace directo LinkedIn si está habilitado" />
-                      <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-invite-url">Copiar Ngaged</button>
+                      <button type="button" class="btn btn-primary w-100 mb-2" id="send-invite-email" disabled>
+                        Enviar invitación por email
+                      </button>
+                      <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-invite-url">Copiar enlace</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-oauth-url">Copiar OAuth</button>
                       </div>
                     </div>
@@ -467,6 +470,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="/assets/onboarding.js?v=20261105-onboarding-fix" defer></script>
-    <script src="/assets/demo.js?v=20261113-invite-approval" defer></script>
+    <script src="/assets/demo.js?v=20261113-invite-email" defer></script>
   </body>
 </html>
