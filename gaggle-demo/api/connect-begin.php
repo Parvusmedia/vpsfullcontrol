@@ -57,7 +57,7 @@ $store['members'][$i] = $member;
 ngaged_save_members($store);
 
 $oauthUrl = trim((string) ($member['linkedinConnectUrl'] ?? ''));
-$selfConnect = $oauthUrl !== '' && gaggle_publora_workspace_enabled();
+$selfConnect = $oauthUrl !== '' && gaggle_publora_employee_connect_ready();
 
 if (!$selfConnect) {
     gaggle_demo_json_response(200, [

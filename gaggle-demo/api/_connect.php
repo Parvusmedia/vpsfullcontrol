@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_campaigns.php';
 require_once __DIR__ . '/_publora.php';
+require_once __DIR__ . '/_publora_company.php';
+require_once __DIR__ . '/_connect_company.php';
 require_once __DIR__ . '/_tokens.php';
 require_once __DIR__ . '/_members_util.php';
 
@@ -68,6 +70,25 @@ function ngaged_provision_member_connect(array $member): array
     $member['inviteUrl'] = $inviteUrl;
     $member['connectStatus'] = $member['connectStatus'] ?? 'pending';
 
+    if (gaggle_publora_company_configured()) {
+        $company = ngaged_provision_member_connect_company($member);
+        if ($company['ok']) {
+            return [
+                'ok' => true,
+                'member' => $company['member'],
+                'inviteUrl' => $inviteUrl,
+                'linkedinConnectUrl' => $company['linkedinConnectUrl'] ?? null,
+                'workspaceEnabled' => true,
+                'companyConnect' => true,
+            ];
+        }
+        return [
+            'ok' => false,
+            'error' => $company['error'] ?? 'No se pudo preparar la conexión LinkedIn.',
+            'publoraCode' => $company['code'] ?? null,
+        ];
+    }
+
     if (!gaggle_publora_workspace_enabled()) {
         $member['workspaceEnabled'] = false;
         return [
@@ -76,7 +97,7 @@ function ngaged_provision_member_connect(array $member): array
             'inviteUrl' => $inviteUrl,
             'linkedinConnectUrl' => null,
             'workspaceEnabled' => false,
-            'notice' => 'La vinculación LinkedIn por el empleado requiere activar la conexión por usuario en la configuración del servidor Ngaged (OAuth).',
+            'notice' => 'La vinculación LinkedIn por el empleado requiere la Company API (workspace) o activar OAuth en el servidor.',
         ];
     }
 
@@ -111,6 +132,10 @@ function ngaged_provision_member_connect(array $member): array
 
 function ngaged_sync_member_linkedin(string $memberId): array
 {
+    if (gaggle_publora_company_configured()) {
+        return ngaged_sync_member_linkedin_company($memberId);
+    }
+
     $store = ngaged_members_store();
     $found = ngaged_find_member($store, $memberId);
     if ($found === null) {

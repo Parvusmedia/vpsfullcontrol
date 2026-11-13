@@ -45,8 +45,9 @@ gaggle_demo_json_response(200, [
     'linkedinConnectUrl' => $oauthUrl,
     'platformLinked' => trim((string) ($member['platformId'] ?? '')) !== '',
     'connectStatus' => $member['connectStatus'] ?? 'pending',
-    'selfConnectAvailable' => $oauthUrl !== null,
-    'workspaceEnabled' => (bool) ($member['workspaceEnabled'] ?? gaggle_publora_workspace_enabled()),
+    'selfConnectAvailable' => $oauthUrl !== null && gaggle_publora_employee_connect_ready(),
+    'workspaceEnabled' => gaggle_publora_employee_connect_ready(),
+    'companyConnect' => gaggle_publora_company_configured(),
     'termsAccepted' => ngaged_member_terms_accepted($member),
     'terms' => ngaged_terms_acceptance_meta(),
 ]);

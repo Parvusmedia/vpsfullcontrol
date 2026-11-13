@@ -40,9 +40,9 @@ if ($existing !== '') {
 
 $result = ngaged_sync_member_linkedin($verified['memberId']);
 if (!$result['ok']) {
-    $hint = gaggle_publora_workspace_enabled()
+    $hint = gaggle_publora_employee_connect_ready()
         ? 'Completa la autorización en LinkedIn y vuelve a pulsar comprobar.'
-        : 'Tu administrador aún no ha vinculado tu perfil. Avísale y vuelve a comprobar en unos minutos.';
+        : 'La conexión automática aún no está disponible. Contacta con tu administrador Ngaged.';
     gaggle_demo_json_response(422, [
         'ok' => false,
         'error' => ngaged_user_error_message($result['error'] ?? null, 'Aún no detectamos LinkedIn.'),
