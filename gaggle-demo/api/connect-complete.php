@@ -50,8 +50,13 @@ if (!$result['ok']) {
     ]);
 }
 
+$message = !empty($result['awaitingAdminApproval'])
+    ? 'LinkedIn vinculado correctamente. Tu administrador Ngaged validará el alta y te asignará un equipo antes de las campañas.'
+    : 'LinkedIn vinculado correctamente.';
+
 gaggle_demo_json_response(200, [
     'ok' => true,
-    'message' => 'LinkedIn vinculado correctamente.',
+    'message' => $message,
     'platformId' => $result['platformId'] ?? null,
+    'awaitingAdminApproval' => !empty($result['awaitingAdminApproval']),
 ]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_campaigns.php';
 require_once __DIR__ . '/_publora.php';
 require_once __DIR__ . '/_tokens.php';
+require_once __DIR__ . '/_members_util.php';
 
 function ngaged_member_connect_token(string $memberId, int $ttlSeconds = 2592000): string
 {
@@ -126,9 +127,15 @@ function ngaged_sync_member_linkedin(string $memberId): array
         return $li;
     }
     $member['platformId'] = $li['platformId'];
-    $member['connectStatus'] = 'linked';
+    $member['connectStatus'] = 'pending_review';
     $member['linkedAt'] = gmdate('c');
+    unset($member['approvedAt'], $member['approvedBy']);
     $store['members'][$i] = $member;
     ngaged_save_members($store);
-    return ['ok' => true, 'member' => $member, 'platformId' => $li['platformId']];
+    return [
+        'ok' => true,
+        'member' => $member,
+        'platformId' => $li['platformId'],
+        'awaitingAdminApproval' => true,
+    ];
 }

@@ -306,7 +306,10 @@
               <div class="col-lg-7" id="members-directory-col">
                 <div class="card shadow-sm">
                   <div class="card-header bg-white"><strong>Directorio del equipo</strong></div>
-                  <div class="card-body" id="members-list"></div>
+                  <div class="card-body">
+                    <div id="members-pending-alert" class="alert alert-warning py-2 small" hidden></div>
+                    <div id="members-list"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -323,10 +326,11 @@
                       Compártelo por email, Slack o Teams; el proceso suele tardar menos de un minuto.
                     </p>
                     <ol class="small text-muted mb-3 ps-3">
-                      <li>Completa nombre y email corporativo.</li>
-                      <li>Pulsa <strong>Generar invitación</strong> y copia el enlace Ngaged.</li>
-                      <li>El empleado abre el enlace, autoriza LinkedIn y confirma la conexión.</li>
-                      <li>Comprueba el estado en <strong>Miembros</strong>; desde ahí puedes vincular una cuenta si hace falta.</li>
+                      <li>Completa nombre y email corporativo y genera el enlace Ngaged.</li>
+                      <li>Envía el enlace al empleado (email, Slack o Teams).</li>
+                      <li>La persona vincula su LinkedIn desde ese enlace.</li>
+                      <li>En <strong>Miembros</strong> aparecerá como <strong>pendiente de validación</strong>.</li>
+                      <li>Tú eliges el equipo y pulsas <strong>Validar y activar</strong> para incluirla en campañas.</li>
                     </ol>
                     <form id="invite-form" class="vstack gap-3">
                       <input class="form-control" id="inv-name" placeholder="Nombre" />
@@ -463,6 +467,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="/assets/onboarding.js?v=20261105-onboarding-fix" defer></script>
-    <script src="/assets/demo.js?v=20261113-white-label" defer></script>
+    <script src="/assets/demo.js?v=20261113-invite-approval" defer></script>
   </body>
 </html>

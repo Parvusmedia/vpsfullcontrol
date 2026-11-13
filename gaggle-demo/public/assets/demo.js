@@ -775,11 +775,40 @@ let previewState = { preview: {}, urn: '' };
 let pendingDispatchCampaignId = null;
 let pendingDispatchResend = false;
 
+function memberStatusKey(m) {
+  const st = (m.connectStatus || '').toLowerCase();
+  if (st === 'active') return 'active';
+  if (st === 'pending_review') return 'pending_review';
+  if (st === 'invited') return 'invited';
+  if (st === 'linked') return 'active';
+  if (m.platformId && !m.approvedAt) return 'pending_review';
+  if (m.platformId && m.approvedAt) return 'active';
+  return st || 'pending';
+}
+
+function memberStatusLabel(key) {
+  const map = {
+    pending: 'Sin invitar',
+    invited: 'Invitación enviada',
+    pending_review: 'Pendiente de validación',
+    active: 'Activo en campañas',
+  };
+  return map[key] || key;
+}
+
+function memberCampaignReady(m) {
+  return memberStatusKey(m) === 'active' && Boolean(m.platformId);
+}
+
 function memberPickLabel(m, teamNames = {}) {
   const base = (m.name || m.email || 'Miembro').trim();
   const team = m.teamId && teamNames[m.teamId] ? ' · ' + teamNames[m.teamId] : '';
-  const li = m.platformId ? '' : ' · sin LinkedIn';
-  return base + team + li;
+  if (!memberCampaignReady(m)) {
+    const hint =
+      memberStatusKey(m) === 'pending_review' ? ' · pendiente de validación' : ' · sin LinkedIn activo';
+    return base + hint;
+  }
+  return base + team;
 }
 
 function teamNameMap(teams) {
@@ -1152,8 +1181,22 @@ async function refreshCampaignMemberPicks() {
   const picks = $('#camp-member-picks');
   try {
     const bundle = await loadMembersBundle();
-    renderMemberPickList(picks, bundle.members, { checkedByDefault: true, teams: bundle.teams });
-    $('#camp-member-tools').hidden = !bundle.members.length;
+    const ready = (bundle.members || []).filter(memberCampaignReady);
+    let hint = $('#camp-members-hint');
+    if (!ready.length && bundle.members?.length) {
+      if (!hint && picks?.parentElement) {
+        hint = document.createElement('p');
+        hint.id = 'camp-members-hint';
+        hint.className = 'small text-muted mb-2';
+        hint.textContent =
+          'No hay miembros activos. Valida en Miembros a quien haya vinculado LinkedIn (pendiente de validación).';
+        picks.parentElement.insertBefore(hint, picks);
+      }
+    } else if (hint) {
+      hint.remove();
+    }
+    renderMemberPickList(picks, ready, { checkedByDefault: true, teams: bundle.teams });
+    $('#camp-member-tools').hidden = !ready.length;
   } catch (e) {
     if (picks) picks.innerHTML = '<p class="empty">' + escapeHtml(e.message) + '</p>';
   }
@@ -1365,7 +1408,26 @@ async function refreshMembers() {
     }
     if (!members.length) {
       list.innerHTML = '<p class="empty">Sin miembros.</p>';
+      const alertEl = $('#members-pending-alert');
+      if (alertEl) alertEl.hidden = true;
       return;
+    }
+    const sorted = [...members].sort((a, b) => {
+      const order = { pending_review: 0, invited: 1, pending: 2, active: 3 };
+      return (order[memberStatusKey(a)] ?? 5) - (order[memberStatusKey(b)] ?? 5);
+    });
+    const pendingReview = sorted.filter((m) => memberStatusKey(m) === 'pending_review');
+    const alertEl = $('#members-pending-alert');
+    if (alertEl) {
+      if (pendingReview.length) {
+        alertEl.hidden = false;
+        alertEl.innerHTML =
+          '<strong>' +
+          pendingReview.length +
+          '</strong> persona(s) con LinkedIn vinculado esperando que asignes equipo y pulses <strong>Validar y activar</strong>.';
+      } else {
+        alertEl.hidden = true;
+      }
     }
     const linkOptions =
       connections.length > 0
@@ -1383,38 +1445,71 @@ async function refreshMembers() {
     const full = isFullAdmin();
     list.innerHTML =
       '<div class="list-group list-group-flush member-directory">' +
-      members
+      sorted
         .map((m) => {
-          const st = m.connectStatus || (m.platformId ? 'linked' : 'pending');
-          const pending = !m.platformId;
+          const stKey = memberStatusKey(m);
+          const st = memberStatusLabel(stKey);
+          const badgeClass =
+            stKey === 'pending_review'
+              ? 'text-bg-warning'
+              : stKey === 'active'
+                ? 'text-bg-success'
+                : 'text-bg-light border';
+          const pendingNoLi = stKey === 'invited' || stKey === 'pending';
           const linkSelect =
-            full && pending && linkOptions
+            full && pendingNoLi && linkOptions
               ? '<select class="form-select form-select-sm mt-2 member-link-select" data-link="' +
                 escapeHtml(m.id) +
-                '"><option value="">Vincular cuenta LinkedIn…</option>' +
+                '"><option value="">Asignar cuenta LinkedIn manualmente…</option>' +
                 linkOptions +
                 '</select>'
               : '';
-          const teamSelect = full
-            ? '<label class="small text-muted mt-2 mb-0">Equipo</label><select class="form-select form-select-sm member-team-select" data-member="' +
-              escapeHtml(m.id) +
-              '"><option value="">Sin equipo</option>' +
-              teams
-                .map(
-                  (t) =>
-                    '<option value="' +
-                    escapeHtml(t.id) +
-                    '"' +
-                    ((m.teamId || '') === t.id ? ' selected' : '') +
-                    '>' +
-                    escapeHtml(t.name) +
-                    '</option>'
-                )
-                .join('') +
-              '</select>'
-            : m.teamId && tmap[m.teamId]
-              ? '<div class="small text-muted mt-1">Equipo: ' + escapeHtml(tmap[m.teamId]) + '</div>'
+          const approveBox =
+            full && stKey === 'pending_review'
+              ? '<div class="member-approve-box border rounded p-2 mt-2 bg-warning-subtle">' +
+                '<p class="small mb-2 mb-0"><strong>Validar alta</strong> — asigna equipo y activa para campañas.</p>' +
+                '<label class="small text-muted">Equipo</label>' +
+                '<select class="form-select form-select-sm mb-2 member-approve-team" data-member="' +
+                escapeHtml(m.id) +
+                '"><option value="">Elige equipo…</option>' +
+                teams
+                  .map(
+                    (t) =>
+                      '<option value="' +
+                      escapeHtml(t.id) +
+                      '"' +
+                      ((m.teamId || '') === t.id ? ' selected' : '') +
+                      '>' +
+                      escapeHtml(t.name) +
+                      '</option>'
+                  )
+                  .join('') +
+                '</select>' +
+                '<button type="button" class="btn btn-primary btn-sm w-100" data-approve="' +
+                escapeHtml(m.id) +
+                '">Validar y activar</button></div>'
               : '';
+          const teamSelect =
+            full && stKey === 'active'
+              ? '<label class="small text-muted mt-2 mb-0">Equipo</label><select class="form-select form-select-sm member-team-select" data-member="' +
+                escapeHtml(m.id) +
+                '"><option value="">Sin equipo</option>' +
+                teams
+                  .map(
+                    (t) =>
+                      '<option value="' +
+                      escapeHtml(t.id) +
+                      '"' +
+                      ((m.teamId || '') === t.id ? ' selected' : '') +
+                      '>' +
+                      escapeHtml(t.name) +
+                      '</option>'
+                  )
+                  .join('') +
+                '</select>'
+              : m.teamId && tmap[m.teamId] && stKey === 'active'
+                ? '<div class="small text-muted mt-1">Equipo: ' + escapeHtml(tmap[m.teamId]) + '</div>'
+                : '';
           const actions = full
             ? '<div class="btn-group btn-group-sm flex-shrink-0" role="group">' +
               '<button type="button" class="btn btn-outline-secondary" data-invite="' +
@@ -1435,7 +1530,9 @@ async function refreshMembers() {
             escapeHtml(m.email) +
             '</div><div class="small text-muted">' +
             escapeHtml(m.platformId || 'Sin LinkedIn') +
-            ' · <span class="badge text-bg-light border">' +
+            ' · <span class="badge ' +
+            badgeClass +
+            '">' +
             escapeHtml(st) +
             '</span>' +
             (m.teamId && tmap[m.teamId] && full
@@ -1444,6 +1541,7 @@ async function refreshMembers() {
             '</div>' +
             teamSelect +
             linkSelect +
+            approveBox +
             '</div>' +
             actions +
             '</div></div>'
@@ -1454,6 +1552,30 @@ async function refreshMembers() {
     if (!full) {
       return;
     }
+    list.querySelectorAll('[data-approve]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const memberId = btn.getAttribute('data-approve');
+        const teamSel = list.querySelector('.member-approve-team[data-member="' + memberId + '"]');
+        const teamId = teamSel?.value || '';
+        if (!teamId) {
+          alert('Elige un equipo antes de validar.');
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await api('/members', {
+            method: 'PUT',
+            admin: true,
+            body: { id: memberId, teamId, approve: true },
+          });
+          await refreshMembers();
+          await refreshCampaignMemberPicks();
+        } catch (e) {
+          alert(e.message);
+          btn.disabled = false;
+        }
+      });
+    });
     list.querySelectorAll('.member-team-select').forEach((sel) => {
       sel.addEventListener('change', async () => {
         try {
@@ -1513,6 +1635,7 @@ async function refreshMembers() {
             btn.disabled = false;
           }, 2000);
           await refreshMembers();
+          await refreshCampaignMemberPicks();
         } catch (e) {
           btn.disabled = false;
           alert(e.message);
@@ -1527,8 +1650,14 @@ async function refreshMembers() {
             admin: true,
             body: { memberId: btn.getAttribute('data-sync') },
           });
-          alert('LinkedIn: ' + (data.platformId || 'OK'));
+          const m = data.member || {};
+          const msg =
+            memberStatusKey(m) === 'pending_review'
+              ? 'LinkedIn detectado. Valida el alta y asigna equipo en esta lista.'
+              : 'LinkedIn: ' + (data.platformId || 'OK');
+          alert(msg);
           await refreshMembers();
+          await refreshCampaignMemberPicks();
         } catch (e) {
           alert(e.message);
         }

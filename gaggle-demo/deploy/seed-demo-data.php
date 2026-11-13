@@ -54,7 +54,13 @@ foreach ($demoMembers as $dm) {
     if ($dm['platformId'] !== '' || empty($row['platformId'])) {
         $row['platformId'] = $dm['platformId'];
     }
-    $row['connectStatus'] = ($row['platformId'] ?? '') !== '' ? 'linked' : 'pending';
+    if (($row['platformId'] ?? '') !== '') {
+        $row['connectStatus'] = 'active';
+        $row['approvedAt'] = $row['approvedAt'] ?? gmdate('c');
+        $row['linkedAt'] = $row['linkedAt'] ?? gmdate('c');
+    } else {
+        $row['connectStatus'] = 'pending';
+    }
     $row['createdAt'] = $row['createdAt'] ?? gmdate('c');
     $byEmail[$em] = $row;
 }

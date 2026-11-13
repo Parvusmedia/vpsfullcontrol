@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_campaigns.php';
 require_once __DIR__ . '/_mail.php';
 require_once __DIR__ . '/_tokens.php';
+require_once __DIR__ . '/_members_util.php';
 
 gaggle_demo_cors();
 
@@ -68,6 +69,15 @@ foreach ($memberIds as $mid) {
     $email = (string) ($member['email'] ?? '');
     if ($email === '') {
         $failed[] = ['memberId' => $mid, 'error' => 'Sin email'];
+        continue;
+    }
+    if (!ngaged_member_ready_for_campaigns($member)) {
+        $failed[] = [
+            'memberId' => $mid,
+            'error' => ngaged_member_connect_status($member) === 'pending_review'
+                ? 'Pendiente de validación en Miembros'
+                : 'Miembro sin LinkedIn activo',
+        ];
         continue;
     }
 
