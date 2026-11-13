@@ -24,6 +24,7 @@ if (str_starts_with($uri, '/api/')) {
         'connect-invite' => 'connect-invite.php',
         'connect-invite-send' => 'connect-invite-send.php',
         'connect-status' => 'connect-status.php',
+        'connect-begin' => 'connect-begin.php',
         'connect-complete' => 'connect-complete.php',
         'connect-accept-terms' => 'connect-accept-terms.php',
         'connect-terms' => 'connect-terms.php',

@@ -693,7 +693,8 @@ async function renderHealthChecks() {
     list.innerHTML = checks
       .map(
         (c) =>
-          '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+          '<li class="list-group-item">' +
+          '<div class="d-flex justify-content-between align-items-center gap-2">' +
           '<span>' +
           escapeHtml(c.label) +
           '</span>' +
@@ -701,7 +702,11 @@ async function renderHealthChecks() {
           (c.ok ? 'text-bg-success' : 'text-bg-warning') +
           '">' +
           (c.ok ? 'OK' : 'Revisar') +
-          '</span></li>'
+          '</span></div>' +
+          (c.hint && !c.ok
+            ? '<p class="small text-muted mb-0 mt-1">' + escapeHtml(c.hint) + '</p>'
+            : '') +
+          '</li>'
       )
       .join('');
     await loadWorkspaceBadge();

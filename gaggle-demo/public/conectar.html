@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ngaged · Vincular LinkedIn</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/assets/demo.css?v=20261103-public" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261113-conectar" />
   </head>
   <body class="admin-body">
     <div class="public-shell min-vh-100 d-flex flex-column">
@@ -68,14 +68,11 @@
                 </div>
               </div>
 
-              <div id="connect-admin-steps" class="vstack gap-2 mb-4 small text-muted" hidden>
-                <p class="mb-2">
-                  Tu organización usa vinculación asistida: un administrador Ngaged conectará tu perfil desde el panel.
+              <div id="connect-unavailable" class="vstack gap-2 mb-4 small text-muted" hidden>
+                <p class="mb-0">
+                  En este momento Ngaged no puede abrir la ventana de autorización de LinkedIn. Tu administrador debe activar
+                  la opción de conexión por empleado. Cuando esté lista, recarga esta página o vuelve a abrir el enlace de invitación.
                 </p>
-                <ol class="mb-0 ps-3">
-                  <li>Envía este enlace a tu admin si aún no lo tiene.</li>
-                  <li>Cuando te confirme que ya está hecho, pulsa <strong>Comprobar vínculo</strong>.</li>
-                </ol>
               </div>
 
               <div class="public-actions-stack" id="connect-oauth-actions" hidden>
@@ -118,7 +115,7 @@
         const connectFlow = document.getElementById('connect-flow');
         const oauthActions = document.getElementById('connect-oauth-actions');
         const steps = document.getElementById('connect-steps');
-        const adminSteps = document.getElementById('connect-admin-steps');
+        const unavailablePanel = document.getElementById('connect-unavailable');
         const checkWrap = document.getElementById('connect-check-wrap');
         const lead = document.getElementById('lead');
         const oauth = document.getElementById('btn-oauth');
@@ -133,35 +130,66 @@
           }
         }
 
-        function showConnectFlow() {
+        async function beginSelfConnect() {
+          setConnectStatus(statusEl, 'Preparando autorización de LinkedIn…', 'info');
+          const res = await fetch('/api/connect-begin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+          });
+          const data = await res.json();
+          if (!data.ok) {
+            if (data.termsRequired) {
+              termsPanel.hidden = false;
+              connectFlow.hidden = true;
+              throw new Error(data.error || 'Acepta las condiciones.');
+            }
+            throw new Error(data.error || 'No pudimos preparar LinkedIn.');
+          }
+          statusData = { ...statusData, ...data, linkedinConnectUrl: data.linkedinConnectUrl };
+          return data;
+        }
+
+        async function showConnectFlow() {
           termsPanel.hidden = true;
           connectFlow.hidden = false;
-          renderConnectUi();
+          try {
+            await beginSelfConnect();
+            renderConnectUi();
+          } catch (e) {
+            setConnectStatus(statusEl, e.message || 'Error', 'err');
+          }
         }
 
         function renderConnectUi() {
           if (!statusData) return;
-          checkWrap.hidden = false;
+          checkWrap.hidden = true;
 
-          if (isValidOAuthUrl(statusData.linkedinConnectUrl)) {
+          if (statusData.selfConnectAvailable && isValidOAuthUrl(statusData.linkedinConnectUrl)) {
             oauth.href = statusData.linkedinConnectUrl;
             oauthActions.hidden = false;
             steps.hidden = false;
-            adminSteps.hidden = true;
-            setConnectStatus(statusEl, 'Sigue los dos pasos de abajo.', 'info');
-            oauth.addEventListener('click', () => {
+            unavailablePanel.hidden = true;
+            setConnectStatus(
+              statusEl,
+              'Pulsa «Conectar LinkedIn», autoriza en LinkedIn y al volver confirmaremos el vínculo.',
+              'info'
+            );
+            oauth.onclick = () => {
               oauthOpened = true;
-            });
+            };
             window.addEventListener('focus', () => {
               if (oauthOpened) runCheck();
             });
+            checkWrap.hidden = false;
           } else {
             oauthActions.hidden = true;
             steps.hidden = true;
-            adminSteps.hidden = false;
+            unavailablePanel.hidden = false;
+            checkWrap.hidden = true;
             setConnectStatus(
               statusEl,
-              'Tu administrador debe vincular tu LinkedIn desde el panel Ngaged. Cuando te avise, pulsa «Comprobar vínculo».',
+              'La autorización automática no está disponible. Contacta con tu administrador Ngaged.',
               'warn'
             );
           }
@@ -185,7 +213,12 @@
               const msg = data.hint ? data.error + ' ' + data.hint : data.error || 'Error';
               throw new Error(msg);
             }
-            setConnectStatus(statusEl, data.message || 'Listo.', 'ok');
+            const msg =
+              data.message ||
+              (data.awaitingAdminApproval
+                ? 'LinkedIn vinculado. Tu administrador validará tu alta en Ngaged en breve.'
+                : 'Listo.');
+            setConnectStatus(statusEl, msg, 'ok');
             connectFlow.hidden = true;
           } catch (e) {
             setConnectStatus(statusEl, e.message || 'No pudimos comprobar el vínculo.', 'warn');

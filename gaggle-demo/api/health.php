@@ -36,7 +36,12 @@ gaggle_demo_json_response(200, [
     'googleLoginConfigured' => ngaged_google_oauth_configured(),
     'checks' => [
         ['id' => 'api', 'label' => 'Publicación en LinkedIn', 'ok' => $keyOk],
-        ['id' => 'oauth', 'label' => 'OAuth LinkedIn por empleado', 'ok' => $oauth],
+        [
+            'id' => 'oauth',
+            'label' => 'OAuth LinkedIn por empleado (/conectar)',
+            'ok' => $oauth,
+            'hint' => $oauth ? null : 'Activa Workspace en la clave de publicación del servidor.',
+        ],
         ['id' => 'data', 'label' => 'Almacenamiento de datos', 'ok' => $writable],
         [
             'id' => 'mail',

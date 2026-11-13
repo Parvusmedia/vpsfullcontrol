@@ -76,7 +76,7 @@ function ngaged_provision_member_connect(array $member): array
             'inviteUrl' => $inviteUrl,
             'linkedinConnectUrl' => null,
             'workspaceEnabled' => false,
-            'notice' => 'OAuth LinkedIn directo no está activo: envía solo el enlace Ngaged o vincula la cuenta en Miembros.',
+            'notice' => 'La vinculación LinkedIn por el empleado requiere activar la conexión por usuario en la configuración del servidor Ngaged (OAuth).',
         ];
     }
 

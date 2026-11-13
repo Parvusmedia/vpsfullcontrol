@@ -26,13 +26,11 @@ $member = $found['member'];
 $i = $found['index'];
 $store = ngaged_members_store();
 
-if (gaggle_publora_workspace_enabled()) {
-    $provision = ngaged_provision_member_connect($member);
-    if ($provision['ok'] && isset($provision['member']) && is_array($provision['member'])) {
-        $member = $provision['member'];
-        $store['members'][$i] = $member;
-        ngaged_save_members($store);
-    }
+$provision = ngaged_provision_member_connect($member);
+if ($provision['ok'] && isset($provision['member']) && is_array($provision['member'])) {
+    $member = $provision['member'];
+    $store['members'][$i] = $member;
+    ngaged_save_members($store);
 }
 
 $oauthUrl = trim((string) ($member['linkedinConnectUrl'] ?? ''));
