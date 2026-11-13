@@ -125,3 +125,19 @@ function gaggle_demo_new_id(string $prefix): string
 {
     return $prefix . '_' . bin2hex(random_bytes(8));
 }
+
+/** Evita filtrar nombres de proveedores internos en errores mostrados al usuario. */
+function ngaged_user_error_message(?string $technical, string $fallback = 'No pudimos completar la acción en LinkedIn. Inténtalo más tarde o contacta con tu administrador Ngaged.'): string
+{
+    $t = trim((string) $technical);
+    if ($t === '') {
+        return $fallback;
+    }
+    if (preg_match('/publora|harvest|PUBLORA|gaggle(?!e)/i', $t)) {
+        return $fallback;
+    }
+    if (str_contains($t, 'API_KEY not configured')) {
+        return 'Ngaged aún no está configurado para publicar en LinkedIn. Contacta con tu administrador.';
+    }
+    return $t;
+}

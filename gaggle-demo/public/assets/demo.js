@@ -66,7 +66,7 @@ const PAGE_META = {
   'campaigns-history': ['Historial', 'Campañas enviadas y resultados'],
   members: ['Miembros', 'Directorio del equipo'],
   'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
-  connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
+  connections: ['Cuentas LinkedIn', 'Perfiles conectados a tu organización'],
   settings: ['Ajustes', 'Accesos admin y estado del sistema'],
   'demo-showcase': ['Vistas demo', 'Experiencia del empleado para presentaciones'],
 };
@@ -679,7 +679,7 @@ async function loadWorkspaceBadge() {
       ? 'Los empleados pueden autorizar LinkedIn desde su invitación.'
       : 'El admin vincula cuentas en Miembros hasta activar OAuth.';
   } catch {
-    badge.textContent = 'Estado API';
+    badge.textContent = 'Ngaged';
   }
 }
 
@@ -1272,7 +1272,7 @@ async function initMembers() {
           )
           .join('') +
         '</div>'
-      : '<p class="meta">Usa «Invitar a vincular LinkedIn» arriba o conecta cuentas en el panel de canales.</p>';
+      : '<p class="meta">Usa «Invitar a vincular LinkedIn» arriba o asocia cuentas en la pestaña Cuentas LinkedIn.</p>';
     connEl.querySelectorAll('.chip-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         $('#mem-platform').value = btn.getAttribute('data-pid');

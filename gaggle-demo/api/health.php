@@ -35,7 +35,7 @@ gaggle_demo_json_response(200, [
     'adminUsersConfigured' => $hasAdmins,
     'googleLoginConfigured' => ngaged_google_oauth_configured(),
     'checks' => [
-        ['id' => 'api', 'label' => 'API de publicación LinkedIn', 'ok' => $keyOk],
+        ['id' => 'api', 'label' => 'Publicación en LinkedIn', 'ok' => $keyOk],
         ['id' => 'oauth', 'label' => 'OAuth LinkedIn por empleado', 'ok' => $oauth],
         ['id' => 'data', 'label' => 'Almacenamiento de datos', 'ok' => $writable],
         [

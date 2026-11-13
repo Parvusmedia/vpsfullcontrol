@@ -15,7 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $result = gaggle_publora_list_connections();
 if (!$result['ok']) {
-    gaggle_demo_json_response(502, ['ok' => false, 'error' => $result['error'] ?? 'Publora error']);
+    gaggle_demo_json_response(502, [
+        'ok' => false,
+        'error' => ngaged_user_error_message(
+            $result['error'] ?? null,
+            'No pudimos cargar las cuentas LinkedIn. Inténtalo más tarde.'
+        ),
+    ]);
 }
 
 $connections = [];

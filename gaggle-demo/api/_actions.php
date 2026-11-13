@@ -115,7 +115,10 @@ function ngaged_apply_campaign_action(string $campaignId, string $memberId, stri
             $campaign['deliveries'] = $deliveries;
             $store['campaigns'][$idx] = $campaign;
             ngaged_save_campaigns($store);
-            return ['ok' => false, 'error' => 'No pudimos dar me gusta en LinkedIn. ' . ($like['error'] ?? '')];
+            return ['ok' => false, 'error' => ngaged_user_error_message(
+                $like['error'] ?? null,
+                'No pudimos dar me gusta en LinkedIn.'
+            )];
         }
         $delivery['likedAt'] = gmdate('c');
         $delivery['reactionType'] = 'LIKE';
@@ -140,7 +143,10 @@ function ngaged_apply_campaign_action(string $campaignId, string $memberId, stri
             $hint = $action === 'like_repost'
                 ? 'El me gusta sí se registró, pero el repost falló.'
                 : 'No pudimos republicar en LinkedIn.';
-            return ['ok' => false, 'error' => $hint . ' ' . ($pub['error'] ?? '')];
+            return ['ok' => false, 'error' => ngaged_user_error_message(
+                trim($hint . ' ' . ($pub['error'] ?? '')),
+                $hint
+            )];
         }
         $delivery['postGroupId'] = $pub['postGroupId'] ?? null;
         $delivery['repostedAt'] = gmdate('c');

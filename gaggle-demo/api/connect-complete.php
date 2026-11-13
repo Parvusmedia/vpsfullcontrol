@@ -45,7 +45,7 @@ if (!$result['ok']) {
         : 'Tu administrador aún no ha vinculado tu perfil. Avísale y vuelve a comprobar en unos minutos.';
     gaggle_demo_json_response(422, [
         'ok' => false,
-        'error' => $result['error'] ?? 'Aún no detectamos LinkedIn.',
+        'error' => ngaged_user_error_message($result['error'] ?? null, 'Aún no detectamos LinkedIn.'),
         'hint' => $hint,
     ]);
 }
