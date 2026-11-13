@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ngaged · Acción</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261103-public" />
+  </head>
+  <body class="admin-body">
+    <div class="public-shell min-vh-100 d-flex flex-column">
+      <header class="public-topbar border-bottom bg-white py-3">
+        <div class="d-flex align-items-center gap-3 public-topbar-brand">
+          <span class="brand-mark flex-shrink-0">N</span>
+          <div class="min-w-0">
+            <strong class="d-block text-truncate">Ngaged</strong>
+            <small class="text-muted public-topbar-tagline">Campaña LinkedIn</small>
+          </div>
+        </div>
+      </header>
+      <main class="flex-grow-1 public-main public-main--center">
+        <div class="card shadow-sm public-card w-100">
+          <div class="card-body">
+            <h1 class="h4 mb-3">Procesando tu respuesta…</h1>
+            <div id="go-status" class="alert alert-info py-2" role="status">Un momento…</div>
+            <p id="go-hint" class="small text-muted mb-0" hidden>Me gusta + Repost puede tardar hasta 20 segundos (LinkedIn).</p>
+            <a href="/" class="small">Volver al panel</a>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script>
+      (async function () {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token') || '';
+        const action = params.get('action') || '';
+        const el = document.getElementById('go-status');
+        function set(msg, kind) {
+          el.textContent = msg;
+          el.className =
+            'alert py-2 ' +
+            (kind === 'ok' ? 'alert-success' : kind === 'err' ? 'alert-danger' : 'alert-info');
+        }
+        if (!token || !action) {
+          set('Enlace incompleto.', 'err');
+          return;
+        }
+        if (action === 'like_repost') {
+          document.getElementById('go-hint').hidden = false;
+          set('Aplicando me gusta, esperando unos segundos y republicando…', '');
+        }
+        try {
+          const res = await fetch(
+            '/api/action?token=' + encodeURIComponent(token) + '&action=' + encodeURIComponent(action)
+          );
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || 'Error');
+          set(data.message || 'Listo.', 'ok');
+        } catch (e) {
+          set(e.message || 'No pudimos completar la acción.', 'err');
+        }
+      })();
+    </script>
+  </body>
+</html>

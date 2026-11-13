@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ngaged · Demo · Bandeja del empleado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261113-demo" />
+  </head>
+  <body class="admin-body demo-public-page">
+    <div class="demo-example-banner alert alert-warning border-0 rounded-0 mb-0 py-2 text-center small">
+      <strong>Vista de ejemplo</strong> · Cómo ve el empleado el email de campaña (datos ficticios)
+    </div>
+    <header class="public-topbar border-bottom bg-white py-3 px-3">
+      <div class="d-flex align-items-center gap-3">
+        <span class="brand-mark flex-shrink-0">N</span>
+        <div>
+          <strong>Bandeja — ana.garcia@empresa.com</strong>
+          <small class="text-muted d-block">Simulación cliente de correo</small>
+        </div>
+      </div>
+    </header>
+    <div class="demo-inbox-layout">
+      <aside class="demo-inbox-list border-end bg-white">
+        <div class="p-3 border-bottom bg-light">
+          <input class="form-control form-control-sm" type="search" placeholder="Buscar correo" value="Ngaged" readonly />
+        </div>
+        <button type="button" class="demo-inbox-item active w-100 text-start border-0 border-bottom p-3" aria-current="true">
+          <span class="demo-inbox-from fw-semibold d-block">Ngaged</span>
+          <span class="demo-inbox-subject">Ngaged · Lanzamiento Q4</span>
+          <span class="small text-muted">Hace 2 min · Bandeja de entrada</span>
+        </button>
+        <div class="demo-inbox-item w-100 text-start border-0 border-bottom p-3 text-muted opacity-50">
+          <span class="d-block">IT Soporte</span>
+          <span class="small">Actualización de contraseña</span>
+        </div>
+        <div class="demo-inbox-item w-100 text-start border-0 p-3 text-muted opacity-50">
+          <span class="d-block">LinkedIn</span>
+          <span class="small">Tienes 3 nuevas visitas</span>
+        </div>
+      </aside>
+      <main class="demo-inbox-preview flex-grow-1 bg-light p-2 p-md-3">
+        <iframe
+          class="demo-email-iframe w-100 border-0 rounded-3 shadow-sm bg-white"
+          title="Contenido del email de campaña"
+          src="/api/demo-email-preview"
+        ></iframe>
+      </main>
+    </div>
+    <footer class="text-center py-3 small text-muted border-top bg-white">
+      <a href="/demo/">Índice de vistas demo</a> ·
+      <a href="/">Panel Ngaged</a>
+    </footer>
+  </body>
+</html>
