@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ngaged · Demo · Vincular LinkedIn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261113-demo" />
+  </head>
+  <body class="admin-body">
+    <div class="demo-example-banner alert alert-warning border-0 rounded-0 mb-0 py-2 text-center small">
+      <strong>Vista de ejemplo</strong> · Paso previo para responder campañas con un clic
+    </div>
+    <div class="public-shell min-vh-100 d-flex flex-column">
+      <header class="public-topbar border-bottom bg-white py-3">
+        <div class="d-flex align-items-center gap-3 public-topbar-brand px-3">
+          <span class="brand-mark flex-shrink-0">N</span>
+          <div>
+            <strong>Ngaged</strong>
+            <small class="text-muted public-topbar-tagline">Vincular LinkedIn</small>
+          </div>
+        </div>
+      </header>
+      <main class="flex-grow-1 public-main px-3 py-4">
+        <div class="card shadow-sm public-card public-card--wide mx-auto">
+          <div class="card-body">
+            <p class="text-muted small mb-1">Invitación para</p>
+            <h1 class="h4 mb-3">Ana García</h1>
+            <ol class="step-list mb-4">
+              <li class="step-item done">
+                <span class="step-num">1</span>
+                <div>
+                  <strong>Abrir enlace de invitación</strong>
+                  <p class="small text-muted mb-0">Desde email o Slack del administrador.</p>
+                </div>
+              </li>
+              <li class="step-item done">
+                <span class="step-num">2</span>
+                <div>
+                  <strong>Aceptar términos de conexión</strong>
+                  <p class="small text-muted mb-0">Uso de LinkedIn solo para acciones que elijas.</p>
+                </div>
+              </li>
+              <li class="step-item active">
+                <span class="step-num">3</span>
+                <div>
+                  <strong>Autorizar LinkedIn</strong>
+                  <p class="small text-muted mb-0">OAuth o vinculación asistida por el admin.</p>
+                </div>
+              </li>
+            </ol>
+            <div class="alert alert-success py-2 mb-3">
+              <strong>LinkedIn conectado.</strong> Ya puedes responder campañas desde el email sin volver a iniciar sesión.
+            </div>
+            <button type="button" class="btn btn-primary w-100" disabled>Conectar con LinkedIn (demo)</button>
+            <p class="small text-muted mt-3 mb-0 text-center">
+              Flujo real en <a href="/conectar">/conectar</a> con token de invitación.
+            </p>
+          </div>
+        </div>
+      </main>
+      <footer class="public-footer border-top bg-white px-3 py-3 small text-muted d-flex gap-3 flex-wrap">
+        <a href="/demo/">Índice demo</a>
+        <a href="/">Panel admin</a>
+      </footer>
+    </div>
+  </body>
+</html>

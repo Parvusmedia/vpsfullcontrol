@@ -32,6 +32,7 @@ if (str_starts_with($uri, '/api/')) {
         'admin-login-verify' => 'admin-login-verify.php',
         'admin-login-resend' => 'admin-login-resend.php',
         'admin-mail-test' => 'admin-mail-test.php',
+        'demo-email-preview' => 'demo-email-preview.php',
         'admin-logout' => 'admin-logout.php',
         'admin-me' => 'admin-me.php',
         'admins' => 'admins.php',
@@ -72,6 +73,22 @@ if ($uri === '/privacidad' || str_starts_with($uri, '/privacidad?')) {
     header('Content-Type: text/html; charset=utf-8');
     readfile(__DIR__ . '/privacidad.html');
     return true;
+}
+
+if ($uri === '/demo' || $uri === '/demo/') {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/demo/index.html');
+    return true;
+}
+
+if (str_starts_with($uri, '/demo/')) {
+    $demoName = basename(parse_url($uri, PHP_URL_PATH) ?: '');
+    $demoFile = __DIR__ . '/demo/' . $demoName;
+    if ($demoName !== '' && is_file($demoFile) && str_ends_with($demoName, '.html')) {
+        header('Content-Type: text/html; charset=utf-8');
+        readfile($demoFile);
+        return true;
+    }
 }
 
 if ($uri === '/login' || str_starts_with($uri, '/login?')) {

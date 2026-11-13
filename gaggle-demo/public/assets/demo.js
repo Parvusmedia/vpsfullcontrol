@@ -68,6 +68,7 @@ const PAGE_META = {
   'members-invite': ['Invitar LinkedIn', 'Invita a tu equipo a conectar su perfil'],
   connections: ['Cuentas LinkedIn', 'Canales conectados al workspace'],
   settings: ['Ajustes', 'Accesos admin y estado del sistema'],
+  'demo-showcase': ['Vistas demo', 'Experiencia del empleado para presentaciones'],
 };
 
 async function api(path, options = {}) {

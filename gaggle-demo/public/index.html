@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ngaged · Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/assets/demo.css?v=20261105-onboarding-fix" />
+    <link rel="stylesheet" href="/assets/demo.css?v=20261113-demo" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   </head>
   <body class="admin-body">
@@ -23,6 +23,9 @@
           <div class="nav-group-label">Resumen</div>
           <button type="button" class="sidebar-link active" data-panel="dashboard">
             <span class="sidebar-icon">📊</span> Dashboard
+          </button>
+          <button type="button" class="sidebar-link" data-panel="demo-showcase">
+            <span class="sidebar-icon">🎬</span> Vistas demo
           </button>
 
           <div class="nav-group-label mt-3">Campañas</div>
@@ -87,6 +90,7 @@
                 <button type="button" class="btn btn-outline-secondary pill" data-days="30">30 días</button>
                 <button type="button" class="btn btn-outline-secondary pill" data-days="all">Todo</button>
               </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-goto="demo-showcase">Vistas demo</button>
               <button type="button" class="btn btn-outline-secondary btn-sm" id="dash-refresh">Actualizar</button>
             </div>
             <div id="dash-empty" class="card border-dashed text-center p-5" hidden>
@@ -145,6 +149,57 @@
                     </thead>
                     <tbody></tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section data-panel="demo-showcase" hidden>
+            <div class="alert alert-warning border-0 shadow-sm mb-4 py-2">
+              <strong>Presentación</strong> — Pantallas de ejemplo con datos ficticios. Abre en pestaña nueva para proyectar.
+            </div>
+            <div class="row g-4">
+              <div class="col-lg-6">
+                <div class="card shadow-sm h-100 demo-showcase-card">
+                  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>Email del empleado</strong>
+                    <a class="btn btn-primary btn-sm" href="/demo/bandeja.html" target="_blank" rel="noopener">Pantalla completa</a>
+                  </div>
+                  <div class="card-body p-0 demo-embed-wrap">
+                    <iframe
+                      class="demo-embed-iframe"
+                      title="Vista previa bandeja y email"
+                      src="/demo/bandeja.html"
+                      loading="lazy"
+                    ></iframe>
+                  </div>
+                  <div class="card-footer bg-white small text-muted">
+                    Cómo llega la campaña: preview del post y botones Me gusta / Repost / Me gusta + Repost / Ignorar.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm h-100 demo-showcase-card">
+                  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>Respuesta tras el clic</strong>
+                    <a class="btn btn-outline-primary btn-sm" href="/demo/respuesta.html?v=like_repost" target="_blank" rel="noopener">Abrir</a>
+                  </div>
+                  <div class="card-body p-0 demo-embed-wrap demo-embed-wrap--short">
+                    <iframe class="demo-embed-iframe" title="Confirmación empleado" src="/demo/respuesta.html?v=like_repost" loading="lazy"></iframe>
+                  </div>
+                  <div class="card-footer bg-white small text-muted">
+                    Equivalente a <code>/go</code> en producción; en demo no llama a LinkedIn.
+                  </div>
+                </div>
+                <div class="card shadow-sm mt-4">
+                  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>Vincular LinkedIn</strong>
+                    <a class="btn btn-outline-primary btn-sm" href="/demo/vincular.html" target="_blank" rel="noopener">Abrir</a>
+                  </div>
+                  <div class="card-body">
+                    <p class="small text-muted mb-3">Onboarding del empleado antes del one-click desde el email.</p>
+                    <a class="btn btn-outline-secondary btn-sm" href="/demo/" target="_blank" rel="noopener">Índice del recorrido demo</a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -408,6 +463,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="/assets/onboarding.js?v=20261105-onboarding-fix" defer></script>
-    <script src="/assets/demo.js?v=20261105-onboarding-fix" defer></script>
+    <script src="/assets/demo.js?v=20261113-demo" defer></script>
   </body>
 </html>
