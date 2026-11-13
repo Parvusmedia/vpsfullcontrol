@@ -47,22 +47,38 @@ function ngaged_provision_member_connect_company(array $member): array
 
     $credentialId = ngaged_member_publora_credential_id($member);
     $link = gaggle_publora_company_connection_link($credentialId);
-    if (!$link['ok']) {
+    if ($link['ok']) {
+        $member['linkedinConnectUrl'] = $link['url'];
+        $member['companyConnectEnabled'] = true;
+        $member['connectViaClientLink'] = false;
+        $member['connectStatus'] = $member['connectStatus'] ?? 'invited';
+
         return [
-            'ok' => false,
-            'error' => $link['error'] ?? 'No se pudo generar el enlace de conexión.',
-            'code' => $link['code'] ?? null,
+            'ok' => true,
+            'member' => $member,
+            'linkedinConnectUrl' => $link['url'],
         ];
     }
 
-    $member['linkedinConnectUrl'] = $link['url'];
-    $member['companyConnectEnabled'] = true;
-    $member['connectStatus'] = $member['connectStatus'] ?? 'invited';
+    $fallback = gaggle_publora_client_connect_url();
+    if ($fallback !== '') {
+        $member['linkedinConnectUrl'] = $fallback;
+        $member['companyConnectEnabled'] = true;
+        $member['connectViaClientLink'] = true;
+        $member['connectStatus'] = $member['connectStatus'] ?? 'invited';
+
+        return [
+            'ok' => true,
+            'member' => $member,
+            'linkedinConnectUrl' => $fallback,
+            'notice' => 'Enlace de autorización del workspace (demo).',
+        ];
+    }
 
     return [
-        'ok' => true,
-        'member' => $member,
-        'linkedinConnectUrl' => $link['url'],
+        'ok' => false,
+        'error' => $link['error'] ?? 'No se pudo generar el enlace de conexión.',
+        'code' => $link['code'] ?? null,
     ];
 }
 
@@ -79,6 +95,12 @@ function ngaged_sync_member_linkedin_company(string $memberId): array
 
     $credentialId = ngaged_member_publora_credential_id($member);
     $li = gaggle_publora_company_linkedin_for_credential($credentialId);
+    if (!$li['ok'] && !empty($member['connectViaClientLink'])) {
+        $li = gaggle_publora_company_linkedin_for_member_profile($member);
+    }
+    if (!$li['ok'] && gaggle_publora_client_connect_url() !== '') {
+        $li = gaggle_publora_company_linkedin_for_member_profile($member);
+    }
     if (!$li['ok']) {
         return $li;
     }

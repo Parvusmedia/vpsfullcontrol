@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_publora.php';
+require_once __DIR__ . '/_publora_company.php';
 
 gaggle_demo_cors();
 
@@ -25,6 +26,20 @@ if (!$result['ok']) {
 }
 
 $connections = [];
+if (gaggle_publora_company_configured()) {
+    foreach (gaggle_publora_company_list_channels() as $row) {
+        $connections[] = [
+            'platformId' => $row['platformId'],
+            'username' => $row['username'],
+            'profileUrl' => null,
+            'profileImageUrl' => null,
+            'tokenStatus' => null,
+            'connectionStatus' => $row['status'],
+            'source' => 'workspace',
+        ];
+    }
+}
+
 foreach ($result['connections'] as $row) {
     if (!is_array($row)) {
         continue;
@@ -40,7 +55,20 @@ foreach ($result['connections'] as $row) {
         'profileImageUrl' => $row['profileImageUrl'] ?? null,
         'tokenStatus' => $row['tokenStatus'] ?? null,
         'connectionStatus' => $row['connectionStatus'] ?? null,
+        'source' => 'account',
     ];
 }
+
+$seen = [];
+$deduped = [];
+foreach ($connections as $c) {
+    $pid = (string) ($c['platformId'] ?? '');
+    if ($pid === '' || isset($seen[$pid])) {
+        continue;
+    }
+    $seen[$pid] = true;
+    $deduped[] = $c;
+}
+$connections = $deduped;
 
 gaggle_demo_json_response(200, ['ok' => true, 'connections' => $connections]);

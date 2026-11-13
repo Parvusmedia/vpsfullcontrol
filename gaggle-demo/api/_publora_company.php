@@ -32,6 +32,21 @@ function gaggle_publora_company_instance_id(): string
     return $id !== '' ? $id : 'ngaged';
 }
 
+/** Enlace de cliente del workspace (panel Publora), plan B si la API connection-link no está disponible. */
+function gaggle_publora_client_connect_url(): string
+{
+    $file = gaggle_demo_load_env();
+    $url = trim((string) (
+        $file['PUBLORA_CLIENT_CONNECT_URL']
+        ?? getenv('PUBLORA_CLIENT_CONNECT_URL')
+        ?: ''
+    ));
+    if ($url !== '' && preg_match('#^https://app\.publora\.com/connect/[A-Za-z0-9_-]+$#', $url)) {
+        return $url;
+    }
+    return '';
+}
+
 function gaggle_publora_company_configured(): bool
 {
     return gaggle_publora_company_workspace_id() !== '' && gaggle_publora_company_external_id() !== '';
@@ -227,10 +242,125 @@ function gaggle_publora_company_linkedin_for_credential(string $credentialId): a
     return ['ok' => false, 'error' => 'Aún no hay LinkedIn conectado para este empleado.'];
 }
 
+/**
+ * Cuando el empleado usa el enlace de cliente del workspace (sin externalOwner por API).
+ *
+ * @return array{ok:bool,platformId?:string,connectionId?:string,error?:string}
+ */
+function gaggle_publora_company_linkedin_for_member_profile(array $member): array
+{
+    $resp = gaggle_publora_company_request('GET', 'connections');
+    if (!$resp['ok']) {
+        return $resp;
+    }
+
+    $items = $resp['data']['items'] ?? [];
+    if (!is_array($items) || $items === []) {
+        return ['ok' => false, 'error' => 'Aún no hay LinkedIn conectado para este empleado.'];
+    }
+
+    $email = strtolower(trim((string) ($member['email'] ?? '')));
+    $name = strtolower(trim((string) ($member['name'] ?? '')));
+    $local = $email !== '' && str_contains($email, '@') ? strstr($email, '@', true) : '';
+
+    $linkedin = [];
+    foreach ($items as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $platform = strtolower((string) ($row['platform'] ?? 'linkedin'));
+        if ($platform !== 'linkedin') {
+            continue;
+        }
+        $status = strtolower((string) ($row['status'] ?? 'active'));
+        if ($status !== '' && !in_array($status, ['active', 'connected', 'ok'], true)) {
+            continue;
+        }
+        $linkedin[] = $row;
+    }
+
+    if ($linkedin === []) {
+        return ['ok' => false, 'error' => 'Aún no hay LinkedIn conectado en el workspace.'];
+    }
+
+    foreach ($linkedin as $row) {
+        $username = strtolower((string) ($row['username'] ?? ''));
+        $display = strtolower((string) ($row['displayName'] ?? ''));
+        if ($email !== '' && ($username === $email || str_contains($username, $local))) {
+            return gaggle_publora_company_row_to_channel($row);
+        }
+        if ($name !== '' && $display !== '' && str_contains($display, $name)) {
+            return gaggle_publora_company_row_to_channel($row);
+        }
+    }
+
+    if (count($linkedin) === 1) {
+        return gaggle_publora_company_row_to_channel($linkedin[0]);
+    }
+
+    return [
+        'ok' => false,
+        'error' => 'Hay varios LinkedIn en el workspace. Tu administrador asignará tu canal en el panel Ngaged.',
+    ];
+}
+
+/** @param array<string, mixed> $row */
+function gaggle_publora_company_row_to_channel(array $row): array
+{
+    $platform = (string) ($row['platform'] ?? 'linkedin');
+    $pid = (string) ($row['platformId'] ?? '');
+    if ($pid === '') {
+        return ['ok' => false, 'error' => 'Conexión sin identificador de canal.'];
+    }
+    $channelKey = str_starts_with($pid, $platform . '-') ? $pid : ($platform . '-' . $pid);
+
+    return [
+        'ok' => true,
+        'platformId' => $channelKey,
+        'connectionId' => (string) ($row['id'] ?? ''),
+    ];
+}
+
+/** @return list<array{platformId:string,username:?string,displayName:?string,status:?string,source:string}> */
+function gaggle_publora_company_list_channels(): array
+{
+    $resp = gaggle_publora_company_request('GET', 'connections');
+    if (!$resp['ok']) {
+        return [];
+    }
+    $items = $resp['data']['items'] ?? [];
+    if (!is_array($items)) {
+        return [];
+    }
+    $out = [];
+    foreach ($items as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $mapped = gaggle_publora_company_row_to_channel($row);
+        if (!$mapped['ok']) {
+            continue;
+        }
+        $out[] = [
+            'platformId' => $mapped['platformId'],
+            'username' => isset($row['username']) ? (string) $row['username'] : null,
+            'displayName' => isset($row['displayName']) ? (string) $row['displayName'] : null,
+            'status' => isset($row['status']) ? (string) $row['status'] : null,
+            'source' => 'workspace',
+        ];
+    }
+    return $out;
+}
+
 function gaggle_publora_employee_connect_ready(): bool
 {
     if (gaggle_publora_company_configured()) {
-        return gaggle_publora_company_context_ok();
+        if (gaggle_publora_company_context_ok()) {
+            return true;
+        }
+    }
+    if (gaggle_publora_client_connect_url() !== '') {
+        return gaggle_demo_api_key() !== '';
     }
 
     return gaggle_publora_workspace_enabled();
