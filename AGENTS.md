@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Digitanimal Google Ads agent
+
+Agent SDK project: [`digitanimal-google-ads/`](digitanimal-google-ads/README.md). Runbook and cadence live in the Digitanimal Project store under `docs/google-ads-*.md`. Windsor + Google Ads MCP via Cursor account connectors.
+
 ## n8n default workflow (this repository)
 
 When a user request is related to n8n (for example: "n8n", "workflow", workflow IDs, exports, MCP, REST API), use the unified helper command in this repository instead of calling n8n endpoints directly.
