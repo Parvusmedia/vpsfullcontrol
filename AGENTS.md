@@ -57,3 +57,12 @@ cde-salesnav/deploy-salesnav-prod.sh
 ```
 
 Use PHP 8.3 CLI on prod for maintenance scripts (`/opt/plesk/php/8.3/bin/php`).
+
+## OpenAI / GPT Work
+
+When the user asks to use GPT, ChatGPT, OpenAI, or "GPT Work", call the OpenAI API with the Cloud Agent secret `GPT_Work_Cursor`.
+
+- Read the key from the environment variable `GPT_Work_Cursor`. Never print, log, commit, or paste the value. Never ask the user to paste it in chat.
+- If the variable is missing, say so and point them to Cloud Agents secrets: a Runtime Secret named `GPT_Work_Cursor`. A new agent is required after adding it. Do not fall back to another OpenAI account.
+- Default model: `gpt-4.1-mini`. Use another model only when the user names one.
+- This is the OpenAI API on that key. It is not a custom GPT's memory, files, or instructions.
