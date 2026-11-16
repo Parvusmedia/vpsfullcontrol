@@ -49,9 +49,10 @@ export function daysElapsedInPlan(now = new Date()): number {
 
 export function buildCumplimientoRows(
   enabledBriefs: Set<string>,
-  windsorSpend: Map<string, ActivationMetrics>
+  windsorSpend: Map<string, ActivationMetrics>,
+  view: { from: string; to: string; budgetDays: number }
 ): Record<string, unknown>[] {
-  const dias = daysElapsedInPlan();
+  const dias = view.budgetDays;
   const rows: Record<string, unknown>[] = [];
 
   for (const c of planCampaigns()) {
@@ -81,9 +82,10 @@ export function buildCumplimientoRows(
       tier: c.tier,
       objetivo: c.objetivo,
       presupuesto_diario_eur: c.presupuesto_diario_eur,
-      fecha_inicio: BRIEF_META.period_start,
-      fecha_fin: BRIEF_META.period_end,
+      fecha_inicio: view.from,
+      fecha_fin: view.to,
       dias,
+      view_period: view,
       spend,
       budget_consumido_eur: budget,
       pct_cumplimiento: pct,

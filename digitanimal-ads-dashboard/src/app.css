@@ -125,6 +125,14 @@ table.data-table .col-rec {
   color: #fff;
   border-color: #18181b;
 }
+.period-filters {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+.period-filters button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 table {
   width: 100%;
   border-collapse: collapse;

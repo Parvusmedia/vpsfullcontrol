@@ -11,6 +11,8 @@ import { recommend, type Recommendation } from "./lib/recommendations";
 import { DeepAnalysisPanel, type DeepAnalysis } from "./DeepAnalysis";
 import "./app.css";
 
+type PeriodPresetId = "plan" | "last7" | "last14" | "last28";
+
 type Payload = {
   source?: string;
   _delivery?: string;
@@ -19,6 +21,11 @@ type Payload = {
   updatedAt?: string;
   metrics_note?: string;
   metrics_period?: { from: string; to: string };
+  period_preset?: PeriodPresetId;
+  period_label?: string;
+  period_options?: { id: PeriodPresetId; label: string }[];
+  recommendation_context?: string;
+  pacing_mode?: "plan" | "rolling";
   cumplimiento?: Row[];
   presupuesto_activacion?: Row[];
   agent_cambios?: Row[];
@@ -30,6 +37,8 @@ type Tab = "cumplimiento" | "profundo" | "cambios" | "presupuesto";
 
 export default function App() {
   const [data, setData] = useState<Payload | null>(null);
+  const [preset, setPreset] = useState<PeriodPresetId>("plan");
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>("ALL");
   const [tab, setTab] = useState<Tab>("cumplimiento");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -50,7 +59,10 @@ export default function App() {
         return;
       }
 
-      for (const url of ["/api/dashboard", "/dashboard.json"] as const) {
+      setLoading(true);
+      const apiUrl = `/api/dashboard?preset=${encodeURIComponent(preset)}`;
+
+      for (const url of [apiUrl, "/dashboard.json"] as const) {
         try {
           const r = await fetch(url, { cache: "no-store" });
           const text = await r.text();
@@ -63,18 +75,21 @@ export default function App() {
               source: "error",
               message: json.message ?? `Error HTTP ${r.status}`,
             });
+            setLoading(false);
             return;
           }
           setData(
             url === "/dashboard.json"
-              ? { ...json, _delivery: json._delivery ?? "build_snapshot" }
+              ? { ...json, _delivery: json._delivery ?? "build_snapshot", period_preset: preset }
               : { ...json, _delivery: "api" }
           );
+          setLoading(false);
           return;
         } catch {
           /* try next URL */
         }
       }
+      setLoading(false);
       const onGrok = host.includes("grok.bot");
       setData({
         source: "error",
@@ -85,7 +100,7 @@ export default function App() {
     };
 
     void load();
-  }, []);
+  }, [preset]);
 
   const rows = useMemo(
     () => (data?.cumplimiento ?? []).map(normalizeCumplimientoRow),
@@ -130,6 +145,15 @@ export default function App() {
 
   const isSample = data?.source === "sample" || data?.source === "error";
   const isSnapshot = data?._delivery === "build_snapshot";
+  const periodOptions =
+    data?.period_options ??
+    ([
+      { id: "plan", label: "Plan 8k€ (acumulado)" },
+      { id: "last7", label: "Últimos 7 días" },
+      { id: "last14", label: "Últimos 14 días" },
+      { id: "last28", label: "Últimos 28 días" },
+    ] as const);
+  const isPlanView = (data?.pacing_mode ?? (preset === "plan" ? "plan" : "rolling")) === "plan";
   const cambios = data?.agent_cambios ?? [];
   const presupuesto = data?.presupuesto_activacion ?? [];
 
@@ -138,6 +162,14 @@ export default function App() {
       <header>
         <h1>Digitanimal · Google Ads</h1>
         <p className="meta">
+          {data?.metrics_period && (
+            <>
+              Periodo: <strong>{data.period_label ?? preset}</strong> ({data.metrics_period.from} →{" "}
+              {data.metrics_period.to})
+              {loading ? " · cargando…" : ""}
+              <br />
+            </>
+          )}
           {isSample && <span className="badge warn">Muestra / Windsor API</span>}
           {!isSample && isSnapshot && (
             <span className="badge warn">Snapshot al publicar</span>
@@ -153,19 +185,33 @@ export default function App() {
         </p>
       </header>
 
-      {(data?.message || data?.metrics_note) && (
+      <nav className="filters period-filters" aria-label="Periodo">
+        {periodOptions.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            className={preset === opt.id ? "active" : ""}
+            disabled={loading}
+            onClick={() => setPreset(opt.id)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </nav>
+
+      {(data?.recommendation_context || data?.message || data?.metrics_note) && (
         <p className="banner">
-          {[data.message, data.metrics_note].filter(Boolean).join(" · ")}
+          {[data.recommendation_context, data.message, data.metrics_note].filter(Boolean).join(" · ")}
         </p>
       )}
 
       <section className="kpis">
         <div className="kpi">
-          <span className="label">Spend acumulado</span>
+          <span className="label">{isPlanView ? "Spend acumulado (plan)" : "Spend del periodo"}</span>
           <span className="value">{totals.spend.toFixed(2)} €</span>
         </div>
         <div className="kpi">
-          <span className="label">Budget consumido (plan)</span>
+          <span className="label">{isPlanView ? "Budget esperado (plan)" : "Budget esperado (tramo)"}</span>
           <span className="value">{totals.budget.toFixed(2)} €</span>
         </div>
         <div className="kpi">
@@ -225,7 +271,9 @@ export default function App() {
                   <th className="col-num">Ritmo %</th>
                   <th className="col-num">Desvío €</th>
                   <th className="col-num">Tier</th>
-                  <th className="col-rec">Recomendación</th>
+                  <th className="col-rec" title={data?.recommendation_context}>
+                    Recomendación (campaña)
+                  </th>
                 </tr>
               </thead>
               <tbody>

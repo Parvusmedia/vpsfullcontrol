@@ -11,13 +11,15 @@ const PLAN_KEYS = new Set(
 );
 
 export async function fetchEnabledPlanBriefs(
-  apiKey: string
+  apiKey: string,
+  dateFrom: string,
+  dateTo: string
 ): Promise<Set<string>> {
   const rows = await windsorQuery(
     apiKey,
     ["campaign", "campaign_status"],
-    BRIEF_META.period_start,
-    BRIEF_META.period_end,
+    dateFrom,
+    dateTo,
     [["campaign_status", "eq", "ENABLED"]]
   );
   const enabled = new Set<string>();
@@ -43,9 +45,11 @@ export type ActivationMetrics = {
   conversion_actions: ConversionActionLine[];
 };
 
-export async function fetchActivationMetrics(apiKey: string): Promise<
-  Map<string, ActivationMetrics>
-> {
+export async function fetchActivationMetrics(
+  apiKey: string,
+  dateFrom: string,
+  dateTo: string
+): Promise<Map<string, ActivationMetrics>> {
   const [rows, split] = await Promise.all([
     windsorQuery(
     apiKey,
@@ -58,15 +62,11 @@ export async function fetchActivationMetrics(apiKey: string): Promise<
       "conversions",
       "cost_per_conversion",
     ],
-      BRIEF_META.period_start,
-      BRIEF_META.period_end,
+      dateFrom,
+      dateTo,
       [["campaign_status", "eq", "ENABLED"]]
     ),
-    fetchCampaignConversionSplit(
-      apiKey,
-      BRIEF_META.period_start,
-      BRIEF_META.period_end
-    ),
+    fetchCampaignConversionSplit(apiKey, dateFrom, dateTo),
   ]);
   const map = new Map<string, ActivationMetrics>();
   for (const r of rows) {
