@@ -85,12 +85,27 @@ class N8NClient:
             url = f"{url}?{query}"
         return self._request("GET", url, headers={"X-N8N-API-KEY": self.rest_key})
 
+    def rest_put(self, path: str, payload: dict[str, Any]) -> tuple[int, Any]:
+        if not self.rest_key:
+            return 0, {"error": "missing_rest_key"}
+        url = f"{self.base_url}{path}"
+        return self._request("PUT", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload)
+
+    def rest_post(self, path: str, payload: dict[str, Any] | None = None) -> tuple[int, Any]:
+        if not self.rest_key:
+            return 0, {"error": "missing_rest_key"}
+        url = f"{self.base_url}{path}"
+        return self._request("POST", url, headers={"X-N8N-API-KEY": self.rest_key}, payload=payload or {})
+
     def _mcp_raw(self, method: str, params: dict[str, Any] | None = None, req_id: str = "1") -> tuple[int, Any]:
         if not self.mcp_token:
             return 0, {"error": "missing_mcp_token"}
         url = f"{self.base_url}/mcp-server/http"
         payload = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
-        headers = {"Authorization": f"Bearer {self.mcp_token}"}
+        headers = {
+            "Authorization": f"Bearer {self.mcp_token}",
+            "Accept": "application/json, text/event-stream",
+        }
         return self._request("POST", url, headers=headers, payload=payload)
 
     def mcp_initialize(self) -> tuple[int, Any]:
@@ -174,6 +189,21 @@ def _extract_rest_list(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _jwt_aud(value: str) -> str | None:
+    if not _is_jwt(value):
+        return None
+    try:
+        import base64
+
+        payload = value.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload))
+        aud = data.get("aud")
+        return aud if isinstance(aud, str) else None
+    except Exception:  # pragma: no cover - defensive
+        return None
+
+
 def _detect_tokens() -> tuple[str | None, str | None]:
     rest_key = os.getenv("N8N_REST_API_KEY")
     mcp_token = os.getenv("N8N_MCP_TOKEN")
@@ -182,7 +212,9 @@ def _detect_tokens() -> tuple[str | None, str | None]:
     if legacy:
         if not rest_key and legacy.startswith("n8n_api_"):
             rest_key = legacy
-        if not mcp_token and _is_jwt(legacy):
+        if not rest_key and _is_jwt(legacy) and _jwt_aud(legacy) == "public-api":
+            rest_key = legacy
+        if not mcp_token and _is_jwt(legacy) and _jwt_aud(legacy) != "public-api":
             mcp_token = legacy
     return rest_key, mcp_token
 
@@ -246,6 +278,35 @@ def cmd_details(client: N8NClient, workflow_id: str) -> int:
             return 0
 
     _print_json({"error": f"No se pudo obtener detalles para workflow {workflow_id}."})
+    return 1
+
+
+def cmd_execution(client: N8NClient, execution_id: str, include_data: bool) -> int:
+    if not client.rest_key:
+        _print_json({"error": "Ejecuciones requieren N8N_REST_API_KEY (prefijo n8n_api_)."})
+        return 1
+    params = {"includeData": "true"} if include_data else None
+    status, payload = client.rest_get(f"/api/v1/executions/{execution_id}", params=params)
+    if status == 200:
+        _print_json({"mode": "rest", "data": payload})
+        return 0
+    _print_json({"error": f"No se pudo obtener ejecución {execution_id}.", "status": status, "payload": payload})
+    return 1
+
+
+def cmd_executions(client: N8NClient, workflow_id: str, limit: int, status_filter: str | None) -> int:
+    if not client.rest_key:
+        _print_json({"error": "Ejecuciones requieren N8N_REST_API_KEY (prefijo n8n_api_)."})
+        return 1
+    params: dict[str, Any] = {"workflowId": workflow_id, "limit": limit}
+    if status_filter:
+        params["status"] = status_filter
+    status, payload = client.rest_get("/api/v1/executions", params=params)
+    if status == 200:
+        items = payload.get("data", []) if isinstance(payload, dict) else []
+        _print_json({"mode": "rest", "count": len(items), "data": items})
+        return 0
+    _print_json({"error": "No se pudo listar ejecuciones.", "status": status, "payload": payload})
     return 1
 
 
@@ -397,6 +458,15 @@ def parse_args() -> argparse.Namespace:
     details_p = sub.add_parser("details", help="Ver detalle de un workflow.")
     details_p.add_argument("--workflow-id", required=True)
 
+    execution_p = sub.add_parser("execution", help="Obtener una ejecución por REST.")
+    execution_p.add_argument("--execution-id", required=True)
+    execution_p.add_argument("--include-data", action="store_true")
+
+    executions_p = sub.add_parser("executions", help="Listar ejecuciones de un workflow (REST).")
+    executions_p.add_argument("--workflow-id", required=True)
+    executions_p.add_argument("--limit", type=int, default=20)
+    executions_p.add_argument("--status", type=str, default=None)
+
     export_p = sub.add_parser("export", help="Exportar workflows a JSON.")
     export_p.add_argument("--out", type=str, default=None)
 
@@ -419,6 +489,10 @@ def main() -> int:
         return cmd_list(client, args.limit, args.query)
     if args.command == "details":
         return cmd_details(client, args.workflow_id)
+    if args.command == "execution":
+        return cmd_execution(client, args.execution_id, args.include_data)
+    if args.command == "executions":
+        return cmd_executions(client, args.workflow_id, args.limit, args.status)
     if args.command == "export":
         return cmd_export(client, args.out)
 

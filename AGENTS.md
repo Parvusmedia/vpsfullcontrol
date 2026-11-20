@@ -26,6 +26,30 @@ This confirms whether MCP token, REST API key, or both are available.
 - Do not print secret values.
 - If `scripts/n8n` fails, report the failure and only then fall back to direct endpoint debugging.
 
+### n8n API / tokens — discover before blocking
+
+**Do not tell the user that n8n (or another) access is missing until you have actively searched** in the Cloud Agent env, on the VPS, and in related project configs.
+
+Search order (n8n):
+
+1. Cloud Agent: `scripts/n8n status`; env vars `N8N_URL`, `N8N_REST_API_KEY`, `N8N_MCP_TOKEN`, `N8N_API_KEY` (JWT `mcp-server-api` vs `public-api` vs `n8n_api_…`).
+2. MCP direct: `POST {N8N_URL}/mcp-server/http` with `Accept: application/json, text/event-stream` if the unified script MCP probe fails with 406.
+3. VPS Parvus (`ssh parvus-vps`): `/opt/apps/nextconvers-qualification-gate/config/deployment.local.env` (`N8N_BASE_URL`, `N8N_API_KEY` REST JWT). Other products may use similar `deployment.local.env` or `config/*.env` under `/opt/apps/*` — locate by name, never paste values.
+4. Docs in-repo: `docs/N8N_ONE_WINDOW.md`, `docs/n8n/SMARTLIFE_RADIADOR.md`.
+
+Only after those steps fail should you ask the user for a new secret or say you cannot proceed. When reporting blockage, list **what you already checked** (paths and mechanisms, not secret values).
+
+## Access discovery (general)
+
+For any missing API, token, or credential:
+
+1. Repo scripts, `AGENTS.md`, and `docs/`.
+2. Cloud Agent / team secrets (`N8N_*`, etc.) and `cursor-cloud` list-available-secrets when relevant.
+3. VPS `ssh parvus-vps`: `/opt/apps/private/`, `/opt/apps/<product>/config/`, `deploy/*.env.example` for filenames only; read values only inside remote commands, never echo in chat or commits.
+4. MCP / plugin auth (e.g. N8N MCP OAuth) if REST from env fails — fix or use an alternate channel found on the VPS.
+
+Same rule: **search first, then report** what is missing and what was tried.
+
 ## Shared VPS secrets (Icypeas / CDE)
 
 Cross-project agent access on Parvus VPS (`ssh parvus-vps`):
