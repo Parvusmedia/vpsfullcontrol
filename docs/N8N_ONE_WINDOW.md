@@ -25,7 +25,11 @@ Comandos disponibles:
 - `status`: valida conectividad y tipo de token disponible.
 - `list [--limit 50] [--query texto]`: lista workflows.
 - `details --workflow-id <id>`: muestra detalle.
+- `execution --execution-id <id> [--include-data]`: detalle de ejecución (REST).
+- `executions --workflow-id <id> [--status error] [--limit N]`: lista ejecuciones (REST).
 - `export [--out ruta]`: exporta workflows a JSON.
+
+Smart Life buhardilla: ver `docs/n8n/SMARTLIFE_RADIADOR.md` y `scripts/n8n_smartlife_radiador_fix.py`.
 
 ## Ejemplos
 
