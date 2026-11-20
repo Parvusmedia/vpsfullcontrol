@@ -30,7 +30,7 @@ El nodo **Decidir temperatura** lanzaba `Night heating self-test failed`: el cas
 
 - ID error workflow: `EltiT3iY5IoJY3yU` — **SmartLife Buhardilla — alertas error**
 - Enlazado en `settings.errorWorkflow` del workflow principal.
-- Telegram configurado vía `scripts/n8n_configure_smartlife_telegram.py` (destino **@etichauer**, chat numérico en fly456 `.env`). En n8n: credencial *Fly456 Support Bot (SmartLife alerts)* en el workflow `EltiT3iY5IoJY3yU`.
+- Telegram: bot **@parvusmediabot** (`/opt/apps/scripts/plesk-disk-guard.local.env`), destino **@etichauer** (chat en fly456 `.env`). Credencial n8n *Parvusmedia Bot (SmartLife alerts)* en `EltiT3iY5IoJY3yU`. Script: `scripts/n8n_configure_smartlife_telegram.py`.
 
 El script:
 
@@ -54,7 +54,7 @@ Telegram reutiliza la credencial `telegramApi` si ya existe en el workflow del r
 
 ## Configurar / reparar alertas Telegram
 
-En el VPS (REST n8n + token del bot en `/opt/apps/fly456bot/.env`):
+En el VPS (REST n8n + token **@parvusmediabot** + chat destino fly456):
 
 ```bash
 set -a && . /opt/apps/nextconvers-qualification-gate/config/deployment.local.env && set +a

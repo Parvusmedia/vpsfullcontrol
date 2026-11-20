@@ -12,7 +12,8 @@ from pathlib import Path
 
 ERROR_WORKFLOW_ID = "EltiT3iY5IoJY3yU"
 MAIN_WORKFLOW_ID = "HPaa9jGQmpDex41t"
-CREDENTIAL_NAME = "Fly456 Support Bot (SmartLife alerts)"
+CREDENTIAL_NAME = "Parvusmedia Bot (SmartLife alerts)"
+PARVUSMEDIA_ENV = Path("/opt/apps/scripts/plesk-disk-guard.local.env")
 FLY456_ENV = Path("/opt/apps/fly456bot/.env")
 
 TEXT_EXPR = (
@@ -63,15 +64,19 @@ def main() -> int:
         print(json.dumps({"error": "Falta N8N_BASE_URL y N8N_API_KEY"}))
         return 1
 
+    if not PARVUSMEDIA_ENV.is_file():
+        print(json.dumps({"error": f"No existe {PARVUSMEDIA_ENV}"}))
+        return 1
     if not FLY456_ENV.is_file():
         print(json.dumps({"error": f"No existe {FLY456_ENV}"}))
         return 1
 
+    pm = parse_env(PARVUSMEDIA_ENV)
     fly = parse_env(FLY456_ENV)
-    token = fly.get("TELEGRAM_SUPPORT_BOT_TOKEN") or fly.get("TELEGRAM_BOT_TOKEN")
+    token = pm.get("TELEGRAM_BOT_TOKEN") or pm.get("PARVUSMEDIA_BOT_TOKEN")
     chat_id = fly.get("OWNER_NOTIFY_CHAT_ID") or fly.get("FLY456_HEALTHCHECK_TELEGRAM_TARGET")
     if not token or not chat_id:
-        print(json.dumps({"error": "Falta token o chat_id en fly456 .env"}))
+        print(json.dumps({"error": "Falta token (parvusmediabot) o chat_id destino (@etichauer)"}))
         return 1
 
     tg_url = f"https://api.telegram.org/bot{token}/getChat?{urllib.parse.urlencode({'chat_id': chat_id})}"
@@ -88,13 +93,13 @@ def main() -> int:
             if isinstance(tg, dict) and tg.get("id"):
                 cred_id = str(tg["id"])
                 break
+    cred_payload = {"name": CREDENTIAL_NAME, "type": "telegramApi", "data": {"accessToken": token}}
+    if cred_id:
+        patch_status, patch_resp = api_request("PATCH", f"{base}/api/v1/credentials/{cred_id}", key, cred_payload)
+        if patch_status not in (200, 201):
+            cred_id = None
     if not cred_id:
-        status, cred_resp = api_request(
-            "POST",
-            f"{base}/api/v1/credentials",
-            key,
-            {"name": CREDENTIAL_NAME, "type": "telegramApi", "data": {"accessToken": token}},
-        )
+        status, cred_resp = api_request("POST", f"{base}/api/v1/credentials", key, cred_payload)
         if status in (200, 201):
             created = (cred_resp.get("data") if isinstance(cred_resp, dict) else None) or cred_resp
             if isinstance(created, dict):
@@ -159,7 +164,7 @@ def main() -> int:
         link_status, _ = api_request("PUT", f"{base}/api/v1/workflows/{MAIN_WORKFLOW_ID}", key, main_put)
         linked = link_status == 200
 
-    test_msg = "✅ SmartLife buhardilla: alertas de error n8n → Telegram (@etichauer) listas."
+    test_msg = "✅ SmartLife buhardilla: alertas de error n8n vía @parvusmediabot → @etichauer."
     send_url = f"https://api.telegram.org/bot{token}/sendMessage"
     send_data = urllib.parse.urlencode({"chat_id": chat_id, "text": test_msg}).encode()
     with urllib.request.urlopen(urllib.request.Request(send_url, data=send_data, method="POST"), timeout=20) as r:
@@ -171,6 +176,7 @@ def main() -> int:
                 "credential_id": cred_ref["id"],
                 "chat_id": str(chat_id),
                 "telegram_username": username,
+                "bot_username": "parvusmediabot",
                 "error_workflow_updated": True,
                 "error_workflow_active": activated,
                 "main_error_workflow_linked": linked,
