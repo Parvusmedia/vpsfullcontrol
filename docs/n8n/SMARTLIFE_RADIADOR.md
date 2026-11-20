@@ -2,11 +2,15 @@
 
 Workflow en n8n Cloud: [HPaa9jGQmpDex41t](https://pmedia.app.n8n.cloud/workflow/HPaa9jGQmpDex41t)
 
-## Requisito: API REST
+## Acceso API (Cloud Agent y VPS)
 
-El token MCP (JWT) **no** permite leer ejecuciones ni actualizar este workflow. Añade en el Cloud Agent:
+| Origen | Variable | Uso |
+|--------|----------|-----|
+| Cloud Agent | `N8N_API_KEY` (JWT `aud: mcp-server-api`) | MCP parcial |
+| Cloud Agent / VPS | `N8N_REST_API_KEY` o JWT `aud: public-api` | REST (`/api/v1/...`) |
+| VPS Parvus | `/opt/apps/nextconvers-qualification-gate/config/deployment.local.env` | `N8N_BASE_URL` + `N8N_API_KEY` (REST) |
 
-- `N8N_REST_API_KEY` — clave con prefijo `n8n_api_...` (n8n → Settings → API)
+`scripts/n8n_unified.py` trata JWT `public-api` como REST.
 
 ## Diagnosticar y corregir ejecución fallida
 
@@ -17,6 +21,16 @@ python3 scripts/n8n_smartlife_radiador_fix.py --execution-id 508599 --dry-run
 # Aplicar parches + workflow de alertas
 python3 scripts/n8n_smartlife_radiador_fix.py --execution-id 508599 --apply
 ```
+
+### Causa típica (ejecución 508599)
+
+El nodo **Decidir temperatura** lanzaba `Night heating self-test failed`: el caso de prueba de las **07:30** (`m=450`) esperaba 0 comandos pero, con la ventana 18:00–08:00, debe permitir encendido → **2 comandos**. Corregido en n8n (`450,0` → `450,2`).
+
+### Workflow de alertas
+
+- ID error workflow: `EltiT3iY5IoJY3yU` — **SmartLife Buhardilla — alertas error**
+- Enlazado en `settings.errorWorkflow` del workflow principal.
+- Añade credencial **Telegram** en n8n y variable de entorno `TELEGRAM_CHAT_ID` (o cambia el nodo por WhatsApp/2Chat).
 
 El script:
 

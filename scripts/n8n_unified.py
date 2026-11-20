@@ -189,6 +189,21 @@ def _extract_rest_list(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _jwt_aud(value: str) -> str | None:
+    if not _is_jwt(value):
+        return None
+    try:
+        import base64
+
+        payload = value.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload))
+        aud = data.get("aud")
+        return aud if isinstance(aud, str) else None
+    except Exception:  # pragma: no cover - defensive
+        return None
+
+
 def _detect_tokens() -> tuple[str | None, str | None]:
     rest_key = os.getenv("N8N_REST_API_KEY")
     mcp_token = os.getenv("N8N_MCP_TOKEN")
@@ -197,7 +212,9 @@ def _detect_tokens() -> tuple[str | None, str | None]:
     if legacy:
         if not rest_key and legacy.startswith("n8n_api_"):
             rest_key = legacy
-        if not mcp_token and _is_jwt(legacy):
+        if not rest_key and _is_jwt(legacy) and _jwt_aud(legacy) == "public-api":
+            rest_key = legacy
+        if not mcp_token and _is_jwt(legacy) and _jwt_aud(legacy) != "public-api":
             mcp_token = legacy
     return rest_key, mcp_token
 
