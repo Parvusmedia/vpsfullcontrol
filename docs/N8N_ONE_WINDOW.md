@@ -40,6 +40,10 @@ python3 scripts/n8n_unified.py details --workflow-id m1eDecjWiX7Ml7J6
 python3 scripts/n8n_unified.py export --out /workspace/n8n_export_latest
 ```
 
+## Antes de decir “sin acceso”
+
+Buscar credenciales en: secrets del Cloud Agent, `scripts/n8n status`, MCP con header `Accept` correcto, VPS `deployment.local.env` (ver `AGENTS.md`). Solo entonces pedir un token nuevo.
+
 ## Comportamiento de export
 
 - Si hay REST válido: exporta por `/api/v1/workflows` (más completo).
