@@ -26,7 +26,8 @@ CONFIG_JS = """return [{json:{
   target_fan:"auto",
   max_age_minutes:30,
   dry_run:false,
-  manual_commands:true
+  manual_commands:true,
+  force_ac_test:false
 }}];"""
 
 
@@ -65,6 +66,10 @@ def main() -> int:
             node.setdefault("parameters", {})["jsCode"] = decidir
         elif name == "Validar resultado":
             node.setdefault("parameters", {})["jsCode"] = validar
+        elif name == "Preparar verificacion":
+            node.setdefault("parameters", {})["jsCode"] = (
+                ROOT / "n8n_mateo_ac_preparar_verificacion.js"
+            ).read_text(encoding="utf-8").strip()
         if node.get("type") == "n8n-nodes-base.httpRequest":
             ref = template_http.get(name or "")
             if ref and ref.get("credentials"):
@@ -74,14 +79,27 @@ def main() -> int:
                     if auth_key in ref.get("parameters", {}):
                         params[auth_key] = ref["parameters"][auth_key]
 
-    # n8n API expects a subset of fields on PUT
-    settings = wf.get("settings") or {}
-    allowed_settings = {k: settings[k] for k in ("executionOrder", "timezone", "callerPolicy") if k in settings}
     body = {
         "name": wf["name"],
         "nodes": wf["nodes"],
         "connections": wf["connections"],
     }
+    settings = wf.get("settings") or {}
+    allowed_settings = {
+        k: settings[k]
+        for k in (
+            "executionOrder",
+            "timezone",
+            "callerPolicy",
+            "saveDataErrorExecution",
+            "saveDataSuccessExecution",
+            "saveManualExecutions",
+            "errorWorkflow",
+            "executionTimeout",
+        )
+        if k in settings
+    }
+    allowed_settings["saveManualExecutions"] = True
     if allowed_settings:
         body["settings"] = allowed_settings
 

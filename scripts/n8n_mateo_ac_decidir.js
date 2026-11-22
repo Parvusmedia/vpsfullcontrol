@@ -66,6 +66,33 @@ if (c.target_c !== 21 || !setpoint || setpoint.value !== 21) throw new Error("AC
 
 summary.logic_tests = tests.length;
 
+if (c.force_ac_test) {
+  const manualRun = !["production", "trigger"].includes($execution.mode);
+  if (!manualRun) throw new Error("force_ac_test solo en ejecución manual");
+  summary.commands = [
+    { code: "mode", value: c.target_mode },
+    { code: "temp", value: c.target_c },
+    { code: "fan", value: c.target_fan },
+    { code: "switch", value: true },
+  ];
+  summary.status = "force_test";
+  summary.reason = "force_ac_test";
+  const should_send = !c.dry_run;
+  return [
+    {
+      json: {
+        summary,
+        should_send,
+        access_token: $("Tuya Token").first().json.result.access_token,
+        tuya_method: "POST",
+        tuya_path: "/v1.0/devices/" + c.radiator_id + "/commands",
+        tuya_body: JSON.stringify({ commands: summary.commands }),
+        started_ms: now,
+      },
+    },
+  ];
+}
+
 const parts = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/Madrid",
   hour: "2-digit",
