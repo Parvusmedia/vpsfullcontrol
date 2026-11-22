@@ -29,6 +29,7 @@ CONFIG_JS = """return [{json:{
   manual_commands:true,
   force_ac_test:false
 }}];"""
+# AC virtual confirmado: Air Conditioner 7 (sub Smart IR Matute)
 
 
 def main() -> int:
