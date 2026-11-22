@@ -7,10 +7,10 @@ const fanVal = { auto: "0", low: "1", mid: "2", high: "3" };
 
 function matches(cmd) {
   const v = cmd.value;
-  if (cmd.code === "switch") return st.switch_power === v;
-  if (cmd.code === "temp") return st.temperature === v;
+  if (cmd.code === "temp") return Number(st.temperature) === Number(v);
   if (cmd.code === "mode") return String(st.mode) === String(modeVal[v] ?? v);
-  if (cmd.code === "fan") return String(st.fan) === String(fanVal[v] ?? v);
+  if (cmd.code === "wind") return String(st.fan) === String(fanVal[v] ?? v);
+  if (cmd.code === "power") return String(st.switch_power ? 1 : 0) === String(v);
   return st[cmd.code] === v;
 }
 

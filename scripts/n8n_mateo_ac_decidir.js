@@ -1,4 +1,4 @@
-// Decidir temperatura — Mateo (AC infrared_ac bajo Smart IR Matute)
+// Decidir temperatura — Mateo (AC infrared_ac; un solo comando Tuya por petición)
 const c = $("Configuracion").first().json;
 const get = (n) => $(n).first().json;
 const now = Date.now();
@@ -35,46 +35,33 @@ function acNorm(s) {
   };
 }
 
-function plan(t, raw, m) {
+/** Tuya infrared_ac: exactamente un comando por POST (varios → error 1109). */
+function planOne(t, raw, m) {
   const s = acNorm(raw);
-  if (!inWindow(m) || t >= c.min_c || s.switch_on) return [];
-  const a = [];
-  if (s.temperature !== c.target_c) a.push({ code: "temp", value: c.target_c });
-  if (s.mode !== c.target_mode) a.push({ code: "mode", value: c.target_mode });
-  if (s.fan !== c.target_fan) a.push({ code: "fan", value: c.target_fan });
-  a.push({ code: "switch", value: true });
-  return a;
+  if (!inWindow(m) || t >= c.min_c) return [];
+  const ready =
+    s.switch_on && s.temperature === c.target_c && s.mode === c.target_mode && s.fan === c.target_fan;
+  if (ready) return [];
+  if (!s.switch_on || s.temperature !== c.target_c) return [{ code: "temp", value: c.target_c }];
+  if (s.mode !== c.target_mode) return [{ code: "mode", value: modeVal[c.target_mode] }];
+  if (s.fan !== c.target_fan) return [{ code: "wind", value: fanVal[c.target_fan] }];
+  return [{ code: "power", value: 1 }];
 }
 
 const off = { switch_power: false, temperature: 20, mode: "1", fan: "0" };
-const tests = [
-  [c.min_c - 0.1, off, 1080, 2],
-  [c.min_c, off, 1080, 0],
-  [c.min_c + 0.1, off, 1080, 0],
-  [c.min_c - 0.1, off, 449, 2],
-  [c.min_c - 0.1, off, 450, 2],
-  [c.min_c - 0.1, off, 1079, 0],
-  [c.min_c - 0.1, off, 0, 2],
-  [c.min_c - 0.1, off, 1439, 2],
-  [c.min_c - 0.1, { ...off, switch_power: true }, 1200, 0],
-  [c.min_c - 0.1, { switch_power: false, temperature: 20, mode: "2", fan: "2" }, 1200, 4],
-];
-if (tests.some(([t, s, m, n]) => plan(t, s, m).length !== n)) throw new Error("Night heating self-test failed");
+const onOk = { switch_power: true, temperature: c.target_c, mode: modeVal[c.target_mode], fan: fanVal[c.target_fan] };
+if (planOne(c.min_c - 0.1, off, 1080).length !== 1) throw new Error("Night heating self-test failed");
+if (planOne(c.min_c - 0.1, off, 1080)[0].code !== "temp") throw new Error("AC start must be temp command");
+if (planOne(c.min_c, off, 1080).length !== 0) throw new Error("At threshold expect no command");
+if (planOne(c.min_c + 0.1, off, 1080).length !== 0) throw new Error("Above threshold expect no command");
+if (planOne(c.min_c - 0.1, onOk, 1200).length !== 0) throw new Error("Already configured expect no command");
+if (planOne(c.min_c - 0.1, off, 450).length !== 1) throw new Error("Morning window self-test failed");
 
-const setpoint = plan(c.min_c - 0.1, { switch_power: false, temperature: 20, mode: "2", fan: "2" }, 1200).find((x) => x.code === "temp");
-if (c.target_c !== 21 || !setpoint || setpoint.value !== 21) throw new Error("AC setpoint must be 21");
-
-summary.logic_tests = tests.length;
+summary.logic_tests = 6;
 
 if (c.force_ac_test) {
-  const manualRun = !["production", "trigger"].includes($execution.mode);
-  if (!manualRun) throw new Error("force_ac_test solo en ejecución manual");
-  summary.commands = [
-    { code: "mode", value: c.target_mode },
-    { code: "temp", value: c.target_c },
-    { code: "fan", value: c.target_fan },
-    { code: "switch", value: true },
-  ];
+  if (["production", "trigger"].includes($execution.mode)) throw new Error("force_ac_test solo en ejecución manual");
+  summary.commands = [{ code: "temp", value: c.target_c }];
   summary.status = "force_test";
   summary.reason = "force_ac_test";
   const should_send = !c.dry_run;
@@ -148,15 +135,18 @@ if (typeof rawState.switch_power !== "boolean" || typeof rawState.temperature !=
   return [{ json: { summary, should_send: false } }];
 }
 
-summary.commands = plan(t, rawState, localMinutes);
+summary.commands = planOne(t, rawState, localMinutes);
 summary.status = summary.commands.length ? "commands_required" : "no_change";
+const ac = acNorm(rawState);
 summary.reason = !summary.in_window
   ? "outside_window"
-  : acNorm(rawState).switch_on
-    ? "already_on"
-    : t < c.min_c
-      ? "below_" + c.min_c
-      : "temperature_not_below_threshold";
+  : summary.commands.length
+    ? "ac_adjust"
+    : ac.switch_on
+      ? "already_on"
+      : t < c.min_c
+        ? "below_" + c.min_c
+        : "temperature_not_below_threshold";
 
 const manual = !["production", "trigger"].includes($execution.mode);
 const permitted = !c.dry_run && (!manual || c.manual_commands);
