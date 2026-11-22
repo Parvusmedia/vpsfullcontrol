@@ -16,9 +16,14 @@ const summary = {
   commands: [],
 };
 
-function inWindow(m) {
-  const day = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date());
-  return m >= 1080 || m < (day === "Sat" || day === "Sun" ? 600 : 480);
+function inWindow(m, dayOverride) {
+  const day =
+    dayOverride ||
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date());
+  const weekend = day === "Sat" || day === "Sun";
+  const start = weekend ? 18 * 60 : 18 * 60 + 30;
+  const endExclusive = weekend ? 10 * 60 : 7 * 60 + 30;
+  return m >= start || m < endExclusive;
 }
 
 const modeKey = { "0": "cold", "1": "heat", "2": "auto", "3": "wind_dry", "4": "dehumidification" };
@@ -38,9 +43,9 @@ function acNorm(s) {
 }
 
 /** Tuya infrared_ac: exactamente un comando por POST (varios → error 1109). */
-function planOne(t, raw, m) {
+function planOne(t, raw, m, dayOverride) {
   const s = acNorm(raw);
-  if (!inWindow(m) || t >= c.min_c) return [];
+  if (!inWindow(m, dayOverride) || t >= c.min_c) return [];
   const ready =
     s.switch_on && s.temperature === c.target_c && s.mode === c.target_mode && s.fan === c.target_fan;
   if (ready) return [];
@@ -78,14 +83,18 @@ function buildSend(summary, commands, should_send, extra) {
 
 const off = { switch_power: false, temperature: 20, mode: "1", fan: "0" };
 const onOk = { switch_power: true, temperature: c.target_c, mode: modeVal[c.target_mode], fan: fanVal[c.target_fan] };
-if (planOne(c.min_c - 0.1, off, 1080).length !== 1) throw new Error("Night heating self-test failed");
-if (planOne(c.min_c - 0.1, off, 1080)[0].code !== "temp") throw new Error("AC start must be temp command");
-if (planOne(c.min_c, off, 1080).length !== 0) throw new Error("At threshold expect no command");
-if (planOne(c.min_c + 0.1, off, 1080).length !== 0) throw new Error("Above threshold expect no command");
-if (planOne(c.min_c - 0.1, onOk, 1200).length !== 0) throw new Error("Already configured expect no command");
-if (planOne(c.min_c - 0.1, off, 450).length !== 1) throw new Error("Morning window self-test failed");
+if (planOne(c.min_c - 0.1, off, 1110, "Mon").length !== 1) throw new Error("Weekday 18:30 self-test failed");
+if (planOne(c.min_c - 0.1, off, 1110, "Mon")[0].code !== "temp") throw new Error("AC start must be temp command");
+if (planOne(c.min_c, off, 1110, "Mon").length !== 0) throw new Error("At threshold expect no command");
+if (planOne(c.min_c + 0.1, off, 1110, "Mon").length !== 0) throw new Error("Above threshold expect no command");
+if (planOne(c.min_c - 0.1, onOk, 1200, "Mon").length !== 0) throw new Error("Already configured expect no command");
+if (planOne(c.min_c - 0.1, off, 449, "Mon").length !== 1) throw new Error("Weekday 07:29 self-test failed");
+if (planOne(c.min_c - 0.1, off, 450, "Mon").length !== 0) throw new Error("After 07:30 weekday expect no heat");
+if (planOne(c.min_c - 0.1, off, 1109, "Mon").length !== 0) throw new Error("Before 18:30 weekday expect no heat");
+if (planOne(c.min_c - 0.1, off, 1080, "Sat").length !== 1) throw new Error("Weekend 18:00 self-test failed");
+if (planOne(c.min_c - 0.1, off, 600, "Sun").length !== 0) throw new Error("Weekend 10:00 expect no heat");
 
-summary.logic_tests = 6;
+summary.logic_tests = 10;
 
 if (c.force_ac_test) {
   if (["production", "trigger"].includes($execution.mode)) throw new Error("force_ac_test solo en ejecución manual");
@@ -103,7 +112,7 @@ const parts = new Intl.DateTimeFormat("en-GB", {
 }).formatToParts(new Date(now));
 const localMinutes = Number(parts.find((p) => p.type === "hour").value) * 60 + Number(parts.find((p) => p.type === "minute").value);
 summary.timezone = "Europe/Madrid";
-summary.window = "18:00-08:00 (lun-vie), 18:00-10:00 (sab-dom)";
+summary.window = "18:30-07:30 (lun-vie), 18:00-10:00 (sab-dom)";
 summary.in_window = inWindow(localMinutes);
 summary.threshold_c = c.min_c;
 summary.auto_off_scheduled_at = store.mateo_ac_auto_off_at

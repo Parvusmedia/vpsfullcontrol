@@ -68,6 +68,10 @@ def main() -> int:
             node.setdefault("parameters", {})["jsCode"] = decidir
         elif name == "Validar resultado":
             node.setdefault("parameters", {})["jsCode"] = validar
+        elif name == "Ultima comprobacion":
+            node.setdefault("parameters", {})["jsCode"] = (
+                ROOT / "n8n_mateo_ultima_comprobacion.js"
+            ).read_text(encoding="utf-8").strip()
         elif name == "Preparar verificacion":
             node.setdefault("parameters", {})["jsCode"] = (
                 ROOT / "n8n_mateo_ac_preparar_verificacion.js"
