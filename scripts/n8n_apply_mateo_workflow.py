@@ -10,6 +10,7 @@ import urllib.request
 from pathlib import Path
 
 WORKFLOW_ID = "DYJV0r0Z86pQIHH8"
+TEMPLATE_WORKFLOW_ID = "HPaa9jGQmpDex41t"
 ROOT = Path(__file__).resolve().parent
 
 CONFIG_JS = """return [{json:{
@@ -39,14 +40,22 @@ def main() -> int:
     decidir = (ROOT / "n8n_mateo_ac_decidir.js").read_text(encoding="utf-8").strip()
     validar = (ROOT / "n8n_mateo_ac_validar.js").read_text(encoding="utf-8").strip()
 
-    wf = json.loads(
-        urllib.request.urlopen(
-            urllib.request.Request(
-                f"{base}/api/v1/workflows/{WORKFLOW_ID}",
-                headers={"X-N8N-API-KEY": key},
-            )
-        ).read()
-    )
+    headers = {"X-N8N-API-KEY": key}
+
+    def fetch(workflow_id: str) -> dict:
+        return json.loads(
+            urllib.request.urlopen(
+                urllib.request.Request(f"{base}/api/v1/workflows/{workflow_id}", headers=headers)
+            ).read()
+        )
+
+    wf = fetch(WORKFLOW_ID)
+    template = fetch(TEMPLATE_WORKFLOW_ID)
+    template_http = {
+        n["name"]: n
+        for n in template.get("nodes") or []
+        if n.get("type") == "n8n-nodes-base.httpRequest"
+    }
 
     for node in wf.get("nodes") or []:
         name = node.get("name")
@@ -56,6 +65,14 @@ def main() -> int:
             node.setdefault("parameters", {})["jsCode"] = decidir
         elif name == "Validar resultado":
             node.setdefault("parameters", {})["jsCode"] = validar
+        if node.get("type") == "n8n-nodes-base.httpRequest":
+            ref = template_http.get(name or "")
+            if ref and ref.get("credentials"):
+                node["credentials"] = ref["credentials"]
+                params = node.setdefault("parameters", {})
+                for auth_key in ("authentication", "genericAuthType"):
+                    if auth_key in ref.get("parameters", {}):
+                        params[auth_key] = ref["parameters"][auth_key]
 
     # n8n API expects a subset of fields on PUT
     settings = wf.get("settings") or {}
