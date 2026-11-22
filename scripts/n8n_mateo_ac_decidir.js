@@ -1,0 +1,153 @@
+// Decidir temperatura — Mateo (AC infrared_ac bajo Smart IR Matute)
+const c = $("Configuracion").first().json;
+const get = (n) => $(n).first().json;
+const now = Date.now();
+const summary = {
+  checked_at: new Date(now).toISOString(),
+  room: c.room || "Mateo",
+  sensor_id: c.sensor_id,
+  ac_device_id: c.radiator_id,
+  ir_hub_id: c.ir_hub_id,
+  dry_run: c.dry_run,
+  execution_mode: $execution.mode,
+  status: "blocked",
+  commands: [],
+};
+
+function inWindow(m) {
+  const day = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date());
+  return m >= 1080 || m < (day === "Sat" || day === "Sun" ? 600 : 480);
+}
+
+const modeKey = { "0": "cold", "1": "heat", "2": "auto", "3": "wind_dry", "4": "dehumidification" };
+const modeVal = { cold: "0", heat: "1", auto: "2", wind_dry: "3", dehumidification: "4" };
+const fanKey = { "0": "auto", "1": "low", "2": "mid", "3": "high" };
+const fanVal = { auto: "0", low: "1", mid: "2", high: "3" };
+
+function acNorm(s) {
+  const m = s?.mode;
+  const f = s?.fan;
+  return {
+    switch_on: s?.switch_power === true,
+    temperature: s?.temperature,
+    mode: typeof m === "string" && m.length === 1 ? modeKey[m] || m : m,
+    fan: typeof f === "string" && f.length === 1 ? fanKey[f] || f : f,
+  };
+}
+
+function plan(t, raw, m) {
+  const s = acNorm(raw);
+  if (!inWindow(m) || t >= c.min_c || s.switch_on) return [];
+  const a = [];
+  if (s.temperature !== c.target_c) a.push({ code: "temp", value: c.target_c });
+  if (s.mode !== c.target_mode) a.push({ code: "mode", value: c.target_mode });
+  if (s.fan !== c.target_fan) a.push({ code: "fan", value: c.target_fan });
+  a.push({ code: "switch", value: true });
+  return a;
+}
+
+const off = { switch_power: false, temperature: 20, mode: "1", fan: "0" };
+const tests = [
+  [c.min_c - 0.1, off, 1080, 2],
+  [c.min_c, off, 1080, 0],
+  [c.min_c + 0.1, off, 1080, 0],
+  [c.min_c - 0.1, off, 449, 2],
+  [c.min_c - 0.1, off, 450, 2],
+  [c.min_c - 0.1, off, 1079, 0],
+  [c.min_c - 0.1, off, 0, 2],
+  [c.min_c - 0.1, off, 1439, 2],
+  [c.min_c - 0.1, { ...off, switch_power: true }, 1200, 0],
+  [c.min_c - 0.1, { switch_power: false, temperature: 20, mode: "2", fan: "2" }, 1200, 4],
+];
+if (tests.some(([t, s, m, n]) => plan(t, s, m).length !== n)) throw new Error("Night heating self-test failed");
+
+const setpoint = plan(c.min_c - 0.1, { switch_power: false, temperature: 20, mode: "2", fan: "2" }, 1200).find((x) => x.code === "temp");
+if (c.target_c !== 21 || !setpoint || setpoint.value !== 21) throw new Error("AC setpoint must be 21");
+
+summary.logic_tests = tests.length;
+
+const parts = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Madrid",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+}).formatToParts(new Date(now));
+const localMinutes = Number(parts.find((p) => p.type === "hour").value) * 60 + Number(parts.find((p) => p.type === "minute").value);
+summary.timezone = "Europe/Madrid";
+summary.window = "18:00-08:00 (lun-vie), 18:00-10:00 (sab-dom)";
+summary.in_window = inWindow(localMinutes);
+summary.threshold_c = c.min_c;
+
+const apiNames = ["Conexion sensor", "Temperatura sensor", "Conexion radiador", "Estado radiador"];
+for (const n of apiNames) {
+  const r = get(n);
+  if (r.success !== true) {
+    summary.reason = "api_error";
+    summary.failed_step = n;
+    summary.api_code = String(r.code || "network_error");
+    return [{ json: { summary, should_send: false } }];
+  }
+}
+if (get("Conexion sensor").result?.online !== true || get("Conexion radiador").result?.online !== true) {
+  summary.reason = "device_offline";
+  return [{ json: { summary, should_send: false } }];
+}
+
+const props = get("Temperatura sensor").result?.properties || [];
+const p = props.find((x) => x.code === c.temperature_code);
+const unit = props.find((x) => x.code === "temp_unit_convert");
+if (!p || typeof p.value !== "number" || !Number.isFinite(p.value) || unit?.value !== "c") {
+  summary.reason = "invalid_temperature_or_unit";
+  return [{ json: { summary, should_send: false } }];
+}
+
+const t = p.value / Math.pow(10, c.scale);
+let ts = Number(p.time);
+if (ts < 1e12) ts *= 1000;
+summary.temperature_c = t;
+summary.reading_at = Number.isFinite(ts) ? new Date(ts).toISOString() : null;
+summary.age_minutes = (now - ts) / 60000;
+
+if (t < -20 || t > 60 || !Number.isFinite(ts) || ts <= 0 || ts > now + 60000) {
+  summary.reason = "invalid_temperature_or_timestamp";
+  return [{ json: { summary, should_send: false } }];
+}
+
+const rp = get("Estado radiador").result?.properties || [];
+const rawState = Object.fromEntries(rp.map((x) => [x.code, x.value]));
+summary.ac = { ...rawState, normalized: acNorm(rawState) };
+if (typeof rawState.switch_power !== "boolean" || typeof rawState.temperature !== "number") {
+  summary.reason = "invalid_ac_state";
+  return [{ json: { summary, should_send: false } }];
+}
+
+summary.commands = plan(t, rawState, localMinutes);
+summary.status = summary.commands.length ? "commands_required" : "no_change";
+summary.reason = !summary.in_window
+  ? "outside_window"
+  : acNorm(rawState).switch_on
+    ? "already_on"
+    : t < c.min_c
+      ? "below_" + c.min_c
+      : "temperature_not_below_threshold";
+
+const manual = !["production", "trigger"].includes($execution.mode);
+const permitted = !c.dry_run && (!manual || c.manual_commands);
+if (summary.commands.length && !permitted) summary.status = "dry_run";
+
+const should_send = permitted && summary.commands.length > 0;
+
+return [
+  {
+    json: {
+      summary,
+      should_send,
+      access_token: $("Tuya Token").first().json.result.access_token,
+      tuya_method: "POST",
+      tuya_path: "/v1.0/devices/" + c.radiator_id + "/commands",
+      tuya_body: JSON.stringify({ commands: summary.commands }),
+      reading_ms: ts,
+      started_ms: now,
+    },
+  },
+];
