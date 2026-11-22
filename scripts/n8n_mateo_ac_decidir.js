@@ -30,13 +30,6 @@ function inWindow(m, dayOverride) {
   return m >= start || m < endExclusive;
 }
 
-/** Calefacción solo en el hueco horario; auto-off cada 5 min si hay timer pendiente. */
-function isHeatPollSlot(localMinutes, dayOverride) {
-  const minute = localMinutes % 60;
-  const weekend = madridDay(dayOverride) === "Sat" || madridDay(dayOverride) === "Sun";
-  return weekend ? minute === 0 : minute === 30;
-}
-
 function autoOffAction(t, minC, offAboveC) {
   if (t >= offAboveC) return "off";
   return "extend";
@@ -113,10 +106,8 @@ const offAbove = c.auto_off_above_c ?? 22;
 if (autoOffAction(22, c.min_c, offAbove) !== "off") throw new Error("Auto-off at 22C must off");
 if (autoOffAction(21.5, c.min_c, offAbove) !== "extend") throw new Error("Auto-off below 22 extend");
 if (autoOffAction(20.5, c.min_c, offAbove) !== "extend") throw new Error("Auto-off below 21 extend");
-if (!isHeatPollSlot(18 * 60 + 30, "Mon")) throw new Error("Weekday heat poll at :30");
-if (isHeatPollSlot(18 * 60 + 20, "Mon")) throw new Error("Weekday not heat poll at :20");
 
-summary.logic_tests = 15;
+summary.logic_tests = 13;
 
 if (c.force_ac_test) {
   if (["production", "trigger"].includes($execution.mode)) throw new Error("force_ac_test solo en ejecución manual");
@@ -140,14 +131,7 @@ summary.threshold_c = c.min_c;
 summary.auto_off_above_c = offAbove;
 const offAtPending = store.mateo_ac_auto_off_at;
 summary.auto_off_scheduled_at = offAtPending ? new Date(offAtPending).toISOString() : null;
-summary.heat_poll = isHeatPollSlot(localMinutes);
 const autoOffDue = Boolean(offAtPending && now >= offAtPending);
-
-if (!c.force_ac_test && !autoOffDue && !summary.heat_poll) {
-  summary.status = "skipped";
-  summary.reason = "poll_wait";
-  return [{ json: { summary, should_send: false, started_ms: now } }];
-}
 
 const apiNames = ["Conexion sensor", "Temperatura sensor", "Conexion radiador", "Estado radiador"];
 for (const n of apiNames) {
@@ -223,12 +207,6 @@ if (autoOffDue) {
 
 if (ac.switch_on && !offAtPending) {
   summary.reason = "already_on_no_timer";
-}
-
-if (!summary.heat_poll) {
-  summary.status = "no_change";
-  summary.reason = summary.reason || "poll_auto_off_only";
-  return [{ json: { summary, should_send: false, reading_ms: ts, started_ms: now } }];
 }
 
 summary.commands = planOne(t, rawState, localMinutes);
