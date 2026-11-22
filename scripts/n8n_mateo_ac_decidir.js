@@ -2,6 +2,8 @@
 const c = $("Configuracion").first().json;
 const get = (n) => $(n).first().json;
 const now = Date.now();
+const store = $getWorkflowStaticData("global");
+const autoOffMs = (c.auto_off_minutes || 30) * 60 * 1000;
 const summary = {
   checked_at: new Date(now).toISOString(),
   room: c.room || "Mateo",
@@ -48,6 +50,32 @@ function planOne(t, raw, m) {
   return [{ code: "power", value: 1 }];
 }
 
+function isHeatOnCommand(cmd) {
+  return cmd.code === "temp" || (cmd.code === "power" && cmd.value === 1);
+}
+
+function buildSend(summary, commands, should_send, extra) {
+  const out = {
+    summary,
+    should_send,
+    access_token: $("Tuya Token").first().json.result.access_token,
+    tuya_method: "POST",
+    tuya_path: "/v1.0/devices/" + c.radiator_id + "/commands",
+    tuya_body: JSON.stringify({ commands }),
+    started_ms: now,
+    ...extra,
+  };
+  if (should_send && commands.length && isHeatOnCommand(commands[0])) {
+    store.mateo_ac_auto_off_at = now + autoOffMs;
+    summary.auto_off_at = new Date(store.mateo_ac_auto_off_at).toISOString();
+    summary.auto_off_minutes = c.auto_off_minutes || 30;
+  }
+  if (!commands.length || (commands[0].code === "power" && commands[0].value === 0)) {
+    store.mateo_ac_auto_off_at = null;
+  }
+  return [{ json: out }];
+}
+
 const off = { switch_power: false, temperature: 20, mode: "1", fan: "0" };
 const onOk = { switch_power: true, temperature: c.target_c, mode: modeVal[c.target_mode], fan: fanVal[c.target_fan] };
 if (planOne(c.min_c - 0.1, off, 1080).length !== 1) throw new Error("Night heating self-test failed");
@@ -64,20 +92,7 @@ if (c.force_ac_test) {
   summary.commands = [{ code: "temp", value: c.target_c }];
   summary.status = "force_test";
   summary.reason = "force_ac_test";
-  const should_send = !c.dry_run;
-  return [
-    {
-      json: {
-        summary,
-        should_send,
-        access_token: $("Tuya Token").first().json.result.access_token,
-        tuya_method: "POST",
-        tuya_path: "/v1.0/devices/" + c.radiator_id + "/commands",
-        tuya_body: JSON.stringify({ commands: summary.commands }),
-        started_ms: now,
-      },
-    },
-  ];
+  return buildSend(summary, summary.commands, !c.dry_run, {});
 }
 
 const parts = new Intl.DateTimeFormat("en-GB", {
@@ -91,6 +106,9 @@ summary.timezone = "Europe/Madrid";
 summary.window = "18:00-08:00 (lun-vie), 18:00-10:00 (sab-dom)";
 summary.in_window = inWindow(localMinutes);
 summary.threshold_c = c.min_c;
+summary.auto_off_scheduled_at = store.mateo_ac_auto_off_at
+  ? new Date(store.mateo_ac_auto_off_at).toISOString()
+  : null;
 
 const apiNames = ["Conexion sensor", "Temperatura sensor", "Conexion radiador", "Estado radiador"];
 for (const n of apiNames) {
@@ -135,9 +153,31 @@ if (typeof rawState.switch_power !== "boolean" || typeof rawState.temperature !=
   return [{ json: { summary, should_send: false } }];
 }
 
+const ac = acNorm(rawState);
+const manual = !["production", "trigger"].includes($execution.mode);
+const permitted = !c.dry_run && (!manual || c.manual_commands);
+
+const offAt = store.mateo_ac_auto_off_at;
+if (offAt && now >= offAt) {
+  summary.auto_off_due = true;
+  if (ac.switch_on) {
+    summary.commands = [{ code: "power", value: 0 }];
+    summary.status = "auto_off";
+    summary.reason = "auto_off_timer";
+    return buildSend(summary, summary.commands, permitted, { reading_ms: ts });
+  }
+  store.mateo_ac_auto_off_at = null;
+  summary.status = "no_change";
+  summary.reason = "auto_off_timer_already_off";
+  return [{ json: { summary, should_send: false, reading_ms: ts, started_ms: now } }];
+}
+
+if (ac.switch_on && !offAt) {
+  summary.reason = "already_on_no_timer";
+}
+
 summary.commands = planOne(t, rawState, localMinutes);
 summary.status = summary.commands.length ? "commands_required" : "no_change";
-const ac = acNorm(rawState);
 summary.reason = !summary.in_window
   ? "outside_window"
   : summary.commands.length
@@ -148,23 +188,7 @@ summary.reason = !summary.in_window
         ? "below_" + c.min_c
         : "temperature_not_below_threshold";
 
-const manual = !["production", "trigger"].includes($execution.mode);
-const permitted = !c.dry_run && (!manual || c.manual_commands);
 if (summary.commands.length && !permitted) summary.status = "dry_run";
 
 const should_send = permitted && summary.commands.length > 0;
-
-return [
-  {
-    json: {
-      summary,
-      should_send,
-      access_token: $("Tuya Token").first().json.result.access_token,
-      tuya_method: "POST",
-      tuya_path: "/v1.0/devices/" + c.radiator_id + "/commands",
-      tuya_body: JSON.stringify({ commands: summary.commands }),
-      reading_ms: ts,
-      started_ms: now,
-    },
-  },
-];
+return buildSend(summary, summary.commands, should_send, { reading_ms: ts });
