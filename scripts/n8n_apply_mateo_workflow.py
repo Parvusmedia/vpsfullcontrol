@@ -26,6 +26,7 @@ CONFIG_JS = """return [{json:{
   target_fan:"auto",
   max_age_minutes:30,
   auto_off_minutes:30,
+  auto_off_above_c:22,
   dry_run:false,
   manual_commands:true,
   force_ac_test:false

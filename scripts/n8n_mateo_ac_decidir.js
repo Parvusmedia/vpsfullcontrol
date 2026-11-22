@@ -16,14 +16,30 @@ const summary = {
   commands: [],
 };
 
-function inWindow(m, dayOverride) {
-  const day =
+function madridDay(dayOverride) {
+  return (
     dayOverride ||
-    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date());
-  const weekend = day === "Sat" || day === "Sun";
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", weekday: "short" }).format(new Date())
+  );
+}
+
+function inWindow(m, dayOverride) {
+  const weekend = madridDay(dayOverride) === "Sat" || madridDay(dayOverride) === "Sun";
   const start = weekend ? 18 * 60 : 18 * 60 + 30;
   const endExclusive = weekend ? 10 * 60 : 7 * 60 + 30;
   return m >= start || m < endExclusive;
+}
+
+/** Calefacción solo en el hueco horario; auto-off cada 5 min si hay timer pendiente. */
+function isHeatPollSlot(localMinutes, dayOverride) {
+  const minute = localMinutes % 60;
+  const weekend = madridDay(dayOverride) === "Sat" || madridDay(dayOverride) === "Sun";
+  return weekend ? minute === 0 : minute === 30;
+}
+
+function autoOffAction(t, minC, offAboveC) {
+  if (t >= offAboveC) return "off";
+  return "extend";
 }
 
 const modeKey = { "0": "cold", "1": "heat", "2": "auto", "3": "wind_dry", "4": "dehumidification" };
@@ -93,8 +109,14 @@ if (planOne(c.min_c - 0.1, off, 450, "Mon").length !== 0) throw new Error("After
 if (planOne(c.min_c - 0.1, off, 1109, "Mon").length !== 0) throw new Error("Before 18:30 weekday expect no heat");
 if (planOne(c.min_c - 0.1, off, 1080, "Sat").length !== 1) throw new Error("Weekend 18:00 self-test failed");
 if (planOne(c.min_c - 0.1, off, 600, "Sun").length !== 0) throw new Error("Weekend 10:00 expect no heat");
+const offAbove = c.auto_off_above_c ?? 22;
+if (autoOffAction(22, c.min_c, offAbove) !== "off") throw new Error("Auto-off at 22C must off");
+if (autoOffAction(21.5, c.min_c, offAbove) !== "extend") throw new Error("Auto-off below 22 extend");
+if (autoOffAction(20.5, c.min_c, offAbove) !== "extend") throw new Error("Auto-off below 21 extend");
+if (!isHeatPollSlot(18 * 60 + 30, "Mon")) throw new Error("Weekday heat poll at :30");
+if (isHeatPollSlot(18 * 60 + 20, "Mon")) throw new Error("Weekday not heat poll at :20");
 
-summary.logic_tests = 10;
+summary.logic_tests = 15;
 
 if (c.force_ac_test) {
   if (["production", "trigger"].includes($execution.mode)) throw new Error("force_ac_test solo en ejecución manual");
@@ -115,9 +137,17 @@ summary.timezone = "Europe/Madrid";
 summary.window = "18:30-07:30 (lun-vie), 18:00-10:00 (sab-dom)";
 summary.in_window = inWindow(localMinutes);
 summary.threshold_c = c.min_c;
-summary.auto_off_scheduled_at = store.mateo_ac_auto_off_at
-  ? new Date(store.mateo_ac_auto_off_at).toISOString()
-  : null;
+summary.auto_off_above_c = offAbove;
+const offAtPending = store.mateo_ac_auto_off_at;
+summary.auto_off_scheduled_at = offAtPending ? new Date(offAtPending).toISOString() : null;
+summary.heat_poll = isHeatPollSlot(localMinutes);
+const autoOffDue = Boolean(offAtPending && now >= offAtPending);
+
+if (!c.force_ac_test && !autoOffDue && !summary.heat_poll) {
+  summary.status = "skipped";
+  summary.reason = "poll_wait";
+  return [{ json: { summary, should_send: false, started_ms: now } }];
+}
 
 const apiNames = ["Conexion sensor", "Temperatura sensor", "Conexion radiador", "Estado radiador"];
 for (const n of apiNames) {
@@ -166,14 +196,24 @@ const ac = acNorm(rawState);
 const manual = !["production", "trigger"].includes($execution.mode);
 const permitted = !c.dry_run && (!manual || c.manual_commands);
 
-const offAt = store.mateo_ac_auto_off_at;
-if (offAt && now >= offAt) {
+if (autoOffDue) {
   summary.auto_off_due = true;
   if (ac.switch_on) {
-    summary.commands = [{ code: "power", value: 0 }];
-    summary.status = "auto_off";
-    summary.reason = "auto_off_timer";
-    return buildSend(summary, summary.commands, permitted, { reading_ms: ts });
+    const action = autoOffAction(t, c.min_c, offAbove);
+    summary.auto_off_action = action;
+    if (action === "off") {
+      summary.commands = [{ code: "power", value: 0 }];
+      summary.status = "auto_off";
+      summary.reason = "auto_off_timer";
+      return buildSend(summary, summary.commands, permitted, { reading_ms: ts });
+    }
+    const nextAt = now + autoOffMs;
+    store.mateo_ac_auto_off_at = nextAt;
+    summary.status = "no_change";
+    summary.reason = t < c.min_c ? "auto_off_extended_below_min" : "auto_off_extended_below_off_above";
+    summary.auto_off_extended_to = new Date(nextAt).toISOString();
+    summary.temperature_c = t;
+    return [{ json: { summary, should_send: false, reading_ms: ts, started_ms: now } }];
   }
   store.mateo_ac_auto_off_at = null;
   summary.status = "no_change";
@@ -181,8 +221,14 @@ if (offAt && now >= offAt) {
   return [{ json: { summary, should_send: false, reading_ms: ts, started_ms: now } }];
 }
 
-if (ac.switch_on && !offAt) {
+if (ac.switch_on && !offAtPending) {
   summary.reason = "already_on_no_timer";
+}
+
+if (!summary.heat_poll) {
+  summary.status = "no_change";
+  summary.reason = summary.reason || "poll_auto_off_only";
+  return [{ json: { summary, should_send: false, reading_ms: ts, started_ms: now } }];
 }
 
 summary.commands = planOne(t, rawState, localMinutes);
