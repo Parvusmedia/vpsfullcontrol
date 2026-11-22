@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 CONFIG_JS = """return [{json:{
   room:"Mateo",
   sensor_id:"bf7634a37dd4e94e17r4pg",
-  radiator_id:"bf7e0c495c637dc320vt0z",
+  radiator_id:"bfa6454e40fd2820fdwlra",
   ir_hub_id:"bf89c842ee56fd3393t695",
   temperature_code:"temp_current",
   scale:1,
