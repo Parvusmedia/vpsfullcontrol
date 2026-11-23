@@ -39,7 +39,7 @@ FULL_CONFIG = """return [{json:{
   push_biz_type:18,
   push_template_id:"",
   push_template_use_params:true,
-  notify_on_heat:true,
+  notify_on_heat:false,
   dry_run:false,
   manual_commands:true,
   force_ac_test:false
@@ -106,6 +106,18 @@ def main() -> int:
                                     "rightValue": "verified",
                                     "operator": {"type": "string", "operation": "equals"},
                                 },
+                                {
+                                    "id": str(uuid.uuid4()),
+                                    "leftValue": "={{ $('Configuracion').first().json.notify_on_heat }}",
+                                    "rightValue": True,
+                                    "operator": {"type": "boolean", "operation": "true"},
+                                },
+                                {
+                                    "id": str(uuid.uuid4()),
+                                    "leftValue": "={{ String($('Configuracion').first().json.push_template_id || '').trim() }}",
+                                    "rightValue": "",
+                                    "operator": {"type": "string", "operation": "notEquals"},
+                                },
                             ],
                         }
                     },
@@ -131,8 +143,9 @@ def main() -> int:
                             "conditions": [
                                 {
                                     "id": str(uuid.uuid4()),
-                                    "leftValue": "={{ $json.tuya_path }}",
-                                    "operator": {"type": "string", "operation": "exists", "singleValue": True},
+                                    "leftValue": "={{ $json.tuya_body }}",
+                                    "rightValue": "",
+                                    "operator": {"type": "string", "operation": "notEmpty"},
                                 }
                             ],
                         }
@@ -181,8 +194,9 @@ def main() -> int:
                         "conditions": [
                             {
                                 "id": str(uuid.uuid4()),
-                                "leftValue": "={{ $json.tuya_path }}",
-                                "operator": {"type": "string", "operation": "exists", "singleValue": True},
+                                "leftValue": "={{ $json.tuya_body }}",
+                                "rightValue": "",
+                                "operator": {"type": "string", "operation": "notEmpty"},
                             }
                         ],
                     }
@@ -192,6 +206,49 @@ def main() -> int:
 
     reg = next(n for n in wf["nodes"] if n["name"] == "Registro sin secretos")
     if_ = next(n for n in wf["nodes"] if n["name"] == "Notificar encendido?")
+    if_push = next(n for n in wf["nodes"] if n["name"] == "Hay push?")
+    if_.setdefault("parameters", {})["conditions"] = {
+        "options": {"version": 2, "caseSensitive": True, "typeValidation": "strict"},
+        "combinator": "and",
+        "conditions": [
+            {
+                "id": str(uuid.uuid4()),
+                "leftValue": "={{ $json.summary.should_notify_heat }}",
+                "rightValue": True,
+                "operator": {"type": "boolean", "operation": "true"},
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "leftValue": "={{ $json.summary.status }}",
+                "rightValue": "verified",
+                "operator": {"type": "string", "operation": "equals"},
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "leftValue": "={{ $('Configuracion').first().json.notify_on_heat }}",
+                "rightValue": True,
+                "operator": {"type": "boolean", "operation": "true"},
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "leftValue": "={{ String($('Configuracion').first().json.push_template_id || '').trim() }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEquals"},
+            },
+        ],
+    }
+    if_push.setdefault("parameters", {})["conditions"] = {
+        "options": {"version": 2, "caseSensitive": True, "typeValidation": "strict"},
+        "combinator": "and",
+        "conditions": [
+            {
+                "id": str(uuid.uuid4()),
+                "leftValue": "={{ $json.tuya_body }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            }
+        ],
+    }
     for n in wf["nodes"]:
         nname = n.get("name")
         if nname == "Preparar push SmartLife":
@@ -200,7 +257,6 @@ def main() -> int:
             n.setdefault("parameters", {})["jsCode"] = read_js("n8n_mateo_registro_push.js")
 
     prep = next(n for n in wf["nodes"] if n["name"] == "Preparar push SmartLife")
-    if_push = next(n for n in wf["nodes"] if n["name"] == "Hay push?")
     push = next(n for n in wf["nodes"] if n["name"] == "Push message center")
     reg_push = next(n for n in wf["nodes"] if n["name"] == "Registro push")
 

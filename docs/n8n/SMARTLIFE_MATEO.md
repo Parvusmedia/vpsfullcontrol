@@ -21,9 +21,9 @@ Tras encender y verificar el AC, el flujo puede enviar un **push al centro de me
 | `smartlife_uid` | UID de la app (p. ej. del dispositivo sensor: campo `uid`) |
 | `push_biz_type` | `18` (Smart Life en este hogar) |
 | `push_template_id` | ID aprobado (`PUSH_...`) |
-| `notify_on_heat` | `true` |
+| `notify_on_heat` | `true` solo cuando `push_template_id` esté configurado |
 
-Si `push_template_id` está vacío, el encendido sigue funcionando y el push se omite (`push_skipped` en el resumen).
+Por defecto va en **`false`** hasta que tengas plantilla aprobada: así el flujo **no entra** en la rama push y no puede fallar por API/permisos.
 
 ### Scripts
 
