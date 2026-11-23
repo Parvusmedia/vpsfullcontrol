@@ -21,6 +21,30 @@ CONFIG_PUSH_FIELDS = """
   push_template_use_params:true,
   notify_on_heat:true,"""
 
+FULL_CONFIG = """return [{json:{
+  room:"Mateo",
+  sensor_id:"bf7634a37dd4e94e17r4pg",
+  radiator_id:"bfa6454e40fd2820fdwlra",
+  ir_hub_id:"bf89c842ee56fd3393t695",
+  temperature_code:"temp_current",
+  scale:1,
+  min_c:21,
+  target_c:21,
+  target_mode:"heat",
+  target_fan:"auto",
+  max_age_minutes:30,
+  auto_off_minutes:30,
+  auto_off_above_c:22,
+  smartlife_uid:"eu1698169819562OGqFr",
+  push_biz_type:18,
+  push_template_id:"",
+  push_template_use_params:true,
+  notify_on_heat:true,
+  dry_run:false,
+  manual_commands:true,
+  force_ac_test:false
+}}];"""
+
 
 def read_js(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8").strip()
@@ -50,7 +74,7 @@ def main() -> int:
     validar.setdefault("parameters", {})["jsCode"] = read_js("n8n_mateo_ac_validar.js")
 
     conf = next(n for n in wf["nodes"] if n["name"] == "Configuracion")
-    conf["parameters"]["jsCode"] = inject_config(conf["parameters"]["jsCode"])
+    conf["parameters"]["jsCode"] = FULL_CONFIG
 
     y = validar["position"][1]
     x0 = validar["position"][0] + 260
