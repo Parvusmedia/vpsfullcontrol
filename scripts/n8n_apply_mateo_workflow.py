@@ -27,6 +27,11 @@ CONFIG_JS = """return [{json:{
   max_age_minutes:30,
   auto_off_minutes:30,
   auto_off_above_c:22,
+  smartlife_uid:"eu1698169819562OGqFr",
+  push_biz_type:18,
+  push_template_id:"PUSH_7146108284",
+  push_template_use_params:true,
+  notify_on_heat:true,
   dry_run:false,
   manual_commands:true,
   force_ac_test:false
@@ -76,6 +81,14 @@ def main() -> int:
         elif name == "Preparar verificacion":
             node.setdefault("parameters", {})["jsCode"] = (
                 ROOT / "n8n_mateo_ac_preparar_verificacion.js"
+            ).read_text(encoding="utf-8").strip()
+        elif name == "Preparar push SmartLife":
+            node.setdefault("parameters", {})["jsCode"] = (
+                ROOT / "n8n_mateo_preparar_push.js"
+            ).read_text(encoding="utf-8").strip()
+        elif name == "Registro push":
+            node.setdefault("parameters", {})["jsCode"] = (
+                ROOT / "n8n_mateo_registro_push.js"
             ).read_text(encoding="utf-8").strip()
         if node.get("type") == "n8n-nodes-base.httpRequest":
             ref = template_http.get(name or "")

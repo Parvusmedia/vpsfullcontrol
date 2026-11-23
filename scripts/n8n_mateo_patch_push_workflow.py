@@ -37,9 +37,9 @@ FULL_CONFIG = """return [{json:{
   auto_off_above_c:22,
   smartlife_uid:"eu1698169819562OGqFr",
   push_biz_type:18,
-  push_template_id:"",
+  push_template_id:"PUSH_7146108284",
   push_template_use_params:true,
-  notify_on_heat:false,
+  notify_on_heat:true,
   dry_run:false,
   manual_commands:true,
   force_ac_test:false
