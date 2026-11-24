@@ -25,7 +25,11 @@ Comandos disponibles:
 - `status`: valida conectividad y tipo de token disponible.
 - `list [--limit 50] [--query texto]`: lista workflows.
 - `details --workflow-id <id>`: muestra detalle.
+- `execution --execution-id <id> [--include-data]`: detalle de ejecución (REST).
+- `executions --workflow-id <id> [--status error] [--limit N]`: lista ejecuciones (REST).
 - `export [--out ruta]`: exporta workflows a JSON.
+
+Smart Life buhardilla: ver `docs/n8n/SMARTLIFE_RADIADOR.md` y `scripts/n8n_smartlife_radiador_fix.py`.
 
 ## Ejemplos
 
@@ -35,6 +39,10 @@ python3 scripts/n8n_unified.py list --limit 20
 python3 scripts/n8n_unified.py details --workflow-id m1eDecjWiX7Ml7J6
 python3 scripts/n8n_unified.py export --out /workspace/n8n_export_latest
 ```
+
+## Antes de decir “sin acceso”
+
+Buscar credenciales en: secrets del Cloud Agent, `scripts/n8n status`, MCP con header `Accept` correcto, VPS `deployment.local.env` (ver `AGENTS.md`). Solo entonces pedir un token nuevo.
 
 ## Comportamiento de export
 
